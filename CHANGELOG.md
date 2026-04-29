@@ -3,6 +3,20 @@
 All notable changes to the Open Finance Data Sandbox.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follows [SemVer](https://semver.org/).
 
+## [1.1.0] — 2026-04-29
+
+### Added — EXP-20 fixture package distribution
+
+The Phase 1.5 EXP-20 deliverable: the synthetic dataset is now distributable as a versioned package other tools can pin in their own CI.
+
+- **`@openfinance-os/sandbox-fixtures`** (npm) — 720 v2.1-shaped JSON envelopes covering 10 personas × 3 LFI profiles × all per-account endpoints. Ships with the parsed `spec.json`, the persona manifests, a single `manifest.json` index keyed by `<persona>|<lfi>|<seed>`, and a tiny ESM/CJS/TS loader exposing `loadFixture / listPersonas / listEndpoints / loadSpec / loadPersonaManifest`. Templated paths like `/accounts/{AccountId}/transactions` resolve to the persona's first account by default.
+- **`openfinance-os-sandbox-fixtures`** (PyPI) — Python wrapper with the same API (snake_case). `pip install openfinance-os-sandbox-fixtures` then `from openfinance_os_sandbox_fixtures import load_fixture`. Same data, same `_specSha`, same determinism guarantees.
+- **`tools/build-fixture-package.mjs`** + **`tools/build-fixture-package-py.mjs`** generate both packages from a single `npm run build:fixtures` invocation.
+- **`.github/workflows/publish-fixtures.yml`** publishes both packages on `fixtures-v*` tag push (npm via `NPM_TOKEN` secret, PyPI via Trusted Publisher OIDC).
+- **`tests/fixture-package.test.mjs`** — 7 round-trip tests including v2.1 schema validation against the published envelope. Hamid's anchor JTBD-13.1 ("multi-persona deterministic test corpus my SDK's CI can validate against, packaged as @openfinance-os/... fixtures I can pin").
+
+Total: 420 unit tests (was 413). Bundle weight unchanged (the fixture package lives outside the deployed sandbox).
+
 ## [1.0.0] — 2026-04-29
 
 First Commons-publishable release. All 27 EXP-NN requirements from PRD v0.9 implemented; both EXP-16 (Compare-LFIs) and EXP-18 (Underwriting Scenario panel) — originally scheduled for Phase 1.5 — landed in this initial release as well.
@@ -64,4 +78,5 @@ First Commons-publishable release. All 27 EXP-NN requirements from PRD v0.9 impl
 
 24-month minimum maintenance window from launch. Quarterly populate-rate band recalibration. Spec-pin updates within 30 days of upstream `v2.x` releases. 14-day issue triage SLA. Persona library reviewed quarterly. Public 90-day EOL clause.
 
+[1.1.0]: https://github.com/openfinance-os/data-sandbox/releases/tag/v1.1.0
 [1.0.0]: https://github.com/openfinance-os/data-sandbox/releases/tag/v1.0.0
