@@ -53,11 +53,66 @@ test('renders Sara, switches endpoints, no console errors, axe-clean', async ({ 
 
 test('determinism — same URL produces same coverage on two loads', async ({ page }) => {
   await page.goto('/src/index.html?lfi=median&seed=4729');
-  // Wait for the URL to be normalised by the app (it may rewrite to /p/<id>).
   await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
   const first = await page.locator('#coverage-pct').textContent();
   await page.reload();
   await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
   const second = await page.locator('#coverage-pct').textContent();
   expect(first).toBe(second);
+});
+
+test('transactions filter narrows the row set — EXP-11', async ({ page }) => {
+  await page.goto('/src/index.html?persona=hnw_multicurrency&lfi=median&seed=1');
+  await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
+  await page.locator('.nav-endpoint', { hasText: '/transactions' }).first().click();
+  const beforeCount = await page.locator('.payload-rendered tbody tr').count();
+  expect(beforeCount).toBeGreaterThan(0);
+  await page.locator('select[name="type"]').selectOption('InternationalTransfer');
+  await page.waitForTimeout(150);
+  const afterCount = await page.locator('.payload-rendered tbody tr').count();
+  expect(afterCount).toBeLessThan(beforeCount);
+  expect(afterCount).toBeGreaterThan(0);
+});
+
+test('cross-link from standing-orders highlights matching transactions — EXP-12', async ({ page }) => {
+  await page.goto('/src/index.html?persona=salaried_emirati_affluent&lfi=median&seed=1');
+  await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
+  await page.locator('.nav-endpoint', { hasText: '/standing-orders' }).first().click();
+  await page.locator('.payload-rendered tbody tr').first().click();
+  await expect(page.locator('.cross-link-banner')).toBeVisible();
+  await expect(page.locator('#endpoint-label')).toContainText('/transactions');
+  // Back button restores the prior endpoint.
+  await page.locator('.cross-link-banner button').click();
+  await expect(page.locator('#endpoint-label')).toContainText('/standing-orders');
+});
+
+test('embed page renders chrome-less view with status badges — EXP-27', async ({ page }) => {
+  await page.goto('/src/embed.html?persona=salaried_expat_mid&lfi=median&endpoint=/accounts/{AccountId}/transactions&seed=4729&height=600');
+  await expect(page.locator('.embed-strip')).toBeVisible();
+  await expect(page.locator('.payload-rendered table')).toBeVisible();
+  expect(await page.locator('.pill-solid').count()).toBeGreaterThan(0);
+  expect(await page.locator('.payload-rendered tbody tr').count()).toBeGreaterThan(5);
+  // No topbar, no persona library.
+  await expect(page.locator('.persona-pane')).toHaveCount(0);
+});
+
+test('field card shows all 9 elements + Report-an-issue link', async ({ page }) => {
+  await page.goto('/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729');
+  await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
+  await page.locator('.nav-endpoint', { hasText: '/transactions' }).first().click();
+  await page.locator('.field-name', { hasText: 'TransactionId' }).first().click();
+  const fc = page.locator('#fc-content');
+  await expect(fc).toBeVisible();
+  // Status, Type, Format, Enum, Example, Conditional, Real LFIs, Spec, Feedback labels visible.
+  for (const k of ['Status', 'Type', 'Format', 'Enum', 'Example', 'Conditional', 'Real LFIs', 'Spec', 'Feedback']) {
+    await expect(fc).toContainText(k);
+  }
+  // Spec citation is a link to the upstream pinned SHA.
+  const specLink = fc.locator('a').first();
+  const href = await specLink.getAttribute('href');
+  expect(href).toMatch(/^https:\/\/github\.com\/Nebras-Open-Finance\/api-specs\/blob\//);
+  // Report-an-issue link goes to a github.com /issues/new prefilled URL.
+  const reportLink = page.locator('.fc-report-link');
+  const reportHref = await reportLink.getAttribute('href');
+  expect(reportHref).toMatch(/^https:\/\/github\.com\/[^/]+\/[^/]+\/issues\/new\?/);
 });

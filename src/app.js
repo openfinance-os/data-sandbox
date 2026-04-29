@@ -4,8 +4,23 @@
 // box and persona-card events; every change re-renders the active panes.
 
 import { buildBundle } from './generator/index.js';
-import { coverage, leafFields, statusBadge } from './shared/spec-helpers.js';
+import {
+  coverage,
+  coverageForEndpoint,
+  leafFields,
+  statusBadge,
+  specCitationUrl,
+  realLfisGuidance,
+  bandForFieldName,
+} from './shared/spec-helpers.js';
 import { decodeFromUrl, encodePermalink } from './url.js';
+import {
+  envelopesFromBundle,
+  csvForResource,
+  downloadJson,
+  downloadCsv,
+  downloadTarball,
+} from './ui/export.js';
 
 // All 12 v1 endpoints (Appendix C). Three are bundle-level (no AccountId
 // scope): /accounts and /parties. The others are per-account.
@@ -169,6 +184,75 @@ function attachEventHandlers() {
     state.view = 'raw';
     renderPayload();
   });
+  document.getElementById('export-json').addEventListener('click', exportActiveJson);
+  document.getElementById('export-csv').addEventListener('click', exportActiveCsv);
+  document.getElementById('export-tar').addEventListener('click', exportTarball);
+}
+
+function exportContext() {
+  return {
+    personaId: state.personaId,
+    lfi: state.lfi,
+    seed: state.seed,
+    specVersion: state.spec?.specVersion,
+    specSha: state.spec?.pinSha,
+    retrievedAt: new Date().toISOString(),
+  };
+}
+
+function activeEnvelopeKey() {
+  if (state.endpoint === '/accounts' || state.endpoint === '/parties') return state.endpoint;
+  if (state.selectedAccountId) {
+    const tail = state.endpoint.replace('{AccountId}', state.selectedAccountId);
+    return tail;
+  }
+  return state.endpoint;
+}
+
+function exportActiveJson() {
+  if (!state.bundle) return;
+  const ctx = exportContext();
+  const envelopes = envelopesFromBundle(state.bundle, ctx);
+  const key = activeEnvelopeKey();
+  const env = envelopes[key] ?? envelopes[state.endpoint];
+  if (!env) return;
+  const fname = `${state.personaId}-${state.lfi}-seed${state.seed}-${key.replace(/^\//, '').replace(/\//g, '__').replace(/[{}]/g, '') || 'root'}.json`;
+  downloadJson(env, fname);
+}
+
+function exportActiveCsv() {
+  if (!state.bundle) return;
+  const ctx = exportContext();
+  // Pick the best-fit resource for the active endpoint.
+  const resourceForEndpoint = {
+    '/accounts': ['accounts', 'Account'],
+    '/accounts/{AccountId}': ['accounts', 'Account'],
+    '/accounts/{AccountId}/balances': ['balances', 'Balance'],
+    '/accounts/{AccountId}/transactions': ['transactions', 'Transaction'],
+    '/accounts/{AccountId}/standing-orders': ['standingOrders', 'StandingOrder'],
+    '/accounts/{AccountId}/direct-debits': ['directDebits', 'DirectDebit'],
+    '/accounts/{AccountId}/beneficiaries': ['beneficiaries', 'Beneficiary'],
+    '/accounts/{AccountId}/scheduled-payments': ['scheduledPayments', 'ScheduledPayment'],
+    '/accounts/{AccountId}/product': ['product', 'Product'],
+    '/accounts/{AccountId}/parties': ['parties', 'Party'],
+    '/parties': ['callingUserParty', 'Party'],
+    '/accounts/{AccountId}/statements': ['statements', 'Statements'],
+  };
+  const [bundleKey, resourceLabel] = resourceForEndpoint[state.endpoint] ?? ['accounts', 'Account'];
+  let rows = state.bundle[bundleKey] ?? [];
+  if (state.selectedAccountId && Array.isArray(rows)) {
+    rows = rows.filter((r) => !r._accountId || r._accountId === state.selectedAccountId);
+  }
+  if (!Array.isArray(rows)) rows = [rows];
+  const csv = csvForResource(rows, ctx);
+  const fname = `${state.personaId}-${state.lfi}-seed${state.seed}-${resourceLabel}.csv`;
+  downloadCsv(csv, fname);
+}
+
+function exportTarball() {
+  if (!state.bundle) return;
+  const ctx = exportContext();
+  downloadTarball(state.bundle, ctx, `${state.personaId}-${state.lfi}-seed${state.seed}.tar`);
 }
 
 function rebuildAndRender() {
@@ -221,12 +305,11 @@ function renderNavigator() {
   for (const ep of BUNDLE_SCOPED_PATHS) {
     const isActive = state.endpoint === ep;
     bundleSection.appendChild(
-      el('button', {
-        class: `nav-endpoint${isActive ? ' active' : ''}`,
-        text: ep,
-        attrs: { 'aria-current': isActive ? 'true' : null },
-        dataset: { endpoint: ep },
-        onClick: () => {
+      navButton({
+        endpoint: ep,
+        accountId: null,
+        active: isActive,
+        onSelect: () => {
           state.endpoint = ep;
           state.selectedAccountId = null;
           clearTxState();
@@ -249,23 +332,48 @@ function renderNavigator() {
     );
     for (const ep of ACCOUNT_SCOPED_PATHS) {
       const isActive = state.endpoint === ep && state.selectedAccountId === acc.AccountId;
-      const btn = el('button', {
-        class: `nav-endpoint${isActive ? ' active' : ''}`,
-        text: ep,
-        attrs: { 'aria-current': isActive ? 'true' : null },
-        dataset: { endpoint: ep, accountId: acc.AccountId },
-        onClick: () => {
-          state.endpoint = ep;
-          state.selectedAccountId = acc.AccountId;
-          clearTxState();
-          renderNavigator();
-          renderPayload();
-        },
-      });
-      wrap.appendChild(btn);
+      wrap.appendChild(
+        navButton({
+          endpoint: ep,
+          accountId: acc.AccountId,
+          active: isActive,
+          onSelect: () => {
+            state.endpoint = ep;
+            state.selectedAccountId = acc.AccountId;
+            clearTxState();
+            renderNavigator();
+            renderPayload();
+          },
+        })
+      );
     }
     nav.appendChild(wrap);
   }
+}
+
+// Build a navigator button with an inline coverage sub-meter (EXP-15 second
+// half). For bundle-scoped endpoints the sub-meter is omitted; for per-account
+// endpoints it shows the populate-rate of optional fields under that scope.
+function navButton({ endpoint, accountId, active, onSelect }) {
+  const btn = el('button', {
+    class: `nav-endpoint${active ? ' active' : ''}`,
+    attrs: { 'aria-current': active ? 'true' : null },
+    dataset: { endpoint, accountId: accountId ?? '' },
+    onClick: onSelect,
+  });
+  btn.appendChild(el('span', { class: 'nav-endpoint-label', text: endpoint }));
+  if (accountId) {
+    const cov = coverageForEndpoint(state.bundle, endpoint, accountId);
+    if (cov.total > 0) {
+      const meter = el('span', { class: 'nav-submeter', attrs: { 'aria-label': `Coverage ${cov.pct}%` } });
+      const fill = el('span', { class: 'nav-submeter-fill' });
+      fill.style.width = `${cov.pct}%`;
+      meter.appendChild(fill);
+      btn.appendChild(meter);
+      btn.appendChild(el('span', { class: 'nav-submeter-pct', text: `${cov.pct}%` }));
+    }
+  }
+  return btn;
 }
 
 function clearTxState() {
@@ -670,16 +778,27 @@ function openFieldCard(name) {
 
   const rows = rowsForActiveEndpoint();
   const example = rows.find((r) => r[name] != null)?.[name];
+  const band = bandForFieldName(name, state.endpoint);
+  const guidance = realLfisGuidance(f, band);
+  const citation = specCitationUrl(state.spec, f);
+  const conditionalRule =
+    f.status === 'conditional'
+      ? (f.conditionalRule ?? 'Triggered by a parent-field value (Phase 1 minimal — see spec link for the exact rule).')
+      : '—';
+
   content.replaceChildren();
 
   const rowsToRender = [
     ['Name', name],
     ['Path', f.path],
-    ['Status', null], // rendered specially below
+    ['Status', null], // rendered specially
     ['Type', f.type],
     ['Format', f.format ?? '—'],
     ['Enum', Array.isArray(f.enum) ? f.enum.join(', ') : '—'],
-    ['Example', example == null ? '—' : (typeof example === 'object' ? JSON.stringify(example) : String(example))],
+    ['Example', formatExample(example)],
+    ['Conditional', conditionalRule],
+    ['Real LFIs', guidance],
+    ['Spec', null], // rendered specially as a link
   ];
   for (const [k, v] of rowsToRender) {
     const row = el('div', { class: 'fc-row' });
@@ -692,13 +811,85 @@ function openFieldCard(name) {
       );
       ve.appendChild(document.createTextNode(badge.text));
       row.appendChild(ve);
+    } else if (k === 'Spec') {
+      const ve = el('span', { class: 'v' });
+      if (citation) {
+        ve.appendChild(
+          el('a', {
+            text: 'View on Nebras GitHub at pinned SHA →',
+            attrs: { href: citation, target: '_blank', rel: 'noopener noreferrer' },
+          })
+        );
+      } else {
+        ve.appendChild(document.createTextNode('—'));
+      }
+      row.appendChild(ve);
     } else {
       row.appendChild(el('span', { class: 'v', text: v }));
     }
     content.appendChild(row);
   }
 
+  // EXP-26: every field card carries a "Report an issue" link with a pre-
+  // filled GitHub issue body. Phase 1 destination is the sandbox's GitHub
+  // issue tracker; the placeholder repo URL is replaced at Commons publication
+  // time per the implementation plan.
+  const reportRow = el('div', { class: 'fc-row fc-report' });
+  reportRow.appendChild(el('span', { class: 'k', text: 'Feedback' }));
+  const reportV = el('span', { class: 'v' });
+  reportV.appendChild(
+    el('a', {
+      class: 'fc-report-link',
+      text: 'Report an issue with this field →',
+      attrs: { href: buildIssueUrl(name, f), target: '_blank', rel: 'noopener noreferrer' },
+    })
+  );
+  reportRow.appendChild(reportV);
+  content.appendChild(reportRow);
+
   document.getElementById('field-detail').classList.add('open');
+}
+
+function formatExample(value) {
+  if (value == null) return '—';
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value);
+}
+
+const ISSUE_REPO = 'openfinance-os/data-sandbox';
+
+function buildIssueUrl(fieldName, field) {
+  const title = `[field-card] ${state.endpoint} — ${fieldName} (${field.status})`;
+  const body = [
+    '## Field',
+    `- **Name:** \`${fieldName}\``,
+    `- **Path:** \`${field.path}\``,
+    `- **Status:** ${field.status}`,
+    `- **Type:** ${field.type}${field.format ? ` (${field.format})` : ''}`,
+    field.enum?.length ? `- **Enum:** ${field.enum.join(', ')}` : null,
+    '',
+    '## Context',
+    `- **Persona:** \`${state.personaId}\``,
+    `- **LFI profile:** \`${state.lfi}\``,
+    `- **Seed:** \`${state.seed}\``,
+    `- **Endpoint:** \`${state.endpoint}\``,
+    `- **Pinned spec SHA:** \`${state.spec?.pinSha ?? 'unknown'}\``,
+    '',
+    '## Type',
+    '- [ ] Spec-interpretation error',
+    '- [ ] Populate-rate band disagreement',
+    '- [ ] Guidance unclear',
+    '- [ ] Generator bug',
+    '- [ ] Other',
+    '',
+    '## What you saw / expected',
+    '<!-- describe -->',
+    '',
+  ].filter((s) => s != null).join('\n');
+  const params = new URLSearchParams();
+  params.set('title', title);
+  params.set('body', body);
+  return `https://github.com/${ISSUE_REPO}/issues/new?${params.toString()}`;
 }
 
 init().catch((err) => {

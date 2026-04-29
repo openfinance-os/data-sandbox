@@ -201,7 +201,9 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
 
 .nav-account-header { font-weight: 600; }
 .nav-endpoint {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   padding: 3px 0 3px 14px;
   color: var(--text);
   cursor: pointer;
@@ -209,9 +211,55 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   background: transparent;
   text-align: left;
   width: 100%;
+  font-family: inherit;
 }
 .nav-endpoint:hover { color: var(--accent); }
 .nav-endpoint.active { color: var(--accent); font-weight: 600; }
+
+.nav-endpoint-label { flex: 1 1 auto; font-size: 12px; }
+
+.nav-submeter {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 36px;
+  height: 5px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.nav-submeter-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+.nav-submeter-pct {
+  font-size: 10px;
+  color: var(--text-muted);
+  min-width: 30px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.fc-content a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.fc-content a:hover { text-decoration: underline; }
+.fc-row .v { line-height: 1.4; }
+.fc-row.fc-report {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.fc-report-link {
+  display: inline-block;
+  padding: 4px 8px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border-strong);
+  border-radius: 3px;
+  font-size: 11px;
+}
 
 .payload-area {
   flex: 1 1 auto;
@@ -307,6 +355,17 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   color: var(--text-muted);
 }
+
+.toolbar-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.export-group { display: flex; gap: 4px; }
+.export-btn {
+  padding: 4px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 3px;
+  background: var(--bg-card);
+  font-size: 11px;
+}
+.export-btn:hover { background: var(--accent-soft); }
 
 .toggle-group { display: flex; gap: 0; }
 .toggle {

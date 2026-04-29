@@ -57,9 +57,16 @@
     <div class="payload-area">
       <div class="payload-toolbar">
         <span class="endpoint-label" id="endpoint-label">/accounts</span>
-        <div class="toggle-group" role="tablist" aria-label="View toggle">
-          <button class="toggle active" id="view-rendered" role="tab" aria-selected="true">Rendered</button>
-          <button class="toggle" id="view-raw" role="tab" aria-selected="false">Raw JSON</button>
+        <div class="toolbar-actions">
+          <div class="toggle-group" role="tablist" aria-label="View toggle">
+            <button class="toggle active" id="view-rendered" role="tab" aria-selected="true">Rendered</button>
+            <button class="toggle" id="view-raw" role="tab" aria-selected="false">Raw JSON</button>
+          </div>
+          <div class="export-group" aria-label="Export the active bundle">
+            <button class="toggle export-btn" id="export-json" title="Download active endpoint as v2.1-shaped JSON">JSON</button>
+            <button class="toggle export-btn" id="export-csv" title="Download active resource as flat CSV">CSV</button>
+            <button class="toggle export-btn" id="export-tar" title="Download all endpoints + CSVs as a single tarball">Tarball</button>
+          </div>
         </div>
       </div>
       <div class="payload-body" id="payload-body" tabindex="0"></div>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="robots" content="noindex" />
+<title>Open Finance Data Sandbox · embed</title>
+<link rel="stylesheet" href="styles.css" />
+<style>
+  /* Chrome-less variant — strip the topbar / nav / footer; render only the
+     active endpoint's table at full viewport. */
+  body { margin: 0; }
+  .embed-host {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  .embed-strip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    background: var(--bg-soft);
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+  }
+  .embed-strip .label {
+    flex: 1 1 auto;
+    color: var(--text-muted);
+  }
+  .embed-strip a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .embed-strip a:hover { text-decoration: underline; }
+  .embed-body {
+    flex: 1 1 auto;
+    overflow: auto;
+    padding: 8px;
+  }
+  .embed-banner {
+    padding: 4px 8px;
+    background: var(--warn-bg);
+    border-bottom: 1px solid var(--warn-border);
+    font-size: 11px;
+  }
+</style>
+</head>
+<body>
+<div class="embed-host" id="embed-host">
+  <div class="embed-banner" role="status">
+    <strong>SYNTHETIC.</strong> Generated from UAE Open Finance Standards v2.1 OpenAPI spec — not from any real bank.
+  </div>
+  <div class="embed-strip" role="contentinfo">
+    <span class="label" id="embed-label">/accounts</span>
+    <a href="#" id="embed-link" target="_blank" rel="noopener noreferrer">Open in sandbox →</a>
+  </div>
+  <div class="embed-body" id="embed-body" tabindex="0"></div>
+</div>
+<script type="module" src="embed.js"></script>
+</body>
+</html>

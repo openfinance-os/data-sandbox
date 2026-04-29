@@ -203,6 +203,21 @@ function stripUndefined(value) {
   return value;
 }
 
+/**
+ * Build a `Schema name -> line number` index by scanning the YAML text for
+ * top-level component-schema headers indented exactly 4 spaces. Phase 1
+ * minimum -- gives the UI line anchors for GitHub spec citations.
+ */
+function buildSchemaLineIndex(yamlText) {
+  const lines = yamlText.split('\n');
+  const idx = {};
+  for (let i = 0; i < lines.length; i++) {
+    const m = /^    ([A-Za-z_][A-Za-z0-9_.]*):\s*$/.exec(lines[i]);
+    if (m) idx[m[1]] = i + 1;
+  }
+  return idx;
+}
+
 function main() {
   if (!fs.existsSync(SPEC_PATH)) {
     console.error(`spec not vendored at ${SPEC_PATH}`);
@@ -211,6 +226,7 @@ function main() {
 
   const yamlText = fs.readFileSync(SPEC_PATH, 'utf8');
   const spec = yaml.load(yamlText);
+  const schemaLines = buildSchemaLineIndex(yamlText);
 
   const pinSha = fs.existsSync(PIN_PATH) ? fs.readFileSync(PIN_PATH, 'utf8').trim() : 'unknown';
   const retrievedAt = fs.existsSync(RETRIEVED_PATH)
@@ -235,7 +251,10 @@ function main() {
     openapiVersion: spec.openapi ?? 'unknown',
     pinSha,
     retrievedAt,
+    upstreamRepo: 'Nebras-Open-Finance/api-specs',
+    upstreamPath: 'dist/standards/v2.1/uae-account-information-openapi.yaml',
     inScopePaths: IN_SCOPE_PATHS,
+    schemaLines,
     endpoints,
   });
 
