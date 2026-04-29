@@ -36,7 +36,29 @@ const state = {
   view: 'rendered',
   bundle: null,
   selectedAccountId: null,
+  // EXP-11: filter / sort state for the /transactions view.
+  txFilter: emptyTxFilter(),
+  txSort: { column: null, dir: 'asc' },
+  // EXP-12: bidirectional links — `txHighlight` is a set of TransactionId
+  // values to render with the highlight class; `crossLink` is the banner
+  // shown above a filtered transactions view that lets the user jump back.
+  txHighlight: new Set(),
+  crossLink: null,
 };
+
+function emptyTxFilter() {
+  return {
+    search: '',
+    type: '',
+    subType: '',
+    debitCredit: '',
+    dateFrom: '',
+    dateTo: '',
+    amountFrom: '',
+    amountTo: '',
+    mcc: '',
+  };
+}
 
 async function init() {
   const [specRes, dataRes] = await Promise.all([
@@ -54,7 +76,10 @@ async function init() {
   state.seed = url.seed;
 
   document.getElementById('footer-sha').textContent = (state.spec.pinSha || 'unknown').slice(0, 7);
-  document.getElementById('version-pin').textContent = `v${state.spec.specVersion} @ ${(state.spec.pinSha || '').slice(0, 7)}`;
+  // specVersion already starts with "v" — don't double-prefix.
+  const v = String(state.spec.specVersion || '');
+  const versionLabel = v.startsWith('v') ? v : `v${v}`;
+  document.getElementById('version-pin').textContent = `${versionLabel} @ ${(state.spec.pinSha || '').slice(0, 7)}`;
 
   buildPersonaList();
   syncControls();
@@ -156,6 +181,11 @@ function rebuildAndRender() {
     now: new Date(state.data.buildInfo.nowIso),
   });
   state.selectedAccountId = state.bundle.accounts[0]?.AccountId ?? null;
+  // Persona/lfi/seed change clears any cross-link state — the bundle is new.
+  state.txFilter = emptyTxFilter();
+  state.txSort = { column: null, dir: 'asc' };
+  state.txHighlight = new Set();
+  state.crossLink = null;
   syncControls();
   renderNavigator();
   renderPayload();
@@ -199,6 +229,7 @@ function renderNavigator() {
         onClick: () => {
           state.endpoint = ep;
           state.selectedAccountId = null;
+          clearTxState();
           renderNavigator();
           renderPayload();
         },
@@ -226,6 +257,7 @@ function renderNavigator() {
         onClick: () => {
           state.endpoint = ep;
           state.selectedAccountId = acc.AccountId;
+          clearTxState();
           renderNavigator();
           renderPayload();
         },
@@ -234,6 +266,13 @@ function renderNavigator() {
     }
     nav.appendChild(wrap);
   }
+}
+
+function clearTxState() {
+  state.txFilter = emptyTxFilter();
+  state.txSort = { column: null, dir: 'asc' };
+  state.txHighlight = new Set();
+  state.crossLink = null;
 }
 
 function rowsForActiveEndpoint() {
@@ -277,7 +316,7 @@ function endpointFieldsByName() {
 
 function renderPayload() {
   document.getElementById('endpoint-label').textContent = state.endpoint;
-  const rows = rowsForActiveEndpoint();
+  const allRows = rowsForActiveEndpoint();
   const fieldsByName = endpointFieldsByName();
   const body = document.getElementById('payload-body');
   body.replaceChildren();
@@ -287,16 +326,20 @@ function renderPayload() {
   document.getElementById('view-rendered').setAttribute('aria-selected', state.view === 'rendered');
   document.getElementById('view-raw').setAttribute('aria-selected', state.view === 'raw');
 
+  // Filter + sort apply only to the /transactions view.
+  const isTransactions = state.endpoint === '/accounts/{AccountId}/transactions';
+
   if (state.view === 'raw') {
+    const rowsToRender = isTransactions ? applyFilter(allRows) : allRows;
     const pre = el('pre', {
       class: 'payload-raw',
-      text: JSON.stringify(rows.map(stripInternal), null, 2),
+      text: JSON.stringify(rowsToRender.map(stripInternal), null, 2),
     });
     body.appendChild(pre);
     return;
   }
 
-  if (rows.length === 0) {
+  if (allRows.length === 0) {
     const wrap = el('div', { class: 'payload-rendered' },
       el('p', { text: 'No records.', attrs: { style: 'color:var(--text-muted)' } })
     );
@@ -304,7 +347,22 @@ function renderPayload() {
     return;
   }
 
-  // Cap row count for the rendered table to keep DOM light.
+  if (isTransactions) {
+    body.appendChild(renderTxFilterBar(allRows));
+    if (state.crossLink) body.appendChild(renderCrossLinkBanner());
+  }
+
+  let rows = isTransactions ? applyFilter(allRows) : allRows;
+  if (isTransactions) rows = applySort(rows);
+
+  if (rows.length === 0) {
+    body.appendChild(el('p', {
+      text: 'No transactions match the active filter.',
+      attrs: { style: 'color:var(--text-muted);padding:8px 12px' },
+    }));
+    return;
+  }
+
   const visible = rows.slice(0, 100);
   const allKeys = new Set();
   for (const r of visible) for (const k of Object.keys(stripInternal(r))) allKeys.add(k);
@@ -314,6 +372,11 @@ function renderPayload() {
   const headRow = el('tr');
   for (const k of allKeys) {
     const th = el('th');
+    if (isTransactions) {
+      th.classList.add('sortable');
+      if (state.txSort.column === k) th.classList.add(`sort-${state.txSort.dir}`);
+      th.addEventListener('click', () => toggleSort(k));
+    }
     const f = fieldsByName.get(k);
     if (f) {
       const badge = statusBadge(f.status);
@@ -325,7 +388,7 @@ function renderPayload() {
       el('button', {
         class: 'field-name',
         text: k,
-        onClick: () => openFieldCard(k),
+        onClick: (e) => { e.stopPropagation(); openFieldCard(k); },
       })
     );
     headRow.appendChild(th);
@@ -333,12 +396,23 @@ function renderPayload() {
   table.appendChild(el('thead', {}, headRow));
   const tbody = el('tbody');
   for (const r of visible) {
-    const tr = el('tr');
     const stripped = stripInternal(r);
+    const isHighlight = isTransactions && r.TransactionId && state.txHighlight.has(r.TransactionId);
+    const tr = el('tr', { class: isHighlight ? 'tx-highlight' : null });
     for (const k of allKeys) {
       const v = stripped[k];
       const text = v == null ? '—' : (typeof v === 'object' ? JSON.stringify(v) : String(v));
       tr.appendChild(el('td', { text }));
+    }
+    // EXP-12 bidirectional link: rows in standing-orders / direct-debits /
+    // beneficiaries are clickable — each jumps to /transactions filtered to
+    // the matching transactions and the cross-link banner shows the jump-back
+    // affordance.
+    const jumpFrom = jumpFromForActiveEndpoint();
+    if (jumpFrom && r) {
+      tr.style.cursor = 'pointer';
+      tr.title = `Jump to /transactions filtered by ${jumpFrom.label(r)}`;
+      tr.addEventListener('click', () => crossLinkToTransactions(r, jumpFrom));
     }
     tbody.appendChild(tr);
   }
@@ -354,7 +428,226 @@ function renderPayload() {
     );
   }
 
+  if (isTransactions) {
+    wrap.appendChild(el('p', {
+      class: 'tx-filter-summary',
+      text: `${rows.length} of ${allRows.length} transactions${rows.length > visible.length ? ` (showing first ${visible.length})` : ''}.`,
+    }));
+  }
+
   body.appendChild(wrap);
+}
+
+// ---- EXP-11 transactions filter ----------------------------------------------------------
+
+function renderTxFilterBar(_allRows) {
+  const f = state.txFilter;
+  const bar = el('div', { class: 'tx-filter-bar', attrs: { role: 'search' } });
+  bar.appendChild(filterInput('search', 'search', f.search, 'Search TransactionInformation…'));
+  bar.appendChild(filterSelect('type', f.type, [
+    ['', 'TransactionType: any'],
+    ['POS', 'POS'],
+    ['ECommerce', 'ECommerce'],
+    ['ATM', 'ATM'],
+    ['BillPayments', 'BillPayments'],
+    ['LocalBankTransfer', 'LocalBankTransfer'],
+    ['SameBankTransfer', 'SameBankTransfer'],
+    ['InternationalTransfer', 'InternationalTransfer'],
+    ['Teller', 'Teller'],
+    ['Cheque', 'Cheque'],
+    ['Other', 'Other'],
+  ]));
+  bar.appendChild(filterSelect('subType', f.subType, [
+    ['', 'SubTransactionType: any'],
+    ['Purchase', 'Purchase'],
+    ['Reversal', 'Reversal'],
+    ['Refund', 'Refund'],
+    ['Withdrawal', 'Withdrawal'],
+    ['Deposit', 'Deposit'],
+    ['MoneyTransfer', 'MoneyTransfer'],
+    ['Repayments', 'Repayments'],
+    ['Fee', 'Fee'],
+    ['Interest', 'Interest'],
+  ]));
+  bar.appendChild(filterSelect('debitCredit', f.debitCredit, [
+    ['', 'Debit/Credit: any'],
+    ['Debit', 'Debit only'],
+    ['Credit', 'Credit only'],
+  ]));
+  bar.appendChild(filterInput('dateFrom', 'date', f.dateFrom, '', 'From'));
+  bar.appendChild(filterInput('dateTo', 'date', f.dateTo, '', 'To'));
+  bar.appendChild(filterInput('amountFrom', 'number', f.amountFrom, 'AED ≥'));
+  bar.appendChild(filterInput('amountTo', 'number', f.amountTo, 'AED ≤'));
+  bar.appendChild(filterInput('mcc', 'text', f.mcc, 'MCC'));
+  const clear = el('button', {
+    class: 'filter-clear',
+    text: 'Clear filters',
+    onClick: () => { state.txFilter = emptyTxFilter(); renderPayload(); },
+  });
+  bar.appendChild(clear);
+  return bar;
+}
+
+function filterInput(name, type, value, placeholder, ariaLabel) {
+  const input = el('input', {
+    attrs: { type, name, value: value ?? '', placeholder: placeholder || '', 'aria-label': ariaLabel ?? placeholder ?? name },
+  });
+  input.addEventListener('input', (e) => {
+    state.txFilter[name] = e.target.value;
+    renderPayload();
+    setTimeout(() => document.querySelector(`.tx-filter-bar [name="${name}"]`)?.focus(), 0);
+  });
+  return input;
+}
+
+function filterSelect(name, value, options) {
+  const select = el('select', { attrs: { name, 'aria-label': name } });
+  for (const [v, label] of options) {
+    const opt = el('option', { text: label, attrs: { value: v } });
+    if (v === value) opt.selected = true;
+    select.appendChild(opt);
+  }
+  select.addEventListener('change', (e) => {
+    state.txFilter[name] = e.target.value;
+    renderPayload();
+  });
+  return select;
+}
+
+function applyFilter(rows) {
+  const f = state.txFilter;
+  return rows.filter((r) => {
+    if (f.search) {
+      const hay = String(r.TransactionInformation ?? '').toLowerCase();
+      if (!hay.includes(f.search.toLowerCase())) return false;
+    }
+    if (f.type && r.TransactionType !== f.type) return false;
+    if (f.subType && r.SubTransactionType !== f.subType) return false;
+    if (f.debitCredit && r.CreditDebitIndicator !== f.debitCredit) return false;
+    if (f.dateFrom && r.BookingDateTime?.slice(0, 10) < f.dateFrom) return false;
+    if (f.dateTo && r.BookingDateTime?.slice(0, 10) > f.dateTo) return false;
+    const amt = parseFloat(r.Amount?.Amount ?? '0');
+    if (f.amountFrom !== '' && amt < parseFloat(f.amountFrom)) return false;
+    if (f.amountTo !== '' && amt > parseFloat(f.amountTo)) return false;
+    if (f.mcc && r.MerchantDetails?.MerchantCategoryCode !== f.mcc) return false;
+    return true;
+  });
+}
+
+function applySort(rows) {
+  const { column, dir } = state.txSort;
+  if (!column) return rows;
+  const sign = dir === 'asc' ? 1 : -1;
+  return rows.slice().sort((a, b) => {
+    const av = readSortValue(a, column);
+    const bv = readSortValue(b, column);
+    if (av == null && bv == null) return 0;
+    if (av == null) return -sign;
+    if (bv == null) return sign;
+    if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * sign;
+    return String(av).localeCompare(String(bv)) * sign;
+  });
+}
+
+function readSortValue(row, column) {
+  const v = row[column];
+  if (v == null) return null;
+  if (column === 'Amount' && v.Amount) return parseFloat(v.Amount);
+  return v;
+}
+
+function toggleSort(column) {
+  if (state.txSort.column === column) {
+    state.txSort.dir = state.txSort.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    state.txSort = { column, dir: 'asc' };
+  }
+  renderPayload();
+}
+
+// ---- EXP-12 bidirectional links ----------------------------------------------------------
+
+function jumpFromForActiveEndpoint() {
+  switch (state.endpoint) {
+    case '/accounts/{AccountId}/standing-orders':
+      return {
+        kind: 'standing-order',
+        label: (so) => `standing order "${so.Reference || so.StandingOrderId}"`,
+        match: (tx, so) => {
+          if (!so.Reference) return false;
+          const ref = String(so.Reference).toUpperCase().slice(0, 6);
+          return tx.TransactionType === 'LocalBankTransfer'
+            && (tx.TransactionReference?.startsWith(ref) || tx.TransactionInformation?.toLowerCase().includes(String(so.Reference).replace(/_/g, ' ').toLowerCase()));
+        },
+      };
+    case '/accounts/{AccountId}/direct-debits':
+      return {
+        kind: 'direct-debit',
+        label: (dd) => `direct debit "${dd.Name || dd.DirectDebitId}"`,
+        match: (tx, dd) => {
+          const purpose = String(dd.Name || '').toLowerCase();
+          return tx.TransactionType === 'BillPayments'
+            && (tx.TransactionInformation?.toLowerCase().includes(purpose) || false);
+        },
+      };
+    case '/accounts/{AccountId}/beneficiaries':
+      return {
+        kind: 'beneficiary',
+        label: (b) => `beneficiary "${b.CreditorAccount?.[0]?.Name || b.BeneficiaryId}"`,
+        match: (tx, b) => {
+          const ben = b.CreditorAccount?.[0]?.Name?.toLowerCase();
+          if (!ben) return false;
+          return (tx.TransactionInformation?.toLowerCase().includes(ben)) || false;
+        },
+      };
+    default:
+      return null;
+  }
+}
+
+function crossLinkToTransactions(record, jumpFrom) {
+  // Find the related transactions in the bundle for the active account.
+  const txs = state.bundle.transactions.filter(
+    (t) => t._accountId === state.selectedAccountId && jumpFrom.match(t, record)
+  );
+  state.txHighlight = new Set(txs.map((t) => t.TransactionId));
+  state.crossLink = {
+    label: jumpFrom.label(record),
+    fromEndpoint: state.endpoint,
+    matchCount: txs.length,
+  };
+  state.endpoint = '/accounts/{AccountId}/transactions';
+  // Pre-populate the search filter with the most-distinctive token so the
+  // matching transactions also pass the row filter.
+  state.txFilter = emptyTxFilter();
+  if (jumpFrom.kind === 'direct-debit') {
+    state.txFilter.search = String(record.Name || '').replace(/_/g, ' ').split(' ')[0] || '';
+    state.txFilter.type = 'BillPayments';
+  } else if (jumpFrom.kind === 'standing-order') {
+    state.txFilter.search = String(record.Reference || '').replace(/_/g, ' ').split(' ')[0] || '';
+    state.txFilter.type = 'LocalBankTransfer';
+  }
+  renderNavigator();
+  renderPayload();
+}
+
+function renderCrossLinkBanner() {
+  const banner = el('div', { class: 'cross-link-banner', attrs: { role: 'status' } });
+  banner.appendChild(el('span', {
+    text: `Showing transactions linked to ${state.crossLink.label} — ${state.crossLink.matchCount} match${state.crossLink.matchCount === 1 ? '' : 'es'} highlighted.`,
+  }));
+  banner.appendChild(el('button', {
+    text: '← Back',
+    onClick: () => {
+      state.endpoint = state.crossLink.fromEndpoint;
+      state.txFilter = emptyTxFilter();
+      state.txHighlight = new Set();
+      state.crossLink = null;
+      renderNavigator();
+      renderPayload();
+    },
+  }));
+  return banner;
 }
 
 function stripInternal(rec) {

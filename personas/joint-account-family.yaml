@@ -1,0 +1,78 @@
+persona_id: joint_account_family
+name: "Maria & Rohan — Joint Account / Family"
+archetype: joint_family
+default_seed: 6612
+stress_coverage:
+  - multi_party_accounts
+  - joint_custodian
+
+demographics:
+  nationality_pool: expat_indian
+  age_band: 32-42
+  emirate: dubai
+
+income:
+  primary_employer_pool: tech_freezone
+  monthly_amount_aed: 45000
+  pay_day: 25
+  variability: low
+  flag_payroll: true
+
+accounts:
+  - type: CurrentAccount
+    currency: AED
+    age_months: 60
+    party_type: Joint
+  - type: Savings
+    currency: AED
+    age_months: 36
+    custodian_for_minor: true
+
+fixed_commitments:
+  - kind: standing_order
+    purpose: villa_rent
+    amount_aed: 14000
+    schedule: monthly_27
+  - kind: direct_debit
+    purpose: utilities_dewa
+    amount_aed_band: [900, 1600]
+    schedule: monthly_5
+  - kind: direct_debit
+    purpose: nursery_fees
+    amount_aed: 3200
+    schedule: monthly_10
+
+spend_profile:
+  groceries_aed_per_month_band: [3000, 5000]
+  fuel_aed_per_month_band: [600, 1100]
+  dining_per_month_count_band: [6, 16]
+
+fx_activity: false
+cash_deposit_activity: false
+
+distress_signals:
+  nsf_events_per_year_band: [0, 1]
+
+# Joint persona ships with two co-holders — the parties generator picks up
+# `party_type: Joint` on the current account and emits a Party per holder.
+# The savings account's `custodian_for_minor` flag emits a Party with
+# AccountRole=CustodianForMinor.
+secondary_holder:
+  given: Rohan
+  surname: Patel
+  pool_id: expat_indian
+
+minor_dependents:
+  - given: Aanya
+    surname: Patel
+    age_band: 4-6
+  - given: Arjun
+    surname: Patel
+    age_band: 7-9
+
+narrative: |
+  Maria & Rohan are an expat couple with a joint current account and a
+  custodian-for-minor savings account for their two children. Tests the
+  v2.1 multi-party shapes: PartyType=Joint, AccountRole=CustodianForMinor.
+  Bundle exercises /accounts/{AccountId}/parties heavily (multiple Party
+  records per account).

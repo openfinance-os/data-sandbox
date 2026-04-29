@@ -1,0 +1,64 @@
+persona_id: hnw_multicurrency
+name: "Layla — HNW Multi-Currency Holder"
+archetype: hnw
+default_seed: 2046
+stress_coverage:
+  - multi_currency_accounts
+  - fx_currency_exchange
+
+demographics:
+  nationality_pool: expat_arab
+  age_band: 42-55
+  emirate: dubai
+
+income:
+  primary_employer_pool: tech_freezone
+  monthly_amount_aed: 95000
+  pay_day: 25
+  variability: low
+  flag_payroll: true
+
+accounts:
+  - type: CurrentAccount
+    currency: AED
+    age_months: 120
+  - type: Savings
+    currency: USD
+    age_months: 84
+  - type: Savings
+    currency: EUR
+    age_months: 60
+  - type: Savings
+    currency: GBP
+    age_months: 48
+
+fixed_commitments:
+  - kind: standing_order
+    purpose: villa_rent
+    amount_aed: 25000
+    schedule: monthly_27
+  - kind: direct_debit
+    purpose: utilities_dewa
+    amount_aed_band: [1500, 2800]
+    schedule: monthly_5
+
+spend_profile:
+  groceries_aed_per_month_band: [4000, 7000]
+  fuel_aed_per_month_band: [800, 1400]
+  dining_per_month_count_band: [15, 30]
+
+fx_activity: true
+fx_transactions_per_month_band: [2, 6]
+fx_currencies: [USD, EUR, GBP]
+cash_deposit_activity: false
+
+distress_signals:
+  nsf_events_per_year_band: [0, 0]
+
+narrative: |
+  Layla holds AED current + USD/EUR/GBP savings accounts. Regular FX
+  transfers (2–6/month, in USD/EUR/GBP) exercise the v2.1 CurrencyExchange
+  block: SourceCurrency, TargetCurrency, ExchangeRate, InstructedAmount.
+  Premium-product LFI configurations populate optional fields aggressively
+  on her bundle; sparse-LFI mode shows how thin the international-transfer
+  shape can become when those optionals drop out.

@@ -1,0 +1,60 @@
+persona_id: sme_cash_heavy
+name: "Karim — SME Owner (Cash-Heavy Retail)"
+archetype: sme_cash
+default_seed: 6308
+stress_coverage:
+  - cash_dominant_flows
+
+demographics:
+  nationality_pool: expat_arab
+  age_band: 35-50
+  emirate: sharjah
+
+income:
+  # SMEs aren't "salaried" — for the purposes of this manifest the principal
+  # owner pulls a regular self-pay amount + irregular cash deposits.
+  primary_employer_pool: tech_freezone
+  monthly_amount_aed: 15000
+  pay_day: 28
+  variability: medium
+  flag_payroll: false
+
+accounts:
+  - type: CurrentAccount
+    currency: AED
+    age_months: 60
+
+fixed_commitments:
+  - kind: direct_debit
+    purpose: utilities_dewa
+    amount_aed_band: [800, 1400]
+    schedule: monthly_5
+  - kind: direct_debit
+    purpose: pos_terminal_lease
+    amount_aed: 350
+    schedule: monthly_8
+  - kind: standing_order
+    purpose: shop_rent
+    amount_aed: 12000
+    schedule: monthly_27
+
+spend_profile:
+  groceries_aed_per_month_band: [400, 1200]
+  fuel_aed_per_month_band: [200, 500]
+  dining_per_month_count_band: [3, 8]
+
+fx_activity: false
+cash_deposit_activity: true
+cash_deposits_per_month_band: [4, 14]
+cash_deposit_amount_aed_band: [800, 8000]
+
+distress_signals:
+  nsf_events_per_year_band: [0, 2]
+
+narrative: |
+  Karim runs a retail shop in Sharjah. Most receipts are cash deposited
+  into the current account in bursts (4–14 deposits/month, AED 800–8k each).
+  Sparse merchant detail because the bank can't categorise teller deposits
+  the way it can POS transactions. A shop-rent standing order and a POS-
+  terminal-lease direct debit are the only fixed commitments. AML stress
+  case: behavioural-monitoring rules need to handle cash-dominant accounts.

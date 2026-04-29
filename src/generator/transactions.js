@@ -102,10 +102,138 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
         }));
       }
     }
+
+    // Cash deposits — only on cash-heavy personas (EXP-06).
+    if (persona.cash_deposit_activity && account._meta.kind === 'CurrentAccount') {
+      const lo = persona.cash_deposits_per_month_band?.[0] ?? 3;
+      const hi = persona.cash_deposits_per_month_band?.[1] ?? 10;
+      const count = rngInt(rng, lo, hi + 1);
+      const amtLo = persona.cash_deposit_amount_aed_band?.[0] ?? 500;
+      const amtHi = persona.cash_deposit_amount_aed_band?.[1] ?? 5000;
+      for (let i = 0; i < count; i++) {
+        const day = rngInt(rng, 1, 28);
+        const amount = rngInt(rng, amtLo, amtHi + 1);
+        out.push(makeCashDeposit({
+          rng, account, date: dateForDay(monthStart, day), amount, txState,
+        }));
+        runningBalance.balance += amount;
+      }
+    }
+
+    // FX transactions — only on FX-active personas (EXP-06).
+    if (persona.fx_activity && account._meta.kind === 'CurrentAccount') {
+      const lo = persona.fx_transactions_per_month_band?.[0] ?? 1;
+      const hi = persona.fx_transactions_per_month_band?.[1] ?? 4;
+      const count = rngInt(rng, lo, hi + 1);
+      for (let i = 0; i < count; i++) {
+        const day = rngInt(rng, 1, 28);
+        const fxCurrency = rngPick(rng, persona.fx_currencies ?? ['USD', 'EUR', 'GBP']);
+        const fxAmount = rngInt(rng, 200, 5000);
+        const exchangeRate = fxRateFor(fxCurrency);
+        const aedAmount = Math.round(fxAmount * exchangeRate);
+        out.push(makeFxTransaction({
+          rng, account, date: dateForDay(monthStart, day),
+          aedAmount, fxAmount, fxCurrency, exchangeRate, txState,
+        }));
+        runningBalance.balance -= aedAmount;
+      }
+    }
+
+    // NSF / distressed-borrower signal — rare per-month event for personas
+    // whose distress_signals.nsf_events_per_year_band has an upper bound > 0.
+    const nsfHi = persona.distress_signals?.nsf_events_per_year_band?.[1] ?? 0;
+    if (nsfHi > 0 && account._meta.kind === 'CurrentAccount') {
+      // Roughly target the per-month frequency by upper-bound / 12.
+      const probability = Math.min(0.5, nsfHi / 12);
+      if (rng() < probability) {
+        const day = rngInt(rng, 1, 28);
+        const amount = rngInt(rng, 250, 1500);
+        out.push(makeNsfRejection({
+          rng, account, date: dateForDay(monthStart, day), amount, txState,
+        }));
+        // Rejected transactions don't move the balance, by design.
+      }
+    }
   }
 
   out.sort((a, b) => a.BookingDateTime.localeCompare(b.BookingDateTime));
   return out;
+}
+
+function fxRateFor(ccy) {
+  // Pinned mid-market rate snapshot (AED per unit of foreign currency).
+  // Phase 1.5 EXP-18 multi-currency normalisation will publish this table
+  // alongside the spec SHA so it's deterministic across rebuilds.
+  switch (ccy) {
+    case 'USD': return 3.6725;
+    case 'EUR': return 3.95;
+    case 'GBP': return 4.6;
+    case 'INR': return 0.044;
+    case 'PKR': return 0.013;
+    case 'PHP': return 0.063;
+    default: return 1.0;
+  }
+}
+
+function makeCashDeposit({ rng, account, date, amount, txState }) {
+  return {
+    _accountId: account.AccountId,
+    TransactionId: nextTxId(account, date, txState),
+    TransactionReference: `CASH${rngInt(rng, 100000, 999999)}`,
+    CreditDebitIndicator: 'Credit',
+    Status: 'Booked',
+    BookingDateTime: isoOf(date),
+    TransactionDateTime: isoOf(date),
+    ValueDateTime: isoOf(date),
+    TransactionInformation: 'Cash deposit (teller)',
+    Amount: { Amount: amount.toFixed(2), Currency: account.Currency },
+    TransactionType: 'Teller',
+    SubTransactionType: 'Deposit',
+    _v: rng(),
+  };
+}
+
+function makeFxTransaction({ rng, account, date, aedAmount, fxAmount, fxCurrency, exchangeRate, txState }) {
+  return {
+    _accountId: account.AccountId,
+    TransactionId: nextTxId(account, date, txState),
+    TransactionReference: `FX${rngInt(rng, 100000, 999999)}`,
+    CreditDebitIndicator: 'Debit',
+    Status: 'Booked',
+    BookingDateTime: isoOf(date),
+    TransactionDateTime: isoOf(date),
+    ValueDateTime: isoOf(date),
+    TransactionInformation: `International transfer (${fxCurrency})`,
+    Amount: { Amount: aedAmount.toFixed(2), Currency: account.Currency },
+    TransactionType: 'InternationalTransfer',
+    SubTransactionType: 'MoneyTransfer',
+    CurrencyExchange: {
+      SourceCurrency: account.Currency,
+      TargetCurrency: fxCurrency,
+      UnitCurrency: account.Currency,
+      ExchangeRate: parseFloat(exchangeRate.toFixed(4)),
+      InstructedAmount: { Amount: fxAmount.toFixed(2), Currency: fxCurrency },
+    },
+    _v: rng(),
+  };
+}
+
+function makeNsfRejection({ rng, account, date, amount, txState }) {
+  return {
+    _accountId: account.AccountId,
+    TransactionId: nextTxId(account, date, txState),
+    TransactionReference: `NSF${rngInt(rng, 100000, 999999)}`,
+    CreditDebitIndicator: 'Debit',
+    Status: 'Rejected',
+    BookingDateTime: isoOf(date),
+    TransactionDateTime: isoOf(date),
+    ValueDateTime: isoOf(date),
+    TransactionInformation: 'Direct debit returned — insufficient funds',
+    Amount: { Amount: amount.toFixed(2), Currency: account.Currency },
+    TransactionType: 'BillPayments',
+    SubTransactionType: 'Reversal',
+    _v: rng(),
+  };
 }
 
 function parseScheduleDay(schedule) {

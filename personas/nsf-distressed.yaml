@@ -1,0 +1,66 @@
+persona_id: nsf_distressed
+name: "Hadi — NSF / Distressed Borrower"
+archetype: distressed
+default_seed: 4407
+stress_coverage:
+  - nsf_distress
+
+demographics:
+  nationality_pool: expat_arab
+  age_band: 30-42
+  emirate: dubai
+
+income:
+  primary_employer_pool: tech_freezone
+  monthly_amount_aed: 11500
+  pay_day: 28
+  variability: medium
+  flag_payroll: true
+
+accounts:
+  - type: CurrentAccount
+    currency: AED
+    age_months: 36
+  - type: CreditCard
+    currency: AED
+    credit_limit_aed: 15000
+    age_months: 24
+
+# Heavier fixed commitments relative to income → balance often dips negative
+# late in the month, triggering rejected direct debits.
+fixed_commitments:
+  - kind: standing_order
+    purpose: rent
+    amount_aed: 5500
+    schedule: monthly_27
+  - kind: direct_debit
+    purpose: utilities_dewa
+    amount_aed_band: [400, 700]
+    schedule: monthly_5
+  - kind: direct_debit
+    purpose: telco
+    amount_aed_band: [200, 400]
+    schedule: monthly_8
+  - kind: direct_debit
+    purpose: personal_loan
+    amount_aed: 2200
+    schedule: monthly_22
+
+spend_profile:
+  groceries_aed_per_month_band: [1400, 2400]
+  fuel_aed_per_month_band: [350, 600]
+  dining_per_month_count_band: [3, 9]
+
+fx_activity: false
+cash_deposit_activity: false
+
+distress_signals:
+  nsf_events_per_year_band: [4, 9]
+
+narrative: |
+  Hadi is salaried at AED 11.5k with rent + utilities + telco + a personal-
+  loan repayment that together leave little buffer. Late-month direct-debit
+  rejections are routine — Status="Rejected" on roughly half the months
+  in the trailing window. EXP-18's NSF / distress event count exercises
+  this persona heavily; behavioural-distress monitoring rules can use this
+  shape as a positive case.

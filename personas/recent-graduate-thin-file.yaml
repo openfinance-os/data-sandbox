@@ -1,0 +1,50 @@
+persona_id: recent_graduate_thin_file
+name: "Tanvi — Recent Graduate (Thin File)"
+archetype: thin_file
+default_seed: 1117
+stress_coverage:
+  - thin_file_short_tenure
+
+demographics:
+  nationality_pool: expat_indian
+  age_band: 22-26
+  emirate: dubai
+
+income:
+  primary_employer_pool: tech_freezone
+  monthly_amount_aed: 8500
+  pay_day: 25
+  variability: low
+  flag_payroll: true
+
+# Single account, recently opened — exercises the "8 months of history" thin-
+# file edge case at the EXP-18 low-volume boundary.
+accounts:
+  - type: CurrentAccount
+    currency: AED
+    age_months: 8
+
+fixed_commitments:
+  - kind: standing_order
+    purpose: shared_rent
+    amount_aed: 3500
+    schedule: monthly_27
+
+spend_profile:
+  groceries_aed_per_month_band: [600, 1200]
+  fuel_aed_per_month_band: [150, 350]
+  dining_per_month_count_band: [4, 10]
+
+fx_activity: false
+cash_deposit_activity: false
+
+distress_signals:
+  nsf_events_per_year_band: [0, 1]
+
+narrative: |
+  Tanvi is a junior IT analyst, salaried at AED 8.5k, single account opened
+  8 months ago. She splits rent with flatmates via a shared standing order.
+  Tests thin-file underwriting: short-tenure account, low-value transactions,
+  little fixed-commitment surface. EXP-18 low-volume guard may engage at the
+  margin (8 months × ~30 tx/month ≈ 240 — above the 50-tx floor but distinct
+  months below the 12 expected).

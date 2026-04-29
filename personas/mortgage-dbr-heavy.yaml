@@ -1,0 +1,68 @@
+persona_id: mortgage_dbr_heavy
+name: "Yousef — Mortgage Holder (DBR Heavy)"
+archetype: dbr_stretched
+default_seed: 9203
+stress_coverage:
+  - high_dbr
+  - mortgage_long_dated
+
+demographics:
+  nationality_pool: expat_arab
+  age_band: 38-48
+  emirate: dubai
+
+income:
+  primary_employer_pool: tech_freezone
+  monthly_amount_aed: 32000
+  pay_day: 25
+  variability: low
+  flag_payroll: true
+
+accounts:
+  - type: CurrentAccount
+    currency: AED
+    age_months: 60
+  - type: Mortgage
+    currency: AED
+    age_months: 84
+  - type: CreditCard
+    currency: AED
+    credit_limit_aed: 80000
+    age_months: 36
+
+fixed_commitments:
+  - kind: standing_order
+    purpose: mortgage_principal
+    amount_aed: 13500
+    schedule: monthly_27
+  - kind: direct_debit
+    purpose: utilities_dewa
+    amount_aed_band: [600, 1100]
+    schedule: monthly_5
+  - kind: direct_debit
+    purpose: school_fees
+    amount_aed_band: [4500, 5500]
+    schedule: monthly_10
+  - kind: direct_debit
+    purpose: car_finance
+    amount_aed: 2400
+    schedule: monthly_15
+
+spend_profile:
+  groceries_aed_per_month_band: [2500, 4000]
+  fuel_aed_per_month_band: [600, 1000]
+  dining_per_month_count_band: [6, 14]
+
+fx_activity: false
+cash_deposit_activity: false
+
+distress_signals:
+  nsf_events_per_year_band: [0, 2]
+
+narrative: |
+  Yousef is salaried at AED 32k with a long-dated mortgage. Total fixed
+  commitments — mortgage principal, school fees, utilities, car finance —
+  push his implied DBR comfortably above 60%. The Phase 1.5 Underwriting
+  panel will compute Total Fixed Commitments by summing standing-order
+  NextPaymentAmount + direct-debit PreviousPaymentAmount, normalised to
+  monthly via Frequency. This persona is the DBR stress case.
