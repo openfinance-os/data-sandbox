@@ -63,6 +63,9 @@ const state = {
   // Date-humanise toggle on /transactions — shows "27 Apr 2025 · 11:00 GST"
   // instead of "2025-04-27T07:00:00Z" when on. Resets on persona/lfi change.
   humanDates: false,
+  // Active stress-coverage filter on the persona library — null when no
+  // filter; otherwise a single term-slug from Appendix F vocabulary.
+  stressFilter: null,
 };
 
 function isDateField(name) {
@@ -151,14 +154,35 @@ function buildPersonaList() {
   list.replaceChildren();
   const select = document.getElementById('persona-select');
   select.replaceChildren();
+
+  // Render stress-filter bar state.
+  const filterBar = document.getElementById('stress-filter-bar');
+  const filterTerm = document.getElementById('stress-filter-term');
+  if (state.stressFilter) {
+    filterBar.classList.remove('is-empty');
+    filterTerm.textContent = humanStressTerm(state.stressFilter);
+    filterTerm.title = `Stress-coverage term: ${state.stressFilter}`;
+    document.getElementById('stress-filter-clear').onclick = () => {
+      state.stressFilter = null;
+      buildPersonaList();
+    };
+  } else {
+    filterBar.classList.add('is-empty');
+  }
+
+  let visibleCount = 0;
   for (const [id, p] of Object.entries(state.data.personas)) {
+    if (state.stressFilter && !(p.stress_coverage ?? []).includes(state.stressFilter)) continue;
+    visibleCount += 1;
+
     const card = el(
       'div',
       {
         class: 'persona-card',
         attrs: { role: 'listitem' },
         dataset: { personaId: id },
-        onClick: () => {
+        onClick: (e) => {
+          if (e.target.classList.contains('stress-chip')) return; // chip handles its own click
           state.personaId = id;
           rebuildAndRender();
         },
@@ -167,19 +191,33 @@ function buildPersonaList() {
       el('div', { class: 'persona-archetype', text: humanArchetype(p.archetype) }),
     );
     if (p.narrative) {
-      // Narrative truncates to 2 lines on inactive cards (CSS line-clamp);
-      // the active card expands the full text so users can read why this
-      // persona was authored without leaving the library.
       card.appendChild(el('div', { class: 'persona-narrative', text: p.narrative.trim() }));
     }
     if (Array.isArray(p.stress_coverage) && p.stress_coverage.length > 0) {
       const chips = el('div', { class: 'persona-stress', attrs: { 'aria-label': 'Stress coverage' } });
       for (const term of p.stress_coverage) {
-        chips.appendChild(el('span', {
-          class: 'stress-chip',
+        const isActive = term === state.stressFilter;
+        const chip = el('span', {
+          class: `stress-chip${isActive ? ' stress-active' : ''}`,
           text: humanStressTerm(term),
-          attrs: { title: `Stress-coverage term: ${term}` },
-        }));
+          attrs: {
+            role: 'button',
+            tabindex: '0',
+            title: isActive
+              ? `Filter active: ${term} — click to clear`
+              : `Click to show only personas covering: ${term}`,
+          },
+        });
+        const onChipActivate = (ev) => {
+          ev.stopPropagation();
+          state.stressFilter = state.stressFilter === term ? null : term;
+          buildPersonaList();
+        };
+        chip.addEventListener('click', onChipActivate);
+        chip.addEventListener('keydown', (ev) => {
+          if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); onChipActivate(ev); }
+        });
+        chips.appendChild(chip);
       }
       card.appendChild(chips);
     }
@@ -187,6 +225,17 @@ function buildPersonaList() {
 
     const opt = el('option', { text: p.name, attrs: { value: id } });
     select.appendChild(opt);
+  }
+
+  if (visibleCount === 0) {
+    list.appendChild(el('div', {
+      class: 'persona-empty',
+      text: 'No personas cover this stress term yet. Clear the filter to see the full library.',
+    }));
+  }
+  // Re-sync the active card's visual state after a re-render.
+  for (const card of document.querySelectorAll('.persona-card')) {
+    card.classList.toggle('active', card.dataset.personaId === state.personaId);
   }
 }
 
@@ -633,8 +682,6 @@ function renderPayload() {
   if (isTransactions) {
     body.appendChild(renderTxFilterBar(allRows));
     if (state.crossLink) body.appendChild(renderCrossLinkBanner());
-    // Distress signal — surface NSF event count above the table for AML &
-    // underwriting workflows that need to know they exist.
     const nsfCount = allRows.filter((t) => t.Status === 'Rejected').length;
     if (nsfCount > 0) {
       body.appendChild(el('div', {
@@ -643,6 +690,10 @@ function renderPayload() {
         text: `${nsfCount} rejected debit${nsfCount === 1 ? '' : 's'} in the trailing 12 months — highlighted below.`,
       }));
     }
+    // Monthly summary — Sara's anchor JTBD ("12 months of transactions").
+    // Aggregates from the unfiltered set so the user sees the underlying
+    // shape, regardless of any active row filter.
+    body.appendChild(renderMonthlySummary(allRows));
   }
   // /product gets a v1.5 hint when the spec defines additional optional
   // blocks the Phase 1 generator doesn't populate (Charges, FinanceRates,
@@ -912,6 +963,84 @@ function toggleSort(column) {
     state.txSort = { column, dir: 'asc' };
   }
   renderPayload();
+}
+
+// ---- Monthly summary on /transactions ---------------------------------------------------
+
+const MONTH_FORMATTER = new Intl.DateTimeFormat('en-GB', {
+  month: 'short', year: 'numeric', timeZone: 'Asia/Dubai',
+});
+
+function renderMonthlySummary(rows) {
+  const buckets = new Map();
+  for (const r of rows) {
+    const d = new Date(r.BookingDateTime);
+    if (Number.isNaN(d.getTime())) continue;
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+    if (!buckets.has(key)) {
+      buckets.set(key, {
+        key, label: MONTH_FORMATTER.format(d),
+        creditCount: 0, creditSum: 0,
+        debitCount: 0, debitSum: 0,
+        nsfCount: 0,
+        currency: r.Amount?.Currency ?? '',
+      });
+    }
+    const b = buckets.get(key);
+    const amt = parseFloat(r.Amount?.Amount ?? '0');
+    if (r.Status === 'Rejected') {
+      b.nsfCount += 1;
+      continue; // rejected debits don't move balance, exclude from credit/debit sums
+    }
+    if (r.CreditDebitIndicator === 'Credit') {
+      b.creditCount += 1; b.creditSum += amt;
+    } else {
+      b.debitCount += 1; b.debitSum += amt;
+    }
+  }
+  const ordered = [...buckets.values()].sort((a, b) => a.key.localeCompare(b.key));
+  const totalCredits = ordered.reduce((acc, m) => acc + m.creditSum, 0);
+  const totalDebits = ordered.reduce((acc, m) => acc + m.debitSum, 0);
+  const net = totalCredits - totalDebits;
+
+  const det = el('details', { class: 'tx-monthly', attrs: { open: 'open' } });
+  const summary = el('summary');
+  summary.appendChild(el('span', { text: 'Monthly summary' }));
+  summary.appendChild(el('span', {
+    class: 'roll-badge',
+    text: `${ordered.length} months · credits ${formatAmount(totalCredits)} · debits ${formatAmount(totalDebits)} · net ${formatAmount(net)} ${ordered[0]?.currency ?? ''}`.trim(),
+  }));
+  det.appendChild(summary);
+
+  const table = el('table');
+  const thead = el('thead');
+  const headRow = el('tr');
+  for (const h of ['Month', 'Credits', 'Σ credits', 'Debits', 'Σ debits', 'Net', 'NSF']) {
+    headRow.appendChild(el('th', { text: h }));
+  }
+  thead.appendChild(headRow);
+  table.appendChild(thead);
+
+  const tbody = el('tbody');
+  for (const m of ordered) {
+    const tr = el('tr', { class: m.nsfCount > 0 ? 'has-nsf' : null });
+    tr.appendChild(el('td', { text: m.label }));
+    tr.appendChild(el('td', { text: String(m.creditCount) }));
+    tr.appendChild(el('td', { text: formatAmount(m.creditSum) }));
+    tr.appendChild(el('td', { text: String(m.debitCount) }));
+    tr.appendChild(el('td', { text: formatAmount(m.debitSum) }));
+    tr.appendChild(el('td', { text: formatAmount(m.creditSum - m.debitSum) }));
+    tr.appendChild(el('td', { text: m.nsfCount > 0 ? String(m.nsfCount) : '—' }));
+    tbody.appendChild(tr);
+  }
+  table.appendChild(tbody);
+  det.appendChild(table);
+  return det;
+}
+
+function formatAmount(n) {
+  if (!Number.isFinite(n)) return '—';
+  return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
 }
 
 // ---- EXP-12 bidirectional links ----------------------------------------------------------

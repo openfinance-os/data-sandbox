@@ -54,9 +54,9 @@
           <option value="sparse" title="Worst case — only Universal-band optional fields populated; everything else dropped. Stress-test downstream UI and decisioning logic.">Sparse</option>
         </select>
       </label>
-      <label class="control-group">
+      <label class="control-group" title="Seed reshuffles the deterministic RNG. The persona's *structure* (account count, fixed commitments, FX activity, distress band) stays the same; the *details* (transaction amounts within bands, exact dates within months, names, IBANs) re-roll. Same persona+lfi+seed always reproduces the exact same bundle — that's how shareable URLs work.">
         <span class="control-label">Seed</span>
-        <input id="seed-input" type="number" value="4729" min="0" step="1" aria-label="Seed" />
+        <input id="seed-input" type="number" value="4729" min="0" step="1" aria-label="Seed (reshuffles deterministic RNG; structure stays, details re-roll)" />
       </label>
     </div>
     <div class="controls-runstate" aria-label="Run state">
@@ -75,7 +75,14 @@
 <main class="three-pane" id="three-pane">
   <section class="pane persona-pane" aria-label="Persona library">
     <div class="pane-header">Persona library</div>
-    <div class="persona-list" id="persona-list" role="list" tabindex="0"></div>
+    <div class="persona-list-shell">
+      <div class="stress-filter-bar is-empty" id="stress-filter-bar">
+        <span class="label">Filter:</span>
+        <span id="stress-filter-term"></span>
+        <button id="stress-filter-clear" type="button" aria-label="Clear stress filter">Clear</button>
+      </div>
+      <div class="persona-list" id="persona-list" role="list" tabindex="0"></div>
+    </div>
   </section>
 
   <section class="pane navigator" aria-label="Account and endpoint navigator">
