@@ -1,0 +1,16 @@
+pool_id: merchants_dining
+description: Synthetic dining / restaurant merchant names; all fictional.
+mcc: "5812"
+merchants:
+  - name: "Olive & Almond Kitchen"
+    typical_amount_aed_band: [60, 300]
+  - name: "Marina Bistro"
+    typical_amount_aed_band: [80, 400]
+  - name: "Saffron Lane"
+    typical_amount_aed_band: [50, 220]
+  - name: "Cedar Plate"
+    typical_amount_aed_band: [70, 280]
+  - name: "Brasserie Eight"
+    typical_amount_aed_band: [120, 500]
+  - name: "Spice Route Cafe"
+    typical_amount_aed_band: [40, 150]

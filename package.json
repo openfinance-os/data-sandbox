@@ -1,0 +1,33 @@
+{
+  "name": "@openfinance-os/data-sandbox",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Open Finance Data Sandbox — interactive client-side explorer for UAE Open Finance Bank Data Sharing payloads. Synthetic data, narratively realistic personas, spec-driven badges. OF-OS Commons contribution.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build:spec": "node tools/parse-spec.mjs",
+    "verify:spec-shape": "node tools/verify-spec-shape.mjs",
+    "lint:no-handauthored": "node tools/lint-no-handauthored-fields.mjs",
+    "lint:no-institution-leak": "node tools/lint-no-institution-leak.mjs",
+    "lint:pii-leak": "node tools/lint-pii-leak.mjs",
+    "lint:no-glyph-only": "node tools/lint-no-glyph-only.mjs",
+    "lint": "npm run lint:no-handauthored && npm run lint:no-institution-leak && npm run lint:pii-leak && npm run lint:no-glyph-only",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "serve": "python3 -m http.server 8000 --directory src",
+    "ci": "npm run verify:spec-shape && npm run build:spec && npm run lint && npm test"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.0",
+    "@playwright/test": "^1.49.0",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "js-yaml": "^4.1.0",
+    "vitest": "^2.1.8"
+  }
+}

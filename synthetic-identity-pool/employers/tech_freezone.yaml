@@ -1,0 +1,26 @@
+# Synthetic employer pool — tech-sector free-zone entities. All names are
+# fictional and combine generic tech descriptors with UAE free-zone suffixes.
+# None reference real employers. EXP-07: only place employer names may originate.
+pool_id: tech_freezone
+description: Synthetic tech-sector free-zone employers used as salary payers.
+employers:
+  - "Aurora Cloud Systems FZ-LLC"
+  - "Bayan Software DMCC"
+  - "Cipher Labs FZ-LLC"
+  - "Datapeak Analytics FZ-LLC"
+  - "EmberSoft Studios FZ-LLC"
+  - "Falcon Edge Networks DMCC"
+  - "Glide Platforms FZ-LLC"
+  - "Helix Data Group FZ-LLC"
+  - "Indigo Ridge Tech FZ-LLC"
+  - "Jasmine AI FZ-LLC"
+  - "Kestrel Cloud FZ-LLC"
+  - "Lumen Stack DMCC"
+  - "Meridian Code Works FZ-LLC"
+  - "Nexus Build FZ-LLC"
+  - "Onyx Compute DMCC"
+  - "Polaris Engineering FZ-LLC"
+  - "Quartz Systems FZ-LLC"
+  - "Rivermark Tech FZ-LLC"
+  - "Skylane Networks DMCC"
+  - "Talisman Software FZ-LLC"

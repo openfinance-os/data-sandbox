@@ -1,0 +1,15 @@
+pool_id: ibans_synthetic
+description: |
+  IBANs in this sandbox use the AE prefix and a synthetic 21-digit body so they
+  are structurally valid (length 23) but do not collide with real-world UAE
+  IBANs assigned by the central bank. The body is generated deterministically
+  from (persona_id, account_index, seed) — see src/generator/identity.js.
+prefix_options:
+  - "AE07"   # paired with Synthetic First Bank
+  - "AE19"
+  - "AE32"
+  - "AE45"
+  - "AE51"
+  - "AE63"
+  - "AE74"
+  - "AE82"

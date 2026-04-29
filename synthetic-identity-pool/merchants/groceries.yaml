@@ -1,0 +1,16 @@
+pool_id: merchants_groceries
+description: Synthetic grocery / supermarket merchant names; all fictional.
+mcc: "5411"
+merchants:
+  - name: "Marketmark Hypermarket"
+    typical_amount_aed_band: [80, 350]
+  - name: "Greenfield Grocers"
+    typical_amount_aed_band: [40, 180]
+  - name: "Cedar Valley Supermart"
+    typical_amount_aed_band: [60, 250]
+  - name: "Solstice Daily Mart"
+    typical_amount_aed_band: [25, 90]
+  - name: "Harborway Foods"
+    typical_amount_aed_band: [70, 300]
+  - name: "Saffron Market"
+    typical_amount_aed_band: [45, 200]

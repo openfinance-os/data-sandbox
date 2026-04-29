@@ -1,0 +1,12 @@
+pool_id: merchants_fuel
+description: Synthetic fuel-station merchant names; all fictional.
+mcc: "5541"
+merchants:
+  - name: "Beacon Fuel Co."
+    typical_amount_aed_band: [80, 220]
+  - name: "Crestline Petroleum"
+    typical_amount_aed_band: [80, 220]
+  - name: "Northstar Energy Stations"
+    typical_amount_aed_band: [80, 220]
+  - name: "Ridgepoint Fuel"
+    typical_amount_aed_band: [80, 220]

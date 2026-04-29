@@ -1,0 +1,11 @@
+node_modules/
+.DS_Store
+.env
+.env.local
+*.log
+npm-debug.log*
+.vitest-cache/
+playwright-report/
+test-results/
+.lighthouseci/
+coverage/

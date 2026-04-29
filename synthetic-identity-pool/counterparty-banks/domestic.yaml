@@ -1,0 +1,19 @@
+pool_id: counterparty_banks_domestic
+description: Synthetic UAE counterparty bank names. All fictional — no real LFI is referenced.
+banks:
+  - name: "Synthetic First Bank"
+    iban_prefix: "AE07"
+  - name: "Cedar National Bank"
+    iban_prefix: "AE19"
+  - name: "Falcon Trust Bank"
+    iban_prefix: "AE32"
+  - name: "Northstar Commercial Bank"
+    iban_prefix: "AE45"
+  - name: "Marina Holdings Bank"
+    iban_prefix: "AE51"
+  - name: "Ridgepoint Bank"
+    iban_prefix: "AE63"
+  - name: "Sandstone Bank"
+    iban_prefix: "AE74"
+  - name: "Skylane Bank"
+    iban_prefix: "AE82"

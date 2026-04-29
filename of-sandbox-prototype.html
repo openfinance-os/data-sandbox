@@ -1,0 +1,1659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Open Finance Sandbox — Prototype</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fafaf9;
+    --surface: #ffffff;
+    --surface-2: #f5f5f4;
+    --border: #e7e5e4;
+    --border-strong: #d6d3d1;
+    --ink: #1c1917;
+    --ink-2: #44403c;
+    --ink-3: #78716c;
+    --ink-4: #a8a29e;
+    --accent: #1d4ed8;
+    --accent-soft: #dbeafe;
+    --mandatory: #15803d;
+    --mandatory-bg: #dcfce7;
+    --optional: #b45309;
+    --optional-bg: #fef3c7;
+    --conditional: #6d28d9;
+    --conditional-bg: #ede9fe;
+    --triggered: #0e7490;
+    --null: #a8a29e;
+    --null-bg: #f5f5f4;
+    --shadow-1: 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-2: 0 4px 12px rgba(0,0,0,0.06);
+    --radius: 6px;
+    --radius-lg: 10px;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: var(--sans);
+    color: var(--ink);
+    background: var(--bg);
+    font-size: 13px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    height: 56px;
+  }
+  .brand {
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: -0.005em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .brand-logo {
+    width: 22px; height: 22px;
+    background: var(--ink);
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 11px;
+    font-family: var(--mono);
+  }
+  .brand .by { color: var(--ink-3); font-weight: 400; }
+  .brand-tag {
+    font-size: 11px;
+    color: var(--ink-3);
+    background: var(--surface-2);
+    padding: 2px 7px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    font-weight: 500;
+    margin-left: 6px;
+  }
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .control-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .control-label {
+    font-size: 11px;
+    color: var(--ink-3);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  select, button {
+    font-family: var(--sans);
+    font-size: 12px;
+    padding: 5px 10px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    background: white;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  select:hover, button:hover { border-color: var(--ink-4); }
+  .version-pin {
+    font-size: 11px;
+    color: var(--ink-2);
+    background: var(--surface-2);
+    padding: 4px 9px;
+    border-radius: 999px;
+    font-family: var(--mono);
+    font-weight: 500;
+  }
+  .coverage {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--ink-2);
+  }
+  .coverage-bar {
+    width: 80px;
+    height: 6px;
+    background: var(--surface-2);
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+  }
+  .coverage-bar > span {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, #15803d, #65a30d);
+    border-radius: 999px;
+    transition: width 0.25s ease;
+  }
+  .coverage-pct { font-weight: 600; min-width: 32px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  .three-pane {
+    display: grid;
+    grid-template-columns: 220px 1fr 320px;
+    height: calc(100vh - 56px - 36px - 36px);
+    overflow: hidden;
+  }
+  /* Narrow / sidebar layout — collapse to two panes; field detail moves into a slide-over */
+  @media (max-width: 1100px) {
+    .three-pane { grid-template-columns: 200px 1fr; }
+    .pane.field-detail {
+      position: fixed;
+      right: 0;
+      top: 56px + 36px;
+      width: 320px;
+      max-width: 90vw;
+      height: calc(100vh - 56px - 36px - 36px);
+      box-shadow: -8px 0 24px rgba(0,0,0,0.08);
+      z-index: 5;
+      transform: translateX(100%);
+      transition: transform 0.18s ease;
+      border-left: 1px solid var(--border);
+    }
+    .pane.field-detail.open { transform: translateX(0); }
+  }
+  @media (max-width: 760px) {
+    .three-pane { grid-template-columns: 1fr; }
+    .pane.personas { display: none; }
+    .pane.navigator { grid-template-columns: 1fr; }
+    .nav-tree { display: none; }
+    .controls { gap: 8px; flex-wrap: wrap; }
+    .topbar { height: auto; padding: 8px 12px; flex-wrap: wrap; }
+    .control-label { display: none; }
+  }
+  .pane {
+    overflow-y: auto;
+    background: var(--surface);
+  }
+  .pane.personas {
+    border-right: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .pane.navigator {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 220px 1fr;
+  }
+  .pane.field-detail {
+    background: var(--bg);
+    padding: 16px;
+  }
+  .pane-header {
+    padding: 14px 16px 10px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-3);
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  .pane.personas .pane-header { background: var(--bg); }
+
+  .persona-item {
+    padding: 10px 14px;
+    margin: 2px 8px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    border: 1px solid transparent;
+  }
+  .persona-item:hover { background: var(--surface); }
+  .persona-item.active {
+    background: var(--surface);
+    border-color: var(--border);
+    box-shadow: var(--shadow-1);
+  }
+  .persona-item .name { font-weight: 600; font-size: 12.5px; }
+  .persona-item .archetype {
+    font-size: 11px;
+    color: var(--ink-3);
+    margin-top: 2px;
+  }
+
+  .nav-tree {
+    background: var(--bg);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+  }
+  .nav-account {
+    margin-top: 6px;
+    padding: 0 8px;
+  }
+  .nav-account-label {
+    padding: 8px 10px 4px;
+    font-size: 11px;
+    color: var(--ink-3);
+    font-family: var(--mono);
+    font-weight: 600;
+  }
+  .nav-account-label .acct-name {
+    color: var(--ink-2);
+    font-family: var(--sans);
+    margin-bottom: 2px;
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .nav-endpoint {
+    padding: 6px 10px;
+    font-size: 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--ink-2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .nav-endpoint:hover { background: var(--surface); }
+  .nav-endpoint.active {
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .nav-endpoint .count {
+    font-size: 11px;
+    color: var(--ink-4);
+    font-variant-numeric: tabular-nums;
+    font-family: var(--mono);
+  }
+  .nav-endpoint.active .count { color: var(--accent); }
+
+  .payload-area {
+    overflow-y: auto;
+    padding: 0;
+  }
+  .payload-toolbar {
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  .payload-title {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-2);
+    font-weight: 500;
+  }
+  .payload-title .verb { color: var(--mandatory); font-weight: 700; }
+  .toggle-group {
+    display: inline-flex;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .toggle-group button {
+    border: 0;
+    border-radius: 0;
+    padding: 4px 12px;
+    font-size: 11px;
+    background: white;
+    color: var(--ink-3);
+  }
+  .toggle-group button.active {
+    background: var(--ink);
+    color: white;
+  }
+
+  .payload-body { padding: 16px 18px 80px; }
+
+  /* Tables */
+  table.payload-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    font-family: var(--mono);
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  table.payload-table th, table.payload-table td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  table.payload-table th {
+    background: var(--surface-2);
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--ink-3);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-family: var(--sans);
+  }
+  table.payload-table tr:last-child td { border-bottom: 0; }
+  table.payload-table tr:hover td { background: #fafaf9; }
+  table.payload-table tr.txn-credit td.amount { color: var(--mandatory); }
+  table.payload-table tr.txn-debit td.amount { color: var(--ink); }
+  td.amount { text-align: right; font-variant-numeric: tabular-nums; }
+  td.null-cell { color: var(--ink-4); font-style: italic; }
+
+  /* Cards (Accounts, beneficiaries, etc.) */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+  }
+  .resource-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 14px;
+  }
+  .resource-card .row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    font-size: 12px;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .resource-card .row .key { color: var(--ink-3); font-size: 11px; flex-shrink: 0; }
+  .resource-card .row .val { font-family: var(--mono); text-align: right; word-break: break-all; }
+  .resource-card .title {
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+  .resource-card .subtitle {
+    color: var(--ink-3);
+    font-size: 11px;
+    margin-bottom: 10px;
+  }
+
+  /* Status badges */
+  .badge {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    font-family: var(--sans);
+    cursor: pointer;
+    user-select: none;
+    margin-left: 4px;
+    line-height: 1.45;
+    vertical-align: 1px;
+  }
+  .badge.mand {
+    background: var(--mandatory-bg);
+    color: var(--mandatory);
+    border: 1px solid transparent;
+  }
+  .badge.opt {
+    background: white;
+    color: var(--optional);
+    border: 1px dashed var(--optional);
+  }
+  .badge.cond {
+    background: white;
+    color: var(--conditional);
+    border: 1px solid var(--conditional);
+  }
+  .badge.cond.triggered { background: var(--conditional-bg); }
+  .badge.null {
+    background: var(--null-bg);
+    color: var(--null);
+    border: 1px solid var(--border);
+  }
+
+  /* Field name cells */
+  .field-name {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink-2);
+  }
+  .field-name button {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-family: var(--mono);
+    cursor: pointer;
+    padding: 0;
+    font-size: 11.5px;
+  }
+  .field-name button:hover { text-decoration: underline; }
+
+  /* Raw JSON */
+  pre.raw-json {
+    background: #0c0a09;
+    color: #f5f5f4;
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    font-size: 11.5px;
+    line-height: 1.55;
+    overflow-x: auto;
+    max-height: 70vh;
+  }
+  pre.raw-json .k { color: #93c5fd; }
+  pre.raw-json .s { color: #fcd34d; }
+  pre.raw-json .n { color: #86efac; }
+  pre.raw-json .b { color: #c4b5fd; }
+  pre.raw-json .nu { color: #78716c; font-style: italic; }
+
+  /* Field detail pane */
+  .field-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    box-shadow: var(--shadow-2);
+  }
+  .field-card .fc-name {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--ink);
+    word-break: break-word;
+  }
+  .field-card .fc-path {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--ink-4);
+    margin-bottom: 8px;
+    word-break: break-word;
+  }
+  .field-card .fc-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 12px;
+    border-bottom: 1px solid var(--surface-2);
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .field-card .fc-row:last-child { border-bottom: 0; }
+  .field-card .fc-key {
+    color: var(--ink-3);
+    flex-shrink: 0;
+  }
+  .field-card .fc-val {
+    font-family: var(--mono);
+    text-align: right;
+    color: var(--ink);
+    word-break: break-word;
+    max-width: 220px;
+  }
+  .field-card .fc-section-title {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-3);
+    font-weight: 700;
+    margin: 14px 0 6px;
+  }
+  .fc-guidance {
+    background: var(--surface-2);
+    padding: 10px 12px;
+    border-radius: var(--radius);
+    font-size: 12px;
+    color: var(--ink-2);
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+  .fc-guidance.tone-good { background: #f0fdf4; color: #166534; }
+  .fc-guidance.tone-warn { background: #fffbeb; color: #92400e; }
+  .fc-guidance.tone-rare { background: #fef2f2; color: #991b1b; }
+  .fc-band-pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .fc-band-pill.universal { background: #dcfce7; color: #166534; }
+  .fc-band-pill.common { background: #dbeafe; color: #1e40af; }
+  .fc-band-pill.variable { background: #fef3c7; color: #92400e; }
+  .fc-band-pill.rare { background: #fee2e2; color: #991b1b; }
+  .fc-empty {
+    color: var(--ink-3);
+    font-size: 12px;
+    font-style: italic;
+    padding: 24px 14px;
+    text-align: center;
+    background: var(--surface);
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius-lg);
+  }
+
+  .footer {
+    height: 36px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--ink-3);
+  }
+  .footer .pill-row { display: flex; gap: 10px; align-items: center; }
+  .pill-syn {
+    background: var(--optional-bg);
+    color: var(--optional);
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+  .footer a { color: var(--ink-3); text-decoration: none; }
+  .footer a:hover { text-decoration: underline; }
+
+  /* Misc */
+  .empty-endpoint {
+    padding: 30px;
+    text-align: center;
+    color: var(--ink-3);
+    font-size: 12px;
+  }
+  details.absent-fields {
+    margin-top: 18px;
+    background: var(--surface-2);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+  }
+  details.absent-fields summary {
+    cursor: pointer;
+    color: var(--ink-3);
+    font-size: 11px;
+    font-weight: 500;
+  }
+  details.absent-fields ul {
+    margin: 8px 0 0;
+    padding-left: 0;
+    list-style: none;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-4);
+  }
+  details.absent-fields li {
+    padding: 3px 0;
+  }
+
+  .key-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--surface-2);
+    align-items: baseline;
+  }
+  .key-row:last-child { border-bottom: 0; }
+  .key-row .k {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink-2);
+  }
+  .key-row .v {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink);
+    text-align: right;
+    word-break: break-all;
+    margin-left: 12px;
+  }
+  .key-row .v.null { color: var(--ink-4); font-style: italic; }
+
+  /* Disclaimer banner */
+  .banner {
+    padding: 8px 20px;
+    background: #fffbeb;
+    border-bottom: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 11.5px;
+    text-align: center;
+  }
+
+  /* Chart */
+  .balance-chart {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 14px;
+    margin-bottom: 16px;
+  }
+  .balance-chart svg { display: block; width: 100%; }
+  .balance-chart .chart-title {
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+  .balance-chart .chart-sub {
+    color: var(--ink-3);
+    font-size: 11px;
+    margin-bottom: 12px;
+  }
+</style>
+</head>
+<body>
+
+<div class="banner">
+  <strong>SYNTHETIC PROTOTYPE.</strong> Data is generated from the UAE OF Standards v2.1-final OpenAPI spec — not from any real bank. Median populate-rate is a Woven-authored ecosystem assumption, not endorsed by Nebras or CBUAE.
+</div>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-logo">W</span>
+    Open Finance Sandbox <span class="by">by Woven</span>
+    <span class="brand-tag">Prototype</span>
+  </div>
+  <div class="controls">
+    <div class="control-group">
+      <span class="control-label">Persona</span>
+      <select id="persona-select"></select>
+    </div>
+    <div class="control-group">
+      <span class="control-label">LFI profile</span>
+      <select id="lfi-select">
+        <option value="rich">Rich</option>
+        <option value="median" selected>Median</option>
+        <option value="sparse">Sparse</option>
+      </select>
+    </div>
+    <span class="version-pin">Standards v2.1-final</span>
+    <div class="coverage" title="Optional fields populated under the active LFI profile">
+      <span class="control-label">Coverage</span>
+      <div class="coverage-bar"><span id="coverage-fill" style="width:0%"></span></div>
+      <span class="coverage-pct" id="coverage-pct">—</span>
+    </div>
+  </div>
+</header>
+
+<main class="three-pane">
+  <aside class="pane personas">
+    <div class="pane-header">Persona library</div>
+    <div id="persona-list"></div>
+  </aside>
+  <section class="pane navigator">
+    <div class="nav-tree" id="nav-tree"></div>
+    <div class="payload-area">
+      <div class="payload-toolbar">
+        <span class="payload-title" id="payload-title"><span class="verb">GET</span> /accounts</span>
+        <div class="toggle-group" id="view-toggle">
+          <button data-view="rendered" class="active">Rendered</button>
+          <button data-view="raw">Raw JSON</button>
+        </div>
+      </div>
+      <div class="payload-body" id="payload-body"></div>
+    </div>
+  </section>
+  <aside class="pane field-detail">
+    <div id="field-card-host">
+      <div class="fc-empty">Click any field name in the rendered view to see its definition, type, populate-rate guidance, and how it behaves under different LFI profiles.</div>
+    </div>
+  </aside>
+</main>
+
+<footer class="footer">
+  <div class="pill-row">
+    <span class="pill-syn">SYNTHETIC</span>
+    <span>Open Finance Sandbox by Woven · Standards v2.1-final · Bank Data Sharing</span>
+  </div>
+  <div class="pill-row">
+    <a href="#about">About & citation</a>
+    <a href="#faq">Field definitions</a>
+    <a href="#footer">Made by Woven →</a>
+  </div>
+</footer>
+
+<script>
+/* ============================================================
+   1. SEEDED PRNG (mulberry32) — deterministic generation
+============================================================ */
+function mulberry32(seed) {
+  return function() {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = seed;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function hashSeed(str) {
+  let h = 2166136261;
+  for (let i=0;i<str.length;i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function rng(persona, lfi, salt) {
+  return mulberry32(hashSeed(persona + ":" + lfi + ":" + salt));
+}
+function pick(r, arr) { return arr[Math.floor(r()*arr.length)]; }
+function rint(r, lo, hi) { return Math.floor(r()*(hi-lo+1))+lo; }
+function rband(r, [lo, hi]) { return lo + r()*(hi-lo); }
+
+/* ============================================================
+   2. FIELD SPEC — abridged v2.1-final field metadata
+   Each entry: { name, type, status, band?, condRule?, enumValues?, desc, lfiNote, tone }
+============================================================ */
+const SPEC = {
+  Account: {
+    AccountId:        { type: "String(40)", status: "mandatory", desc: "Unique per-LFI identifier for the account.", lfiNote: "Always present per spec. All LFIs populate. Safe to depend on.", tone: "good" },
+    Currency:         { type: "String(3) ISO 4217", status: "mandatory", desc: "Account base currency.", lfiNote: "Always present per spec.", tone: "good" },
+    AccountType:      { type: "Enum", status: "mandatory", enumValues: ["Business","Personal"], desc: "Owner type.", lfiNote: "Always present per spec.", tone: "good" },
+    AccountSubType:   { type: "Enum", status: "mandatory", enumValues: ["ChargeCard","CreditCard","CurrentAccount","EMoney","Loan","Mortgage","PrePaidCard","Savings"], desc: "Account product sub-type.", lfiNote: "Always present per spec; clusters of values vary by LFI product mix.", tone: "good" },
+    Status:           { type: "Enum", status: "optional", band: "common", enumValues: ["Enabled","Disabled","Deleted","ProForma","Pending"], desc: "Account operational status.", lfiNote: "Most LFIs populate. Treat absence as 'Enabled' with caution.", tone: "warn" },
+    StatusUpdateDateTime:{ type: "DateTime", status: "optional", band: "variable", desc: "Last status change.", lfiNote: "Variable populate rate. Bonus signal, not a primary key.", tone: "warn" },
+    Nickname:         { type: "String(70)", status: "optional", band: "variable", desc: "Customer-set nickname.", lfiNote: "Only LFIs that surface nicknames in channel populate.", tone: "warn" },
+    AccountHolderName:{ type: "String(350)", status: "optional", band: "common", desc: "Full legal account holder name.", lfiNote: "Common; useful for matching to KYC.", tone: "warn" },
+    OpeningDate:      { type: "DateTime", status: "optional", band: "common", desc: "Account opening date.", lfiNote: "Common. Critical for tenure-based credit signals when available.", tone: "warn" },
+    MaturityDate:     { type: "DateTime", status: "optional", band: "rare", desc: "Term-product maturity date.", lfiNote: "Common on mortgages/loans, rare on current/savings. Conditional-by-product.", tone: "warn" },
+    Account:          { type: "Array<AccountIdentifier>", status: "mandatory", desc: "IBAN/BBAN/PAN identifiers.", lfiNote: "Always present per spec. AE.IBAN is universal in UAE.", tone: "good" },
+    Servicer:         { type: "Object{SchemeName,Identification}", status: "optional", band: "common", desc: "BIC of servicing institution.", lfiNote: "Common. Useful for routing logic.", tone: "warn" }
+  },
+  Balance: {
+    Amount:               { type: "Object{Amount,Currency}", status: "mandatory", desc: "Balance amount.", lfiNote: "Always present per spec.", tone: "good" },
+    CreditDebitIndicator: { type: "Enum", status: "mandatory", enumValues: ["Credit","Debit"], desc: "Sign of the balance.", lfiNote: "Always present per spec.", tone: "good" },
+    Type:                 { type: "Enum", status: "mandatory", enumValues: ["ClosingAvailable","ClosingBooked","Expected","ForwardAvailable","Information","InterimAvailable","InterimBooked","OpeningAvailable","OpeningBooked"], desc: "Balance type.", lfiNote: "Always present per spec; LFIs vary in which types they expose.", tone: "good" },
+    DateTime:             { type: "DateTime", status: "mandatory", desc: "As-of timestamp.", lfiNote: "Always present per spec.", tone: "good" },
+    CreditLine:           { type: "Array<CreditLine>", status: "optional", band: "variable", desc: "Pre-agreed credit-line composition.", lfiNote: "Variable. Critical for credit-card affordability when present.", tone: "warn" }
+  },
+  Transaction: {
+    TransactionId:        { type: "String(210)", status: "mandatory", desc: "Per-LFI unique transaction id.", lfiNote: "Always present per spec.", tone: "good" },
+    CreditDebitIndicator: { type: "Enum", status: "mandatory", enumValues: ["Credit","Debit"], desc: "Direction.", lfiNote: "Always present per spec.", tone: "good" },
+    Status:               { type: "Enum", status: "mandatory", enumValues: ["Booked","Pending"], desc: "Posting state.", lfiNote: "Always present per spec.", tone: "good" },
+    BookingDateTime:      { type: "DateTime", status: "mandatory", desc: "When the transaction posted.", lfiNote: "Always present per spec. Use for time-series ordering.", tone: "good" },
+    TransactionDateTime:  { type: "DateTime", status: "mandatory", desc: "When the transaction occurred.", lfiNote: "Always present per spec.", tone: "good" },
+    TransactionType:      { type: "Enum", status: "mandatory", enumValues: ["CardPayment","CashDeposit","CashWithdrawal","DirectDebit","FeeCharges","FPSOut","FPSIn","InternalTransfer","OnlinePayment","Payment","StandingOrder","TransferIn","TransferOut","Other"], desc: "High-level transaction type.", lfiNote: "Always present per spec. Foundational for categorisation.", tone: "good" },
+    SubTransactionType:   { type: "Enum", status: "mandatory", enumValues: ["ChargePayment","Purchase","Refund","Reversal","TransferToSelf","TransferToOther","SalaryPayment","Other"], desc: "Refinement of TransactionType.", lfiNote: "Always present per spec; SalaryPayment is gold-standard for income.", tone: "good" },
+    PaymentModes:         { type: "Enum", status: "mandatory", enumValues: ["NEFT","RTGS","IPS","Other"], desc: "Payment rail used.", lfiNote: "Always present per spec.", tone: "good" },
+    Amount:               { type: "Object{Amount,Currency}", status: "mandatory", desc: "Signed amount.", lfiNote: "Always present per spec.", tone: "good" },
+    ValueDateTime:        { type: "DateTime", status: "optional", band: "common", desc: "Funds availability date.", lfiNote: "Common. Useful for cash-flow modelling.", tone: "warn" },
+    TransactionInformation:{ type: "String(500)", status: "optional", band: "universal", desc: "Free-text description / narrative.", lfiNote: "Universal — practically every LFI populates a description, but content quality varies wildly.", tone: "good" },
+    StatementReference:   { type: "String(35)", status: "optional", band: "common", desc: "Bank-side reference number.", lfiNote: "Common.", tone: "warn" },
+    MerchantDetails:      { type: "Object{MerchantName,MerchantCategoryCode}", status: "optional", band: "common", desc: "Merchant name + ISO 18245 MCC.", lfiNote: "Common on card payments. MCC populate rate varies by acquirer integration.", tone: "warn" },
+    CreditorAgent:        { type: "Object{SchemeName,Identification}", status: "optional", band: "variable", desc: "BIC of receiving institution.", lfiNote: "Variable. Useful for counterparty concentration analysis.", tone: "warn" },
+    DebtorAgent:          { type: "Object{SchemeName,Identification}", status: "optional", band: "variable", desc: "BIC of sending institution.", lfiNote: "Variable.", tone: "warn" },
+    CreditorAccount:      { type: "Object", status: "optional", band: "variable", desc: "Receiving account identifier.", lfiNote: "Variable. Privacy-sensitive — some LFIs redact.", tone: "warn" },
+    CardInstrument:       { type: "Object{CardSchemeName,…}", status: "conditional", condRule: "TransactionType=CardPayment", band: "common", desc: "Card scheme + masked PAN. Only meaningful on card transactions.", lfiNote: "Triggered on card transactions. Common populate rate within that bucket.", tone: "warn" },
+    CurrencyExchange:     { type: "Object{SourceCurrency,TargetCurrency,ExchangeRate,…}", status: "conditional", condRule: "FX transaction", band: "variable", desc: "FX details when present.", lfiNote: "Triggered on FX transactions. Populate quality varies.", tone: "warn" },
+    GeoLocation:          { type: "Object{Latitude,Longitude}", status: "optional", band: "rare", desc: "Lat/lon of transaction.", lfiNote: "Rare. Bonus signal for AML, never a primary dependency.", tone: "rare" },
+    Balance:              { type: "Object", status: "optional", band: "common", desc: "Running balance after transaction.", lfiNote: "Common.", tone: "warn" },
+    BankTransactionCode:  { type: "Object{Code,SubCode}", status: "optional", band: "variable", desc: "ISO 20022 domain/sub-domain code.", lfiNote: "Variable. When present, more reliable than free-text categorisation.", tone: "warn" },
+    Flags:                { type: "Array<String>", status: "optional", band: "rare", enumValues: ["IsDeferred","IsForecasted"], desc: "Special-state flags.", lfiNote: "Rare.", tone: "rare" }
+  },
+  StandingOrder: {
+    StandingOrderId:      { type: "String", status: "mandatory", desc: "Unique standing-order id.", lfiNote: "Always present per spec.", tone: "good" },
+    Frequency:            { type: "String", status: "mandatory", desc: "Cron-like schedule code.", lfiNote: "Always present per spec.", tone: "good" },
+    NextPaymentAmount:    { type: "Object{Amount,Currency}", status: "mandatory", desc: "Next scheduled amount.", lfiNote: "Always present per spec.", tone: "good" },
+    NextPaymentDateTime:  { type: "DateTime", status: "mandatory", desc: "Next scheduled date.", lfiNote: "Always present per spec.", tone: "good" },
+    Reference:            { type: "String", status: "optional", band: "common", desc: "User-set reference.", lfiNote: "Common.", tone: "warn" },
+    CreditorAccount:      { type: "Object", status: "optional", band: "common", desc: "Beneficiary identifier.", lfiNote: "Common.", tone: "warn" },
+    FirstPaymentDateTime: { type: "DateTime", status: "optional", band: "variable", desc: "When the standing order was first scheduled.", lfiNote: "Variable.", tone: "warn" }
+  },
+  DirectDebit: {
+    DirectDebitId:        { type: "String", status: "mandatory", desc: "Unique direct-debit id.", lfiNote: "Always present per spec.", tone: "good" },
+    MandateIdentification:{ type: "String", status: "mandatory", desc: "Mandate reference.", lfiNote: "Always present per spec.", tone: "good" },
+    DirectDebitStatusCode:{ type: "Enum", status: "mandatory", enumValues: ["Active","Inactive"], desc: "Mandate status.", lfiNote: "Always present per spec.", tone: "good" },
+    Name:                 { type: "String", status: "optional", band: "common", desc: "Originator name (e.g., DEWA).", lfiNote: "Common; primary signal for utility/recurring identification.", tone: "warn" },
+    PreviousPaymentDateTime:{ type: "DateTime", status: "optional", band: "common", desc: "Last execution.", lfiNote: "Common.", tone: "warn" },
+    PreviousPaymentAmount:{ type: "Object", status: "optional", band: "common", desc: "Last execution amount.", lfiNote: "Common.", tone: "warn" }
+  },
+  Beneficiary: {
+    BeneficiaryId:        { type: "String", status: "mandatory", desc: "Unique beneficiary id.", lfiNote: "Always present per spec.", tone: "good" },
+    Reference:            { type: "String", status: "optional", band: "common", desc: "Customer-set label.", lfiNote: "Common.", tone: "warn" },
+    CreditorAccount:      { type: "Object{SchemeName,Identification,Name}", status: "optional", band: "common", desc: "Beneficiary account.", lfiNote: "Common.", tone: "warn" },
+    BeneficiaryType:      { type: "Enum", status: "optional", band: "variable", enumValues: ["Trusted","Ordinary"], desc: "Trusted-list flag.", lfiNote: "Variable.", tone: "warn" }
+  }
+};
+
+/* ============================================================
+   3. PERSONAS
+============================================================ */
+const PERSONAS = [
+  {
+    id: "salaried_expat_mid",
+    name: "Sara — Salaried Expat (Mid Tier)",
+    archetype: "Salaried expat, AED 25k/mo, IT professional",
+    kyc: { fullName: "Sara Iyer", emirate: "Dubai", nationality: "Indian (synthetic)" },
+    accounts: [
+      { id: "AE12-0260-1100-0001-1234", subType: "CurrentAccount", currency: "AED", iban: "AE120260011000011234", openingDate: "2022-04-12", nickname: "Salary" },
+      { id: "AE14-0260-1100-0009-7788", subType: "CreditCard",     currency: "AED", iban: null, pan: "************4421", openingDate: "2023-01-08", creditLimit: 50000 }
+    ],
+    salary: { amount: 25000, day: 25, employer: "TechCo FZ-LLC" },
+    rent: { amount: 8000, day: 27 },
+    standingOrders: [{ ref: "Rent — JLT Apt", amount: 8000, day: 27 }, { ref: "Family transfer — India", amount: 4000, day: 28 }],
+    directDebits: [{ name: "DEWA", amountBand:[400,800], day:5 }, { name: "du Postpaid", amountBand:[180,260], day:10 }, { name: "RTA Salik", amountBand:[80,250], day:15 }],
+    beneficiaries: ["Self — HDFC Mumbai (AE.IBAN external)", "Landlord — Mr. Patel", "Friend — Karthik J", "Self — Investment account"],
+    spend: { groceries:[1200,2200,12,18], fuel:[400,700,5,9], dining:[80,400,5,12], shopping:[150,1200,3,7], atm:[500,2000,2,4] },
+    fxActivity: false, cashHeavy: false
+  },
+  {
+    id: "sme_owner_cash",
+    name: "Khalid — SME Owner (Cash-Heavy Retail)",
+    archetype: "UAE national SME owner, retail, cash-heavy",
+    kyc: { fullName: "Khalid Al Marri Trading LLC", emirate: "Sharjah", nationality: "Emirati (synthetic)" },
+    accounts: [
+      { id: "AE22-0260-2200-0007-5544", subType: "CurrentAccount", currency: "AED", iban: "AE220260022000075544", openingDate: "2018-09-03", nickname: "Operating" },
+      { id: "AE23-0260-2200-0008-9911", subType: "Savings",        currency: "AED", iban: "AE230260022000089911", openingDate: "2019-02-14", nickname: "Reserve" }
+    ],
+    salary: null,
+    rent: null,
+    standingOrders: [{ ref: "Loan EMI — SME facility", amount: 12500, day: 1 }],
+    directDebits: [{ name: "Trade licence renewal annual hold", amountBand:[200,200], day:20 }, { name: "Etisalat Business", amountBand:[450,650], day:8 }],
+    beneficiaries: ["Supplier — Asia Wholesale FZE", "Supplier — Gulf Foods LLC", "Employee — Junaid R", "Employee — Asma K", "Employee — Ravi S"],
+    spend: { cashIn:[2000,8000,20,35], supplierOut:[3000,18000,8,16], customerIn:[500,4000,15,25], salaryOut:[1500,4500,3,5], cardOps:[80,400,8,15] },
+    fxActivity: false, cashHeavy: true
+  },
+  {
+    id: "hnw_multi_currency",
+    name: "Yousef — HNW Multi-Currency",
+    archetype: "Senior exec, AED 80k/mo + investment activity, FX-active",
+    kyc: { fullName: "Yousef A.", emirate: "Abu Dhabi", nationality: "Lebanese (synthetic)" },
+    accounts: [
+      { id: "AE52-0260-3300-0001-2233", subType: "CurrentAccount", currency: "AED", iban: "AE520260033000012233", openingDate: "2017-11-20", nickname: "Salary AED" },
+      { id: "USD-AE52-3300-0002-4455",  subType: "CurrentAccount", currency: "USD", iban: "AE520260033000024455", openingDate: "2019-06-04", nickname: "USD" },
+      { id: "AE53-0260-3300-0007-9921", subType: "CreditCard",     currency: "AED", iban: null, pan: "************0099", openingDate: "2020-08-17", creditLimit: 200000 },
+      { id: "AE54-0260-3300-0010-1199", subType: "Mortgage",       currency: "AED", iban: "AE540260033000101199", openingDate: "2021-03-30", maturityDate: "2046-03-30", nickname: "Home loan" }
+    ],
+    salary: { amount: 80000, day: 25, employer: "Holding Co PJSC" },
+    rent: null,
+    standingOrders: [{ ref: "Mortgage EMI", amount: 18500, day: 1 }, { ref: "Investment SIP", amount: 10000, day: 3 }],
+    directDebits: [{ name: "ADDC", amountBand:[600,1200], day:6 }, { name: "Etisalat Premium", amountBand:[600,900], day:11 }, { name: "Private Schooling", amountBand:[6000,6000], day:1 }],
+    beneficiaries: ["Self — USD account", "Investment broker — Saxo", "Family — London", "Property mgmt — JLL"],
+    spend: { groceries:[800,2500,8,14], fuel:[600,1100,4,7], dining:[300,2500,6,12], shopping:[500,8000,3,8], travel:[2000,15000,1,3], fxBuy:[2000,12000,2,5] },
+    fxActivity: true, cashHeavy: false
+  }
+];
+
+/* ============================================================
+   4. POPULATE-RATE PROBABILITIES BY LFI PROFILE
+============================================================ */
+const POPULATE_PROB = {
+  rich:   { universal: 1.00, common: 1.00, variable: 1.00, rare: 1.00 },
+  median: { universal: 1.00, common: 0.70, variable: 0.40, rare: 0.10 },
+  sparse: { universal: 1.00, common: 0.00, variable: 0.00, rare: 0.00 }
+};
+
+/* ============================================================
+   5. GENERATORS — produce spec-shaped payloads per persona
+============================================================ */
+function fmtIso(d) { return d.toISOString().replace(/\.\d{3}Z$/, "Z"); }
+function fmtAed(n) { return Number(n).toFixed(2); }
+
+function genAccounts(persona) {
+  return persona.accounts.map(a => ({
+    AccountId: a.id,
+    Currency: a.currency,
+    AccountType: persona.id === "sme_owner_cash" ? "Business" : "Personal",
+    AccountSubType: a.subType,
+    Status: "Enabled",
+    StatusUpdateDateTime: a.openingDate + "T00:00:00Z",
+    Nickname: a.nickname,
+    AccountHolderName: persona.kyc.fullName,
+    OpeningDate: a.openingDate + "T00:00:00Z",
+    MaturityDate: a.maturityDate ? a.maturityDate + "T00:00:00Z" : null,
+    Account: a.iban ? [{ SchemeName: "AE.IBAN", Identification: a.iban, Name: persona.kyc.fullName }]
+                    : [{ SchemeName: "PAN", Identification: a.pan, Name: persona.kyc.fullName }],
+    Servicer: { SchemeName: "BICFI", Identification: "ADCBAEAA" }
+  }));
+}
+
+function genBalances(persona, account) {
+  const balances = [];
+  const today = new Date("2026-04-28T00:00:00Z");
+  // emit ClosingBooked for the last 90 days
+  const r = rng(persona.id, "balances", account.id);
+  let bal = account.subType === "CreditCard" ? -rband(r, [2000, 12000])
+          : account.subType === "Mortgage"   ? -1900000 + rband(r, [-50000, 50000])
+          : account.subType === "Savings"    ? rband(r, [80000, 350000])
+          :                                    rband(r, [4000, 22000]);
+  for (let i = 90; i >= 0; i -= 7) {
+    const d = new Date(today.getTime() - i*86400000);
+    bal += rband(r, [-2500, 4000]);
+    balances.push({
+      Amount: { Amount: fmtAed(Math.abs(bal)), Currency: account.currency },
+      CreditDebitIndicator: bal >= 0 ? "Credit" : "Debit",
+      Type: "ClosingBooked",
+      DateTime: fmtIso(d),
+      CreditLine: account.creditLimit ? [{ Included: true, Type: "Credit", Amount: { Amount: fmtAed(account.creditLimit), Currency: account.currency } }] : null
+    });
+  }
+  return balances;
+}
+
+function genTransactions(persona, account) {
+  // Only generate transactions for transactional accounts; savings/mortgage stay quiet.
+  if (account.subType !== "CurrentAccount" && account.subType !== "CreditCard") return [];
+
+  const txns = [];
+  const r = rng(persona.id, "txns", account.id);
+  const today = new Date("2026-04-28T00:00:00Z");
+  const months = 3;
+  let txnCounter = 1;
+
+  // Identify the salary-receiving account: AED current account, prefer the one nicknamed "Salary*"
+  const salaryAccount = persona.accounts.find(a => a.subType === "CurrentAccount" && a.currency === "AED" && /salary/i.test(a.nickname || "")) ||
+                        persona.accounts.find(a => a.subType === "CurrentAccount" && a.currency === "AED");
+  const isSalaryAccount = salaryAccount && salaryAccount.id === account.id;
+
+  for (let m = 0; m < months; m++) {
+    const monthStart = new Date(today); monthStart.setUTCMonth(today.getUTCMonth() - m);
+
+    // Salary credit (only on the persona's salary account)
+    if (persona.salary && isSalaryAccount) {
+      const d = new Date(monthStart); d.setUTCDate(persona.salary.day);
+      txns.push(buildTxn(persona, account, d, "Credit", "TransferIn", "SalaryPayment", persona.salary.amount, `Salary — ${persona.salary.employer}`, "salary", txnCounter++, r));
+    }
+
+    // SME cash deposits
+    if (persona.cashHeavy && account.subType === "CurrentAccount") {
+      const n = rint(r, persona.spend.cashIn[2], persona.spend.cashIn[3]);
+      for (let i = 0; i < n; i++) {
+        const d = new Date(monthStart); d.setUTCDate(rint(r, 1, 28));
+        const a = rband(r, [persona.spend.cashIn[0], persona.spend.cashIn[1]]);
+        txns.push(buildTxn(persona, account, d, "Credit", "CashDeposit", "Other", a, "Cash deposit — branch", "cash", txnCounter++, r));
+      }
+      // Customer transfers in
+      const ni = rint(r, persona.spend.customerIn[2], persona.spend.customerIn[3]);
+      for (let i = 0; i < ni; i++) {
+        const d = new Date(monthStart); d.setUTCDate(rint(r, 1, 28));
+        const a = rband(r, [persona.spend.customerIn[0], persona.spend.customerIn[1]]);
+        txns.push(buildTxn(persona, account, d, "Credit", "TransferIn", "TransferToOther", a, pick(r,["Customer payment INV-2381","Customer payment INV-2412","Settlement","Customer payment"]), "biz", txnCounter++, r));
+      }
+      // Supplier transfers out
+      const no = rint(r, persona.spend.supplierOut[2], persona.spend.supplierOut[3]);
+      for (let i = 0; i < no; i++) {
+        const d = new Date(monthStart); d.setUTCDate(rint(r, 1, 28));
+        const a = rband(r, [persona.spend.supplierOut[0], persona.spend.supplierOut[1]]);
+        txns.push(buildTxn(persona, account, d, "Debit", "TransferOut", "TransferToOther", a, pick(r,["Asia Wholesale FZE","Gulf Foods LLC","Inventory restock"]), "biz", txnCounter++, r));
+      }
+      // Salary disbursements
+      const ns = rint(r, persona.spend.salaryOut[2], persona.spend.salaryOut[3]);
+      for (let i = 0; i < ns; i++) {
+        const d = new Date(monthStart); d.setUTCDate(25);
+        const a = rband(r, [persona.spend.salaryOut[0], persona.spend.salaryOut[1]]);
+        txns.push(buildTxn(persona, account, d, "Debit", "TransferOut", "SalaryPayment", a, "Employee payroll", "biz", txnCounter++, r));
+      }
+    }
+
+    // Direct debits
+    if (account.subType === "CurrentAccount") {
+      persona.directDebits.forEach(dd => {
+        const d = new Date(monthStart); d.setUTCDate(dd.day);
+        const a = rband(r, dd.amountBand);
+        txns.push(buildTxn(persona, account, d, "Debit", "DirectDebit", "Other", a, dd.name, "dd", txnCounter++, r));
+      });
+      // Standing orders
+      persona.standingOrders.forEach(so => {
+        const d = new Date(monthStart); d.setUTCDate(so.day);
+        txns.push(buildTxn(persona, account, d, "Debit", "StandingOrder", "TransferToOther", so.amount, so.ref, "so", txnCounter++, r));
+      });
+    }
+
+    // Card spend (current account: occasional debit; credit card: most spend)
+    const isCard = account.subType === "CreditCard";
+    const cats = persona.cashHeavy ? [["cardOps","CardPayment","Purchase"]]
+              : persona.fxActivity ? [["groceries","CardPayment","Purchase"],["fuel","CardPayment","Purchase"],["dining","CardPayment","Purchase"],["shopping","CardPayment","Purchase"],["travel","CardPayment","Purchase"]]
+              : [["groceries","CardPayment","Purchase"],["fuel","CardPayment","Purchase"],["dining","CardPayment","Purchase"],["shopping","CardPayment","Purchase"]];
+    cats.forEach(([k, type, sub]) => {
+      const sp = persona.spend[k];
+      if (!sp) return;
+      const n = rint(r, sp[2], sp[3]);
+      for (let i = 0; i < n; i++) {
+        if (!isCard && r() > 0.3) continue; // most card spend hits the credit card
+        if (isCard && account.subType === "CreditCard" && r() < 0.05) continue;
+        const d = new Date(monthStart); d.setUTCDate(rint(r, 1, 28));
+        const a = rband(r, [sp[0], sp[1]]);
+        const merchant = pickMerchant(r, k);
+        txns.push(buildTxn(persona, account, d, "Debit", "CardPayment", "Purchase", a, merchant.name, k, txnCounter++, r, merchant));
+      }
+    });
+
+    // FX activity
+    if (persona.fxActivity && account.subType === "CurrentAccount" && account.currency === "AED") {
+      const nfx = rint(r, persona.spend.fxBuy[2], persona.spend.fxBuy[3]);
+      for (let i = 0; i < nfx; i++) {
+        const d = new Date(monthStart); d.setUTCDate(rint(r, 1, 28));
+        const a = rband(r, [persona.spend.fxBuy[0], persona.spend.fxBuy[1]]);
+        const t = buildTxn(persona, account, d, "Debit", "TransferOut", "TransferToSelf", a, "FX purchase USD", "fx", txnCounter++, r);
+        t.CurrencyExchange = {
+          SourceCurrency: "AED",
+          TargetCurrency: "USD",
+          UnitCurrency: "USD",
+          ExchangeRate: 0.272,
+          ContractIdentification: "FX-" + rint(r, 100000, 999999)
+        };
+        txns.push(t);
+      }
+    }
+
+    // ATM
+    if (account.subType === "CurrentAccount" && persona.spend.atm) {
+      const n = rint(r, persona.spend.atm[2], persona.spend.atm[3]);
+      for (let i = 0; i < n; i++) {
+        const d = new Date(monthStart); d.setUTCDate(rint(r, 1, 28));
+        const a = Math.round(rband(r, [persona.spend.atm[0], persona.spend.atm[1]])/100)*100;
+        txns.push(buildTxn(persona, account, d, "Debit", "CashWithdrawal", "Other", a, "ATM withdrawal", "atm", txnCounter++, r));
+      }
+    }
+  }
+
+  // sort newest first
+  txns.sort((a,b) => b.BookingDateTime.localeCompare(a.BookingDateTime));
+  return txns;
+}
+
+function pickMerchant(r, category) {
+  const map = {
+    groceries: [{ name:"Carrefour MOE", mcc:"5411" },{ name:"Lulu Hypermarket", mcc:"5411" },{ name:"Spinneys Dubai Mall", mcc:"5411" },{ name:"Choithrams JLT", mcc:"5411" }],
+    fuel:      [{ name:"ADNOC Service Station", mcc:"5541" },{ name:"ENOC Sheikh Zayed Rd", mcc:"5541" },{ name:"EPPCO", mcc:"5541" }],
+    dining:    [{ name:"Talabat Online Order", mcc:"5814" },{ name:"Carluccio's DIFC", mcc:"5812" },{ name:"Eataly Dubai Mall", mcc:"5812" },{ name:"Starbucks JLT", mcc:"5814" },{ name:"Zaroob Restaurant", mcc:"5812" }],
+    shopping:  [{ name:"Amazon AE", mcc:"5969" },{ name:"Noon", mcc:"5969" },{ name:"IKEA Festival City", mcc:"5712" },{ name:"H&M Dubai Mall", mcc:"5651" }],
+    travel:    [{ name:"Emirates Airlines", mcc:"3009" },{ name:"Marriott Bonvoy", mcc:"3501" },{ name:"Booking.com", mcc:"4722" }],
+    cardOps:   [{ name:"Office supplies — Sharaf DG", mcc:"5732" },{ name:"Logistics — Aramex", mcc:"4214" }]
+  };
+  return pick(r, map[category] || [{ name:"Unknown merchant", mcc:"5999" }]);
+}
+
+function buildTxn(persona, account, date, dir, type, subType, amount, narrative, kind, idx, r, merchant) {
+  const t = {
+    TransactionId: `${account.id}-${(idx).toString().padStart(6,"0")}`,
+    CreditDebitIndicator: dir,
+    Status: "Booked",
+    BookingDateTime: fmtIso(date),
+    TransactionDateTime: fmtIso(date),
+    TransactionType: type,
+    SubTransactionType: subType,
+    PaymentModes: type === "CardPayment" ? "Other" : (subType === "TransferToOther" ? "IPS" : "NEFT"),
+    Amount: { Amount: fmtAed(Math.abs(amount)), Currency: account.currency },
+    ValueDateTime: fmtIso(date),
+    TransactionInformation: narrative,
+    StatementReference: "REF-" + rint(r, 100000, 999999),
+    MerchantDetails: merchant ? { MerchantName: merchant.name, MerchantCategoryCode: merchant.mcc } : null,
+    CreditorAgent: null, DebtorAgent: null, CreditorAccount: null,
+    CardInstrument: account.subType === "CreditCard" || (type === "CardPayment") ? { CardSchemeName: pick(r, ["VISA","MasterCard","AmericanExpress"]), AuthorisationType: pick(r,["Contactless","PIN","ConsumerDevice"]), Identification: account.pan || "************"+rint(r,1000,9999) } : null,
+    CurrencyExchange: null,
+    GeoLocation: type === "CardPayment" ? { Latitude: (25.1 + r()*0.4).toFixed(4), Longitude: (55.1 + r()*0.5).toFixed(4) } : null,
+    Balance: null,
+    BankTransactionCode: { Code: "PMNT", SubCode: type === "CardPayment" ? "POSP" : "RCDT" },
+    Flags: null
+  };
+  if (type === "TransferOut" && subType === "TransferToOther") {
+    t.CreditorAgent = { SchemeName: "BICFI", Identification: pick(r,["EBILAEAD","NBADAEAA","FGBMAEAA","HSBCAEAD"]) };
+    t.CreditorAccount = { SchemeName: "AE.IBAN", Identification: "AE" + rint(r,10,99).toString() + "0260" + rint(r,1000000000000000,9999999999999999).toString().slice(0,16), Name: pick(r,["Beneficiary","Counterparty"]) };
+  }
+  if (type === "TransferIn") {
+    t.DebtorAgent = { SchemeName: "BICFI", Identification: pick(r,["EBILAEAD","NBADAEAA","FGBMAEAA","HSBCAEAD"]) };
+  }
+  return t;
+}
+
+function genStandingOrders(persona, account) {
+  if (account.subType !== "CurrentAccount") return [];
+  return persona.standingOrders.map((so, i) => ({
+    StandingOrderId: `${account.id}-SO-${(i+1).toString().padStart(3,"0")}`,
+    Frequency: "MNTH",
+    NextPaymentAmount: { Amount: fmtAed(so.amount), Currency: account.currency },
+    NextPaymentDateTime: `2026-05-${so.day.toString().padStart(2,"0")}T00:00:00Z`,
+    Reference: so.ref,
+    CreditorAccount: { SchemeName: "AE.IBAN", Identification: "AE350260055000" + (1000000000+i*7).toString(), Name: so.ref.split(" — ")[0] },
+    FirstPaymentDateTime: "2024-04-" + so.day.toString().padStart(2,"0") + "T00:00:00Z"
+  }));
+}
+
+function genDirectDebits(persona, account) {
+  if (account.subType !== "CurrentAccount") return [];
+  return persona.directDebits.map((dd, i) => ({
+    DirectDebitId: `${account.id}-DD-${(i+1).toString().padStart(3,"0")}`,
+    MandateIdentification: "MND-" + (200000+i*13),
+    DirectDebitStatusCode: "Active",
+    Name: dd.name,
+    PreviousPaymentDateTime: `2026-04-${dd.day.toString().padStart(2,"0")}T00:00:00Z`,
+    PreviousPaymentAmount: { Amount: fmtAed((dd.amountBand[0]+dd.amountBand[1])/2), Currency: account.currency }
+  }));
+}
+
+function genBeneficiaries(persona, account) {
+  if (account.subType !== "CurrentAccount") return [];
+  return persona.beneficiaries.map((b, i) => ({
+    BeneficiaryId: `${account.id}-BEN-${(i+1).toString().padStart(3,"0")}`,
+    Reference: b,
+    CreditorAccount: { SchemeName: i % 3 === 0 ? "AE.IBAN" : "BBAN", Identification: "AE" + rint(mulberry32(i*97+1), 10, 99) + "02600660001" + (1000+i*53).toString(), Name: b.split(" — ")[0] },
+    BeneficiaryType: i === 0 ? "Trusted" : "Ordinary"
+  }));
+}
+
+/* ============================================================
+   6. LFI PROFILE: redact optional fields
+============================================================ */
+function applyLfiProfile(payload, schemaName, lfi) {
+  const probs = POPULATE_PROB[lfi];
+  const fields = SPEC[schemaName];
+  if (!fields) return payload;
+  if (Array.isArray(payload)) return payload.map((row, i) => redactRow(row, fields, probs, schemaName + ":" + i + ":" + lfi));
+  return redactRow(payload, fields, probs, schemaName + ":" + lfi);
+}
+function redactRow(row, fields, probs, salt) {
+  const out = {};
+  const r = mulberry32(hashSeed(salt));
+  for (const [k, meta] of Object.entries(fields)) {
+    let v = row[k];
+    if (meta.status === "mandatory") { out[k] = v; continue; }
+    if (meta.status === "optional") {
+      const p = probs[meta.band || "common"];
+      if (v == null) { out[k] = null; continue; }
+      out[k] = r() < p ? v : null;
+    } else if (meta.status === "conditional") {
+      if (v == null) { out[k] = null; continue; }
+      // conditional fields gated by population probability of band, but only if rule is satisfied (we trust generator)
+      const p = probs[meta.band || "common"];
+      out[k] = r() < p ? v : null;
+    } else {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
+/* ============================================================
+   7. UI STATE & RENDER
+============================================================ */
+const state = {
+  personaId: PERSONAS[0].id,
+  lfi: "median",
+  view: "rendered", // 'rendered' | 'raw'
+  endpoint: { type: "accounts" }, // {type:"accounts"|"balances"|"transactions"|"standing-orders"|"direct-debits"|"beneficiaries", accountId?:string}
+  bundle: null,
+  selectedField: null
+};
+
+function getPersona() { return PERSONAS.find(p => p.id === state.personaId); }
+
+function buildBundle() {
+  const persona = getPersona();
+  const lfi = state.lfi;
+  const accounts = applyLfiProfile(genAccounts(persona), "Account", lfi);
+  const perAccount = {};
+  persona.accounts.forEach(a => {
+    perAccount[a.id] = {
+      balances:        applyLfiProfile(genBalances(persona, a), "Balance", lfi),
+      transactions:    applyLfiProfile(genTransactions(persona, a), "Transaction", lfi),
+      standingOrders:  applyLfiProfile(genStandingOrders(persona, a), "StandingOrder", lfi),
+      directDebits:    applyLfiProfile(genDirectDebits(persona, a), "DirectDebit", lfi),
+      beneficiaries:   applyLfiProfile(genBeneficiaries(persona, a), "Beneficiary", lfi)
+    };
+  });
+  state.bundle = { accounts, perAccount, persona };
+}
+
+function computeCoverage() {
+  const b = state.bundle;
+  if (!b) return 0;
+  let total = 0, populated = 0;
+  function tally(rows, schemaName) {
+    const spec = SPEC[schemaName]; if (!spec) return;
+    rows.forEach(row => {
+      Object.entries(spec).forEach(([k, meta]) => {
+        if (meta.status === "optional") {
+          total++;
+          if (row[k] != null) populated++;
+        }
+      });
+    });
+  }
+  tally(b.accounts, "Account");
+  Object.values(b.perAccount).forEach(p => {
+    tally(p.balances, "Balance");
+    tally(p.transactions, "Transaction");
+    tally(p.standingOrders, "StandingOrder");
+    tally(p.directDebits, "DirectDebit");
+    tally(p.beneficiaries, "Beneficiary");
+  });
+  return total === 0 ? 0 : Math.round(100 * populated / total);
+}
+
+/* ===== rendering ===== */
+function render() {
+  buildBundle();
+  renderPersonaList();
+  renderNav();
+  renderPayload();
+  renderCoverage();
+}
+
+function renderPersonaList() {
+  const host = document.getElementById("persona-list");
+  host.innerHTML = "";
+  PERSONAS.forEach(p => {
+    const div = document.createElement("div");
+    div.className = "persona-item" + (p.id === state.personaId ? " active" : "");
+    div.innerHTML = `<div class="name">${p.name}</div><div class="archetype">${p.archetype}</div>`;
+    div.onclick = () => { state.personaId = p.id; state.endpoint = { type: "accounts" }; state.selectedField = null; render(); };
+    host.appendChild(div);
+  });
+  document.getElementById("persona-select").value = state.personaId;
+}
+
+function renderNav() {
+  const host = document.getElementById("nav-tree");
+  host.innerHTML = "";
+  const persona = getPersona();
+  // global "All accounts" group
+  const accountsItem = mkNavEndpoint("All accounts", "GET /accounts", { type: "accounts" }, state.bundle.accounts.length);
+  host.appendChild(accountsItem);
+
+  persona.accounts.forEach(a => {
+    const card = document.createElement("div");
+    card.className = "nav-account";
+    const label = document.createElement("div");
+    label.className = "nav-account-label";
+    label.innerHTML = `<span class="acct-name">${a.nickname || a.subType}</span>${a.iban || a.pan}<br><span style="opacity:0.7">${a.subType} · ${a.currency}</span>`;
+    card.appendChild(label);
+    const per = state.bundle.perAccount[a.id];
+    [
+      ["Balances",       "balances",       `/accounts/{id}/balances`,        per.balances.length],
+      ["Transactions",   "transactions",   `/accounts/{id}/transactions`,    per.transactions.length],
+      ["Standing orders","standingOrders", `/accounts/{id}/standing-orders`, per.standingOrders.length],
+      ["Direct debits",  "directDebits",   `/accounts/{id}/direct-debits`,   per.directDebits.length],
+      ["Beneficiaries",  "beneficiaries",  `/accounts/{id}/beneficiaries`,   per.beneficiaries.length]
+    ].forEach(([label, key, path, n]) => {
+      card.appendChild(mkNavEndpoint(label, "GET " + path, { type: key, accountId: a.id }, n));
+    });
+    host.appendChild(card);
+  });
+}
+
+function mkNavEndpoint(label, urlLabel, ep, count) {
+  const el = document.createElement("div");
+  el.className = "nav-endpoint";
+  if (state.endpoint.type === ep.type && state.endpoint.accountId === ep.accountId) el.classList.add("active");
+  el.innerHTML = `<span>${label}</span><span class="count">${count}</span>`;
+  el.title = urlLabel;
+  el.onclick = () => { state.endpoint = ep; state.selectedField = null; renderPayload(); document.querySelectorAll(".nav-endpoint").forEach(n=>n.classList.remove("active")); el.classList.add("active"); };
+  return el;
+}
+
+function renderCoverage() {
+  const pct = computeCoverage();
+  document.getElementById("coverage-fill").style.width = pct + "%";
+  document.getElementById("coverage-pct").textContent = pct + "%";
+}
+
+function endpointPath() {
+  const ep = state.endpoint;
+  if (ep.type === "accounts") return "/accounts";
+  const a = getPersona().accounts.find(x => x.id === ep.accountId);
+  const id = a ? a.id : "{id}";
+  if (ep.type === "balances") return `/accounts/${id}/balances`;
+  if (ep.type === "transactions") return `/accounts/${id}/transactions`;
+  if (ep.type === "standingOrders") return `/accounts/${id}/standing-orders`;
+  if (ep.type === "directDebits") return `/accounts/${id}/direct-debits`;
+  if (ep.type === "beneficiaries") return `/accounts/${id}/beneficiaries`;
+}
+
+function activePayload() {
+  const ep = state.endpoint;
+  if (ep.type === "accounts") return { rows: state.bundle.accounts, schema: "Account" };
+  const per = state.bundle.perAccount[ep.accountId];
+  const map = { balances:"Balance", transactions:"Transaction", standingOrders:"StandingOrder", directDebits:"DirectDebit", beneficiaries:"Beneficiary" };
+  return { rows: per[ep.type], schema: map[ep.type] };
+}
+
+function renderPayload() {
+  document.getElementById("payload-title").innerHTML = `<span class="verb">GET</span> ${endpointPath()}`;
+  const body = document.getElementById("payload-body");
+  body.innerHTML = "";
+  const { rows, schema } = activePayload();
+  if (state.view === "raw") {
+    body.appendChild(renderRawJson(rows));
+    return;
+  }
+  // rendered
+  if (schema === "Account") body.appendChild(renderAccountCards(rows));
+  else if (schema === "Balance") body.appendChild(renderBalancesView(rows));
+  else if (schema === "Transaction") body.appendChild(renderTransactionsTable(rows));
+  else body.appendChild(renderGenericList(rows, schema));
+
+  body.appendChild(renderAbsentSummary(rows, schema));
+}
+
+function renderAccountCards(rows) {
+  const wrap = document.createElement("div");
+  wrap.className = "card-grid";
+  rows.forEach((row, i) => {
+    const card = document.createElement("div");
+    card.className = "resource-card";
+    const idents = row.Account ? row.Account.map(id => `${id.SchemeName}: ${id.Identification}`).join("<br>") : "—";
+    card.innerHTML = `
+      <div class="title">${row.Nickname || row.AccountSubType} <span class="badge mand">M</span></div>
+      <div class="subtitle">${row.AccountSubType} · ${row.Currency} · ${row.AccountType}</div>
+      <div class="row"><span class="key">${fkey("Account","AccountId")}</span><span class="val">${row.AccountId}</span></div>
+      <div class="row"><span class="key">${fkey("Account","Account")}</span><span class="val" style="font-size:11px">${idents}</span></div>
+      ${kvRow("Account","Status", row.Status)}
+      ${kvRow("Account","AccountHolderName", row.AccountHolderName)}
+      ${kvRow("Account","OpeningDate", fmtDate(row.OpeningDate))}
+      ${kvRow("Account","MaturityDate", fmtDate(row.MaturityDate))}
+      ${kvRow("Account","Servicer", row.Servicer ? row.Servicer.Identification : null)}
+    `;
+    wrap.appendChild(card);
+  });
+  return wrap;
+}
+
+function fkey(schema, name) {
+  const meta = SPEC[schema][name];
+  const badgeCls = meta.status === "mandatory" ? "mand" : (meta.status === "conditional" ? "cond" : "opt");
+  const badgeLbl = meta.status === "mandatory" ? "M" : (meta.status === "conditional" ? "C" : "O");
+  return `<button onclick="selectField('${schema}','${name}')">${name}</button><span class="badge ${badgeCls}" onclick="selectField('${schema}','${name}')">${badgeLbl}</span>`;
+}
+function kvRow(schema, name, val) {
+  if (val === undefined || val === null || val === "")
+    return `<div class="row"><span class="key">${fkey(schema,name)}</span><span class="val null-cell">null</span></div>`;
+  return `<div class="row"><span class="key">${fkey(schema,name)}</span><span class="val">${esc(String(val))}</span></div>`;
+}
+function fmtDate(s) { if (!s) return null; return s.split("T")[0]; }
+function esc(s) { return String(s).replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"})[c]); }
+
+function renderBalancesView(rows) {
+  const wrap = document.createElement("div");
+  // chart
+  if (rows.length > 0) {
+    const chart = document.createElement("div");
+    chart.className = "balance-chart";
+    chart.innerHTML = `<div class="chart-title">Balance — last 90 days</div>
+                       <div class="chart-sub">${rows.length} ClosingBooked snapshots, weekly. Synthetic.</div>`;
+    chart.appendChild(buildBalanceSvg(rows));
+    wrap.appendChild(chart);
+  }
+  // also show a key-value table for the most recent balance
+  const recent = rows[rows.length - 1] || rows[0];
+  if (recent) {
+    const card = document.createElement("div");
+    card.className = "resource-card";
+    card.innerHTML = `<div class="title">Most recent balance <span class="badge mand">M</span></div>`;
+    card.innerHTML += kvRow("Balance","Amount", recent.Amount ? `${recent.Amount.Amount} ${recent.Amount.Currency}` : null);
+    card.innerHTML += kvRow("Balance","CreditDebitIndicator", recent.CreditDebitIndicator);
+    card.innerHTML += kvRow("Balance","Type", recent.Type);
+    card.innerHTML += kvRow("Balance","DateTime", recent.DateTime);
+    card.innerHTML += kvRow("Balance","CreditLine", recent.CreditLine ? `${recent.CreditLine[0].Amount.Amount} ${recent.CreditLine[0].Amount.Currency} (${recent.CreditLine[0].Type})` : null);
+    wrap.appendChild(card);
+  }
+  return wrap;
+}
+
+function buildBalanceSvg(rows) {
+  const W = 720, H = 180, padL = 50, padR = 12, padT = 8, padB = 22;
+  const xs = rows.map((_, i) => i / Math.max(1, rows.length-1));
+  const ys = rows.map(r => {
+    const v = parseFloat(r.Amount?.Amount || "0");
+    return r.CreditDebitIndicator === "Debit" ? -v : v;
+  });
+  const ymin = Math.min(0, ...ys);
+  const ymax = Math.max(0, ...ys, 1);
+  const sx = i => padL + i*(W-padL-padR);
+  const sy = v => padT + (1 - (v - ymin)/(ymax - ymin)) * (H-padT-padB);
+  let path = "";
+  ys.forEach((v,i) => { path += (i===0 ? "M":"L") + sx(xs[i]).toFixed(1) + "," + sy(v).toFixed(1); });
+  const svgNS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(svgNS, "svg");
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.setAttribute("preserveAspectRatio", "none");
+  svg.style.height = "180px";
+  // axis
+  const axis = document.createElementNS(svgNS, "line");
+  axis.setAttribute("x1", padL); axis.setAttribute("x2", W-padR);
+  const yz = sy(0);
+  axis.setAttribute("y1", yz); axis.setAttribute("y2", yz);
+  axis.setAttribute("stroke", "#e7e5e4");
+  svg.appendChild(axis);
+  // path
+  const p = document.createElementNS(svgNS, "path");
+  p.setAttribute("d", path);
+  p.setAttribute("fill", "none");
+  p.setAttribute("stroke", "#1d4ed8");
+  p.setAttribute("stroke-width", "1.6");
+  svg.appendChild(p);
+  // labels
+  [ymin, (ymin+ymax)/2, ymax].forEach(v => {
+    const t = document.createElementNS(svgNS, "text");
+    t.setAttribute("x", padL - 6); t.setAttribute("y", sy(v) + 3);
+    t.setAttribute("text-anchor", "end");
+    t.setAttribute("font-size", "10");
+    t.setAttribute("fill", "#a8a29e");
+    t.setAttribute("font-family", "ui-monospace, monospace");
+    t.textContent = Math.round(v).toLocaleString();
+    svg.appendChild(t);
+  });
+  return svg;
+}
+
+function renderTransactionsTable(rows) {
+  const wrap = document.createElement("div");
+  // small filter row (date + type)
+  const filterBar = document.createElement("div");
+  filterBar.style.cssText = "margin-bottom:10px; color:var(--ink-3); font-size:11.5px;";
+  filterBar.innerHTML = `Showing <strong style="color:var(--ink)">${rows.length}</strong> transactions over the last 3 months. Click any column header (e.g. <code style="font-family:var(--mono)">MerchantDetails</code>) for the field card.`;
+  wrap.appendChild(filterBar);
+  const t = document.createElement("table");
+  t.className = "payload-table";
+  t.innerHTML = `<thead><tr>
+    <th>${fkey("Transaction","BookingDateTime")}</th>
+    <th>${fkey("Transaction","TransactionType")}</th>
+    <th>${fkey("Transaction","SubTransactionType")}</th>
+    <th>${fkey("Transaction","TransactionInformation")}</th>
+    <th>${fkey("Transaction","MerchantDetails")}</th>
+    <th style="text-align:right">${fkey("Transaction","Amount")}</th>
+    <th>${fkey("Transaction","CardInstrument")}</th>
+  </tr></thead><tbody></tbody>`;
+  const tb = t.querySelector("tbody");
+  rows.slice(0, 200).forEach(r => {
+    const tr = document.createElement("tr");
+    tr.className = r.CreditDebitIndicator === "Credit" ? "txn-credit" : "txn-debit";
+    const amt = (r.CreditDebitIndicator === "Credit" ? "+" : "−") + (r.Amount ? r.Amount.Amount : "—") + " " + (r.Amount ? r.Amount.Currency : "");
+    tr.innerHTML = `
+      <td>${r.BookingDateTime ? r.BookingDateTime.split("T")[0] : "—"}</td>
+      <td>${r.TransactionType || nullCell()}</td>
+      <td>${r.SubTransactionType || nullCell()}</td>
+      <td>${r.TransactionInformation ? esc(r.TransactionInformation) : nullCell()}</td>
+      <td>${r.MerchantDetails ? esc(r.MerchantDetails.MerchantName) + " <span style='color:var(--ink-4)'>(" + (r.MerchantDetails.MerchantCategoryCode || "—") + ")</span>" : nullCell()}</td>
+      <td class="amount">${amt}</td>
+      <td>${r.CardInstrument ? r.CardInstrument.CardSchemeName : nullCell()}</td>
+    `;
+    tb.appendChild(tr);
+  });
+  wrap.appendChild(t);
+  if (rows.length > 200) {
+    const note = document.createElement("div");
+    note.style.cssText = "color:var(--ink-3); font-size:11px; padding-top:8px;";
+    note.textContent = `Showing first 200 of ${rows.length}. Switch to Raw JSON for the full payload.`;
+    wrap.appendChild(note);
+  }
+  return wrap;
+}
+function nullCell() { return `<span class="null-cell">null</span>`; }
+
+function renderGenericList(rows, schema) {
+  const wrap = document.createElement("div");
+  if (rows.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "empty-endpoint";
+    empty.textContent = "No items for this account / endpoint combination.";
+    wrap.appendChild(empty);
+    return wrap;
+  }
+  const grid = document.createElement("div");
+  grid.className = "card-grid";
+  rows.forEach(row => {
+    const card = document.createElement("div");
+    card.className = "resource-card";
+    const titleField = schema === "StandingOrder" ? row.Reference : (schema === "DirectDebit" ? row.Name : row.Reference);
+    card.innerHTML = `<div class="title">${titleField || "(no label)"} <span class="badge mand">M</span></div>`;
+    Object.entries(SPEC[schema]).forEach(([k,m]) => {
+      let val = row[k];
+      if (val && typeof val === "object" && !Array.isArray(val)) {
+        if (val.Amount && val.Currency) val = val.Amount + " " + val.Currency;
+        else if (val.Identification) val = val.Identification + (val.Name ? " (" + val.Name + ")" : "");
+      }
+      card.innerHTML += kvRow(schema, k, val == null ? null : val);
+    });
+    grid.appendChild(card);
+  });
+  wrap.appendChild(grid);
+  return wrap;
+}
+
+function renderAbsentSummary(rows, schema) {
+  const spec = SPEC[schema]; if (!spec) return document.createElement("div");
+  const optional = Object.entries(spec).filter(([k,m])=>m.status==="optional");
+  if (optional.length === 0) return document.createElement("div");
+  const popCount = {};
+  optional.forEach(([k,m]) => {
+    let pop = 0; rows.forEach(r => { if (r[k] != null) pop++; });
+    popCount[k] = { name: k, pop, total: rows.length, band: m.band };
+  });
+  const absent = Object.values(popCount).filter(x => x.pop === 0);
+  const partial = Object.values(popCount).filter(x => x.pop > 0 && x.pop < x.total);
+  const det = document.createElement("details");
+  det.className = "absent-fields";
+  det.innerHTML = `<summary>Optional-field summary — ${Object.values(popCount).filter(x=>x.pop>0).length} populated · ${absent.length} absent · ${partial.length} partial</summary>
+    <ul>${Object.values(popCount).map(x => `<li><span class="badge ${x.pop===0?'null':'opt'}">${x.band||'optional'}</span> <code>${x.name}</code> · ${x.pop}/${x.total}</li>`).join("")}</ul>`;
+  return det;
+}
+
+function renderRawJson(payload) {
+  const pre = document.createElement("pre");
+  pre.className = "raw-json";
+  pre.innerHTML = colorizeJson(JSON.stringify(payload, null, 2));
+  return pre;
+}
+function colorizeJson(s) {
+  s = esc(s);
+  return s
+    .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*")(\s*:)/g, '<span class="k">$1</span>$3')
+    .replace(/: ("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*")/g, ': <span class="s">$1</span>')
+    .replace(/: (-?\d+(\.\d+)?)/g, ': <span class="n">$1</span>')
+    .replace(/: (true|false)/g, ': <span class="b">$1</span>')
+    .replace(/: null/g, ': <span class="nu">null</span>');
+}
+
+/* ===== field card ===== */
+function selectField(schema, name) {
+  state.selectedField = { schema, name };
+  renderFieldCard();
+  // Narrow-mode: open the field-detail slide-over
+  const fd = document.querySelector('.pane.field-detail');
+  if (fd) fd.classList.add('open');
+}
+// Click anywhere outside field-detail to close it in narrow mode
+document.addEventListener('click', (e) => {
+  const fd = document.querySelector('.pane.field-detail');
+  if (!fd || !fd.classList.contains('open')) return;
+  if (fd.contains(e.target)) return;
+  if (e.target.closest('button') && e.target.closest('button').onclick) return;
+  // Don't close when clicking field-name buttons (those are how you OPEN it)
+  if (e.target.closest('.field-name') || e.target.matches('.badge')) return;
+  fd.classList.remove('open');
+});
+function renderFieldCard() {
+  const host = document.getElementById("field-card-host");
+  if (!state.selectedField) {
+    host.innerHTML = '<div class="fc-empty">Click any field name in the rendered view to see its definition, type, populate-rate guidance, and how it behaves under different LFI profiles.</div>';
+    return;
+  }
+  const { schema, name } = state.selectedField;
+  const meta = SPEC[schema][name];
+  const badgeCls = meta.status === "mandatory" ? "mand" : (meta.status === "conditional" ? "cond" : "opt");
+  const badgeLbl = meta.status.toUpperCase();
+  const enumHtml = meta.enumValues ? `<div class="fc-section-title">Enum values</div><div style="font-family:var(--mono);font-size:11px;line-height:1.7">${meta.enumValues.map(e=>`<span class="badge mand" style="background:#f5f5f4;color:var(--ink-2);font-weight:500">${e}</span>`).join(" ")}</div>` : "";
+  const condHtml = meta.condRule ? `<div class="fc-row"><span class="fc-key">Conditional rule</span><span class="fc-val">${meta.condRule}</span></div>` : "";
+  const bandHtml = meta.band ? `<span class="fc-band-pill ${meta.band}">${meta.band}</span>` : "";
+  const tone = meta.tone === "good" ? "tone-good" : (meta.tone === "rare" ? "tone-rare" : "tone-warn");
+
+  // pull a sample value from current payload
+  const { rows } = activePayload();
+  let sample = null;
+  for (const r of rows) {
+    if (r && r[name] != null) {
+      sample = r[name];
+      if (typeof sample === "object") {
+        try { sample = JSON.stringify(sample).slice(0, 80); } catch(e){}
+      } else sample = String(sample);
+      break;
+    }
+  }
+
+  host.innerHTML = `
+    <div class="field-card">
+      <div class="fc-name">${name} <span class="badge ${badgeCls}">${badgeLbl}</span></div>
+      <div class="fc-path">${schema} · ${endpointPath()}</div>
+      <div class="fc-row"><span class="fc-key">Type</span><span class="fc-val">${meta.type}</span></div>
+      ${condHtml}
+      ${meta.band ? `<div class="fc-row"><span class="fc-key">Populate band</span><span class="fc-val">${bandHtml}</span></div>` : ""}
+      <div class="fc-row"><span class="fc-key">Sample (this persona)</span><span class="fc-val">${sample ? esc(sample) : '<span style="color:var(--ink-4)">null under current LFI profile</span>'}</span></div>
+      ${enumHtml}
+      <div class="fc-section-title">Description</div>
+      <div style="font-size:12px;color:var(--ink-2);line-height:1.5">${meta.desc}</div>
+      <div class="fc-section-title">What to expect from real LFIs</div>
+      <div class="fc-guidance ${tone}">${meta.lfiNote}</div>
+      <div class="fc-section-title">Behaviour by LFI profile</div>
+      <div style="font-size:11.5px;color:var(--ink-2);line-height:1.6">
+        ${profileLine("Rich", meta)}<br>
+        ${profileLine("Median", meta)}<br>
+        ${profileLine("Sparse", meta)}
+      </div>
+    </div>
+  `;
+}
+function profileLine(label, meta) {
+  const lower = label.toLowerCase();
+  if (meta.status === "mandatory") return `<strong>${label}:</strong> always populated`;
+  const p = POPULATE_PROB[lower][meta.band || "common"];
+  return `<strong>${label}:</strong> ${(p*100).toFixed(0)}% populate-rate`;
+}
+
+/* ============================================================
+   8. WIRING
+============================================================ */
+function setupControls() {
+  const ps = document.getElementById("persona-select");
+  PERSONAS.forEach(p => { const o = document.createElement("option"); o.value = p.id; o.textContent = p.name; ps.appendChild(o); });
+  ps.value = state.personaId;
+  ps.onchange = e => { state.personaId = e.target.value; state.endpoint = { type: "accounts" }; state.selectedField = null; render(); };
+
+  document.getElementById("lfi-select").onchange = e => { state.lfi = e.target.value; render(); };
+
+  document.querySelectorAll("#view-toggle button").forEach(b => {
+    b.onclick = () => {
+      document.querySelectorAll("#view-toggle button").forEach(x=>x.classList.remove("active"));
+      b.classList.add("active");
+      state.view = b.dataset.view;
+      renderPayload();
+    };
+  });
+}
+
+window.selectField = selectField;
+setupControls();
+render();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+# Synthetic name pool — South-Asian expat tier, common UAE-resident archetype.
+# All names are fictional combinations of common given/surname elements; none
+# reference real individuals. EXP-07: this is the only place names may originate.
+pool_id: expat_indian
+description: South-Asian expat names typical of the UAE-resident professional tier.
+given_names:
+  - Aarav
+  - Aditi
+  - Anjali
+  - Arjun
+  - Ashwin
+  - Deepa
+  - Divya
+  - Karan
+  - Kavya
+  - Manish
+  - Meera
+  - Neha
+  - Nikhil
+  - Pooja
+  - Priya
+  - Rahul
+  - Rajesh
+  - Riya
+  - Rohan
+  - Sara
+  - Sneha
+  - Suresh
+  - Tanvi
+  - Vikram
+  - Yash
+surnames:
+  - Agarwal
+  - Bhat
+  - Chandran
+  - Desai
+  - Gupta
+  - Iyer
+  - Jain
+  - Kapoor
+  - Krishnan
+  - Mehta
+  - Nair
+  - Patel
+  - Pillai
+  - Rao
+  - Reddy
+  - Sharma
+  - Shetty
+  - Singh
+  - Subramanian
+  - Verma

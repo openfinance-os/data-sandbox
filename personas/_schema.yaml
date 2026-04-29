@@ -1,0 +1,52 @@
+# Persona manifest schema — EXP-02. Validated in CI by tests/persona-manifest.test.mjs.
+# Each persona/*.yaml must conform to this shape.
+#
+# Field meanings:
+#   persona_id          stable slug; matches filename without .yaml; used in URLs
+#   name                human-readable display name
+#   archetype           short typology tag for filter/search
+#   stress_coverage     array of terms drawn from PRD Appendix F controlled vocabulary
+#   demographics.nationality_pool  references /synthetic-identity-pool/names/<pool>.yaml
+#   income.primary_employer_pool   references /synthetic-identity-pool/employers/<pool>.yaml
+#   income.flag_payroll            whether the salary credit carries v2.1 Flags=Payroll
+#   accounts[].type                v2.1 AccountSubType (CurrentAccount/CreditCard/etc.)
+#   default_seed                   shipped default seed for stable persona-permalink (§6.8)
+#
+# This file is documentation, not enforced (yet). The test that validates
+# manifests against this shape lives in tests/persona-manifest.test.mjs.
+
+persona_id: <slug>
+name: <string>
+archetype: <string>
+default_seed: <int>
+stress_coverage:
+  - <term-from-Appendix-F>
+demographics:
+  nationality_pool: <pool_id>
+  age_band: <int-int>          # e.g. "28-38"
+  emirate: <enum: dubai|abu_dhabi|sharjah|other>
+income:
+  primary_employer_pool: <pool_id>
+  monthly_amount_aed: <int>
+  pay_day: <int 1-31>
+  variability: <enum: none|low|medium|high>
+  flag_payroll: <bool>
+accounts:
+  - type: <CurrentAccount|Savings|CreditCard|Mortgage|Finance>
+    currency: <ISO 4217>
+    age_months: <int>
+    credit_limit_aed: <int?>   # only on CreditCard
+fixed_commitments:
+  - kind: <standing_order|direct_debit>
+    purpose: <string>
+    amount_aed: <int?>
+    amount_aed_band: <[int, int]?>
+    schedule: <monthly_<day>|weekly_<weekday>|annual_<month_<day>>>
+spend_profile:
+  groceries_aed_per_month_band: <[int, int]?>
+  fuel_aed_per_month_band: <[int, int]?>
+  dining_per_month_count_band: <[int, int]?>
+fx_activity: <bool>
+cash_deposit_activity: <bool>
+distress_signals:
+  nsf_events_per_year_band: <[int, int]>

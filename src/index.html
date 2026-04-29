@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="robots" content="noindex" />
+<title>Open Finance Data Sandbox · Phase 0</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="banner" role="status" aria-label="Synthetic data notice">
+  <strong>SYNTHETIC.</strong>
+  Data is generated from the UAE Open Finance Standards v2.1 OpenAPI spec — not from any real bank.
+  Median populate-rate is a Commons-curated ecosystem assumption, not endorsed by Nebras or CBUAE.
+</div>
+
+<header class="topbar" role="banner">
+  <div class="brand">
+    <span class="brand-title">Open Finance Data Sandbox</span>
+    <span class="brand-sub">OpenFinance-OS Commons</span>
+  </div>
+  <nav class="controls" aria-label="Persona controls">
+    <label class="control-group">
+      <span class="control-label">Persona</span>
+      <select id="persona-select" aria-label="Persona"></select>
+    </label>
+    <label class="control-group">
+      <span class="control-label">LFI profile</span>
+      <select id="lfi-select" aria-label="LFI profile">
+        <option value="rich">Rich</option>
+        <option value="median" selected>Median</option>
+        <option value="sparse">Sparse</option>
+      </select>
+    </label>
+    <label class="control-group">
+      <span class="control-label">Seed</span>
+      <input id="seed-input" type="number" value="4729" min="0" step="1" aria-label="Seed" />
+    </label>
+    <span class="version-pin" id="version-pin" title="Pinned spec SHA"></span>
+    <div class="coverage" aria-label="Coverage of optional fields">
+      <span class="coverage-label">Coverage</span>
+      <div class="coverage-bar"><span id="coverage-fill"></span></div>
+      <span class="coverage-pct" id="coverage-pct">—</span>
+    </div>
+  </nav>
+</header>
+
+<main class="three-pane" id="three-pane">
+  <section class="pane persona-pane" aria-label="Persona library">
+    <div class="pane-header">Persona library</div>
+    <div class="persona-list" id="persona-list" role="list"></div>
+  </section>
+
+  <section class="pane navigator" aria-label="Account and endpoint navigator">
+    <div class="pane-header" id="nav-title">Accounts &amp; endpoints</div>
+    <div class="nav-tree" id="nav-tree" aria-label="Account &amp; endpoint navigator"></div>
+    <div class="payload-area">
+      <div class="payload-toolbar">
+        <span class="endpoint-label" id="endpoint-label">/accounts</span>
+        <div class="toggle-group" role="tablist" aria-label="View toggle">
+          <button class="toggle active" id="view-rendered" role="tab" aria-selected="true">Rendered</button>
+          <button class="toggle" id="view-raw" role="tab" aria-selected="false">Raw JSON</button>
+        </div>
+      </div>
+      <div class="payload-body" id="payload-body" tabindex="0"></div>
+    </div>
+  </section>
+
+  <aside class="pane field-detail" id="field-detail" aria-label="Field detail">
+    <div class="pane-header">Field detail</div>
+    <div class="fc-empty" id="fc-empty">
+      Click any field name in the rendered view to see its definition, type, and status.
+      Phase 0 shows: status, type, format, enum values, and example value from the current persona.
+    </div>
+    <div class="fc-content" id="fc-content" hidden></div>
+  </aside>
+</main>
+
+<footer class="footer" role="contentinfo">
+  <span>SYNTHETIC · Open Finance Data Sandbox · OpenFinance-OS Commons · Standards v2.1 @ <span id="footer-sha">unknown</span></span>
+</footer>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

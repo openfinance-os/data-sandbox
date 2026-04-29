@@ -1,0 +1,13 @@
+pool_id: merchants_utilities
+description: Synthetic utility-biller names (electricity/water, telco). All fictional.
+mcc: "4900"
+merchants:
+  - name: "Synthetic Power & Water Authority"
+    type: utilities_dewa
+    typical_amount_aed_band: [400, 800]
+  - name: "Solstice Telecom"
+    type: telco
+    typical_amount_aed_band: [200, 400]
+  - name: "Beacon Mobile"
+    type: telco
+    typical_amount_aed_band: [150, 350]
