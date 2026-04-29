@@ -21,6 +21,7 @@ import {
   downloadCsv,
   downloadTarball,
 } from './ui/export.js';
+import { conditionalRule, isPii, whyEmpty } from './shared/field-knowledge.js';
 
 // All 12 v1 endpoints (Appendix C). Three are bundle-level (no AccountId
 // scope): /accounts and /parties. The others are per-account.
@@ -59,7 +60,26 @@ const state = {
   // shown above a filtered transactions view that lets the user jump back.
   txHighlight: new Set(),
   crossLink: null,
+  // Date-humanise toggle on /transactions — shows "27 Apr 2025 · 11:00 GST"
+  // instead of "2025-04-27T07:00:00Z" when on. Resets on persona/lfi change.
+  humanDates: false,
 };
+
+function isDateField(name) {
+  return /(?:Date|DateTime)$/.test(name);
+}
+
+const DATE_FORMATTER = new Intl.DateTimeFormat('en-GB', {
+  day: '2-digit', month: 'short', year: 'numeric',
+  hour: '2-digit', minute: '2-digit',
+  timeZone: 'Asia/Dubai', timeZoneName: 'short', hour12: false,
+});
+
+function humaniseDate(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return DATE_FORMATTER.format(d);
+}
 
 function emptyTxFilter() {
   return {
@@ -144,13 +164,49 @@ function buildPersonaList() {
         },
       },
       el('div', { class: 'persona-name', text: p.name }),
-      el('div', { class: 'persona-archetype', text: p.archetype })
+      el('div', { class: 'persona-archetype', text: humanArchetype(p.archetype) }),
     );
+    if (p.narrative) {
+      // Narrative truncates to 2 lines on inactive cards (CSS line-clamp);
+      // the active card expands the full text so users can read why this
+      // persona was authored without leaving the library.
+      card.appendChild(el('div', { class: 'persona-narrative', text: p.narrative.trim() }));
+    }
+    if (Array.isArray(p.stress_coverage) && p.stress_coverage.length > 0) {
+      const chips = el('div', { class: 'persona-stress', attrs: { 'aria-label': 'Stress coverage' } });
+      for (const term of p.stress_coverage) {
+        chips.appendChild(el('span', {
+          class: 'stress-chip',
+          text: humanStressTerm(term),
+          attrs: { title: `Stress-coverage term: ${term}` },
+        }));
+      }
+      card.appendChild(chips);
+    }
     list.appendChild(card);
 
     const opt = el('option', { text: p.name, attrs: { value: id } });
     select.appendChild(opt);
   }
+}
+
+// Convert snake_case archetype slug to a human label.
+function humanArchetype(s) {
+  if (!s) return '';
+  return s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+// Stress-coverage terms come from PRD Appendix F controlled vocabulary.
+// Render as concise human labels with the slug retained as a tooltip.
+function humanStressTerm(t) {
+  return t
+    .replace(/_/g, ' ')
+    .replace(/\bdbr\b/i, 'DBR')
+    .replace(/\bfx\b/i, 'FX')
+    .replace(/\bnsf\b/i, 'NSF')
+    .replace(/\bpep\b/i, 'PEP')
+    .replace(/\bkyc\b/i, 'KYC')
+    .replace(/\buae\b/i, 'UAE');
 }
 
 function syncControls() {
@@ -577,6 +633,25 @@ function renderPayload() {
   if (isTransactions) {
     body.appendChild(renderTxFilterBar(allRows));
     if (state.crossLink) body.appendChild(renderCrossLinkBanner());
+    // Distress signal — surface NSF event count above the table for AML &
+    // underwriting workflows that need to know they exist.
+    const nsfCount = allRows.filter((t) => t.Status === 'Rejected').length;
+    if (nsfCount > 0) {
+      body.appendChild(el('div', {
+        class: 'distress-summary',
+        attrs: { role: 'status' },
+        text: `${nsfCount} rejected debit${nsfCount === 1 ? '' : 's'} in the trailing 12 months — highlighted below.`,
+      }));
+    }
+  }
+  // /product gets a v1.5 hint when the spec defines additional optional
+  // blocks the Phase 1 generator doesn't populate (Charges, FinanceRates,
+  // RewardsBenefits, AssetBacked).
+  if (state.endpoint === '/accounts/{AccountId}/product') {
+    body.appendChild(el('div', {
+      class: 'product-hint',
+      text: 'v2.1 defines additional optional blocks for /product (Charges, FinanceRates, DepositRates, AssetBacked, RewardsBenefits) that the Phase 1 generator does not populate. v1.5 widens the generator to cover them — track via the field card spec links.',
+    }));
   }
 
   let rows = isTransactions ? applyFilter(allRows) : allRows;
@@ -622,23 +697,54 @@ function renderPayload() {
         onClick: (e) => { e.stopPropagation(); openFieldCard(k); },
       })
     );
+    if (isPii(k)) {
+      th.appendChild(
+        el('span', { class: 'pii-badge', text: 'PII', attrs: { title: 'Contains PII — PDPL handling controls required (see field card).', 'aria-label': 'Personal data — PDPL applies' } })
+      );
+    }
     headRow.appendChild(th);
   }
   table.appendChild(el('thead', {}, headRow));
+  const persona = state.data.personas[state.personaId];
   const tbody = el('tbody');
   for (const r of visible) {
     const stripped = stripInternal(r);
     const isHighlight = isTransactions && r.TransactionId && state.txHighlight.has(r.TransactionId);
-    const tr = el('tr', { class: isHighlight ? 'tx-highlight' : null });
+    // NSF / distressed rows — Status=Rejected gets a visual marker so AML
+    // and underwriting workflows can scan for them.
+    const isRejected = r.Status === 'Rejected';
+    const trClasses = [
+      isHighlight && 'tx-highlight',
+      isRejected && 'tx-rejected',
+    ].filter(Boolean).join(' ') || null;
+    const tr = el('tr', { class: trClasses });
     for (const k of allKeys) {
       const v = stripped[k];
-      const text = v == null ? '—' : (typeof v === 'object' ? JSON.stringify(v) : String(v));
-      tr.appendChild(el('td', { text }));
+      const isEmpty = v == null;
+      const f = fieldsByName.get(k);
+      let text;
+      if (isEmpty) {
+        text = '—';
+      } else if (state.humanDates && isDateField(k) && typeof v === 'string') {
+        text = humaniseDate(v);
+      } else if (typeof v === 'object') {
+        text = JSON.stringify(v);
+      } else {
+        text = String(v);
+      }
+      const td = el('td', { text });
+      // "Why is this empty?" tooltip — for optional/conditional blanks.
+      if (isEmpty && f && f.status !== 'mandatory') {
+        td.classList.add('cell-absent');
+        td.title = whyEmpty({
+          field: f,
+          lfi: state.lfi,
+          persona,
+          band: bandForFieldName(k, state.endpoint),
+        });
+      }
+      tr.appendChild(td);
     }
-    // EXP-12 bidirectional link: rows in standing-orders / direct-debits /
-    // beneficiaries are clickable — each jumps to /transactions filtered to
-    // the matching transactions and the cross-link banner shows the jump-back
-    // affordance.
     const jumpFrom = jumpFromForActiveEndpoint();
     if (jumpFrom && r) {
       tr.style.cursor = 'pointer';
@@ -710,6 +816,18 @@ function renderTxFilterBar(_allRows) {
   bar.appendChild(filterInput('amountFrom', 'number', f.amountFrom, 'AED ≥'));
   bar.appendChild(filterInput('amountTo', 'number', f.amountTo, 'AED ≤'));
   bar.appendChild(filterInput('mcc', 'text', f.mcc, 'MCC'));
+  // Date humanise toggle — flips ISO datetimes to human format.
+  const humanLabel = el('label', { class: 'filter-toggle' });
+  const humanCheckbox = el('input', { attrs: { type: 'checkbox' } });
+  humanCheckbox.checked = !!state.humanDates;
+  humanCheckbox.addEventListener('change', (e) => {
+    state.humanDates = e.target.checked;
+    renderPayload();
+  });
+  humanLabel.appendChild(humanCheckbox);
+  humanLabel.appendChild(document.createTextNode(' Humanise dates'));
+  bar.appendChild(humanLabel);
+
   const clear = el('button', {
     class: 'filter-clear',
     text: 'Clear filters',
@@ -904,10 +1022,13 @@ function openFieldCard(name) {
   const band = bandForFieldName(name, state.endpoint);
   const guidance = realLfisGuidance(f, band);
   const citation = specCitationUrl(state.spec, f);
-  const conditionalRule =
+  // Concrete conditional-rule prose for fields in the curated lookup;
+  // falls back to a generic stub for unmapped fields.
+  const ruleProse = conditionalRule(name, f.path);
+  const conditionalLine =
     f.status === 'conditional'
-      ? (f.conditionalRule ?? 'Triggered by a parent-field value (Phase 1 minimal — see spec link for the exact rule).')
-      : '—';
+      ? (ruleProse ?? 'Triggered by a parent-field value — see the spec link for the exact rule.')
+      : (ruleProse ?? '—');
 
   content.replaceChildren();
 
@@ -919,8 +1040,9 @@ function openFieldCard(name) {
     ['Format', f.format ?? '—'],
     ['Enum', Array.isArray(f.enum) ? f.enum.join(', ') : '—'],
     ['Example', formatExample(example)],
-    ['Conditional', conditionalRule],
+    ['Conditional', conditionalLine],
     ['Real LFIs', guidance],
+    ['PII', isPii(name) ? 'Yes — under PDPL this field requires explicit data-handling controls.' : 'No (per the v1 PII allowlist).'],
     ['Spec', null], // rendered specially as a link
   ];
   for (const [k, v] of rowsToRender) {

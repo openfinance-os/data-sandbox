@@ -48,10 +48,10 @@
       </label>
       <label class="control-group">
         <span class="control-label">LFI profile</span>
-        <select id="lfi-select" aria-label="LFI profile">
-          <option value="rich">Rich</option>
-          <option value="median" selected>Median</option>
-          <option value="sparse">Sparse</option>
+        <select id="lfi-select" aria-label="LFI profile" title="LFI populate-rate profile — switch to Sparse to see only universal-band optional fields, Rich to see every populate-band field. See /about for the calibration table.">
+          <option value="rich" title="Best case — every populate-band optional field populated. Probe what's available when an LFI is mature.">Rich</option>
+          <option value="median" selected title="v1 calibration — Universal=1.0, Common=0.7, Variable=0.4, Rare=0.1. The Commons-curated ecosystem-wide assumption.">Median</option>
+          <option value="sparse" title="Worst case — only Universal-band optional fields populated; everything else dropped. Stress-test downstream UI and decisioning logic.">Sparse</option>
         </select>
       </label>
       <label class="control-group">
