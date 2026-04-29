@@ -32,9 +32,15 @@ fixed_commitments:
     schedule: monthly_10
 
 spend_profile:
+  # Senior persona is genuinely low-volume — designed so EXP-18's guard
+  # (<50 tx OR <6 distinct months in the trailing 12) triggers under all
+  # LFI profiles. Average ~4 tx/month across all categories incl. salary
+  # + utility = ~48 tx/year, just below the 50 floor.
   groceries_aed_per_month_band: [600, 1400]
+  groceries_per_month_count_band: [0, 2]
   fuel_aed_per_month_band: [100, 300]
-  dining_per_month_count_band: [0, 4]
+  fuel_per_month_count_band: [0, 1]
+  dining_per_month_count_band: [0, 1]
 
 fx_activity: false
 cash_deposit_activity: false

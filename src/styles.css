@@ -900,6 +900,123 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   .payload-body.is-fading { opacity: 1; }
 }
 
+/* EXP-18 Underwriting Scenario panel. Lives in a virtual bundle-level
+   navigator entry; renders 4 illustrative signals with auditable
+   contributor lists. */
+.uw-panel {
+  padding: 16px 18px;
+  max-width: 980px;
+}
+.uw-panel .uw-title {
+  font-size: 18px;
+  margin: 0 0 4px;
+}
+.uw-disclaimer {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0 0 14px;
+  font-style: italic;
+}
+.uw-guard {
+  background: #fdf3ef;
+  border: 1px solid #d8a17b;
+  color: #6b2912;
+  padding: 10px 12px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.uw-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.uw-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.uw-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+}
+.uw-card-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+.uw-card-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.uw-card-sub {
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.5;
+}
+.uw-card-formula,
+.uw-card-contrib {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.uw-card-formula summary,
+.uw-card-contrib summary {
+  cursor: pointer;
+  list-style: none;
+  font-weight: 600;
+  color: var(--accent);
+}
+.uw-card-formula summary::-webkit-details-marker,
+.uw-card-contrib summary::-webkit-details-marker { display: none; }
+.uw-card-formula summary::before,
+.uw-card-contrib summary::before {
+  content: '▸ ';
+  font-size: 9px;
+  color: var(--text-muted);
+}
+.uw-card-formula[open] summary::before,
+.uw-card-contrib[open] summary::before { content: '▾ '; }
+.uw-card-formula p {
+  margin: 6px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text);
+}
+.uw-card-contrib ul {
+  margin: 6px 0 0;
+  padding-left: 14px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.uw-card-contrib li {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+@media (max-width: 1099px) {
+  .uw-grid { grid-template-columns: 1fr; }
+}
+
+/* Visual indicator that the navigator entry is a derived view, not a
+   spec endpoint. */
+.nav-endpoint.nav-virtual { font-style: italic; }
+.nav-endpoint.nav-virtual .nav-endpoint-label { color: var(--accent); }
+
 /* Compare-LFIs view (EXP-16) — two side-by-side tables of the same persona
    under two LFI profiles, with diff highlighting on cells that differ. */
 .compare-bar {

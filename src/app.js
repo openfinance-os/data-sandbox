@@ -22,9 +22,13 @@ import {
   downloadTarball,
 } from './ui/export.js';
 import { conditionalRule, isPii, whyEmpty } from './shared/field-knowledge.js';
+import { computeUnderwriting, UNDERWRITING_FOOTNOTE } from './shared/underwriting.js';
 
 // All 12 v1 endpoints (Appendix C). Three are bundle-level (no AccountId
 // scope): /accounts and /parties. The others are per-account.
+// EXP-18 Underwriting Scenario panel sits as a virtual bundle-level entry —
+// not a wire endpoint, just a derived view over the live bundle.
+const UNDERWRITING_PSEUDO = '/(underwriting)';
 const ENDPOINTS = [
   { path: '/accounts', scope: 'bundle' },
   { path: '/accounts/{AccountId}', scope: 'account' },
@@ -38,6 +42,7 @@ const ENDPOINTS = [
   { path: '/accounts/{AccountId}/parties', scope: 'account' },
   { path: '/parties', scope: 'bundle' },
   { path: '/accounts/{AccountId}/statements', scope: 'account' },
+  { path: UNDERWRITING_PSEUDO, scope: 'bundle' },
 ];
 const ACCOUNT_SCOPED_PATHS = ENDPOINTS.filter((e) => e.scope === 'account').map((e) => e.path);
 const BUNDLE_SCOPED_PATHS = ENDPOINTS.filter((e) => e.scope === 'bundle').map((e) => e.path);
@@ -740,12 +745,15 @@ function renderNavigator() {
 // endpoints it shows the populate-rate of optional fields under that scope.
 function navButton({ endpoint, accountId, active, onSelect }) {
   const btn = el('button', {
-    class: `nav-endpoint${active ? ' active' : ''}`,
+    class: `nav-endpoint${active ? ' active' : ''}${endpoint === UNDERWRITING_PSEUDO ? ' nav-virtual' : ''}`,
     attrs: { 'aria-current': active ? 'true' : null },
     dataset: { endpoint, accountId: accountId ?? '' },
     onClick: onSelect,
   });
-  btn.appendChild(el('span', { class: 'nav-endpoint-label', text: endpoint }));
+  // The Underwriting pseudo-endpoint shows a friendlier label so it's clearly
+  // a derived view, not a spec endpoint.
+  const label = endpoint === UNDERWRITING_PSEUDO ? '◇ Underwriting summary' : endpoint;
+  btn.appendChild(el('span', { class: 'nav-endpoint-label', text: label }));
   if (accountId) {
     const cov = coverageForEndpoint(state.bundle, endpoint, accountId);
     if (cov.total > 0) {
@@ -812,10 +820,17 @@ function endpointFieldsByName() {
 
 function renderPayload() {
   document.getElementById('endpoint-label').textContent = state.endpoint;
-  const allRows = rowsForActiveEndpoint();
-  const fieldsByName = endpointFieldsByName();
   const body = document.getElementById('payload-body');
   body.replaceChildren();
+
+  // EXP-18 Underwriting Scenario panel — a derived view, not a spec endpoint.
+  if (state.endpoint === UNDERWRITING_PSEUDO) {
+    renderUnderwritingPanel(body);
+    return;
+  }
+
+  const allRows = rowsForActiveEndpoint();
+  const fieldsByName = endpointFieldsByName();
 
   document.getElementById('view-rendered').classList.toggle('active', state.view === 'rendered');
   document.getElementById('view-raw').classList.toggle('active', state.view === 'raw');
@@ -1401,6 +1416,119 @@ function renderMonthlySummary(rows) {
 function formatAmount(n) {
   if (!Number.isFinite(n)) return '—';
   return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
+}
+
+// ---- EXP-18 Underwriting Scenario panel -------------------------------------------------
+
+function renderUnderwritingPanel(body) {
+  const now = new Date(state.data.buildInfo.nowIso);
+  const result = computeUnderwriting(state.bundle, now);
+
+  const wrap = el('div', { class: 'uw-panel' });
+  wrap.appendChild(el('h2', { class: 'uw-title', text: 'Underwriting Scenario — illustrative signals' }));
+  wrap.appendChild(el('p', {
+    class: 'uw-disclaimer',
+    text: UNDERWRITING_FOOTNOTE,
+  }));
+
+  if (result.guard.triggered) {
+    wrap.appendChild(el('div', {
+      class: 'uw-guard',
+      attrs: { role: 'status' },
+      text: `Low-volume guard triggered. ${result.guard.reason} Off-the-shelf affordability formulas don't generalise to this segment — DBR is suppressed below.`,
+    }));
+  }
+
+  const grid = el('div', { class: 'uw-grid' });
+  grid.appendChild(renderUwSignal({
+    title: 'Implied monthly net income',
+    value: result.income.value != null ? `${formatAmount(result.income.value)} ${result.income.currency}` : '—',
+    sub: result.income.sourceLabel,
+    contributors: result.income.contributors,
+    formula:
+      'Trailing-12-month average of credits where Flags=Payroll. ' +
+      'Fallback A: largest recurring credit on the same calendar day each month (≥3 occurrences). ' +
+      'Fallback B: monthly average of credits from the top recurring counterparty (≥6 inflows). ' +
+      'Final fallback: "—" with persona-specific guidance.',
+    contributorRender: renderTxContributor,
+  }));
+  grid.appendChild(renderUwSignal({
+    title: 'Total fixed commitments (monthly)',
+    value: `${formatAmount(result.commitments.value)} ${result.commitments.currency}`,
+    sub: `${result.commitments.contributors.length} active commitments — standing orders + direct debits, normalised to monthly via the resource's Frequency, multi-currency converted to AED at the pinned snapshot rate.`,
+    contributors: result.commitments.contributors,
+    formula:
+      'Σ (NextPaymentAmount on active StandingOrders) + Σ (PreviousPaymentAmount on active DirectDebits, normalised by Frequency).',
+    contributorRender: renderCommitmentContributor,
+  }));
+  grid.appendChild(renderUwSignal({
+    title: 'Implied DBR',
+    value: result.dbr.value != null ? result.dbr.label : '—',
+    sub: result.dbr.value != null
+      ? 'Commitments ÷ income, expressed as percentage. Treat values >50% as a stretch indicator; >100% means the persona is structurally unable to meet commitments from inferred income.'
+      : (result.dbr.reason ?? 'Undefined.'),
+    contributors: [],
+    formula: 'Implied DBR = Total fixed commitments / Implied monthly net income.',
+  }));
+  grid.appendChild(renderUwSignal({
+    title: 'NSF / distress event count',
+    value: String(result.nsf.value),
+    sub: result.nsf.value > 0
+      ? `${result.nsf.value} rejected debit${result.nsf.value === 1 ? '' : 's'} in the trailing 12 months — see /transactions for the rows.`
+      : 'No rejected debits in the trailing 12 months.',
+    contributors: result.nsf.contributors,
+    formula: 'Count of transactions in trailing 12 months where Status=Rejected. Phase 1.5 minimum — Phase 2 widens to "debit posted on a day where ClosingBooked balance for that account became negative".',
+    contributorRender: renderTxContributor,
+  }));
+  wrap.appendChild(grid);
+  body.appendChild(wrap);
+}
+
+function renderUwSignal({ title, value, sub, contributors, formula, contributorRender }) {
+  const card = el('div', { class: 'uw-card' });
+  const header = el('div', { class: 'uw-card-header' });
+  header.appendChild(el('div', { class: 'uw-card-title', text: title }));
+  header.appendChild(el('div', { class: 'uw-card-value', text: value }));
+  card.appendChild(header);
+  card.appendChild(el('div', { class: 'uw-card-sub', text: sub }));
+
+  const formulaDet = el('details', { class: 'uw-card-formula' });
+  formulaDet.appendChild(el('summary', { text: 'Formula' }));
+  formulaDet.appendChild(el('p', { text: formula }));
+  card.appendChild(formulaDet);
+
+  if (contributors && contributors.length > 0) {
+    const det = el('details', { class: 'uw-card-contrib' });
+    det.appendChild(el('summary', { text: `Source fields (${contributors.length})` }));
+    const list = el('ul');
+    for (const c of contributors.slice(0, 30)) list.appendChild(contributorRender(c));
+    if (contributors.length > 30) {
+      list.appendChild(el('li', { text: `…${contributors.length - 30} more.` }));
+    }
+    det.appendChild(list);
+    card.appendChild(det);
+  }
+  return card;
+}
+
+function renderTxContributor(c) {
+  const li = el('li');
+  const date = c.BookingDateTime?.slice(0, 10) ?? '—';
+  const amt = c.Amount ? `${formatAmount(parseFloat(c.Amount.Amount))} ${c.Amount.Currency}` : '—';
+  const tail = c.CreditorName ? ` · ${c.CreditorName}` : (c.TransactionInformation ? ` · ${c.TransactionInformation}` : '');
+  li.textContent = `${date} · ${amt}${tail}`;
+  return li;
+}
+
+function renderCommitmentContributor(c) {
+  const li = el('li');
+  const id = c.StandingOrderId || c.DirectDebitId || '?';
+  const label = c.Reference || c.Name || c.kind;
+  const amt = c.Amount ? `${c.Amount.Amount} ${c.Amount.Currency}` : '—';
+  const freq = c.Frequency ? ` (${c.Frequency})` : '';
+  const monthly = `≈ ${formatAmount(c.monthlyAed)} AED/mo`;
+  li.textContent = `${id} · ${label} · ${amt}${freq} → ${monthly}`;
+  return li;
 }
 
 // ---- EXP-12 bidirectional links ----------------------------------------------------------

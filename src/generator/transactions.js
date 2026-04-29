@@ -62,7 +62,8 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
         runningBalance.balance -= amount;
       }
 
-      const groceriesCount = rngInt(rng, 4, 9);
+      const groceriesBand = persona.spend_profile?.groceries_per_month_count_band ?? [4, 9];
+      const groceriesCount = rngInt(rng, groceriesBand[0], groceriesBand[1] + 1);
       for (let i = 0; i < groceriesCount; i++) {
         const merchant = drawMerchant(rng, pools.groceries);
         const amount = rngInt(rng, merchant.typical_amount_aed_band[0], merchant.typical_amount_aed_band[1] + 1);
@@ -73,7 +74,8 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
         }));
         runningBalance.balance -= amount;
       }
-      const fuelCount = rngInt(rng, 2, 5);
+      const fuelBand = persona.spend_profile?.fuel_per_month_count_band ?? [2, 5];
+      const fuelCount = rngInt(rng, fuelBand[0], fuelBand[1] + 1);
       for (let i = 0; i < fuelCount; i++) {
         const merchant = drawMerchant(rng, pools.fuel);
         const amount = rngInt(rng, merchant.typical_amount_aed_band[0], merchant.typical_amount_aed_band[1] + 1);

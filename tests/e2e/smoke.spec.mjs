@@ -205,6 +205,28 @@ test('Monthly summary shows 12-row roll-up on /transactions', async ({ page }) =
   expect(rowCount).toBeLessThanOrEqual(13);
 });
 
+test('Underwriting panel renders 4 signals — EXP-18', async ({ page }) => {
+  await page.goto('/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729');
+  await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
+  await page.locator('.nav-endpoint', { hasText: 'Underwriting summary' }).click();
+  await expect(page.locator('.uw-panel')).toBeVisible();
+  await expect(page.locator('.uw-card-title', { hasText: 'Implied monthly net income' })).toBeVisible();
+  await expect(page.locator('.uw-card-title', { hasText: 'Total fixed commitments' })).toBeVisible();
+  await expect(page.locator('.uw-card-title', { hasText: 'Implied DBR' })).toBeVisible();
+  await expect(page.locator('.uw-card-title', { hasText: 'NSF / distress' })).toBeVisible();
+});
+
+test('Senior persona triggers low-volume guard — EXP-18', async ({ page }) => {
+  await page.goto('/src/index.html?persona=senior_retiree&lfi=median&seed=4729');
+  await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
+  await page.locator('.nav-endpoint', { hasText: 'Underwriting summary' }).click();
+  await expect(page.locator('.uw-guard')).toBeVisible();
+  await expect(page.locator('.uw-guard')).toContainText('Low-volume guard');
+  // DBR should be suppressed (—).
+  const dbrCard = page.locator('.uw-card', { hasText: 'Implied DBR' });
+  await expect(dbrCard.locator('.uw-card-value')).toHaveText('—');
+});
+
 test('field card shows all 9 elements + Report-an-issue link', async ({ page }) => {
   await page.goto('/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729');
   await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
