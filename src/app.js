@@ -91,6 +91,10 @@ const state = {
   // rendered view. EXP-14 hover/click is the on-demand path; this is the
   // "I want to read everything at once" path for first-time visits.
   expandFields: false,
+  // PII-only column filter — Reem's JTBD-12.1 ("scope my data-handling
+  // controls under PDPL"). When true, the rendered table hides every
+  // column whose field is not in the curated PII allowlist.
+  piiOnly: false,
   // Coachmark cascade state — first-load orientation for cold visitors.
   // null = inactive, 0..N = active step. Per EXP-22 we cannot persist
   // dismissal across reloads, so coachmarks fire only when the URL has
@@ -98,6 +102,10 @@ const state = {
   // this tab session.
   coachStep: null,
   coachDismissed: false,
+  // Cold-landing welcome cards — same lifecycle as coachmarks (no
+  // storage). Dismissed in JS state once the visitor self-routes.
+  welcomeShown: false,
+  welcomeDismissed: false,
 };
 
 function isDateField(name) {
@@ -142,6 +150,7 @@ async function init() {
   // Commons feed for the first time). Drives the first-load coachmark
   // cascade since EXP-22 forbids storage-based "first-visit" detection.
   const isColdLanding = window.location.search === '';
+  state.welcomeShown = isColdLanding;
 
   const url = decodeFromUrl(window.location.href);
   state.personaId = url.personaId && state.data.personas[url.personaId]
@@ -417,6 +426,8 @@ function syncControls() {
   document.getElementById('seed-input').value = String(state.seed);
   const expand = document.getElementById('toggle-expand-all');
   if (expand) expand.checked = !!state.expandFields;
+  const piiOnly = document.getElementById('toggle-pii-only');
+  if (piiOnly) piiOnly.checked = !!state.piiOnly;
   for (const card of document.querySelectorAll('.persona-card')) {
     card.classList.toggle('active', card.dataset.personaId === state.personaId);
   }
@@ -471,6 +482,12 @@ function attachEventHandlers() {
       rebuildAndRender();
     }
   });
+  document.getElementById('seed-reset')?.addEventListener('click', () => {
+    const persona = state.data.personas[state.personaId];
+    const def = Number(persona?.default_seed);
+    state.seed = Number.isFinite(def) ? def : 1;
+    rebuildAndRender();
+  });
   document.getElementById('view-rendered').addEventListener('click', () => {
     state.view = 'rendered';
     renderPayload();
@@ -481,6 +498,10 @@ function attachEventHandlers() {
   });
   document.getElementById('toggle-expand-all')?.addEventListener('change', (e) => {
     state.expandFields = !!e.target.checked;
+    renderPayload();
+  });
+  document.getElementById('toggle-pii-only')?.addEventListener('change', (e) => {
+    state.piiOnly = !!e.target.checked;
     renderPayload();
   });
   document.getElementById('export-json').addEventListener('click', exportActiveJson);
@@ -512,8 +533,13 @@ function openFind() {
   const card = el('div', { class: 'find-card' });
   const input = el('input', {
     class: 'find-input',
-    attrs: { type: 'search', placeholder: 'Search fields, enums, persona narratives…', 'aria-label': 'Find input', autocomplete: 'off' },
+    attrs: { type: 'search', placeholder: 'Search fields, paths, enums, persona names, narratives, stress coverage…', 'aria-label': 'Find input', autocomplete: 'off' },
   });
+  const corpus = el('div', { class: 'find-corpus' });
+  corpus.appendChild(el('span', { class: 'find-corpus-label', text: 'Searches' }));
+  for (const tag of ['Field names', 'Field paths', 'Enum values', 'Personas', 'Stress coverage']) {
+    corpus.appendChild(el('span', { class: 'find-corpus-tag', text: tag }));
+  }
   const ul = el('ul', { class: 'find-results', attrs: { role: 'listbox' } });
   const hint = el('div', { class: 'find-hint' });
   const left = el('span', { text: 'Click any result to jump' });
@@ -525,6 +551,7 @@ function openFind() {
   hint.appendChild(left);
   hint.appendChild(right);
   card.appendChild(input);
+  card.appendChild(corpus);
   card.appendChild(ul);
   card.appendChild(hint);
   overlay.appendChild(card);
@@ -1043,6 +1070,14 @@ function renderPayload() {
   const body = document.getElementById('payload-body');
   body.replaceChildren();
 
+  // Cold-landing welcome — three jump cards routing the user to the surface
+  // that matches their JTBD (Sara explore vs. Maryam embed vs. Hamid
+  // fixtures). Lives at the top of the payload area; one-shot, dismissed
+  // via JS state once the user picks a path.
+  if (state.welcomeShown && !state.welcomeDismissed) {
+    body.appendChild(renderWelcomeCards());
+  }
+
   // EXP-18 Underwriting Scenario panel — a derived view, not a spec endpoint.
   if (state.endpoint === UNDERWRITING_PSEUDO) {
     renderUnderwritingPanel(body);
@@ -1094,6 +1129,10 @@ function renderPayload() {
   if (isTransactions) {
     body.appendChild(renderTxFilterBar(allRows));
     if (state.crossLink) body.appendChild(renderCrossLinkBanner());
+    // Sara's primary JTBD-1.1/1.2 lives on /transactions. Dock a compact
+    // 4-stat strip so the underwriting signals are one glance away
+    // without leaving the wire view; clicking opens the full panel.
+    body.appendChild(renderUnderwritingStrip());
     const nsfCount = allRows.filter((t) => t.Status === 'Rejected').length;
     if (nsfCount > 0) {
       body.appendChild(el('div', {
@@ -1132,10 +1171,38 @@ function renderPayload() {
   const allKeys = new Set();
   for (const r of visible) for (const k of Object.keys(stripInternal(r))) allKeys.add(k);
 
+  // PII-only filter (Reem) — drop every column whose field is not in the
+  // curated PII allowlist. Mandatory or not, only PDPL-relevant columns
+  // remain so the user can scope data-handling controls.
+  if (state.piiOnly) {
+    for (const k of [...allKeys]) if (!isPii(k)) allKeys.delete(k);
+    if (allKeys.size === 0) {
+      body.appendChild(el('div', {
+        class: 'pii-empty',
+        attrs: { role: 'status' },
+        text: 'No PII fields under this endpoint. Personal data lives mostly on /accounts (identifiers, holder name) and /parties — switch to one of those endpoints, or untick "PII only" to see the full payload.',
+      }));
+      return;
+    }
+  }
+
+  // Cross-link match counts (EXP-12) — pre-computed per row so the header
+  // affordance reads "→ N matching transactions" instead of a quiet hover.
+  const jumpFrom = jumpFromForActiveEndpoint();
+  const linkedColumn = jumpFrom != null;
+  const matchCountByRow = new Map();
+  if (linkedColumn) {
+    const accTx = (state.bundle.transactions ?? []).filter((t) => t._accountId === state.selectedAccountId);
+    for (const r of visible) {
+      const n = accTx.filter((t) => jumpFrom.match(t, r)).length;
+      matchCountByRow.set(r, n);
+    }
+  }
+
   // Sticky leftmost column is most useful on /transactions (the only really
   // wide table). Apply selectively rather than to every endpoint.
   const stickyColClass = isTransactions ? ' has-sticky-col' : '';
-  const wrap = el('div', { class: `payload-rendered${stickyColClass}` });
+  const wrap = el('div', { class: `payload-rendered${stickyColClass}${linkedColumn ? ' has-linked-col' : ''}` });
   const table = el('table');
   const headRow = el('tr');
   for (const k of allKeys) {
@@ -1167,28 +1234,49 @@ function renderPayload() {
         el('span', { class: 'pii-badge', text: 'PII', attrs: { title: 'Contains PII — PDPL handling controls required (see field card).', 'aria-label': 'Personal data — PDPL applies' } })
       );
     }
+    // Real-LFIs guidance as a column-header subtitle — the soul of the
+    // product (PRD §5.3) escapes the field card and reads ambiently. Only
+    // for non-mandatory fields where the guidance is non-trivial; mandatory
+    // fields' "Always present per spec" is already implied by the M pill.
+    if (f && f.status !== 'mandatory') {
+      const band = bandForFieldName(k, state.endpoint);
+      th.appendChild(el('span', {
+        class: 'col-guidance',
+        text: realLfisGuidance(f, band),
+      }));
+    }
     headRow.appendChild(th);
+  }
+  if (linkedColumn) {
+    const linkedTh = el('th', { class: 'th-linked', attrs: { scope: 'col', title: 'Linked transactions — count of /transactions rows that match each record on this endpoint (EXP-12).' } });
+    linkedTh.appendChild(el('span', { class: 'pill pill-linked', text: '→' }));
+    linkedTh.appendChild(el('span', { class: 'field-name', text: 'Linked tx' }));
+    headRow.appendChild(linkedTh);
   }
   table.appendChild(el('thead', {}, headRow));
   const persona = state.data.personas[state.personaId];
   const tbody = el('tbody');
   // Expand-all — inline field metadata row directly under the headers.
-  // Surfaces status / type / Real-LFIs guidance without click-then-read.
+  // Type / format / enum-cardinality detail (the Real-LFIs guidance line
+  // is now ambient on every non-mandatory column header, so this row
+  // carries the wire-shape detail not the prose).
   if (state.expandFields) {
     const fieldRow = el('tr', { class: 'field-row' });
     for (const k of allKeys) {
       const f = fieldsByName.get(k);
       const td = el('td');
       if (f) {
-        const band = bandForFieldName(k, state.endpoint);
-        const meta = `${f.type}${f.format ? ' · ' + f.format : ''}${f.enum ? ' · enum' : ''}`;
+        const meta = `${f.type}${f.format ? ' · ' + f.format : ''}${Array.isArray(f.enum) ? ` · enum (${f.enum.length})` : ''}`;
         td.appendChild(el('span', { class: 'fr-meta', text: meta }));
-        td.appendChild(el('span', { class: 'fr-guidance', text: realLfisGuidance(f, band) }));
+        if (Array.isArray(f.enum) && f.enum.length > 0) {
+          td.appendChild(el('span', { class: 'fr-guidance', text: f.enum.slice(0, 6).join(', ') + (f.enum.length > 6 ? `, …(+${f.enum.length - 6})` : '') }));
+        }
       } else {
         td.textContent = '—';
       }
       fieldRow.appendChild(td);
     }
+    if (linkedColumn) fieldRow.appendChild(el('td'));
     tbody.appendChild(fieldRow);
   }
   for (const r of visible) {
@@ -1229,11 +1317,32 @@ function renderPayload() {
       }
       tr.appendChild(td);
     }
-    const jumpFrom = jumpFromForActiveEndpoint();
-    if (jumpFrom && r) {
-      tr.style.cursor = 'pointer';
-      tr.title = `Jump to /transactions filtered by ${jumpFrom.label(r)}`;
-      tr.addEventListener('click', () => crossLinkToTransactions(r, jumpFrom));
+    if (linkedColumn) {
+      const n = matchCountByRow.get(r) ?? 0;
+      const td = el('td', { class: 'td-linked' });
+      const btn = el('button', {
+        class: `linked-btn${n === 0 ? ' is-empty' : ''}`,
+        attrs: {
+          type: 'button',
+          title: n > 0
+            ? `Jump to /transactions filtered by ${jumpFrom.label(r)} — ${n} match${n === 1 ? '' : 'es'} highlighted.`
+            : `No matching transactions found for ${jumpFrom.label(r)}.`,
+        },
+        text: n > 0 ? `→ ${n} matching tx` : '— no matches',
+        onClick: (e) => {
+          e.stopPropagation();
+          if (n > 0) crossLinkToTransactions(r, jumpFrom);
+        },
+      });
+      if (n === 0) btn.disabled = true;
+      td.appendChild(btn);
+      tr.appendChild(td);
+      // Whole-row click stays as a quick path for keyboard / muscle memory.
+      tr.style.cursor = n > 0 ? 'pointer' : 'default';
+      if (n > 0) {
+        tr.title = `Jump to /transactions filtered by ${jumpFrom.label(r)}`;
+        tr.addEventListener('click', () => crossLinkToTransactions(r, jumpFrom));
+      }
     }
     tbody.appendChild(tr);
   }
@@ -1634,6 +1743,77 @@ function formatAmount(n) {
   return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
 }
 
+// ---- Cold-landing welcome cards — route by JTBD bucket ------------------------------------
+
+function renderWelcomeCards() {
+  const wrap = el('div', { class: 'welcome-cards', attrs: { role: 'region', 'aria-label': 'Welcome — three ways to use this' } });
+  const head = el('div', { class: 'welcome-head' });
+  head.appendChild(el('span', { class: 'welcome-eyebrow', text: 'Welcome' }));
+  head.appendChild(el('button', {
+    class: 'welcome-dismiss',
+    attrs: { type: 'button', 'aria-label': 'Dismiss welcome' },
+    text: '×',
+    onClick: () => {
+      state.welcomeDismissed = true;
+      renderPayload();
+    },
+  }));
+  wrap.appendChild(head);
+  wrap.appendChild(el('h3', { class: 'welcome-title', text: 'Three ways to use the sandbox' }));
+
+  const grid = el('div', { class: 'welcome-grid' });
+
+  // Bucket 1 — explore the data (default flow). Closes the welcome and
+  // jumps the active endpoint to /transactions on the first account so
+  // the user lands on the highest-signal surface.
+  grid.appendChild(welcomeCard({
+    label: 'Explore the data',
+    body: 'Walk a synthetic UAE customer end-to-end. Switch the LFI profile to see how field coverage drops; click any field name for spec-grounded guidance.',
+    cta: 'Open Sara → Transactions',
+    onClick: () => {
+      state.welcomeDismissed = true;
+      state.endpoint = '/accounts/{AccountId}/transactions';
+      state.selectedAccountId = state.bundle.accounts?.[0]?.AccountId ?? null;
+      clearTxState();
+      renderNavigator();
+      renderPayload();
+    },
+  }));
+  // Bucket 2 — embed in your article / class (Maryam, Yusuf).
+  grid.appendChild(welcomeCard({
+    label: 'Embed in your article or class',
+    body: 'Drop a chrome-less view of a single persona+endpoint into a slide deck, blog post, or LMS module. Snippet pre-filled to the active state.',
+    cta: 'Copy embed snippet',
+    onClick: () => {
+      state.welcomeDismissed = true;
+      copyEmbedSnippet();
+      renderPayload();
+    },
+  }));
+  // Bucket 3 — grab fixtures (Priya, Hamid).
+  grid.appendChild(welcomeCard({
+    label: 'Grab fixtures for your tests',
+    body: 'Versioned, deterministic test corpus on npm + PyPI under @openfinance-os/sandbox-fixtures (MIT code, CC0 data). Pin to the same SHA the sandbox uses.',
+    cta: 'See packaging on About →',
+    href: 'about.html#fixtures',
+  }));
+
+  wrap.appendChild(grid);
+  return wrap;
+}
+
+function welcomeCard({ label, body, cta, onClick, href }) {
+  const card = el('div', { class: 'welcome-card' });
+  card.appendChild(el('div', { class: 'welcome-card-label', text: label }));
+  card.appendChild(el('p', { class: 'welcome-card-body', text: body }));
+  if (href) {
+    card.appendChild(el('a', { class: 'welcome-cta', text: cta, attrs: { href } }));
+  } else {
+    card.appendChild(el('button', { class: 'welcome-cta', attrs: { type: 'button' }, text: cta, onClick }));
+  }
+  return card;
+}
+
 // ---- Persona overview landing — story-level orientation -----------------------------------
 
 function labelForEndpoint(ep) {
@@ -1755,6 +1935,67 @@ function renderPersonaOverview(body) {
 }
 
 // ---- EXP-18 Underwriting Scenario panel -------------------------------------------------
+
+// Compact 4-stat strip docked above /transactions. Click any stat to
+// pivot to the full Underwriting Scenario panel for source fields and
+// formulas. Honours the EXP-18 low-volume guard with an inline notice.
+function renderUnderwritingStrip() {
+  const now = new Date(state.data.buildInfo.nowIso);
+  const r = computeUnderwriting(state.bundle, now);
+  const strip = el('details', { class: 'uw-strip', attrs: { open: 'open', role: 'region', 'aria-label': 'Underwriting at-a-glance' } });
+  const summary = el('summary');
+  summary.appendChild(el('span', { class: 'uw-strip-eyebrow', text: 'Underwriting at-a-glance' }));
+  if (r.guard.triggered) {
+    summary.appendChild(el('span', { class: 'uw-strip-guard', text: 'Low-volume guard active' }));
+  }
+  summary.appendChild(el('button', {
+    class: 'uw-strip-jump',
+    attrs: { type: 'button', title: 'Open the full Underwriting Scenario panel — formulas, source fields, contributors.' },
+    text: 'Open full panel →',
+    onClick: (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      state.endpoint = UNDERWRITING_PSEUDO;
+      state.selectedAccountId = null;
+      renderNavigator();
+      renderPayload();
+    },
+  }));
+  strip.appendChild(summary);
+
+  const grid = el('div', { class: 'uw-strip-grid' });
+  const stats = [
+    {
+      title: 'Income',
+      value: r.income.value != null ? `${formatAmount(r.income.value)} ${r.income.currency}` : '—',
+      sub: r.income.sourceLabel,
+    },
+    {
+      title: 'Fixed commitments',
+      value: `${formatAmount(r.commitments.value)} ${r.commitments.currency}`,
+      sub: `${r.commitments.contributors.length} active`,
+    },
+    {
+      title: 'Implied DBR',
+      value: r.dbr.value != null ? r.dbr.label : '—',
+      sub: r.dbr.value != null ? 'Commitments ÷ income' : (r.dbr.reason ?? 'Undefined'),
+    },
+    {
+      title: 'NSF events',
+      value: String(r.nsf.value),
+      sub: r.nsf.value > 0 ? 'Trailing 12 months' : 'None in window',
+    },
+  ];
+  for (const s of stats) {
+    const card = el('div', { class: 'uw-strip-card' });
+    card.appendChild(el('div', { class: 'uw-strip-title', text: s.title }));
+    card.appendChild(el('div', { class: 'uw-strip-value', text: s.value }));
+    card.appendChild(el('div', { class: 'uw-strip-sub', text: s.sub }));
+    grid.appendChild(card);
+  }
+  strip.appendChild(grid);
+  return strip;
+}
 
 function renderUnderwritingPanel(body) {
   const now = new Date(state.data.buildInfo.nowIso);

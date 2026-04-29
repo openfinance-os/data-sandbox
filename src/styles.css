@@ -1284,11 +1284,27 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   border: 1.5px dashed var(--border-strong);
 }
 
+/* Conditional pill — visually distinct from optional. Filled accent-soft
+   tint + dotted border + right-edge "fx" indicator strip so it never
+   reads as a slight variant of the dashed Optional pill at a glance. */
 .pill-conditional {
-  background: var(--conditional-bg);
+  background: var(--accent-soft);
   color: var(--conditional-fg);
-  border: 1.5px solid var(--conditional-fg);
+  border: 1.5px dotted var(--conditional-fg);
   border-radius: 999px;
+  padding-right: 10px;
+  position: relative;
+}
+.pill-conditional::after {
+  content: '';
+  position: absolute;
+  right: 3px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 8px;
+  background: var(--conditional-fg);
+  border-radius: 1px;
 }
 
 .field-detail-scroll {
@@ -1632,4 +1648,348 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   .persona-pane {
     max-height: 200px;
   }
+}
+
+/* Real-LFIs guidance subtitle inside every non-mandatory column header.
+   The product's "soul" (PRD §5.3) — escaping the field card to read
+   ambiently. Mandatory columns omit it (the M pill already implies
+   "always present per spec"). */
+.payload-rendered th .col-guidance {
+  display: block;
+  margin-top: 2px;
+  font-size: 9.5px;
+  font-weight: 400;
+  color: var(--text-muted);
+  text-transform: none;
+  letter-spacing: 0;
+  line-height: 1.3;
+  max-width: 220px;
+  white-space: normal;
+}
+
+/* Linked-tx column (EXP-12) — surfaces match counts on standing-orders /
+   direct-debits / beneficiaries so the cross-link is loud, not hidden
+   behind a row-cursor. */
+.payload-rendered .th-linked,
+.payload-rendered .td-linked {
+  background: var(--bg-soft);
+  border-left: 1px solid var(--border-strong);
+  text-align: right;
+  white-space: nowrap;
+  width: 1%;
+}
+.payload-rendered .pill-linked {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
+  border-radius: 999px;
+}
+.linked-btn {
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--bg-card);
+  color: var(--accent);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.linked-btn:hover {
+  background: var(--accent);
+  color: var(--mandatory-fg);
+}
+.linked-btn.is-empty,
+.linked-btn[disabled] {
+  border-color: var(--border-strong);
+  color: var(--text-muted);
+  background: transparent;
+  cursor: default;
+  font-weight: 400;
+}
+.linked-btn.is-empty:hover { background: transparent; color: var(--text-muted); }
+
+/* Toolbar status-pill legend — always-visible reading of M/O/C without
+   opening a field card. Sits to the right of the endpoint label. */
+.toolbar-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-left: 1px dashed var(--border);
+  font-size: 10px;
+  color: var(--text-muted);
+  float: none;
+}
+.toolbar-legend .legend-pill {
+  font-size: 9px;
+  padding: 1px 4px;
+  margin: 0;
+  cursor: help;
+}
+.toolbar-legend .legend-text {
+  margin-right: 6px;
+  margin-left: 2px;
+  font-size: 10px;
+  letter-spacing: 0.02em;
+}
+.toolbar-legend .legend-text:last-child { margin-right: 0; }
+
+/* Advanced disclosure for the seed input — most users never touch this;
+   tucking it behind a one-click <details> de-clutters the topbar without
+   losing reproducibility for Priya / Hamid. */
+.control-advanced {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.control-advanced > summary {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  list-style: none;
+}
+.control-advanced > summary::-webkit-details-marker { display: none; }
+.control-advanced[open] > summary {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.control-advanced .control-seed {
+  margin-left: 6px;
+}
+.control-advanced .seed-reset {
+  font: inherit;
+  font-size: 11px;
+  padding: 3px 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 3px;
+  background: var(--bg-card);
+  cursor: pointer;
+  color: var(--text-muted);
+}
+.control-advanced .seed-reset:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* Cold-landing welcome cards — three-bucket router for new visitors.
+   Lives at the top of the payload area on cold landings; dismissed in
+   JS state once the user picks a bucket (or hits ×). */
+.welcome-cards {
+  background: var(--bg-soft);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 14px 16px;
+  margin: 12px;
+  margin-bottom: 16px;
+}
+.welcome-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.welcome-eyebrow {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: var(--accent);
+}
+.welcome-dismiss {
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0 4px;
+}
+.welcome-dismiss:hover { color: var(--accent); }
+.welcome-title {
+  margin: 4px 0 10px;
+  font-size: 15px;
+}
+.welcome-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+.welcome-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.welcome-card-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+.welcome-card-body {
+  font-size: 12px;
+  margin: 0;
+  line-height: 1.5;
+  color: var(--text);
+}
+.welcome-cta {
+  align-self: flex-start;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  background: var(--bg-card);
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: none;
+}
+.welcome-cta:hover { background: var(--accent); color: var(--mandatory-fg); }
+
+/* Underwriting at-a-glance strip — compact 4-stat dock above /transactions
+   so Sara's primary JTBD-1.1/1.2 signals are one glance away without
+   leaving the wire view. Click "Open full panel →" to pivot to EXP-18. */
+.uw-strip {
+  margin: 8px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--bg-card);
+  font-size: 12px;
+}
+.uw-strip > summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px;
+  cursor: pointer;
+  list-style: none;
+  background: var(--accent-soft);
+  border-radius: 4px 4px 0 0;
+}
+.uw-strip > summary::-webkit-details-marker { display: none; }
+.uw-strip > summary::before {
+  content: '▾';
+  font-size: 10px;
+  color: var(--accent);
+}
+.uw-strip:not([open]) > summary::before { content: '▸'; }
+.uw-strip-eyebrow {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  color: var(--accent);
+}
+.uw-strip-guard {
+  font-size: 11px;
+  color: #6b2912;
+  background: #fdf3ef;
+  border: 1px solid #d8a17b;
+  padding: 1px 8px;
+  border-radius: 999px;
+}
+.uw-strip-jump {
+  margin-left: auto;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  background: var(--bg-card);
+  color: var(--accent);
+  cursor: pointer;
+}
+.uw-strip-jump:hover { background: var(--accent); color: var(--mandatory-fg); }
+.uw-strip-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 10px 12px;
+}
+.uw-strip-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.uw-strip-title {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.uw-strip-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.uw-strip-sub {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+@media (max-width: 1099px) {
+  .uw-strip-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* PII-only mode helpers. */
+.pii-empty {
+  margin: 12px;
+  padding: 10px 14px;
+  background: #fbf2e1;
+  border: 1px solid #b07a3e;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #6b4a1f;
+  line-height: 1.5;
+}
+
+/* Find overlay corpus hint (#15) — explicit search-domain tags so the
+   user's first attempt isn't a hunch into a black box. */
+.find-corpus {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px 12px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  font-size: 10px;
+}
+.find-corpus-label {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-right: 4px;
+  font-weight: 600;
+}
+.find-corpus-tag {
+  font-size: 10px;
+  padding: 1px 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  color: var(--text-muted);
+  background: var(--bg-card);
 }

@@ -71,10 +71,14 @@
           <button type="button" id="compare-close" class="lfi-compare-close" aria-label="Close compare mode" title="Close compare">×</button>
         </div>
       </div>
-      <label class="control-group control-seed" title="Seed reshuffles the deterministic RNG. The persona's *structure* (account count, fixed commitments, FX activity, distress band) stays the same; the *details* (transaction amounts within bands, exact dates within months, names, IBANs) re-roll. Same persona+lfi+seed always reproduces the exact same bundle — that's how shareable URLs work.">
-        <span class="control-label">Seed</span>
-        <input id="seed-input" type="number" value="4729" min="0" step="1" aria-label="Seed (reshuffles deterministic RNG; structure stays, details re-roll)" />
-      </label>
+      <details class="control-advanced" id="control-advanced">
+        <summary title="Show advanced controls — seed lever, etc. The seed reshuffles the deterministic RNG; structure stays, details re-roll. Most users never touch this.">Advanced</summary>
+        <label class="control-group control-seed">
+          <span class="control-label">Seed</span>
+          <input id="seed-input" type="number" value="4729" min="0" step="1" aria-label="Seed (reshuffles deterministic RNG; structure stays, details re-roll)" />
+        </label>
+        <button type="button" id="seed-reset" class="seed-reset" title="Reset to the persona's default seed.">Reset</button>
+      </details>
     </div>
     <div class="controls-runstate" aria-label="Run state">
       <div class="coverage" id="coverage" aria-label="Coverage of optional fields by populate-rate band">
@@ -110,14 +114,23 @@
     <div class="payload-area">
       <div class="payload-toolbar">
         <span class="endpoint-label" id="endpoint-label">/accounts</span>
+        <span class="status-legend toolbar-legend" aria-label="Field-status legend">
+          <span class="legend-pill pill pill-solid" title="Mandatory — every LFI populates per spec.">M</span><span class="legend-text">Mandatory</span>
+          <span class="legend-pill pill pill-dashed" title="Optional — populate-rate varies by ecosystem band; see the column subtitle and the coverage strip.">O</span><span class="legend-text">Optional</span>
+          <span class="legend-pill pill pill-conditional" title="Conditional — populated only when a parent-field rule fires. The field card spells out the rule.">C</span><span class="legend-text">Conditional</span>
+        </span>
         <div class="toolbar-actions">
           <div class="toggle-group" role="tablist" aria-label="View toggle">
             <button class="toggle active" id="view-rendered" role="tab" aria-selected="true">Rendered</button>
             <button class="toggle" id="view-raw" role="tab" aria-selected="false">Raw JSON</button>
           </div>
-          <label class="toolbar-checkbox" title="Inline every column's status / type / format / Real-LFIs guidance under the header — useful for first reads of an endpoint without click-then-read field cards.">
+          <label class="toolbar-checkbox" title="Inline every column's type / format / enum cardinality under the header — useful for first reads of an endpoint without click-then-read field cards.">
             <input type="checkbox" id="toggle-expand-all" />
             Expand fields
+          </label>
+          <label class="toolbar-checkbox" title="Hide every non-PII column. PII allowlist follows the curated PDPL-relevant set; pairs with the per-card PII badge so a privacy/DPO audit can scope data-handling controls per endpoint.">
+            <input type="checkbox" id="toggle-pii-only" />
+            PII only
           </label>
           <div class="export-group" aria-label="Export the active bundle">
             <button class="toggle export-btn" id="export-json" title="Download active endpoint as v2.1-shaped JSON">JSON</button>
