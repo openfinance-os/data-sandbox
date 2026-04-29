@@ -25,22 +25,7 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run verify:spec-shape
-      - run: npm run build:spec
-      - run: node tools/build-data.mjs
-      - name: Stage Pages site
-        run: |
-          mkdir -p _site
-          cp -r src _site/src
-          cp -r dist _site/dist
-          cp README.md _site/README.md || true
-          cat > _site/index.html <<'HTML'
-          <!DOCTYPE html>
-          <html><head><meta charset="utf-8"/><title>Open Finance Data Sandbox</title>
-          <meta http-equiv="refresh" content="0; url=src/index.html"/>
-          <link rel="canonical" href="src/index.html"/></head>
-          <body><p>Redirecting to <a href="src/index.html">the sandbox</a>…</p></body></html>
-          HTML
-          touch _site/.nojekyll
+      - run: npm run build:site
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

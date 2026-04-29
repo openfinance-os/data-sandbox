@@ -10,6 +10,8 @@
   },
   "scripts": {
     "build:spec": "node tools/parse-spec.mjs",
+    "build:data": "node tools/build-data.mjs",
+    "build:site": "npm run build:spec && npm run build:data && node tools/stage-site.mjs",
     "verify:spec-shape": "node tools/verify-spec-shape.mjs",
     "lint:no-handauthored": "node tools/lint-no-handauthored-fields.mjs",
     "lint:no-institution-leak": "node tools/lint-no-institution-leak.mjs",
