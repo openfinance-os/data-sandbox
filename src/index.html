@@ -46,23 +46,44 @@
         <span class="control-label">Persona</span>
         <select id="persona-select" aria-label="Persona"></select>
       </label>
-      <label class="control-group">
+      <div class="control-group lfi-control">
         <span class="control-label">LFI profile</span>
-        <select id="lfi-select" aria-label="LFI profile" title="LFI populate-rate profile — switch to Sparse to see only universal-band optional fields, Rich to see every populate-band field. See /about for the calibration table.">
-          <option value="rich" title="Best case — every populate-band optional field populated. Probe what's available when an LFI is mature.">Rich</option>
-          <option value="median" selected title="v1 calibration — Universal=1.0, Common=0.7, Variable=0.4, Rare=0.1. The Commons-curated ecosystem-wide assumption.">Median</option>
-          <option value="sparse" title="Worst case — only Universal-band optional fields populated; everything else dropped. Stress-test downstream UI and decisioning logic.">Sparse</option>
+        <div class="lfi-seg" id="lfi-seg" role="radiogroup" aria-label="LFI populate-rate profile">
+          <button type="button" role="radio" data-lfi="rich"   aria-checked="false" title="Best case. Every populate-band optional field set. Probe what mature LFIs make available.">Rich</button>
+          <button type="button" role="radio" data-lfi="median" aria-checked="true"  title="v1 calibration — Universal=1.0, Common=0.7, Variable=0.4, Rare=0.1. The Commons-curated ecosystem-wide assumption.">Median</button>
+          <button type="button" role="radio" data-lfi="sparse" aria-checked="false" title="Worst case. Mandatory + Universal-band only — every other optional field dropped. Stress-test downstream UI and decisioning logic.">Sparse</button>
+          <button type="button" id="compare-toggle" class="lfi-compare" aria-pressed="false" title="Compare two LFI profiles side-by-side (EXP-16). Click to add a comparison partner.">+ Compare</button>
+        </div>
+        <span class="lfi-caption" id="lfi-caption"></span>
+        <select id="lfi-select" aria-label="LFI profile (legacy)" hidden>
+          <option value="rich">Rich</option>
+          <option value="median" selected>Median</option>
+          <option value="sparse">Sparse</option>
         </select>
-      </label>
-      <label class="control-group" title="Seed reshuffles the deterministic RNG. The persona's *structure* (account count, fixed commitments, FX activity, distress band) stays the same; the *details* (transaction amounts within bands, exact dates within months, names, IBANs) re-roll. Same persona+lfi+seed always reproduces the exact same bundle — that's how shareable URLs work.">
-        <span class="control-label">Seed</span>
-        <input id="seed-input" type="number" value="4729" min="0" step="1" aria-label="Seed (reshuffles deterministic RNG; structure stays, details re-roll)" />
-      </label>
+        <div class="lfi-compare-row" id="lfi-compare-row" hidden>
+          <span class="control-label">Compare with</span>
+          <div class="lfi-seg lfi-seg-compare" id="lfi-seg-compare" role="radiogroup" aria-label="Compare partner LFI profile">
+            <button type="button" role="radio" data-cmp-lfi="rich"   aria-checked="false">Rich</button>
+            <button type="button" role="radio" data-cmp-lfi="median" aria-checked="false">Median</button>
+            <button type="button" role="radio" data-cmp-lfi="sparse" aria-checked="true">Sparse</button>
+          </div>
+          <button type="button" id="compare-swap" class="lfi-compare-swap" title="Swap left and right LFIs">↔</button>
+          <button type="button" id="compare-close" class="lfi-compare-close" aria-label="Close compare mode" title="Close compare">×</button>
+        </div>
+      </div>
+      <details class="control-advanced" id="control-advanced">
+        <summary title="Show advanced controls — seed lever, etc. The seed reshuffles the deterministic RNG; structure stays, details re-roll. Most users never touch this.">Advanced</summary>
+        <label class="control-group control-seed">
+          <span class="control-label">Seed</span>
+          <input id="seed-input" type="number" value="4729" min="0" step="1" aria-label="Seed (reshuffles deterministic RNG; structure stays, details re-roll)" />
+        </label>
+        <button type="button" id="seed-reset" class="seed-reset" title="Reset to the persona's default seed.">Reset</button>
+      </details>
     </div>
     <div class="controls-runstate" aria-label="Run state">
-      <div class="coverage" aria-label="Coverage of optional fields">
-        <span class="coverage-label">Coverage</span>
-        <div class="coverage-bar"><span id="coverage-fill"></span></div>
+      <div class="coverage" id="coverage" aria-label="Coverage of optional fields by populate-rate band">
+        <span class="coverage-label" title="Populate-rate bands per §7.3 — Universal: every LFI populates · Common: ~70% · Variable: ~40% · Rare: ~10%. Hover any dot for the populated/total count.">Coverage</span>
+        <div class="coverage-bands" id="coverage-bands"></div>
         <span class="coverage-pct" id="coverage-pct">—</span>
       </div>
       <span class="version-pin" id="version-pin" title="Pinned spec SHA — hover for retrieval date"></span>
@@ -77,6 +98,7 @@
   <section class="pane persona-pane" aria-label="Persona library">
     <div class="pane-header">Persona library</div>
     <div class="persona-list-shell">
+      <div class="jtbd-rail" id="jtbd-rail" role="toolbar" aria-label="Filter personas by job-to-be-done"></div>
       <div class="stress-filter-bar is-empty" id="stress-filter-bar">
         <span class="label">Filter:</span>
         <span id="stress-filter-term"></span>
@@ -92,16 +114,29 @@
     <div class="payload-area">
       <div class="payload-toolbar">
         <span class="endpoint-label" id="endpoint-label">/accounts</span>
+        <span class="status-legend toolbar-legend" aria-label="Field-status legend">
+          <span class="legend-pill pill pill-solid" title="Mandatory — every LFI populates per spec.">M</span><span class="legend-text">Mandatory</span>
+          <span class="legend-pill pill pill-dashed" title="Optional — populate-rate varies by ecosystem band; see the column subtitle and the coverage strip.">O</span><span class="legend-text">Optional</span>
+          <span class="legend-pill pill pill-conditional" title="Conditional — populated only when a parent-field rule fires. The field card spells out the rule.">C</span><span class="legend-text">Conditional</span>
+        </span>
         <div class="toolbar-actions">
           <div class="toggle-group" role="tablist" aria-label="View toggle">
             <button class="toggle active" id="view-rendered" role="tab" aria-selected="true">Rendered</button>
             <button class="toggle" id="view-raw" role="tab" aria-selected="false">Raw JSON</button>
-            <button class="toggle" id="view-compare" role="tab" aria-selected="false" title="Side-by-side LFI comparison (EXP-16)">Compare LFIs</button>
           </div>
+          <label class="toolbar-checkbox" title="Inline every column's type / format / enum cardinality under the header — useful for first reads of an endpoint without click-then-read field cards.">
+            <input type="checkbox" id="toggle-expand-all" />
+            Expand fields
+          </label>
+          <label class="toolbar-checkbox" title="Hide every non-PII column. PII allowlist follows the curated PDPL-relevant set; pairs with the per-card PII badge so a privacy/DPO audit can scope data-handling controls per endpoint.">
+            <input type="checkbox" id="toggle-pii-only" />
+            PII only
+          </label>
           <div class="export-group" aria-label="Export the active bundle">
             <button class="toggle export-btn" id="export-json" title="Download active endpoint as v2.1-shaped JSON">JSON</button>
             <button class="toggle export-btn" id="export-csv" title="Download active resource as flat CSV">CSV</button>
             <button class="toggle export-btn" id="export-tar" title="Download all endpoints + CSVs as a single tarball">Tarball</button>
+            <button class="toggle export-btn" id="export-embed" title="Copy an iframe snippet pinned to the current persona+LFI+endpoint+seed — drop into a slide deck, blog post, or LMS module (EXP-27).">Embed</button>
           </div>
         </div>
       </div>
@@ -110,16 +145,26 @@
   </section>
 
   <aside class="pane field-detail" id="field-detail" aria-label="Field detail">
-    <div class="pane-header">Field detail</div>
+    <div class="pane-header">
+      Field detail
+      <span class="status-legend" aria-label="Status badge legend">
+        <span class="legend-pill pill pill-solid" title="Mandatory — every LFI populates per spec.">M</span>
+        <span class="legend-pill pill pill-dashed" title="Optional — populate-rate varies; see Real-LFIs guidance and the populate-band coverage on the topbar.">O</span>
+        <span class="legend-pill pill pill-conditional" title="Conditional — populated only when a parent-field rule fires. The card shows the rule.">C</span>
+      </span>
+    </div>
     <div class="field-detail-scroll" tabindex="0">
       <div class="fc-empty" id="fc-empty">
-        Click any field name in the rendered view to see its definition, type, and status.
-        Phase 0 shows: status, type, format, enum values, and example value from the current persona.
+        Hover any field name in the rendered view for a quick preview, or click to pin the full card here.
+        Cards show: status, type, format, enum values, example, conditional rule, Real-LFIs guidance, PII flag, and a deep link to the spec at the pinned SHA.
       </div>
       <div class="fc-content" id="fc-content" hidden></div>
     </div>
   </aside>
 </main>
+
+<div class="hovercard" id="hovercard" role="tooltip" hidden></div>
+<div class="coachmark-host" id="coachmark-host" hidden></div>
 
 <footer class="footer" role="contentinfo">
   <span>SYNTHETIC · Open Finance Data Sandbox · OpenFinance-OS Commons · Standards v2.1 @ <span id="footer-sha">unknown</span></span>

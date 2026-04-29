@@ -52,6 +52,21 @@ export function coverageForEndpoint(bundle, endpointPath, accountId) {
   };
 }
 
+// Probe path → populate-rate band (§7.3). Single source of truth shared
+// with src/generator/lfi-profile.js so band breakdowns and redaction
+// decisions never drift apart.
+const PROBE_BAND = Object.freeze({
+  'Account.Nickname': 'Common',
+  'Account.OpeningDate': 'Common',
+  'Transaction.TransactionInformation': 'Universal',
+  'Transaction.Flags': 'Common',
+  'Transaction.ValueDateTime': 'Universal',
+  'Transaction.MerchantDetails': 'Variable',
+  'Transaction.MerchantDetails.MerchantCategoryCode': 'Variable',
+  'Transaction.MerchantDetails.MerchantName': 'Common',
+  'Balance.CreditLine': 'Variable',
+});
+
 function collectProbes(bundle) {
   const probes = [];
   for (const a of bundle.accounts ?? []) {
@@ -61,6 +76,7 @@ function collectProbes(bundle) {
   for (const t of bundle.transactions ?? []) {
     probes.push(['Transaction.TransactionInformation', t.TransactionInformation != null]);
     probes.push(['Transaction.Flags', Array.isArray(t.Flags) && t.Flags.length > 0]);
+    probes.push(['Transaction.ValueDateTime', t.ValueDateTime != null]);
     probes.push(['Transaction.MerchantDetails', t.MerchantDetails != null]);
     if (t.MerchantDetails) {
       probes.push(['Transaction.MerchantDetails.MerchantCategoryCode', t.MerchantDetails.MerchantCategoryCode != null]);
@@ -71,6 +87,29 @@ function collectProbes(bundle) {
     probes.push(['Balance.CreditLine', Array.isArray(b.CreditLine)]);
   }
   return probes;
+}
+
+// Per-band populate-rate breakdown — same probes as `coverage()`, grouped
+// by §7.3 band. Returns { Universal: {pop, total, pct}, Common: {...}, ...}.
+// Faisal's JTBD-3.2: "show me the populate-rate distribution across
+// optional fields" — the single roll-up percentage is not enough.
+export function coverageByBand(bundle) {
+  const out = {
+    Universal: { populated: 0, total: 0, pct: 0 },
+    Common:    { populated: 0, total: 0, pct: 0 },
+    Variable:  { populated: 0, total: 0, pct: 0 },
+    Rare:      { populated: 0, total: 0, pct: 0 },
+  };
+  for (const [path, ok] of collectProbes(bundle)) {
+    const band = PROBE_BAND[path];
+    if (!band || !out[band]) continue;
+    out[band].total += 1;
+    if (ok) out[band].populated += 1;
+  }
+  for (const b of Object.values(out)) {
+    b.pct = b.total > 0 ? Math.round((b.populated / b.total) * 100) : 0;
+  }
+  return out;
 }
 
 function collectProbesForEndpoint(bundle, endpointPath, accountId) {
