@@ -190,6 +190,29 @@ export function loadFixture({ persona, lfi = 'median', seed, endpoint }) {
   if (!rel) throw new Error(\`no fixture for endpoint \${endpoint} in \${key}\`);
   return JSON.parse(readFileSync(path.join(here, rel), 'utf8'));
 }
+export function loadJourney({ persona, lfi = 'median', seed } = {}) {
+  const info = manifest.personas[persona];
+  if (!info) throw new Error(\`unknown persona: \${persona}\`);
+  const useSeed = seed ?? info.default_seed;
+  const key = \`\${persona}|\${lfi}|\${useSeed}\`;
+  const fx = manifest.fixtures[key];
+  if (!fx) throw new Error(\`no fixture for \${key}\`);
+  const endpoints = {};
+  for (const [endpoint, rel] of Object.entries(fx.endpoints)) {
+    endpoints[endpoint] = JSON.parse(readFileSync(path.join(here, rel), 'utf8'));
+  }
+  return {
+    persona,
+    lfi,
+    seed: useSeed,
+    accountIds: fx.accountIds ?? [],
+    customerId: endpoints['/parties']?.Data?.Party?.PartyId ?? null,
+    specVersion: manifest.specVersion,
+    specSha: manifest.specSha,
+    version: manifest.version,
+    endpoints,
+  };
+}
 export function loadSpec() {
   return JSON.parse(readFileSync(path.join(here, 'spec.json'), 'utf8'));
 }
@@ -229,11 +252,41 @@ function loadFixture(opts) {
   if (!rel) throw new Error('no fixture for endpoint ' + opts.endpoint + ' in ' + key);
   return JSON.parse(fs.readFileSync(path.join(here, rel), 'utf8'));
 }
+function loadJourney(opts) {
+  opts = opts || {};
+  const persona = opts.persona;
+  const lfi = opts.lfi || 'median';
+  const info = manifest.personas[persona];
+  if (!info) throw new Error('unknown persona: ' + persona);
+  const useSeed = opts.seed != null ? opts.seed : info.default_seed;
+  const key = persona + '|' + lfi + '|' + useSeed;
+  const fx = manifest.fixtures[key];
+  if (!fx) throw new Error('no fixture for ' + key);
+  const endpoints = {};
+  const epEntries = Object.entries(fx.endpoints);
+  for (let i = 0; i < epEntries.length; i++) {
+    const ep = epEntries[i][0];
+    const rel = epEntries[i][1];
+    endpoints[ep] = JSON.parse(fs.readFileSync(path.join(here, rel), 'utf8'));
+  }
+  const parties = endpoints['/parties'];
+  return {
+    persona: persona,
+    lfi: lfi,
+    seed: useSeed,
+    accountIds: fx.accountIds || [],
+    customerId: (parties && parties.Data && parties.Data.Party && parties.Data.Party.PartyId) || null,
+    specVersion: manifest.specVersion,
+    specSha: manifest.specSha,
+    version: manifest.version,
+    endpoints: endpoints,
+  };
+}
 function loadSpec() { return JSON.parse(fs.readFileSync(path.join(here, 'spec.json'), 'utf8')); }
 function loadPersonaManifest(personaId) {
   return JSON.parse(fs.readFileSync(path.join(here, 'personas', personaId + '.json'), 'utf8'));
 }
-module.exports = { manifest, listPersonas, getPersonaInfo, listEndpoints, loadFixture, loadSpec, loadPersonaManifest };
+module.exports = { manifest, listPersonas, getPersonaInfo, listEndpoints, loadFixture, loadJourney, loadSpec, loadPersonaManifest };
 `;
 fs.writeFileSync(path.join(OUT, 'index.cjs'), indexCjs);
 
@@ -251,8 +304,19 @@ export interface Manifest {
   specSha: string;
   generatedAt: string;
   nowAnchor: string;
-  fixtures: Record<string, { personaId: string; lfi: string; seed: number; endpoints: Record<string, string> }>;
+  fixtures: Record<string, { personaId: string; lfi: string; seed: number; accountIds: string[]; endpoints: Record<string, string> }>;
   personas: Record<string, PersonaInfo>;
+}
+export interface Journey {
+  persona: string;
+  lfi: 'rich' | 'median' | 'sparse';
+  seed: number;
+  accountIds: string[];
+  customerId: string | null;
+  specVersion: string;
+  specSha: string;
+  version: string;
+  endpoints: Record<string, unknown>;
 }
 export const manifest: Manifest;
 export function listPersonas(): string[];
@@ -264,6 +328,11 @@ export function loadFixture(opts: {
   seed?: number;
   endpoint: string;
 }): unknown;
+export function loadJourney(opts: {
+  persona: string;
+  lfi?: 'rich' | 'median' | 'sparse';
+  seed?: number;
+}): Journey;
 export function loadSpec(): unknown;
 export function loadPersonaManifest(personaId: string): unknown;
 `;
@@ -287,7 +356,7 @@ npm install @openfinance-os/sandbox-fixtures
 ## Use
 
 \`\`\`js
-import { loadFixture, listPersonas, listEndpoints, loadSpec } from '@openfinance-os/sandbox-fixtures';
+import { loadFixture, loadJourney, listPersonas, listEndpoints, loadSpec } from '@openfinance-os/sandbox-fixtures';
 
 const sara = loadFixture({
   persona: 'salaried_expat_mid',
@@ -295,6 +364,14 @@ const sara = loadFixture({
   endpoint: '/accounts/{AccountId}/transactions',
 });
 // → v2.1-shaped envelope: { Data: { AccountId, Transaction: [...] }, Links, Meta, _watermark, ... }
+
+const journey = loadJourney({ persona: 'salaried_expat_mid', lfi: 'median' });
+// → { persona, lfi, seed, accountIds, customerId, specVersion, specSha, version,
+//     endpoints: { '/accounts': envelope, '/parties': envelope,
+//       '/accounts/{AccountId}/balances': envelope, ... all endpoints, all coherent } }
+// AccountIds, CustomerId line up across every endpoint — drop-in replacement for
+// the data your TPP demo currently fetches from the Nebras-operated regulatory
+// sandbox, which ships intentionally thin mock data.
 
 listPersonas();
 // → ['salaried_expat_mid', 'salaried_emirati_affluent', ...]

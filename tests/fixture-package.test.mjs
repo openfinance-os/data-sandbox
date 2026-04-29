@@ -70,8 +70,46 @@ describe('EXP-20 fixture package — @openfinance-os/sandbox-fixtures', () => {
     const text = fs.readFileSync(cjsPath, 'utf8');
     expect(text).toContain('module.exports');
     expect(text).toContain('loadFixture');
+    expect(text).toContain('loadJourney');
     expect(text).toContain('listPersonas');
     expect(text).toContain('loadSpec');
+  });
+
+  // EXP-29 — TPP showcase consumers shouldn't have to loop endpoints
+  // themselves to assemble a coherent journey. loadJourney returns the
+  // full bundle in one call.
+  it('EXP-29 loadJourney returns a coherent bundle for one (persona, lfi, seed)', async () => {
+    const m = await import(path.join(PKG_DIR, 'index.mjs'));
+    const j = m.loadJourney({ persona: 'salaried_expat_mid', lfi: 'median' });
+    expect(j.persona).toBe('salaried_expat_mid');
+    expect(j.lfi).toBe('median');
+    expect(j.seed).toBe(4729);
+    expect(j.specVersion).toBe('v2.1');
+    expect(j.specSha.length).toBeGreaterThan(20);
+    expect(j.version).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(j.accountIds.length).toBeGreaterThan(0);
+    expect(j.customerId).toMatch(/-party$/);
+
+    // The accounts envelope agrees with manifest.accountIds.
+    const accountsEnv = j.endpoints['/accounts'];
+    expect(accountsEnv?.Data?.Account?.map((a) => a.AccountId).sort())
+      .toEqual([...j.accountIds].sort());
+
+    // Every accountId resolves to balances + transactions envelopes.
+    for (const id of j.accountIds) {
+      expect(j.endpoints[`/accounts/${id}/balances`]).toBeDefined();
+      expect(j.endpoints[`/accounts/${id}/transactions`]).toBeDefined();
+    }
+
+    // /parties customerId matches the journey's customerId.
+    expect(j.endpoints['/parties']?.Data?.Party?.PartyId).toBe(j.customerId);
+  });
+
+  it('EXP-29 loadJourney is deterministic across two calls', async () => {
+    const m = await import(path.join(PKG_DIR, 'index.mjs'));
+    const a = m.loadJourney({ persona: 'hnw_multicurrency', lfi: 'rich' });
+    const b = m.loadJourney({ persona: 'hnw_multicurrency', lfi: 'rich' });
+    expect(JSON.stringify(a)).toBe(JSON.stringify(b));
   });
 
   it('every fixture file is valid JSON and v2.1-shaped', async () => {

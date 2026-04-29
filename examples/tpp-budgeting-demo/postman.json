@@ -1,0 +1,107 @@
+{
+  "info": {
+    "name": "Open Finance Data Sandbox — TPP Budgeting Demo",
+    "description": "Worked-example flow for a TPP showcase journey: fetch /accounts, chain the first AccountId into per-account /balances, /transactions, /standing-orders. Mirrors what a TPP would do against the Nebras-operated regulatory sandbox post-consent, but sourced from the OpenFinance-OS Commons Data Sandbox's narratively-coherent synthetic personas. Synthetic data — not endorsed by Nebras / CBUAE.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "origin", "value": "https://openfinance-os.org/commons/data-sandbox", "description": "Sandbox deployment origin" },
+    { "key": "persona", "value": "salaried_expat_mid", "description": "Sara — mid-tier salaried expat" },
+    { "key": "lfi", "value": "median", "description": "rich | median | sparse" },
+    { "key": "seed", "value": "4729", "description": "Persona's default seed (manifest.personas.<id>.default_seed)" },
+    { "key": "accountId", "value": "", "description": "Set by the GET /accounts test script" }
+  ],
+  "item": [
+    {
+      "name": "GET manifest",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": "{{origin}}/fixtures/v1/manifest.json"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('manifest is v2.1', () => {",
+              "  const m = pm.response.json();",
+              "  pm.expect(m.specVersion).to.eql('v2.1');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET /parties",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": "{{origin}}/fixtures/v1/bundles/{{persona}}/{{lfi}}/seed-{{seed}}/parties.json"
+      }
+    },
+    {
+      "name": "GET /accounts",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": "{{origin}}/fixtures/v1/bundles/{{persona}}/{{lfi}}/seed-{{seed}}/accounts.json"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const env = pm.response.json();",
+              "const id = env.Data && env.Data.Account && env.Data.Account[0] && env.Data.Account[0].AccountId;",
+              "pm.expect(id, 'first AccountId').to.be.a('string');",
+              "pm.environment.set('accountId', id);",
+              "console.log('captured accountId:', id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET /accounts/{{accountId}}/balances",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": "{{origin}}/fixtures/v1/bundles/{{persona}}/{{lfi}}/seed-{{seed}}/accounts__{{accountId}}__balances.json"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('balance envelope AccountId matches request', () => {",
+              "  const env = pm.response.json();",
+              "  pm.expect(env.Data.AccountId).to.eql(pm.environment.get('accountId'));",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET /accounts/{{accountId}}/transactions",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": "{{origin}}/fixtures/v1/bundles/{{persona}}/{{lfi}}/seed-{{seed}}/accounts__{{accountId}}__transactions.json"
+      }
+    },
+    {
+      "name": "GET /accounts/{{accountId}}/standing-orders",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": "{{origin}}/fixtures/v1/bundles/{{persona}}/{{lfi}}/seed-{{seed}}/accounts__{{accountId}}__standing-orders.json"
+      }
+    }
+  ]
+}

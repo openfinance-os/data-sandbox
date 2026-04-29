@@ -95,6 +95,58 @@ def load_persona_manifest(persona_id: str) -> Dict[str, Any]:
     return json.loads((_data_dir() / "personas" / f"{persona_id}.json").read_text(encoding="utf-8"))
 
 
+def load_journey(
+    persona: str,
+    *,
+    lfi: str = "median",
+    seed: Optional[int] = None,
+) -> Dict[str, Any]:
+    """Load the full coherent bundle for one (persona, lfi, seed) tuple.
+
+    Returns a journey dict::
+
+        {
+          "persona": str, "lfi": str, "seed": int,
+          "accountIds": [str, ...],
+          "customerId": str | None,             # /parties Data.Party.PartyId
+          "specVersion": "v2.1", "specSha": str, "version": str,
+          "endpoints": { "/accounts": envelope,
+                          "/parties": envelope,
+                          "/accounts/{AccountId}/balances": envelope, ... }
+        }
+
+    AccountIds, CustomerId, transactions all line up across endpoints — drop
+    this in where your TPP demo currently calls the Nebras-operated regulatory
+    sandbox to get richer, persona-coherent data for sales / pitch / QA flows.
+    """
+    m = _manifest()
+    info = m["personas"].get(persona)
+    if info is None:
+        raise KeyError(f"unknown persona: {persona}")
+    use_seed = seed if seed is not None else info["default_seed"]
+    key = f"{persona}|{lfi}|{use_seed}"
+    fx = m["fixtures"].get(key)
+    if fx is None:
+        raise KeyError(f"no fixture for {key}")
+    endpoints = {
+        ep: json.loads((_data_dir() / rel).read_text(encoding="utf-8"))
+        for ep, rel in fx["endpoints"].items()
+    }
+    parties_env = endpoints.get("/parties", {})
+    customer_id = parties_env.get("Data", {}).get("Party", {}).get("PartyId")
+    return {
+        "persona": persona,
+        "lfi": lfi,
+        "seed": use_seed,
+        "accountIds": fx.get("accountIds", []),
+        "customerId": customer_id,
+        "specVersion": m["specVersion"],
+        "specSha": m["specSha"],
+        "version": m["version"],
+        "endpoints": endpoints,
+    }
+
+
 def manifest() -> Dict[str, Any]:
     """Return the top-level manifest.json."""
     return _manifest()
@@ -105,6 +157,7 @@ __all__ = [
     "get_persona_info",
     "list_endpoints",
     "load_fixture",
+    "load_journey",
     "load_spec",
     "load_persona_manifest",
     "manifest",

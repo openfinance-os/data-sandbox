@@ -17,7 +17,7 @@ pip install openfinance-os-sandbox-fixtures
 
 ```python
 from openfinance_os_sandbox_fixtures import (
-    load_fixture, list_personas, list_endpoints, load_spec,
+    load_fixture, load_journey, list_personas, list_endpoints, load_spec,
 )
 
 sara = load_fixture(
@@ -26,6 +26,15 @@ sara = load_fixture(
     endpoint="/accounts/{AccountId}/transactions",
 )
 # v2.1-shaped envelope: {"Data": {"AccountId", "Transaction": [...]}, "Links", "Meta", "_watermark", ...}
+
+journey = load_journey(persona="salaried_expat_mid", lfi="median")
+# {"persona", "lfi", "seed", "accountIds", "customerId",
+#  "specVersion", "specSha", "version",
+#  "endpoints": {"/accounts": envelope, "/parties": envelope,
+#                "/accounts/{AccountId}/balances": envelope, ... all coherent}}
+# AccountIds, CustomerId line up across every endpoint — drop-in replacement
+# for the Nebras-operated regulatory sandbox's mock data when wiring up TPP
+# demo journeys for sales / pitch / QA flows that need richer payloads.
 
 list_personas()
 # ['salaried_expat_mid', 'salaried_emirati_affluent', ...]

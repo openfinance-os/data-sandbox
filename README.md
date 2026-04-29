@@ -105,11 +105,21 @@ npm run test:perf   # Lighthouse-CI mobile profile (EXP-24)
 npm run ci          # full suite
 ```
 
+## TPP integration
+
+If you are wiring sandbox personas into a TPP demo journey to overcome the
+intentionally-thin mock data in the Nebras-operated regulatory sandbox,
+the [integration guide](./src/integrate.html) walks through four plug
+points (iframe, npm `loadJourney()`, PyPI `load_journey()`, raw HTTPS
+fixtures at `/fixtures/v1/`). A worked example lives in
+[`examples/tpp-budgeting-demo/`](./examples/tpp-budgeting-demo/).
+
 ## Docs
 
 - **PRD** — [`PRD_OF_Data_Explorer.md`](./PRD_OF_Data_Explorer.md) (v0.9)
 - **Implementation plan** — [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
 - **Methodology, citation guidance, stewardship** — [/about](./src/about.html)
+- **TPP integration guide** — [/integrate](./src/integrate.html)
 
 ## Licensing
 
