@@ -55,11 +55,8 @@ for (const [pid, persona] of Object.entries(personas)) {
     if (tx.MerchantDetails?.MerchantName) {
       probes.push({ at: 'tx.MerchantDetails.MerchantName', val: tx.MerchantDetails.MerchantName });
     }
-    if (typeof tx.TransactionInformation === 'string' && tx.TransactionInformation.startsWith('Salary credit — ')) {
-      probes.push({
-        at: 'tx.TransactionInformation (employer)',
-        val: tx.TransactionInformation.replace('Salary credit — ', ''),
-      });
+    if (tx.CreditorName) {
+      probes.push({ at: 'tx.CreditorName', val: tx.CreditorName });
     }
   }
   for (const b of bundle.beneficiaries) {
