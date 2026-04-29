@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>About · Open Finance Data Sandbox</title>
+<link rel="stylesheet" href="styles.css" />
+<style>
+  body { background: var(--bg); }
+  .about-shell {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 24px 18px 80px;
+  }
+  .about-shell h1 {
+    font-size: 22px;
+    margin: 12px 0 4px;
+  }
+  .about-shell h2 {
+    font-size: 16px;
+    margin-top: 28px;
+    margin-bottom: 8px;
+  }
+  .about-shell h3 {
+    font-size: 13px;
+    margin-top: 16px;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+  }
+  .about-shell p, .about-shell li { font-size: 14px; line-height: 1.55; }
+  .about-shell li { margin-bottom: 4px; }
+  .about-shell a { color: var(--accent); text-decoration: none; }
+  .about-shell a:hover { text-decoration: underline; }
+  .meta-grid {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 4px 16px;
+    font-size: 13px;
+    margin-top: 8px;
+  }
+  .meta-grid dt {
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+  }
+  .meta-grid dd { margin: 0; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; }
+  .lead { font-size: 15px; line-height: 1.6; color: var(--text); }
+  .back-link { font-size: 12px; color: var(--text-muted); }
+  .band-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+    font-size: 13px;
+  }
+  .band-table th, .band-table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+  }
+  .band-table th { background: var(--bg-soft); font-size: 11px; text-transform: uppercase; }
+</style>
+</head>
+<body>
+<div class="banner" role="status">
+  <strong>SYNTHETIC.</strong>
+  Data is generated from the UAE Open Finance Standards v2.1 OpenAPI spec — not from any real bank.
+  Median populate-rate is a Commons-curated ecosystem assumption, not endorsed by Nebras or CBUAE.
+</div>
+
+<main class="about-shell">
+  <p class="back-link"><a href="index.html">← Back to the sandbox</a></p>
+
+  <h1>About</h1>
+  <p class="lead">
+    The <strong>Open Finance Data Sandbox</strong> is a client-side static
+    explorer that lets a TPP-perspective user load synthetic UAE customer
+    personas and read every UAE Open Finance Bank Data Sharing payload
+    they would receive, with mandatory / optional / conditional field
+    treatment derived live from the published v2.1 OpenAPI spec.
+  </p>
+  <p>
+    It is contributed and maintained as part of the
+    <a href="https://openfinance-os.org/commons/">OpenFinance-OS Commons</a>.
+    Synthetic by construction — no real customer data, no anonymised data,
+    no institution-specific operational detail. The Median LFI profile is a
+    Commons-curated ecosystem assumption, not endorsed by Nebras or CBUAE,
+    and is recalibrated quarterly as cross-LFI public evidence accumulates.
+  </p>
+
+  <h2>What this sandbox is for</h2>
+  <ul>
+    <li>Underwriters, risk modellers, AML analysts and product managers stress-testing affordability / fraud / decisioning logic against worst-case (Sparse) and best-case (Rich) field-population shapes.</li>
+    <li>Fintech founders and pre-licence applicants assessing UAE OF feasibility before raising the next round.</li>
+    <li>SDK and tooling authors who want a deterministic test corpus they can pin and rerun in CI.</li>
+    <li>LFI compliance officers self-verifying their bank's emissions against the v2.1 spec.</li>
+    <li>Educators and journalists who want a citable, stable example of what a real OF payload looks like.</li>
+  </ul>
+
+  <h2>What this sandbox is <em>not</em></h2>
+  <ul>
+    <li>Not a production decisioning system. It never runs a real credit decision, payment, or any other operation against live data.</li>
+    <li>Not a TPP runtime. It does not call the Al Tareq API Hub. It synthesises data from the spec; it does not consume real payloads.</li>
+    <li>Not a faithful simulation of any specific LFI. The Median populate-rate is a Commons-curated assumption from publicly available evidence.</li>
+  </ul>
+
+  <h2>Methodology — populate-rate bands</h2>
+  <p>
+    Every optional field in the v2.1 spec carries one of five bands. These
+    are the qualitative vocabulary; the numeric calibration that drives the
+    Median LFI generator is the engineering contract pinned in the source.
+  </p>
+  <table class="band-table" aria-label="Populate-rate bands">
+    <thead><tr><th>Band</th><th>Meaning</th><th>Median populate (v1)</th></tr></thead>
+    <tbody>
+      <tr><td>Universal</td><td>Populated by all LFIs in practice.</td><td>1.0</td></tr>
+      <tr><td>Common</td><td>Populated by most LFIs.</td><td>0.7</td></tr>
+      <tr><td>Variable</td><td>Populated by some LFIs.</td><td>0.4</td></tr>
+      <tr><td>Rare</td><td>Only premium-product or mature-integration LFIs.</td><td>0.1</td></tr>
+      <tr><td>Unknown</td><td>No cross-LFI evidence yet.</td><td>0.0</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Bands are revised quarterly as public evidence accumulates from the live
+    API Hub and ecosystem reporting. The revision history is published on
+    <code>/changelog</code> with a one-paragraph note explaining what changed
+    and why.
+  </p>
+
+  <h2>Citation guidance</h2>
+  <p>If you are referencing this sandbox in an article, blog post, slide deck, paper or LMS module:</p>
+  <ul>
+    <li><strong>Stable persona-level URLs.</strong> Every share-URL encodes <code>(persona, lfi, seed)</code> and reproduces the same payload bundle deterministically across machines. URLs are stable across deployments — pin tested at every build.</li>
+    <li><strong>Embed mode.</strong> A chrome-less variant lives at <code>/embed?persona=&lfi=&endpoint=&seed=&height=</code> for iframe consumption. oEmbed metadata published.</li>
+    <li><strong>Cite the spec, not the sandbox.</strong> The sandbox is the show-don't-tell complement; the authoritative source is the upstream UAE Open Finance Standards v2.1 OpenAPI spec at the pinned SHA.</li>
+    <li><strong>Always describe the data as synthetic.</strong> The footer watermark is on every export and embed; please carry it through to the citation.</li>
+  </ul>
+
+  <h2>Stewardship</h2>
+  <p>
+    The sandbox is committed to a <strong>24-month minimum maintenance window</strong>
+    from public launch. Maintenance includes quarterly populate-rate band
+    recalibration, spec-pin updates within 30 days of any upstream Nebras
+    <code>v2.x</code> release on the <code>ozone</code> branch, bug-fix triage
+    within 14 days of an issue report, and quarterly persona-library reviews.
+  </p>
+  <p>
+    If the maintainer can no longer continue, the sandbox will be offered to
+    OF-OS Commons stewards for take-over with full repository access and 90
+    days of consultative support. The artefact will never go un-maintained
+    without an explicit, public end-of-life notice on this page providing at
+    least 90 days' warning.
+  </p>
+
+  <h2>Spec source &amp; version pin</h2>
+  <dl class="meta-grid" aria-label="Spec metadata">
+    <dt>Standards baseline</dt><dd>UAE Open Finance v2.1 (Account Information API)</dd>
+    <dt>OpenAPI version</dt><dd id="meta-openapi">—</dd>
+    <dt>Upstream repo</dt><dd id="meta-repo">—</dd>
+    <dt>Pinned SHA</dt><dd id="meta-sha">—</dd>
+    <dt>Retrieved</dt><dd id="meta-retrieved">—</dd>
+    <dt>Endpoints in scope</dt><dd id="meta-endpoints">—</dd>
+    <dt>Total fields</dt><dd id="meta-fields">—</dd>
+    <dt>Mandatory fields</dt><dd id="meta-mandatory">—</dd>
+  </dl>
+
+  <h2>Reporting issues &amp; contributing</h2>
+  <p>
+    Every field card carries a <em>Report an issue</em> link that opens a
+    pre-filled GitHub issue with the full reproduction context (persona,
+    LFI, seed, pinned SHA, field path). Issues are triaged within 14 days.
+  </p>
+  <p>
+    Community persona contributions (PR-style) open in v2 alongside a
+    contributing guide and SME review process. v1 and v1.5 remain
+    maintainer-curated.
+  </p>
+
+  <h2>Licensing</h2>
+  <ul>
+    <li><strong>Code:</strong> MIT.</li>
+    <li><strong>Synthetic data &amp; fixtures:</strong> CC0 — public domain.</li>
+    <li><strong>Vendored OpenAPI YAML:</strong> inherits the upstream Nebras-Open-Finance/api-specs licence; the maintainer verifies compatibility at every pin-SHA bump.</li>
+  </ul>
+</main>
+
+<footer class="footer" role="contentinfo">
+  <span>SYNTHETIC · Open Finance Data Sandbox · OpenFinance-OS Commons · Standards v2.1 @ <span id="footer-sha">unknown</span></span>
+</footer>
+
+<script type="module" src="about.js"></script>
+</body>
+</html>

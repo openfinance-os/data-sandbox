@@ -19,11 +19,13 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:perf": "lhci autorun --config=lighthouserc.json",
     "serve": "python3 -m http.server 8000 --directory src",
     "ci": "npm run verify:spec-shape && npm run build:spec && npm run lint && npm test"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.0",
+    "@lhci/cli": "^0.14.0",
     "@playwright/test": "^1.49.0",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",

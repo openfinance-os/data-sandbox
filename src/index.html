@@ -6,6 +6,27 @@
 <meta name="robots" content="noindex" />
 <title>Open Finance Data Sandbox · Phase 0</title>
 <link rel="stylesheet" href="styles.css" />
+<link rel="modulepreload" href="app.js" />
+<link rel="modulepreload" href="prng.js" />
+<link rel="modulepreload" href="url.js" />
+<link rel="modulepreload" href="generator/index.js" />
+<link rel="modulepreload" href="generator/identity.js" />
+<link rel="modulepreload" href="generator/accounts.js" />
+<link rel="modulepreload" href="generator/balances.js" />
+<link rel="modulepreload" href="generator/transactions.js" />
+<link rel="modulepreload" href="generator/standing-orders.js" />
+<link rel="modulepreload" href="generator/direct-debits.js" />
+<link rel="modulepreload" href="generator/beneficiaries.js" />
+<link rel="modulepreload" href="generator/scheduled-payments.js" />
+<link rel="modulepreload" href="generator/parties.js" />
+<link rel="modulepreload" href="generator/statements.js" />
+<link rel="modulepreload" href="generator/product.js" />
+<link rel="modulepreload" href="generator/lfi-profile.js" />
+<link rel="modulepreload" href="shared/spec-helpers.js" />
+<link rel="modulepreload" href="shared/watermark.js" />
+<link rel="modulepreload" href="ui/export.js" />
+<link rel="preload" href="../dist/SPEC.json" as="fetch" crossorigin="anonymous" />
+<link rel="preload" href="../dist/data.json" as="fetch" crossorigin="anonymous" />
 </head>
 <body>
 <div class="banner" role="status" aria-label="Synthetic data notice">
@@ -42,6 +63,8 @@
       <div class="coverage-bar"><span id="coverage-fill"></span></div>
       <span class="coverage-pct" id="coverage-pct">—</span>
     </div>
+    <button class="topbar-btn" id="tour-btn" title="Walk through Sara's bundle in 5 steps" aria-label="Start guided tour">Tour</button>
+    <a class="topbar-btn" href="about.html" title="Methodology, citation guidance, stewardship">About</a>
   </nav>
 </header>
 

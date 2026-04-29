@@ -104,6 +104,85 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   border: 1px solid var(--border);
 }
 
+.topbar-btn {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 3px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-card);
+  color: var(--text);
+  cursor: pointer;
+  text-decoration: none;
+  font-family: inherit;
+}
+.topbar-btn:hover { background: var(--accent-soft); }
+
+.tour-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.32);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+.tour-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  max-width: 520px;
+  width: 90vw;
+  padding: 18px 20px;
+}
+.tour-step-num {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.tour-card h3 {
+  font-size: 16px;
+  margin: 0 0 8px;
+}
+.tour-card p {
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0 0 10px;
+}
+.tour-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  gap: 8px;
+}
+.tour-actions button {
+  padding: 5px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 3px;
+  background: var(--bg-card);
+  font-size: 12px;
+  cursor: pointer;
+}
+.tour-actions .tour-primary {
+  background: var(--accent);
+  color: var(--mandatory-fg);
+  border-color: var(--accent);
+}
+.tour-skip {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tour-overlay { transition: none; }
+}
+
 .coverage {
   display: flex;
   align-items: center;

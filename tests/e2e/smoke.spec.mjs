@@ -96,6 +96,63 @@ test('embed page renders chrome-less view with status badges — EXP-27', async 
   await expect(page.locator('.persona-pane')).toHaveCount(0);
 });
 
+test('identity posture — no cookies / localStorage writes / non-static fetches — EXP-22', async ({ page, context }) => {
+  const fetchedUrls = [];
+  page.on('request', (req) => {
+    if (req.frame() === page.mainFrame()) fetchedUrls.push(req.url());
+  });
+  await page.goto('/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729');
+  await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
+
+  // Cookies — none should be set by the app on this origin.
+  const cookies = await context.cookies('http://127.0.0.1:8765');
+  expect(cookies, 'cookies present').toEqual([]);
+
+  // localStorage / sessionStorage — empty.
+  const ls = await page.evaluate(() => Object.keys(window.localStorage));
+  const ss = await page.evaluate(() => Object.keys(window.sessionStorage));
+  expect(ls).toEqual([]);
+  expect(ss).toEqual([]);
+
+  // Fetched URLs — every same-origin request must be a static asset under
+  // /src or /dist (no analytics calls in Phase 1; PostHog wiring lands later).
+  for (const url of fetchedUrls) {
+    if (!url.startsWith('http://127.0.0.1:8765')) continue;
+    const ok = url.includes('/src/') || url.includes('/dist/') || url.includes('favicon.ico');
+    expect(ok, `unexpected same-origin fetch: ${url}`).toBe(true);
+  }
+});
+
+test('about page renders with live spec metadata', async ({ page }) => {
+  await page.goto('/src/about.html');
+  await page.waitForFunction(() => document.getElementById('meta-sha')?.textContent !== '—');
+  const sha = await page.locator('#meta-sha').textContent();
+  expect(sha?.length).toBeGreaterThan(20);
+  // Total + mandatory field counts pulled from SPEC.json must be numeric.
+  const total = parseInt((await page.locator('#meta-fields').textContent()) ?? '0', 10);
+  const mandatory = parseInt((await page.locator('#meta-mandatory').textContent()) ?? '0', 10);
+  expect(total).toBeGreaterThan(100);
+  expect(mandatory).toBeGreaterThan(50);
+  expect(mandatory).toBeLessThan(total);
+});
+
+test('tour walks through 5 steps and finishes cleanly', async ({ page }) => {
+  await page.goto('/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729');
+  await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
+  await page.locator('#tour-btn').click();
+  // Step 1 visible.
+  await expect(page.locator('#tour-overlay')).toBeVisible();
+  await expect(page.locator('#tour-overlay .tour-step-num')).toContainText('Step 1 of 5');
+  for (let i = 0; i < 4; i++) {
+    await page.locator('#tour-overlay .tour-primary').click();
+    await page.waitForTimeout(60);
+  }
+  // Final step now shows Finish.
+  await expect(page.locator('#tour-overlay .tour-primary')).toHaveText('Finish');
+  await page.locator('#tour-overlay .tour-primary').click();
+  await expect(page.locator('#tour-overlay')).toHaveCount(0);
+});
+
 test('field card shows all 9 elements + Report-an-issue link', async ({ page }) => {
   await page.goto('/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729');
   await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
