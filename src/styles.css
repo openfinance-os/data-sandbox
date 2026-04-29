@@ -122,6 +122,79 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
 
 .control-group input { min-width: 88px; }
 
+/* LFI segmented control — promotes the Rich/Median/Sparse choice to a
+   visible lever. The single-line caption underneath previews the populate-
+   rate consequence before the user goes to the coverage meter. */
+.lfi-control { gap: 2px; }
+.lfi-seg {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--bg-card);
+}
+.lfi-seg button {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--border);
+  color: var(--text);
+  cursor: pointer;
+  min-width: 56px;
+}
+.lfi-seg button:last-child { border-right: none; }
+.lfi-seg button[aria-checked='true'],
+.lfi-seg button[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--mandatory-fg);
+}
+.lfi-seg button:hover:not([aria-checked='true']):not([aria-pressed='true']) {
+  background: var(--accent-soft);
+}
+.lfi-seg .lfi-compare {
+  border-left: 1px solid var(--border-strong);
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.lfi-seg .lfi-compare:hover { color: var(--accent); background: var(--accent-soft); }
+.lfi-caption {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  padding: 2px 2px 0;
+  max-width: 320px;
+  line-height: 1.3;
+}
+.lfi-compare-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px dashed var(--border);
+}
+.lfi-compare-row .control-label { font-size: 10px; color: var(--text-muted); }
+.lfi-seg-compare button { min-width: 50px; padding: 3px 8px; font-size: 11px; }
+.lfi-compare-swap, .lfi-compare-close {
+  font: inherit;
+  font-size: 12px;
+  padding: 2px 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 3px;
+  background: var(--bg-card);
+  cursor: pointer;
+  color: var(--text-muted);
+}
+.lfi-compare-swap:hover, .lfi-compare-close:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.control-seed[hidden] { display: none; }
+
 .version-pin {
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-size: 11px;
@@ -292,12 +365,15 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   .tour-overlay { transition: none; }
 }
 
-/* Coverage chip — promoted from a small bar to a more visible indicator
-   that shows both the populate-rate percentage and the colour-coded segment. */
+/* Coverage indicator — band-disaggregated readout of populate-rate per
+   §7.3 (Universal / Common / Variable / Rare). Each band is a four-cell
+   strip whose filled cells reflect the populated/total ratio for that
+   band; the trailing percentage is the bundle-level roll-up. Band detail
+   is the diagnostic the single bar concealed (Faisal's JTBD-3.2). */
 .coverage {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   font-size: 12px;
   color: var(--text);
   padding: 4px 10px 4px 8px;
@@ -310,22 +386,41 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--text-muted);
+  cursor: help;
 }
-.coverage-bar {
-  width: 110px;
+.coverage-bands {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+.coverage-band {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  cursor: help;
+}
+.coverage-band .band-label { font-weight: 600; }
+.coverage-band .band-cells {
+  display: inline-flex;
+  gap: 1px;
+}
+.coverage-band .band-cell {
+  width: 6px;
   height: 8px;
   background: var(--bg-card);
   border: 1px solid var(--border-strong);
-  border-radius: 999px;
-  overflow: hidden;
+  border-radius: 1px;
 }
-#coverage-fill {
-  display: block;
-  height: 100%;
-  width: 0%;
-  background: linear-gradient(90deg, #c8862a 0%, #d8a13b 30%, #6a8f4a 65%, var(--accent) 100%);
-  transition: width 200ms ease;
-}
+.coverage-band[data-band='Universal'] .band-cell.is-on { background: var(--accent); border-color: var(--accent); }
+.coverage-band[data-band='Common']    .band-cell.is-on { background: #6a8f4a; border-color: #6a8f4a; }
+.coverage-band[data-band='Variable']  .band-cell.is-on { background: #d8a13b; border-color: #d8a13b; }
+.coverage-band[data-band='Rare']      .band-cell.is-on { background: #c8862a; border-color: #c8862a; }
+.coverage-band.is-empty { opacity: 0.45; }
 .coverage-pct {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -370,6 +465,39 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   display: flex;
   flex-direction: column;
   min-height: 0;
+}
+
+/* JTBD preset chip rail above the persona library — each preset filters the
+   library to personas whose stress_coverage covers a known JTBD area
+   (Affordability / AML / Thin-file / FX / Low-volume / Sharia). One tap
+   replaces the manual stress-chip filter; chips are toggle-on/toggle-off. */
+.jtbd-rail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-soft);
+}
+.jtbd-rail .jtbd-chip {
+  font: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.jtbd-rail .jtbd-chip:hover { color: var(--accent); border-color: var(--accent); }
+.jtbd-rail .jtbd-chip[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--mandatory-fg);
+  border-color: var(--accent);
 }
 
 .stress-filter-bar {
@@ -486,6 +614,23 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   font-size: 10px;
   color: var(--text-muted);
   text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+/* "Best for" — derived from stress_coverage at render time so the persona
+   library answers "which one of these answers my JTBD?" without scanning
+   each narrative. */
+.persona-best {
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 600;
+  margin-top: 2px;
+}
+.persona-best::before {
+  content: 'Best for · ';
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-size: 9px;
   letter-spacing: 0.04em;
 }
 .persona-narrative {
@@ -1187,6 +1332,275 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   color: var(--text-muted);
   background: var(--bg-card);
   flex: 0 0 auto;
+}
+
+/* Persona overview landing — when the user clicks a persona card, the
+   payload pane defaults to a story-level summary (narrative + key
+   commitments + "what to look at first") rather than the wire-level
+   /accounts table. Wire endpoints remain a click away in the navigator. */
+.persona-overview {
+  padding: 16px 18px;
+  max-width: 880px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.persona-overview h2 {
+  font-size: 18px;
+  margin: 0;
+}
+.persona-overview .po-archetype {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+.persona-overview .po-narrative {
+  font-size: 14px;
+  line-height: 1.55;
+  background: var(--bg-soft);
+  border-left: 3px solid var(--accent);
+  padding: 10px 14px;
+  border-radius: 0 4px 4px 0;
+}
+.persona-overview .po-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+.persona-overview .po-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 10px 12px;
+  font-size: 12px;
+}
+.persona-overview .po-card-title {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.persona-overview .po-card-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.persona-overview .po-card ul {
+  margin: 4px 0 0;
+  padding-left: 16px;
+  font-size: 12px;
+  color: var(--text);
+}
+.persona-overview .po-jumps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.persona-overview .po-jump {
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  background: var(--bg-card);
+  color: var(--accent);
+  cursor: pointer;
+}
+.persona-overview .po-jump:hover { background: var(--accent); color: var(--mandatory-fg); }
+.persona-overview .po-stress {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* Hover preview for field cards — fast affordance per EXP-14, click still
+   pins the full card in the right pane. */
+.hovercard {
+  position: fixed;
+  z-index: 300;
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-size: 12px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  max-width: 320px;
+  pointer-events: none;
+}
+.hovercard .hc-title {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.hovercard .hc-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.hovercard .hc-guidance {
+  font-size: 11.5px;
+  color: var(--text);
+  line-height: 1.4;
+}
+.hovercard .hc-meta {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hovercard { transition: none; }
+}
+
+/* Inline field-card expansion under each column header — surfaces status,
+   type, and one-line Real-LFIs guidance without click-then-read. Toggle
+   sits in the payload toolbar. */
+.payload-rendered tbody tr.field-row td {
+  background: var(--bg-soft);
+  border-bottom: 1px solid var(--border-strong);
+  font-size: 11px;
+  color: var(--text-muted);
+  vertical-align: top;
+  padding: 6px 8px;
+}
+.payload-rendered tr.field-row .fr-guidance {
+  display: block;
+  margin-top: 2px;
+  color: var(--text);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.payload-rendered tr.field-row .fr-meta {
+  display: block;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 10px;
+}
+
+.toolbar-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.toolbar-checkbox input { margin: 0; }
+
+/* Status pill legend on the field-detail header — anchored mini-legend so
+   first-time users don't have to open a card to learn what M/O/C means. */
+.status-legend {
+  float: right;
+  display: inline-flex;
+  gap: 4px;
+  margin-top: -2px;
+}
+.status-legend .legend-pill {
+  font-size: 9px;
+  padding: 1px 4px;
+  margin: 0;
+  cursor: help;
+}
+
+/* Coachmarks — first-load orientation tour for cold visitors arriving
+   from the Commons feed. Per EXP-22 the app does not write to local /
+   sessionStorage; the dismissal lives only in JS state, so a refresh
+   re-shows by design. The coachmarks fire only when the URL has no query
+   params (cold landing) and never re-fire once dismissed in the tab. */
+.coachmark-host { position: fixed; inset: 0; pointer-events: none; z-index: 220; }
+.coachmark-host:not([hidden]) { display: block; }
+/* No click-blocking backdrop — coachmarks orient, they don't gate. The
+   user can interact with the live target (LFI / persona / nav) while the
+   coachmark explains it; dismissal is via Skip / Got it / Esc. */
+.coachmark {
+  position: absolute;
+  background: var(--bg-card);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  padding: 12px 14px;
+  width: 280px;
+  pointer-events: auto;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.coachmark .cm-step {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.coachmark h4 {
+  margin: 0 0 4px;
+  font-size: 14px;
+  color: var(--text);
+}
+.coachmark p {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--text);
+}
+.coachmark .cm-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.coachmark .cm-actions button {
+  font: inherit;
+  font-size: 11px;
+  padding: 4px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 3px;
+  background: var(--bg-card);
+  cursor: pointer;
+}
+.coachmark .cm-actions .cm-primary {
+  background: var(--accent);
+  color: var(--mandatory-fg);
+  border-color: var(--accent);
+}
+.coachmark .cm-actions .cm-skip {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+}
+.coachmark::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: var(--bg-card);
+  border-left: 1px solid var(--accent);
+  border-top: 1px solid var(--accent);
+  transform: rotate(45deg);
+}
+.coachmark[data-arrow='top']::after    { top: -7px; left: 32px; }
+.coachmark[data-arrow='left']::after   { left: -7px; top: 32px; transform: rotate(-45deg); }
+.coachmark[data-arrow='right']::after  { right: -7px; top: 32px; transform: rotate(135deg); }
+.coachmark[data-arrow='bottom']::after { bottom: -7px; left: 32px; transform: rotate(225deg); }
+
+@media (prefers-reduced-motion: reduce) {
+  .coachmark { transition: none; }
+}
+
+/* Toast for "Embed snippet copied" confirmation. */
+.copy-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--mandatory-bg);
+  color: var(--mandatory-fg);
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 12px;
+  z-index: 400;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
 }
 
 @media (max-width: 1099px) {

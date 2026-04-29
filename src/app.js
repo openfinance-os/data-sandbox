@@ -6,6 +6,7 @@
 import { buildBundle } from './generator/index.js';
 import {
   coverage,
+  coverageByBand,
   coverageForEndpoint,
   leafFields,
   statusBadge,
@@ -13,7 +14,7 @@ import {
   realLfisGuidance,
   bandForFieldName,
 } from './shared/spec-helpers.js';
-import { decodeFromUrl, encodePermalink } from './url.js';
+import { decodeFromUrl, encodeEmbed, encodePermalink } from './url.js';
 import {
   envelopesFromBundle,
   csvForResource,
@@ -27,9 +28,13 @@ import { computeUnderwriting, UNDERWRITING_FOOTNOTE } from './shared/underwritin
 // All 12 v1 endpoints (Appendix C). Three are bundle-level (no AccountId
 // scope): /accounts and /parties. The others are per-account.
 // EXP-18 Underwriting Scenario panel sits as a virtual bundle-level entry —
-// not a wire endpoint, just a derived view over the live bundle.
+// not a wire endpoint, just a derived view over the live bundle. The
+// Persona Overview is a second virtual bundle-level entry — the natural
+// landing for "who is this person?" before drilling into wire endpoints.
 const UNDERWRITING_PSEUDO = '/(underwriting)';
+const OVERVIEW_PSEUDO = '/(overview)';
 const ENDPOINTS = [
+  { path: OVERVIEW_PSEUDO, scope: 'bundle' },
   { path: '/accounts', scope: 'bundle' },
   { path: '/accounts/{AccountId}', scope: 'account' },
   { path: '/accounts/{AccountId}/balances', scope: 'account' },
@@ -54,7 +59,7 @@ const state = {
   lfi: 'median',
   seed: 4729,
   endpoint: '/accounts',
-  view: 'rendered',
+  view: 'rendered',                     // 'rendered' | 'raw'  (orthogonal to compareMode)
   bundle: null,
   selectedAccountId: null,
   // EXP-11: filter / sort state for the /transactions view.
@@ -71,11 +76,28 @@ const state = {
   // Active stress-coverage filter on the persona library — null when no
   // filter; otherwise a single term-slug from Appendix F vocabulary.
   stressFilter: null,
-  // EXP-16 Compare-LFIs — when state.view === 'compare', renderPayload
-  // builds two bundles (compareLeft and compareRight LFIs) and renders
-  // them side-by-side with diff highlighting.
-  compareLeft: 'rich',
-  compareRight: 'sparse',
+  // Active JTBD preset filter on the persona library — null or a key from
+  // JTBD_PRESETS. Composes with stressFilter (both must match if both are
+  // set, but UI activates only one at a time).
+  jtbdFilter: null,
+  // EXP-16 Compare-LFIs — when state.compareMode is true, renderPayload
+  // builds two bundles (state.lfi vs state.compareWith) and renders them
+  // side-by-side with diff highlighting. Decoupled from state.view so
+  // representation (rendered/raw) and cardinality (one/two LFIs) stay
+  // orthogonal.
+  compareMode: false,
+  compareWith: 'sparse',
+  // Inline-expand the field metadata under each column header in the
+  // rendered view. EXP-14 hover/click is the on-demand path; this is the
+  // "I want to read everything at once" path for first-time visits.
+  expandFields: false,
+  // Coachmark cascade state — first-load orientation for cold visitors.
+  // null = inactive, 0..N = active step. Per EXP-22 we cannot persist
+  // dismissal across reloads, so coachmarks fire only when the URL has
+  // no query params (cold landing) and never re-fire once dismissed in
+  // this tab session.
+  coachStep: null,
+  coachDismissed: false,
 };
 
 function isDateField(name) {
@@ -116,6 +138,11 @@ async function init() {
   state.spec = await specRes.json();
   state.data = await dataRes.json();
 
+  // Cold landing = URL with no query params (visitor arriving from the
+  // Commons feed for the first time). Drives the first-load coachmark
+  // cascade since EXP-22 forbids storage-based "first-visit" detection.
+  const isColdLanding = window.location.search === '';
+
   const url = decodeFromUrl(window.location.href);
   state.personaId = url.personaId && state.data.personas[url.personaId]
     ? url.personaId
@@ -131,10 +158,17 @@ async function init() {
   pin.textContent = `${versionLabel} @ ${(state.spec.pinSha || '').slice(0, 7)}`;
   pin.title = `Pinned spec SHA ${state.spec.pinSha}\nRetrieved ${state.spec.retrievedAt}\nUpstream: ${state.spec.upstreamRepo}/${state.spec.upstreamPath}`;
 
+  buildJtbdRail();
   buildPersonaList();
   syncControls();
   attachEventHandlers();
   rebuildAndRender();
+
+  if (isColdLanding) {
+    // Defer one frame so the topbar / persona list / payload are in the
+    // DOM before we measure target rectangles.
+    setTimeout(() => startCoachmarks(), 60);
+  }
 }
 
 function el(tag, opts = {}, ...children) {
@@ -157,6 +191,86 @@ function el(tag, opts = {}, ...children) {
     else node.appendChild(c);
   }
   return node;
+}
+
+// JTBD presets — map a job-to-be-done bucket (per PRD §3) to the
+// stress_coverage terms a persona must include to qualify. One-tap
+// filters for Aisha (AML), Faisal (affordability/DBR), Layla (FX),
+// Daniel/Maryam (low-volume edge cases), Hamid (Sharia/multi-product).
+const JTBD_PRESETS = Object.freeze({
+  affordability: { label: 'Affordability',  terms: ['salary_payroll_flag', 'high_dbr', 'mortgage_long_dated', 'credit_line_block', 'gig_irregular_inflow'] },
+  aml:           { label: 'AML',            terms: ['cash_dominant_flows', 'multi_party_accounts', 'joint_custodian'] },
+  thinFile:      { label: 'Thin file',      terms: ['thin_file_short_tenure'] },
+  fx:            { label: 'FX',             terms: ['fx_currency_exchange', 'multi_currency_accounts'] },
+  distress:      { label: 'NSF / distress', terms: ['nsf_distress', 'low_volume_inference'] },
+  sharia:        { label: 'Sharia',         terms: ['sharia_compliant_product'] },
+});
+
+// "Best for" — per-stress-term human one-liner driving the persona-card
+// summary. Derived from PRD §3.2 JTBD wording so the library answers
+// "which persona answers my job?" without reading every narrative.
+const STRESS_BEST_FOR = Object.freeze({
+  salary_payroll_flag:       'Baseline affordability case (Flags=Payroll income marker)',
+  credit_line_block:         'Credit-line / card commitment shape',
+  multi_currency_accounts:   'Multi-currency / FX edge cases',
+  fx_currency_exchange:      'CurrencyExchange handling',
+  multi_party_accounts:      'Multi-party / custodianship accounts',
+  joint_custodian:           'Joint + custodian-for-minor account roles',
+  high_dbr:                  'DBR-stretched affordability stress test',
+  mortgage_long_dated:       'Long-dated mortgage commitments',
+  nsf_distress:              'NSF / behavioural distress signal detection',
+  thin_file_short_tenure:    'Thin-file / short-tenure underwriting',
+  sharia_compliant_product:  'Sharia-compliant product handling',
+  cash_dominant_flows:       'AML rule design — sparse merchant detail',
+  gig_irregular_inflow:      'Income verification for gig / variable patterns',
+  low_volume_inference:      'Low-volume / pension cadence (formula breaks here)',
+});
+
+function bestForLine(persona) {
+  const terms = persona.stress_coverage ?? [];
+  const lines = [];
+  for (const t of terms) {
+    const v = STRESS_BEST_FOR[t];
+    if (v && !lines.includes(v)) lines.push(v);
+  }
+  return lines.join(' · ');
+}
+
+function buildJtbdRail() {
+  const rail = document.getElementById('jtbd-rail');
+  if (!rail) return;
+  rail.replaceChildren();
+  for (const [key, preset] of Object.entries(JTBD_PRESETS)) {
+    const active = state.jtbdFilter === key;
+    const chip = el('button', {
+      class: 'jtbd-chip',
+      attrs: {
+        type: 'button',
+        'aria-pressed': active ? 'true' : 'false',
+        title: `Show personas covering ${preset.label.toLowerCase()} JTBDs (${preset.terms.join(', ')})`,
+      },
+      text: preset.label,
+      onClick: () => {
+        state.jtbdFilter = state.jtbdFilter === key ? null : key;
+        // JTBD preset replaces any single-term stress filter — keeps the
+        // persona list state legible (one filter active at a time).
+        if (state.jtbdFilter) state.stressFilter = null;
+        buildJtbdRail();
+        buildPersonaList();
+      },
+    });
+    rail.appendChild(chip);
+  }
+}
+
+function personaMatchesActiveFilter(persona) {
+  const terms = persona.stress_coverage ?? [];
+  if (state.stressFilter && !terms.includes(state.stressFilter)) return false;
+  if (state.jtbdFilter) {
+    const allow = JTBD_PRESETS[state.jtbdFilter]?.terms ?? [];
+    if (!terms.some((t) => allow.includes(t))) return false;
+  }
+  return true;
 }
 
 function buildPersonaList() {
@@ -182,7 +296,7 @@ function buildPersonaList() {
 
   let visibleCount = 0;
   for (const [id, p] of Object.entries(state.data.personas)) {
-    if (state.stressFilter && !(p.stress_coverage ?? []).includes(state.stressFilter)) continue;
+    if (!personaMatchesActiveFilter(p)) continue;
     visibleCount += 1;
 
     const card = el(
@@ -194,12 +308,20 @@ function buildPersonaList() {
         onClick: (e) => {
           if (e.target.classList.contains('stress-chip')) return; // chip handles its own click
           state.personaId = id;
+          // Persona-switch defaults the payload pane to the overview —
+          // story-level orientation before drilling into wire endpoints.
+          state.endpoint = OVERVIEW_PSEUDO;
+          state.selectedAccountId = null;
           rebuildAndRender();
         },
       },
       el('div', { class: 'persona-name', text: p.name }),
       el('div', { class: 'persona-archetype', text: humanArchetype(p.archetype) }),
     );
+    const bestFor = bestForLine(p);
+    if (bestFor) {
+      card.appendChild(el('div', { class: 'persona-best', text: bestFor }));
+    }
     if (p.narrative) {
       card.appendChild(el('div', { class: 'persona-narrative', text: p.narrative.trim() }));
     }
@@ -268,10 +390,33 @@ function humanStressTerm(t) {
     .replace(/\buae\b/i, 'UAE');
 }
 
+const LFI_CAPTIONS = Object.freeze({
+  rich:   'Rich. Every populate-band optional field set — best-case ecosystem.',
+  median: 'Median. Universal=1.0, Common=0.7, Variable=0.4, Rare=0.1 (v1 calibration).',
+  sparse: 'Sparse. Mandatory + Universal-band only — every other optional field dropped.',
+});
+
 function syncControls() {
   document.getElementById('persona-select').value = state.personaId;
-  document.getElementById('lfi-select').value = state.lfi;
+  // Hidden legacy <select> kept for any URL-encoded form handlers and as a
+  // single readable accessor; the visible control is the segmented buttons.
+  const legacy = document.getElementById('lfi-select');
+  if (legacy) legacy.value = state.lfi;
+  for (const btn of document.querySelectorAll('#lfi-seg button[data-lfi]')) {
+    btn.setAttribute('aria-checked', btn.dataset.lfi === state.lfi ? 'true' : 'false');
+  }
+  for (const btn of document.querySelectorAll('#lfi-seg-compare button[data-cmp-lfi]')) {
+    btn.setAttribute('aria-checked', btn.dataset.cmpLfi === state.compareWith ? 'true' : 'false');
+  }
+  const compareBtn = document.getElementById('compare-toggle');
+  if (compareBtn) compareBtn.setAttribute('aria-pressed', state.compareMode ? 'true' : 'false');
+  const compareRow = document.getElementById('lfi-compare-row');
+  if (compareRow) compareRow.hidden = !state.compareMode;
+  const caption = document.getElementById('lfi-caption');
+  if (caption) caption.textContent = LFI_CAPTIONS[state.lfi] ?? '';
   document.getElementById('seed-input').value = String(state.seed);
+  const expand = document.getElementById('toggle-expand-all');
+  if (expand) expand.checked = !!state.expandFields;
   for (const card of document.querySelectorAll('.persona-card')) {
     card.classList.toggle('active', card.dataset.personaId === state.personaId);
   }
@@ -280,12 +425,45 @@ function syncControls() {
 function attachEventHandlers() {
   document.getElementById('persona-select').addEventListener('change', (e) => {
     state.personaId = e.target.value;
+    state.endpoint = OVERVIEW_PSEUDO;
+    state.selectedAccountId = null;
     rebuildAndRender();
   });
-  document.getElementById('lfi-select').addEventListener('change', (e) => {
-    state.lfi = e.target.value;
+  // LFI segmented control — replaces the v1 dropdown with a visible lever.
+  for (const btn of document.querySelectorAll('#lfi-seg button[data-lfi]')) {
+    btn.addEventListener('click', () => {
+      state.lfi = btn.dataset.lfi;
+      rebuildAndRender();
+    });
+  }
+  // Compare toggle — adds a partner LFI row that drives EXP-16 side-by-side.
+  document.getElementById('compare-toggle')?.addEventListener('click', () => {
+    state.compareMode = !state.compareMode;
+    if (state.compareMode && state.compareWith === state.lfi) {
+      // Sensible default partner — anything other than the active LFI.
+      state.compareWith = state.lfi === 'sparse' ? 'rich' : 'sparse';
+    }
+    syncControls();
+    renderPayload();
+  });
+  document.getElementById('compare-close')?.addEventListener('click', () => {
+    state.compareMode = false;
+    syncControls();
+    renderPayload();
+  });
+  document.getElementById('compare-swap')?.addEventListener('click', () => {
+    const tmp = state.lfi;
+    state.lfi = state.compareWith;
+    state.compareWith = tmp;
     rebuildAndRender();
   });
+  for (const btn of document.querySelectorAll('#lfi-seg-compare button[data-cmp-lfi]')) {
+    btn.addEventListener('click', () => {
+      state.compareWith = btn.dataset.cmpLfi;
+      syncControls();
+      renderPayload();
+    });
+  }
   document.getElementById('seed-input').addEventListener('change', (e) => {
     const n = Number(e.target.value);
     if (Number.isFinite(n)) {
@@ -301,13 +479,14 @@ function attachEventHandlers() {
     state.view = 'raw';
     renderPayload();
   });
-  document.getElementById('view-compare').addEventListener('click', () => {
-    state.view = 'compare';
+  document.getElementById('toggle-expand-all')?.addEventListener('change', (e) => {
+    state.expandFields = !!e.target.checked;
     renderPayload();
   });
   document.getElementById('export-json').addEventListener('click', exportActiveJson);
   document.getElementById('export-csv').addEventListener('click', exportActiveCsv);
   document.getElementById('export-tar').addEventListener('click', exportTarball);
+  document.getElementById('export-embed')?.addEventListener('click', copyEmbedSnippet);
   document.getElementById('tour-btn').addEventListener('click', () => startTour());
   document.getElementById('find-btn').addEventListener('click', openFind);
   // ⌘K / Ctrl+K opens the find box from anywhere in the app.
@@ -315,8 +494,9 @@ function attachEventHandlers() {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
       e.preventDefault();
       openFind();
-    } else if (e.key === 'Escape' && document.getElementById('find-overlay')) {
-      closeFind();
+    } else if (e.key === 'Escape') {
+      if (document.getElementById('find-overlay')) closeFind();
+      else if (state.coachStep != null) dismissCoachmarks();
     }
   });
 }
@@ -680,9 +860,46 @@ function pushPermalink() {
 
 function renderCoverage() {
   const cov = coverage(state.bundle);
-  document.getElementById('coverage-fill').style.width = `${cov.pct}%`;
+  const byBand = coverageByBand(state.bundle);
   document.getElementById('coverage-pct').textContent = `${cov.pct}%`;
+
+  const host = document.getElementById('coverage-bands');
+  if (!host) return;
+  host.replaceChildren();
+  // 4-cell strips per §7.3 band — Universal first (always-on), then Common,
+  // Variable, Rare. Each cell = 25% of the band's populated/total ratio.
+  // A band with no probes (Rare today) renders as is-empty so its semantic
+  // slot stays visible, signalling "no curated probes for this band yet".
+  const order = ['Universal', 'Common', 'Variable', 'Rare'];
+  for (const band of order) {
+    const b = byBand[band];
+    const cells = 4;
+    const filled = b.total > 0 ? Math.round((b.populated / b.total) * cells) : 0;
+    const wrap = el('span', {
+      class: `coverage-band${b.total === 0 ? ' is-empty' : ''}`,
+      attrs: {
+        'data-band': band,
+        title: b.total === 0
+          ? `${band} band: no curated probes yet (Phase 1 starter — widens as the spec parser feeds bands directly).`
+          : `${band} band — ${b.populated} of ${b.total} populated (${b.pct}%). ${MEDIAN_HINT[band] ?? ''}`,
+      },
+    });
+    wrap.appendChild(el('span', { class: 'band-label', text: band[0] }));
+    const cellRow = el('span', { class: 'band-cells' });
+    for (let i = 0; i < cells; i += 1) {
+      cellRow.appendChild(el('span', { class: `band-cell${i < filled ? ' is-on' : ''}` }));
+    }
+    wrap.appendChild(cellRow);
+    host.appendChild(wrap);
+  }
 }
+
+const MEDIAN_HINT = Object.freeze({
+  Universal: 'Median expectation: every LFI populates.',
+  Common:    'Median expectation: ~70% of LFIs populate.',
+  Variable:  'Median expectation: ~40% of LFIs populate.',
+  Rare:      'Median expectation: ~10% of LFIs populate (premium-product only).',
+});
 
 function renderNavigator() {
   const nav = document.getElementById('nav-tree');
@@ -744,15 +961,18 @@ function renderNavigator() {
 // half). For bundle-scoped endpoints the sub-meter is omitted; for per-account
 // endpoints it shows the populate-rate of optional fields under that scope.
 function navButton({ endpoint, accountId, active, onSelect }) {
+  const isVirtual = endpoint === UNDERWRITING_PSEUDO || endpoint === OVERVIEW_PSEUDO;
   const btn = el('button', {
-    class: `nav-endpoint${active ? ' active' : ''}${endpoint === UNDERWRITING_PSEUDO ? ' nav-virtual' : ''}`,
+    class: `nav-endpoint${active ? ' active' : ''}${isVirtual ? ' nav-virtual' : ''}`,
     attrs: { 'aria-current': active ? 'true' : null },
     dataset: { endpoint, accountId: accountId ?? '' },
     onClick: onSelect,
   });
-  // The Underwriting pseudo-endpoint shows a friendlier label so it's clearly
-  // a derived view, not a spec endpoint.
-  const label = endpoint === UNDERWRITING_PSEUDO ? '◇ Underwriting summary' : endpoint;
+  // Pseudo-endpoints (overview, underwriting summary) get friendlier labels
+  // so they read clearly as derived views rather than spec wire endpoints.
+  let label = endpoint;
+  if (endpoint === UNDERWRITING_PSEUDO) label = '◇ Underwriting summary';
+  else if (endpoint === OVERVIEW_PSEUDO) label = '◇ Persona overview';
   btn.appendChild(el('span', { class: 'nav-endpoint-label', text: label }));
   if (accountId) {
     const cov = coverageForEndpoint(state.bundle, endpoint, accountId);
@@ -819,7 +1039,7 @@ function endpointFieldsByName() {
 }
 
 function renderPayload() {
-  document.getElementById('endpoint-label').textContent = state.endpoint;
+  document.getElementById('endpoint-label').textContent = labelForEndpoint(state.endpoint);
   const body = document.getElementById('payload-body');
   body.replaceChildren();
 
@@ -828,19 +1048,24 @@ function renderPayload() {
     renderUnderwritingPanel(body);
     return;
   }
+  // Persona overview — the natural landing on persona-switch.
+  if (state.endpoint === OVERVIEW_PSEUDO) {
+    renderPersonaOverview(body);
+    return;
+  }
 
   const allRows = rowsForActiveEndpoint();
   const fieldsByName = endpointFieldsByName();
 
   document.getElementById('view-rendered').classList.toggle('active', state.view === 'rendered');
   document.getElementById('view-raw').classList.toggle('active', state.view === 'raw');
-  document.getElementById('view-compare').classList.toggle('active', state.view === 'compare');
   document.getElementById('view-rendered').setAttribute('aria-selected', state.view === 'rendered');
   document.getElementById('view-raw').setAttribute('aria-selected', state.view === 'raw');
-  document.getElementById('view-compare').setAttribute('aria-selected', state.view === 'compare');
 
-  // Compare-LFIs branches off completely — different layout.
-  if (state.view === 'compare') {
+  // Compare-LFIs is a parallel rendering mode driven by state.compareMode
+  // (orthogonal to state.view: representation × cardinality). Either
+  // branch can be re-entered without losing the other axis.
+  if (state.compareMode) {
     renderCompareView(body);
     return;
   }
@@ -928,13 +1153,15 @@ function renderPayload() {
         el('span', { class: `pill ${badge.shape}`, text: badge.label, attrs: { 'aria-label': badge.text } })
       );
     }
-    th.appendChild(
-      el('button', {
-        class: 'field-name',
-        text: k,
-        onClick: (e) => { e.stopPropagation(); openFieldCard(k); },
-      })
-    );
+    const fieldBtn = el('button', {
+      class: 'field-name',
+      text: k,
+      onClick: (e) => { e.stopPropagation(); openFieldCard(k); },
+    });
+    // Hover preview — fast affordance per EXP-14 (within ~100 ms). Click
+    // still pins the full card in the right pane.
+    attachHoverPreview(fieldBtn, k);
+    th.appendChild(fieldBtn);
     if (isPii(k)) {
       th.appendChild(
         el('span', { class: 'pii-badge', text: 'PII', attrs: { title: 'Contains PII — PDPL handling controls required (see field card).', 'aria-label': 'Personal data — PDPL applies' } })
@@ -945,6 +1172,25 @@ function renderPayload() {
   table.appendChild(el('thead', {}, headRow));
   const persona = state.data.personas[state.personaId];
   const tbody = el('tbody');
+  // Expand-all — inline field metadata row directly under the headers.
+  // Surfaces status / type / Real-LFIs guidance without click-then-read.
+  if (state.expandFields) {
+    const fieldRow = el('tr', { class: 'field-row' });
+    for (const k of allKeys) {
+      const f = fieldsByName.get(k);
+      const td = el('td');
+      if (f) {
+        const band = bandForFieldName(k, state.endpoint);
+        const meta = `${f.type}${f.format ? ' · ' + f.format : ''}${f.enum ? ' · enum' : ''}`;
+        td.appendChild(el('span', { class: 'fr-meta', text: meta }));
+        td.appendChild(el('span', { class: 'fr-guidance', text: realLfisGuidance(f, band) }));
+      } else {
+        td.textContent = '—';
+      }
+      fieldRow.appendChild(td);
+    }
+    tbody.appendChild(fieldRow);
+  }
   for (const r of visible) {
     const stripped = stripInternal(r);
     const isHighlight = isTransactions && r.TransactionId && state.txHighlight.has(r.TransactionId);
@@ -1157,17 +1403,20 @@ function toggleSort(column) {
 function renderCompareView(body) {
   const persona = state.data.personas[state.personaId];
   const now = new Date(state.data.buildInfo.nowIso);
-  const leftBundle = buildBundle({ persona, lfi: state.compareLeft, seed: state.seed, pools: state.data.pools, now });
-  const rightBundle = buildBundle({ persona, lfi: state.compareRight, seed: state.seed, pools: state.data.pools, now });
-
-  body.appendChild(renderCompareBar());
+  // Compare-mode renders the active LFI (state.lfi) against a partner
+  // (state.compareWith). Lever placement is in the topbar; the in-pane
+  // affordance is just a thin context line + diff legend.
+  const leftLfi = state.lfi;
+  const rightLfi = state.compareWith;
+  const leftBundle = buildBundle({ persona, lfi: leftLfi, seed: state.seed, pools: state.data.pools, now });
+  const rightBundle = buildBundle({ persona, lfi: rightLfi, seed: state.seed, pools: state.data.pools, now });
 
   const leftRows = compareRowsFor(leftBundle);
   const rightRows = compareRowsFor(rightBundle);
   const stats = compareStats(leftRows, rightRows);
   body.appendChild(el('div', {
     class: 'compare-summary',
-    text: `${stats.totalCellsLeft} populated cells on ${state.compareLeft} · ${stats.totalCellsRight} on ${state.compareRight} · ${stats.diffCount} fields differ across ${Math.max(leftRows.length, rightRows.length)} rows. Cells highlighted: green = present only on this side, amber = changed, red = missing.`,
+    text: `${stats.totalCellsLeft} populated cells on ${leftLfi} · ${stats.totalCellsRight} on ${rightLfi} · ${stats.diffCount} fields differ across ${Math.max(leftRows.length, rightRows.length)} rows. Cells highlighted: green = present only on this side, amber = changed, red = missing.`,
   }));
 
   // Union of column keys across both sides so each half renders the same
@@ -1180,42 +1429,9 @@ function renderCompareView(body) {
   }
 
   const compareWrap = el('div', { class: 'compare-pane' });
-  compareWrap.appendChild(renderCompareHalf(leftBundle, leftRows, rightRows, state.compareLeft, allKeys));
-  compareWrap.appendChild(renderCompareHalf(rightBundle, rightRows, leftRows, state.compareRight, allKeys));
+  compareWrap.appendChild(renderCompareHalf(leftBundle, leftRows, rightRows, leftLfi, allKeys));
+  compareWrap.appendChild(renderCompareHalf(rightBundle, rightRows, leftRows, rightLfi, allKeys));
   body.appendChild(compareWrap);
-}
-
-function renderCompareBar() {
-  const bar = el('div', { class: 'compare-bar', attrs: { role: 'toolbar' } });
-  bar.appendChild(el('span', { text: 'Compare LFIs:' }));
-  bar.appendChild(makeLfiSelect('compareLeft'));
-  bar.appendChild(el('span', { text: '↔' }));
-  bar.appendChild(makeLfiSelect('compareRight'));
-  bar.appendChild(el('button', {
-    class: 'swap',
-    text: 'Swap',
-    onClick: () => {
-      const tmp = state.compareLeft;
-      state.compareLeft = state.compareRight;
-      state.compareRight = tmp;
-      renderPayload();
-    },
-  }));
-  return bar;
-}
-
-function makeLfiSelect(key) {
-  const select = el('select', { attrs: { 'aria-label': key === 'compareLeft' ? 'Left LFI profile' : 'Right LFI profile' } });
-  for (const lfi of ['rich', 'median', 'sparse']) {
-    const opt = el('option', { text: lfi[0].toUpperCase() + lfi.slice(1), attrs: { value: lfi } });
-    if (state[key] === lfi) opt.selected = true;
-    select.appendChild(opt);
-  }
-  select.addEventListener('change', (e) => {
-    state[key] = e.target.value;
-    renderPayload();
-  });
-  return select;
 }
 
 function compareRowsFor(bundle) {
@@ -1416,6 +1632,126 @@ function renderMonthlySummary(rows) {
 function formatAmount(n) {
   if (!Number.isFinite(n)) return '—';
   return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
+}
+
+// ---- Persona overview landing — story-level orientation -----------------------------------
+
+function labelForEndpoint(ep) {
+  if (ep === UNDERWRITING_PSEUDO) return 'Underwriting summary';
+  if (ep === OVERVIEW_PSEUDO) return 'Persona overview';
+  return ep;
+}
+
+function renderPersonaOverview(body) {
+  const persona = state.data.personas[state.personaId];
+  if (!persona) return;
+
+  const wrap = el('div', { class: 'persona-overview' });
+  wrap.appendChild(el('div', { class: 'po-archetype', text: humanArchetype(persona.archetype) }));
+  wrap.appendChild(el('h2', { text: persona.name }));
+  if (persona.narrative) {
+    wrap.appendChild(el('div', { class: 'po-narrative', text: persona.narrative.trim() }));
+  }
+
+  const grid = el('div', { class: 'po-grid' });
+
+  // Account roster — drawn from the live bundle so it matches what the
+  // wire endpoints will show.
+  const accCard = el('div', { class: 'po-card' });
+  accCard.appendChild(el('div', { class: 'po-card-title', text: 'Accounts' }));
+  const accList = el('ul');
+  for (const a of state.bundle.accounts ?? []) {
+    const id = a.AccountIdentifiers?.[0]?.Identification?.slice(0, 16) ?? a.AccountId;
+    accList.appendChild(el('li', { text: `${a.AccountSubType} · ${a.Currency} · ${id}…` }));
+  }
+  accCard.appendChild(accList);
+  grid.appendChild(accCard);
+
+  // Income — straight from the persona manifest.
+  if (persona.income) {
+    const inc = el('div', { class: 'po-card' });
+    inc.appendChild(el('div', { class: 'po-card-title', text: 'Income' }));
+    const amt = persona.income.monthly_amount_aed
+      ? `AED ${persona.income.monthly_amount_aed.toLocaleString()} / mo`
+      : 'Variable';
+    inc.appendChild(el('div', { class: 'po-card-value', text: amt }));
+    const detail = [
+      persona.income.flag_payroll ? 'Carries Flags=Payroll' : 'No Payroll flag',
+      persona.income.pay_day ? `Pay-day ${persona.income.pay_day}th` : null,
+      persona.income.variability ? `${persona.income.variability} variability` : null,
+    ].filter(Boolean).join(' · ');
+    if (detail) inc.appendChild(el('div', { attrs: { style: 'color:var(--text-muted);font-size:11px' }, text: detail }));
+    grid.appendChild(inc);
+  }
+
+  // Fixed commitments — quick scan; full detail lives on /standing-orders
+  // and /direct-debits.
+  if (Array.isArray(persona.fixed_commitments) && persona.fixed_commitments.length > 0) {
+    const fc = el('div', { class: 'po-card' });
+    fc.appendChild(el('div', { class: 'po-card-title', text: `Fixed commitments (${persona.fixed_commitments.length})` }));
+    const fcList = el('ul');
+    for (const c of persona.fixed_commitments) {
+      const amt = c.amount_aed
+        ? `AED ${c.amount_aed.toLocaleString()}`
+        : Array.isArray(c.amount_aed_band) ? `AED ${c.amount_aed_band[0]}–${c.amount_aed_band[1]}` : '—';
+      fcList.appendChild(el('li', { text: `${c.kind === 'standing_order' ? 'SO' : 'DD'} · ${c.purpose} · ${amt} · ${c.schedule}` }));
+    }
+    fc.appendChild(fcList);
+    grid.appendChild(fc);
+  }
+
+  // What this persona stresses — drives "why is this in the library?".
+  if (Array.isArray(persona.stress_coverage) && persona.stress_coverage.length > 0) {
+    const sc = el('div', { class: 'po-card' });
+    sc.appendChild(el('div', { class: 'po-card-title', text: 'Stress coverage' }));
+    const value = el('div', { class: 'po-card-value persona-best', text: bestForLine(persona) });
+    sc.appendChild(value);
+    grid.appendChild(sc);
+  }
+
+  // Quick flags row.
+  const flags = el('div', { class: 'po-card' });
+  flags.appendChild(el('div', { class: 'po-card-title', text: 'Profile flags' }));
+  const flagList = [
+    persona.fx_activity ? 'FX-active' : 'No FX',
+    persona.cash_deposit_activity ? 'Cash-heavy' : 'No cash deposits',
+    persona.distress_signals?.nsf_events_per_year_band
+      ? `NSF events / yr: ${persona.distress_signals.nsf_events_per_year_band[0]}–${persona.distress_signals.nsf_events_per_year_band[1]}`
+      : null,
+  ].filter(Boolean);
+  flags.appendChild(el('div', { attrs: { style: 'font-size:12px;line-height:1.5' }, text: flagList.join(' · ') }));
+  grid.appendChild(flags);
+
+  wrap.appendChild(grid);
+
+  // Where to look first — direct jumps to wire endpoints. Deep-link the
+  // Daniel/Maryam/Omar 5-minute walkthrough into a single click.
+  const jumps = el('div', { class: 'po-jumps', attrs: { role: 'group', 'aria-label': 'Where to look first' } });
+  const firstAcc = state.bundle.accounts?.[0]?.AccountId ?? null;
+  const jumpDefs = [
+    { label: 'Transactions →', endpoint: '/accounts/{AccountId}/transactions', acc: firstAcc },
+    { label: 'Standing Orders →', endpoint: '/accounts/{AccountId}/standing-orders', acc: firstAcc },
+    { label: 'Direct Debits →', endpoint: '/accounts/{AccountId}/direct-debits', acc: firstAcc },
+    { label: 'Underwriting summary →', endpoint: UNDERWRITING_PSEUDO, acc: null },
+  ];
+  for (const j of jumpDefs) {
+    const btn = el('button', {
+      class: 'po-jump',
+      text: j.label,
+      attrs: { type: 'button' },
+      onClick: () => {
+        state.endpoint = j.endpoint;
+        state.selectedAccountId = j.acc;
+        clearTxState();
+        renderNavigator();
+        renderPayload();
+      },
+    });
+    jumps.appendChild(btn);
+  }
+  wrap.appendChild(jumps);
+
+  body.appendChild(wrap);
 }
 
 // ---- EXP-18 Underwriting Scenario panel -------------------------------------------------
@@ -1752,6 +2088,234 @@ function buildIssueUrl(fieldName, field) {
   params.set('title', title);
   params.set('body', body);
   return `https://github.com/${ISSUE_REPO}/issues/new?${params.toString()}`;
+}
+
+// ---- Hover preview tooltip — quick field-card peek (EXP-14) ----------------------------
+
+let hoverHideTimer = null;
+
+function attachHoverPreview(node, fieldName) {
+  let openTimer = null;
+  const open = () => {
+    clearTimeout(hoverHideTimer);
+    showHoverPreview(node, fieldName);
+  };
+  const hide = () => {
+    clearTimeout(openTimer);
+    hoverHideTimer = setTimeout(hideHoverPreview, 80);
+  };
+  node.addEventListener('mouseenter', () => { openTimer = setTimeout(open, 120); });
+  node.addEventListener('mouseleave', hide);
+  node.addEventListener('focus', open);
+  node.addEventListener('blur', hide);
+}
+
+function showHoverPreview(anchor, fieldName) {
+  const fieldsByName = endpointFieldsByName();
+  const f = fieldsByName.get(fieldName);
+  if (!f) return;
+  const card = document.getElementById('hovercard');
+  if (!card) return;
+  const band = bandForFieldName(fieldName, state.endpoint);
+  const badge = statusBadge(f.status);
+
+  card.replaceChildren();
+  card.appendChild(el('div', { class: 'hc-title', text: fieldName }));
+  const status = el('div', { class: 'hc-status' });
+  status.appendChild(el('span', { class: `pill ${badge.shape}`, text: badge.label, attrs: { 'aria-label': badge.text } }));
+  status.appendChild(document.createTextNode(badge.text));
+  if (band) status.appendChild(el('span', {
+    attrs: { style: 'margin-left:6px;font-size:10px;color:var(--text-muted)' },
+    text: ` · ${band} band`,
+  }));
+  card.appendChild(status);
+  card.appendChild(el('div', { class: 'hc-guidance', text: realLfisGuidance(f, band) }));
+  const meta = `${f.type}${f.format ? ' · ' + f.format : ''}${Array.isArray(f.enum) ? ` · enum (${f.enum.length})` : ''}`;
+  card.appendChild(el('div', { class: 'hc-meta', text: meta }));
+  card.appendChild(el('div', {
+    class: 'hc-meta',
+    attrs: { style: 'margin-top:6px;font-style:italic' },
+    text: 'Click to pin full card →',
+  }));
+
+  // Position next to the anchor — prefer below, flip above if overflowing.
+  card.hidden = false;
+  const r = anchor.getBoundingClientRect();
+  const cardW = Math.min(card.offsetWidth, 320);
+  const cardH = card.offsetHeight;
+  let left = Math.min(window.innerWidth - cardW - 8, Math.max(8, r.left));
+  let top = r.bottom + 6;
+  if (top + cardH > window.innerHeight - 8) top = Math.max(8, r.top - cardH - 6);
+  card.style.left = `${left}px`;
+  card.style.top = `${top}px`;
+}
+
+function hideHoverPreview() {
+  const card = document.getElementById('hovercard');
+  if (card) card.hidden = true;
+}
+
+// ---- Embed-snippet copy — EXP-27 ergonomic affordance ----------------------------------
+
+function copyEmbedSnippet() {
+  const slugBase = window.location.origin + window.location.pathname.replace(/\/index\.html$/, '');
+  const url = slugBase.replace(/\/$/, '') + encodeEmbed({
+    personaId: state.personaId,
+    lfi: state.lfi,
+    endpoint: state.endpoint === OVERVIEW_PSEUDO || state.endpoint === UNDERWRITING_PSEUDO
+      ? '/accounts/{AccountId}/transactions'
+      : state.endpoint,
+    seed: state.seed,
+    height: 600,
+  }).replace(/^\/embed/, '/embed.html');
+  const snippet = `<iframe src="${url}" width="100%" height="600" loading="lazy" title="Open Finance Data Sandbox · ${state.personaId} · ${state.lfi}" referrerpolicy="no-referrer" style="border:1px solid #d9d5cb;border-radius:4px"></iframe>`;
+  // Best-effort clipboard. Falls back to a textarea + selection so the user
+  // can ⌘C themselves if the browser blocks programmatic clipboard access.
+  const ok = (text) => {
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).then(
+        () => showCopyToast('Embed snippet copied. Paste into your slide deck or article.'),
+        () => fallbackCopy(text),
+      );
+    } else {
+      fallbackCopy(text);
+    }
+  };
+  ok(snippet);
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); showCopyToast('Embed snippet copied.'); }
+  catch { showCopyToast('Copy blocked — selecting snippet for ⌘C / Ctrl+C.'); ta.style.opacity = '1'; return; }
+  ta.remove();
+}
+
+function showCopyToast(text) {
+  document.querySelectorAll('.copy-toast').forEach((n) => n.remove());
+  const t = el('div', { class: 'copy-toast', attrs: { role: 'status' }, text });
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2400);
+}
+
+// ---- First-load coachmark cascade — orientation for cold visitors ----------------------
+
+const COACHMARKS = [
+  {
+    target: '#lfi-seg',
+    arrow: 'top',
+    title: 'LFI populate-rate — the central lever',
+    body: 'Rich, Median, or Sparse decides which optional fields are populated. Switch to Sparse to see the worst-case shape your downstream UI must handle.',
+  },
+  {
+    target: '#coverage',
+    arrow: 'top',
+    title: 'Coverage by populate-rate band',
+    body: 'Each strip is one §7.3 band — Universal, Common, Variable, Rare. Filled cells show how many curated probes are actually populated under the current LFI profile.',
+  },
+  {
+    target: '.persona-pane',
+    arrow: 'left',
+    title: 'Pick a persona that matches your job',
+    body: 'Use the chip rail at the top — Affordability, AML, Thin file, FX — to filter the library. Each card has a "Best for" line so you can spot the right one without reading every narrative.',
+  },
+  {
+    target: '#endpoint-label',
+    arrow: 'top',
+    title: 'Click any field name',
+    body: 'Hover for a quick preview. Click to pin the full card on the right — status, type, enum, example, conditional rule, and Real-LFIs guidance, all spec-driven from the pinned SHA.',
+  },
+  {
+    target: '#tour-btn',
+    arrow: 'top',
+    title: 'Want a longer walkthrough?',
+    body: 'Tour walks through Sara\'s bundle in five steps — salary marker, rent commitment, field card, Sparse drop-off. Find (⌘K) jumps to any field by name.',
+  },
+];
+
+function startCoachmarks() {
+  if (state.coachDismissed) return;
+  state.coachStep = 0;
+  document.getElementById('coachmark-host').hidden = false;
+  renderCoachmark();
+}
+
+function dismissCoachmarks() {
+  state.coachStep = null;
+  state.coachDismissed = true;
+  const host = document.getElementById('coachmark-host');
+  if (host) {
+    host.hidden = true;
+    host.replaceChildren();
+  }
+}
+
+function renderCoachmark() {
+  const host = document.getElementById('coachmark-host');
+  if (!host) return;
+  host.replaceChildren();
+  const step = COACHMARKS[state.coachStep];
+  if (!step) {
+    dismissCoachmarks();
+    return;
+  }
+  const target = document.querySelector(step.target);
+  if (!target) {
+    state.coachStep += 1;
+    renderCoachmark();
+    return;
+  }
+
+  const card = el('div', { class: 'coachmark', attrs: { role: 'dialog', 'aria-labelledby': 'cm-title', 'data-arrow': step.arrow } });
+  card.appendChild(el('div', { class: 'cm-step', text: `Step ${state.coachStep + 1} of ${COACHMARKS.length}` }));
+  card.appendChild(el('h4', { text: step.title, attrs: { id: 'cm-title' } }));
+  card.appendChild(el('p', { text: step.body }));
+  const actions = el('div', { class: 'cm-actions' });
+  actions.appendChild(el('button', { class: 'cm-skip', text: 'Skip', onClick: dismissCoachmarks }));
+  const right = el('div', { attrs: { style: 'display:flex;gap:6px' } });
+  if (state.coachStep > 0) {
+    right.appendChild(el('button', { text: 'Back', onClick: () => { state.coachStep -= 1; renderCoachmark(); } }));
+  }
+  const isLast = state.coachStep === COACHMARKS.length - 1;
+  right.appendChild(el('button', {
+    class: 'cm-primary',
+    text: isLast ? 'Got it' : 'Next →',
+    onClick: () => {
+      if (isLast) dismissCoachmarks();
+      else { state.coachStep += 1; renderCoachmark(); }
+    },
+  }));
+  actions.appendChild(right);
+  card.appendChild(actions);
+  host.appendChild(card);
+
+  // Position next to the target — prefer below for top-arrow, right of
+  // target for left-arrow, etc.
+  const r = target.getBoundingClientRect();
+  const cardW = 280;
+  const cardH = card.offsetHeight || 140;
+  let left = r.left;
+  let top = r.bottom + 12;
+  if (step.arrow === 'left') {
+    left = r.right + 14;
+    top = Math.max(8, r.top);
+  } else if (step.arrow === 'right') {
+    left = r.left - cardW - 14;
+    top = Math.max(8, r.top);
+  } else if (step.arrow === 'bottom') {
+    top = r.top - cardH - 12;
+  }
+  // Clamp to viewport.
+  left = Math.max(8, Math.min(window.innerWidth - cardW - 8, left));
+  top = Math.max(8, Math.min(window.innerHeight - cardH - 8, top));
+  card.style.left = `${left}px`;
+  card.style.top = `${top}px`;
+  card.querySelector('.cm-primary')?.focus();
 }
 
 init().catch((err) => {
