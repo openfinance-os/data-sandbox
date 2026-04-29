@@ -18,6 +18,10 @@ jobs:
       - run: npm ci
       - run: npm run verify:spec-shape
       - run: npm run build:spec
+      - run: npm run build:data
+      # tests/fixture-package.test.mjs reads from packages/sandbox-fixtures/
+      # which is generated, not checked in.
+      - run: npm run build:fixtures
       - run: npm run lint
       - run: npm test
 
