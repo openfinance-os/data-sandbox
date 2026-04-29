@@ -32,7 +32,15 @@ html, body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   font-size: 14px;
   line-height: 1.5;
-  height: 100%;
+  height: 100vh;
+  /* Lock the chrome to the viewport — banner / topbar / footer stay
+     visible; only the inner panes scroll internally. */
+  overflow: hidden;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
 }
 
 button { font: inherit; cursor: pointer; }
@@ -47,16 +55,18 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   border-bottom: 1px solid var(--warn-border);
   padding: 6px 16px;
   font-size: 12px;
+  flex: 0 0 auto;
 }
 
 .topbar {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 16px;
-  padding: 10px 16px;
+  gap: 12px;
+  padding: 8px 16px;
   border-bottom: 1px solid var(--border);
   background: var(--bg-card);
+  flex: 0 0 auto;
 }
 
 .brand {
@@ -212,7 +222,9 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   display: grid;
   grid-template-columns: 240px 1fr 320px;
   gap: 0;
-  min-height: calc(100vh - 140px);
+  flex: 1 1 auto;
+  min-height: 0;       /* let internal panes overflow:auto kick in */
+  overflow: hidden;
 }
 
 .pane {
@@ -221,6 +233,7 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  overflow: hidden;    /* contain children; their own overflow handles scroll */
 }
 
 .pane:last-of-type { border-right: none; }
@@ -260,15 +273,29 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
 .persona-name { font-weight: 600; font-size: 13px; }
 .persona-archetype { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 
-.navigator { display: flex; flex-direction: column; }
+.navigator {
+  display: grid;
+  /* Two columns inside the middle pane: nav tree on the left (fixed),
+     payload on the right (flex). Replaces the previous stacked layout that
+     produced two stacked vertical scrollers (page + nav-tree + payload). */
+  grid-template-columns: minmax(220px, 260px) 1fr;
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    "header  header"
+    "tree    payload";
+  min-height: 0;
+}
+.navigator > .pane-header { grid-area: header; }
+.navigator > .nav-tree { grid-area: tree; }
+.navigator > .payload-area { grid-area: payload; }
 
 .nav-tree {
-  flex: 0 0 auto;
   padding: 8px 12px;
-  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  border-bottom: none;
   font-size: 13px;
-  max-height: 240px;
   overflow-y: auto;
+  min-height: 0;
 }
 
 .nav-account {
@@ -341,10 +368,11 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
 }
 
 .payload-area {
-  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   min-height: 0;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .payload-toolbar {
@@ -539,6 +567,12 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   border-radius: 999px;
 }
 
+.field-detail-scroll {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0;
+}
+
 .field-detail .fc-empty {
   padding: 12px;
   font-size: 12px;
@@ -568,11 +602,12 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
 }
 
 .footer {
-  padding: 10px 16px;
+  padding: 6px 16px;
   border-top: 1px solid var(--border);
   font-size: 11px;
   color: var(--text-muted);
   background: var(--bg-card);
+  flex: 0 0 auto;
 }
 
 @media (max-width: 1099px) {

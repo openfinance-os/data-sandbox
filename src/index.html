@@ -71,12 +71,12 @@
 <main class="three-pane" id="three-pane">
   <section class="pane persona-pane" aria-label="Persona library">
     <div class="pane-header">Persona library</div>
-    <div class="persona-list" id="persona-list" role="list"></div>
+    <div class="persona-list" id="persona-list" role="list" tabindex="0"></div>
   </section>
 
   <section class="pane navigator" aria-label="Account and endpoint navigator">
     <div class="pane-header" id="nav-title">Accounts &amp; endpoints</div>
-    <div class="nav-tree" id="nav-tree" aria-label="Account &amp; endpoint navigator"></div>
+    <div class="nav-tree" id="nav-tree" aria-label="Account &amp; endpoint navigator" tabindex="0"></div>
     <div class="payload-area">
       <div class="payload-toolbar">
         <span class="endpoint-label" id="endpoint-label">/accounts</span>
@@ -98,11 +98,13 @@
 
   <aside class="pane field-detail" id="field-detail" aria-label="Field detail">
     <div class="pane-header">Field detail</div>
-    <div class="fc-empty" id="fc-empty">
-      Click any field name in the rendered view to see its definition, type, and status.
-      Phase 0 shows: status, type, format, enum values, and example value from the current persona.
+    <div class="field-detail-scroll" tabindex="0">
+      <div class="fc-empty" id="fc-empty">
+        Click any field name in the rendered view to see its definition, type, and status.
+        Phase 0 shows: status, type, format, enum values, and example value from the current persona.
+      </div>
+      <div class="fc-content" id="fc-content" hidden></div>
     </div>
-    <div class="fc-content" id="fc-content" hidden></div>
   </aside>
 </main>
 
