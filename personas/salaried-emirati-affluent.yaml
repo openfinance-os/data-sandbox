@@ -1,0 +1,72 @@
+persona_id: salaried_emirati_affluent
+name: "Khalid — Salaried Emirati (Affluent)"
+archetype: salaried_affluent
+default_seed: 8821
+stress_coverage:
+  - mortgage_long_dated
+  - high_dbr
+  - sharia_compliant_product
+
+demographics:
+  nationality_pool: emirati
+  age_band: 38-50
+  emirate: abu_dhabi
+
+income:
+  primary_employer_pool: tech_freezone
+  monthly_amount_aed: 60000
+  pay_day: 27
+  variability: low
+  flag_payroll: true
+
+accounts:
+  - type: CurrentAccount
+    currency: AED
+    age_months: 96
+  - type: Savings
+    currency: AED
+    age_months: 60
+  - type: CreditCard
+    currency: AED
+    credit_limit_aed: 200000
+    age_months: 48
+  - type: Mortgage
+    currency: AED
+    age_months: 72
+
+fixed_commitments:
+  - kind: standing_order
+    purpose: mortgage_principal
+    amount_aed: 18000
+    schedule: monthly_28
+  - kind: direct_debit
+    purpose: utilities_dewa
+    amount_aed_band: [800, 1500]
+    schedule: monthly_5
+  - kind: direct_debit
+    purpose: school_fees
+    amount_aed_band: [3500, 5000]
+    schedule: monthly_10
+  - kind: direct_debit
+    purpose: club_membership
+    amount_aed_band: [1200, 1800]
+    schedule: monthly_15
+
+spend_profile:
+  groceries_aed_per_month_band: [3000, 5500]
+  fuel_aed_per_month_band: [800, 1300]
+  dining_per_month_count_band: [12, 25]
+
+fx_activity: false
+cash_deposit_activity: false
+
+distress_signals:
+  nsf_events_per_year_band: [0, 0]
+
+narrative: |
+  Khalid is a 45-year-old Emirati national in Abu Dhabi, salaried at AED
+  60k/mo, with a mortgage, a savings account, a high-limit credit card,
+  and several monthly commitments (school fees, club membership, utilities).
+  Tests multi-account stress, high-DBR commitments, and a Sharia-compliant
+  mortgage product. Salary lands on the 27th, mortgage principal hits the
+  next day.

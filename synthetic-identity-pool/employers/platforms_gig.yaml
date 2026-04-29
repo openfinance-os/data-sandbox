@@ -1,0 +1,9 @@
+pool_id: platforms_gig
+description: Synthetic gig-platform employer / payer names. All fictional.
+employers:
+  - "Delta Rides FZ-LLC"
+  - "Swift Couriers DMCC"
+  - "Marketmark Marketplace FZ-LLC"
+  - "Glide Logistics FZ-LLC"
+  - "Sandstone Delivery DMCC"
+  - "Falcon Trips FZ-LLC"

@@ -1,0 +1,52 @@
+persona_id: gig_variable_income
+name: "Priya — Gig / Variable Income"
+archetype: gig_worker
+default_seed: 5523
+stress_coverage:
+  - gig_irregular_inflow
+
+demographics:
+  nationality_pool: expat_indian
+  age_band: 26-34
+  emirate: dubai
+
+# Gig workers don't have a monthly_amount + pay_day shape in the same way.
+# We still seed the manifest with a notional monthly figure so downstream
+# generators have something to work from; flag_payroll is false because the
+# spec-clean Flags=Payroll marker doesn't apply to gig credits.
+income:
+  primary_employer_pool: platforms_gig
+  monthly_amount_aed: 12000
+  pay_day: 1
+  variability: high
+  flag_payroll: false
+
+accounts:
+  - type: CurrentAccount
+    currency: AED
+    age_months: 14
+
+fixed_commitments:
+  - kind: direct_debit
+    purpose: utilities_dewa
+    amount_aed_band: [250, 500]
+    schedule: monthly_8
+
+spend_profile:
+  groceries_aed_per_month_band: [800, 1600]
+  fuel_aed_per_month_band: [200, 500]
+  dining_per_month_count_band: [3, 8]
+
+fx_activity: false
+cash_deposit_activity: false
+
+distress_signals:
+  nsf_events_per_year_band: [1, 3]
+
+narrative: |
+  Priya works gig hours via delivery and rideshare platforms. Her income
+  arrives in irregular bursts from multiple counterparties — no single
+  Flags=Payroll credit marks her salary. EXP-18's primary income formula
+  (trailing-12-month average of Payroll-flagged credits) returns nothing
+  for her; the Phase 1.5 Underwriting panel must fall back to Fallback B
+  (clustered counterparty inflow) to produce a usable income signal.

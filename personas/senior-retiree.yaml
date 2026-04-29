@@ -1,0 +1,52 @@
+persona_id: senior_retiree
+name: "Hassan — Senior / Retiree"
+archetype: senior_retiree
+default_seed: 7134
+stress_coverage:
+  - low_volume_inference
+
+demographics:
+  nationality_pool: emirati
+  age_band: 65-72
+  emirate: sharjah
+
+income:
+  primary_employer_pool: pension_gcc
+  monthly_amount_aed: 14000
+  pay_day: 1
+  variability: low
+  flag_payroll: true
+
+accounts:
+  - type: CurrentAccount
+    currency: AED
+    age_months: 240
+  - type: Savings
+    currency: AED
+    age_months: 180
+
+fixed_commitments:
+  - kind: direct_debit
+    purpose: utilities_dewa
+    amount_aed_band: [400, 700]
+    schedule: monthly_10
+
+spend_profile:
+  groceries_aed_per_month_band: [600, 1400]
+  fuel_aed_per_month_band: [100, 300]
+  dining_per_month_count_band: [0, 4]
+
+fx_activity: false
+cash_deposit_activity: false
+
+distress_signals:
+  nsf_events_per_year_band: [0, 0]
+
+narrative: |
+  Hassan is 68, retired, receiving a GCC pension on the 1st of each month.
+  Low transaction volume by design — typically <10 transactions/month.
+  Triggers EXP-18's low-volume guard under all three LFI profiles: the
+  trailing-12-month-count is below the 50-transaction floor, so the
+  Underwriting panel suppresses DBR with a tooltip explaining why. The
+  Senior persona is the case study for "off-the-shelf affordability
+  formulas don't generalise to low-volume segments."

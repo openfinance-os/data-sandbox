@@ -7,11 +7,24 @@ import { buildBundle } from './generator/index.js';
 import { coverage, leafFields, statusBadge } from './shared/spec-helpers.js';
 import { decodeFromUrl, encodePermalink } from './url.js';
 
-const PHASE_0_ENDPOINTS = [
-  '/accounts',
-  '/accounts/{AccountId}/balances',
-  '/accounts/{AccountId}/transactions',
+// All 12 v1 endpoints (Appendix C). Three are bundle-level (no AccountId
+// scope): /accounts and /parties. The others are per-account.
+const ENDPOINTS = [
+  { path: '/accounts', scope: 'bundle' },
+  { path: '/accounts/{AccountId}', scope: 'account' },
+  { path: '/accounts/{AccountId}/balances', scope: 'account' },
+  { path: '/accounts/{AccountId}/transactions', scope: 'account' },
+  { path: '/accounts/{AccountId}/standing-orders', scope: 'account' },
+  { path: '/accounts/{AccountId}/direct-debits', scope: 'account' },
+  { path: '/accounts/{AccountId}/beneficiaries', scope: 'account' },
+  { path: '/accounts/{AccountId}/scheduled-payments', scope: 'account' },
+  { path: '/accounts/{AccountId}/product', scope: 'account' },
+  { path: '/accounts/{AccountId}/parties', scope: 'account' },
+  { path: '/parties', scope: 'bundle' },
+  { path: '/accounts/{AccountId}/statements', scope: 'account' },
 ];
+const ACCOUNT_SCOPED_PATHS = ENDPOINTS.filter((e) => e.scope === 'account').map((e) => e.path);
+const BUNDLE_SCOPED_PATHS = ENDPOINTS.filter((e) => e.scope === 'bundle').map((e) => e.path);
 
 const state = {
   spec: null,
@@ -171,6 +184,30 @@ function renderCoverage() {
 function renderNavigator() {
   const nav = document.getElementById('nav-tree');
   nav.replaceChildren();
+
+  // Bundle-scoped endpoints get their own header section at the top.
+  const bundleSection = el('div', { class: 'nav-account' });
+  bundleSection.appendChild(el('div', { class: 'nav-account-header', text: 'Bundle-level' }));
+  for (const ep of BUNDLE_SCOPED_PATHS) {
+    const isActive = state.endpoint === ep;
+    bundleSection.appendChild(
+      el('button', {
+        class: `nav-endpoint${isActive ? ' active' : ''}`,
+        text: ep,
+        attrs: { 'aria-current': isActive ? 'true' : null },
+        dataset: { endpoint: ep },
+        onClick: () => {
+          state.endpoint = ep;
+          state.selectedAccountId = null;
+          renderNavigator();
+          renderPayload();
+        },
+      })
+    );
+  }
+  nav.appendChild(bundleSection);
+
+  // One section per account, listing the per-account endpoints.
   for (const acc of state.bundle.accounts) {
     const wrap = el('div', { class: 'nav-account' });
     wrap.appendChild(
@@ -179,7 +216,7 @@ function renderNavigator() {
         text: `${acc.AccountSubType} · ${acc.AccountIdentifiers?.[0]?.Identification?.slice(0, 12) ?? acc.AccountId}…`,
       })
     );
-    for (const ep of PHASE_0_ENDPOINTS) {
+    for (const ep of ACCOUNT_SCOPED_PATHS) {
       const isActive = state.endpoint === ep && state.selectedAccountId === acc.AccountId;
       const btn = el('button', {
         class: `nav-endpoint${isActive ? ' active' : ''}`,
@@ -201,14 +238,31 @@ function renderNavigator() {
 
 function rowsForActiveEndpoint() {
   const acc = state.bundle.accounts.find((a) => a.AccountId === state.selectedAccountId);
-  if (!acc) return [];
   switch (state.endpoint) {
     case '/accounts':
       return state.bundle.accounts;
+    case '/parties':
+      return state.bundle.callingUserParty ? [state.bundle.callingUserParty] : [];
+    case '/accounts/{AccountId}':
+      return acc ? [acc] : [];
     case '/accounts/{AccountId}/balances':
-      return state.bundle.balances.filter((b) => b._accountId === acc.AccountId);
+      return acc ? state.bundle.balances.filter((b) => b._accountId === acc.AccountId) : [];
     case '/accounts/{AccountId}/transactions':
-      return state.bundle.transactions.filter((t) => t._accountId === acc.AccountId);
+      return acc ? state.bundle.transactions.filter((t) => t._accountId === acc.AccountId) : [];
+    case '/accounts/{AccountId}/standing-orders':
+      return acc ? state.bundle.standingOrders.filter((x) => x._accountId === acc.AccountId) : [];
+    case '/accounts/{AccountId}/direct-debits':
+      return acc ? state.bundle.directDebits.filter((x) => x._accountId === acc.AccountId) : [];
+    case '/accounts/{AccountId}/beneficiaries':
+      return acc ? state.bundle.beneficiaries.filter((x) => x._accountId === acc.AccountId) : [];
+    case '/accounts/{AccountId}/scheduled-payments':
+      return acc ? state.bundle.scheduledPayments.filter((x) => x._accountId === acc.AccountId) : [];
+    case '/accounts/{AccountId}/product':
+      return acc ? state.bundle.product.filter((x) => x._accountId === acc.AccountId) : [];
+    case '/accounts/{AccountId}/parties':
+      return acc ? state.bundle.parties.filter((x) => x._accountId === acc.AccountId) : [];
+    case '/accounts/{AccountId}/statements':
+      return acc ? state.bundle.statements.filter((x) => x._accountId === acc.AccountId) : [];
     default:
       return [];
   }

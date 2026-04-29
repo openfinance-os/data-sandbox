@@ -1,0 +1,42 @@
+pool_id: emirati
+description: Synthetic Emirati national name combinations.
+given_names:
+  - Abdullah
+  - Ahmed
+  - Aisha
+  - Ali
+  - Aliyah
+  - Fatima
+  - Hamdan
+  - Hessa
+  - Khalid
+  - Latifa
+  - Maitha
+  - Mohammed
+  - Mariam
+  - Noura
+  - Omar
+  - Reem
+  - Saeed
+  - Salem
+  - Salama
+  - Yousef
+  - Zayed
+  - Hassan
+surnames:
+  - Al Falasi
+  - Al Mansoori
+  - Al Marri
+  - Al Maktoum
+  - Al Mazrouei
+  - Al Mehairi
+  - Al Mualla
+  - Al Mulla
+  - Al Nuaimi
+  - Al Otaiba
+  - Al Qasimi
+  - Al Rashid
+  - Al Romaithi
+  - Al Shamsi
+  - Al Suwaidi
+  - Al Zaabi

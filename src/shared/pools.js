@@ -1,26 +1,37 @@
-// Identity-pool loader — works in both Node and the browser.
-// In Node we read YAML files directly; in the browser we fetch pre-bundled
-// JSON copies. Phase 0 keeps things simple by exposing the same load() shape.
+// Identity-pool list and indexing helpers.
+//
+// As the persona library grows, pool files are added under
+// /synthetic-identity-pool/. Phase 1: rather than hardcoding each file in
+// this list, tools/load-fixtures.mjs (Node) and tools/build-data.mjs (browser
+// build) walk the directory; this module exposes the indexing helper that
+// turns the loaded set into name/employer/merchant lookups by pool_id.
 
-const POOL_FILES = [
-  ['namesExpatIndian', 'names/expat_indian.yaml'],
-  ['employersTechFreezone', 'employers/tech_freezone.yaml'],
-  ['merchantsGroceries', 'merchants/groceries.yaml'],
-  ['merchantsFuel', 'merchants/fuel.yaml'],
-  ['merchantsDining', 'merchants/dining.yaml'],
-  ['merchantsUtilities', 'merchants/utilities.yaml'],
-  ['counterpartyBanksDomestic', 'counterparty-banks/domestic.yaml'],
-  ['ibansSynthetic', 'ibans/synthetic.yaml'],
-];
-
-export const POOL_FILE_LIST = POOL_FILES.slice();
-
-export function indexPoolsByPoolId(pools) {
+export function indexPools(rawPools) {
   const namesByPoolId = {};
-  for (const [k, v] of Object.entries(pools)) {
-    if (k.startsWith('names') && v && v.pool_id) {
-      namesByPoolId[v.pool_id] = v;
+  const employersByPoolId = {};
+  const merchantsByCategory = {};
+  const counterpartyBanksByCategory = {};
+  const ibansByCategory = {};
+
+  for (const p of rawPools) {
+    if (!p || typeof p.pool_id !== 'string') continue;
+    if (Array.isArray(p.given_names) && Array.isArray(p.surnames)) {
+      namesByPoolId[p.pool_id] = p;
+    } else if (Array.isArray(p.employers)) {
+      employersByPoolId[p.pool_id] = p;
+    } else if (Array.isArray(p.merchants)) {
+      merchantsByCategory[p.pool_id] = p;
+    } else if (Array.isArray(p.banks)) {
+      counterpartyBanksByCategory[p.pool_id] = p;
+    } else if (Array.isArray(p.prefix_options)) {
+      ibansByCategory[p.pool_id] = p;
     }
   }
-  return { ...pools, namesByPoolId };
+  return {
+    namesByPoolId,
+    employersByPoolId,
+    merchantsByCategory,
+    counterpartyBanksByCategory,
+    ibansByCategory,
+  };
 }

@@ -1,11 +1,12 @@
-// Test-side helper: loads persona manifests and identity pools from disk.
-// Used by Vitest tests; the browser uses fetched JSON instead.
+// Test-side helper: loads persona manifests and identity pools from disk
+// dynamically (so adding a new pool file or persona doesn't require edits
+// here or in src/shared/pools.js).
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import yaml from 'js-yaml';
-import { POOL_FILE_LIST, indexPoolsByPoolId } from '../src/shared/pools.js';
+import { indexPools } from '../src/shared/pools.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,12 +22,38 @@ export function loadPersona(personaId) {
   return loadYaml(`personas/${slug}.yaml`);
 }
 
-export function loadAllPools() {
-  const pools = {};
-  for (const [key, rel] of POOL_FILE_LIST) {
-    pools[key] = loadYaml(`synthetic-identity-pool/${rel}`);
+export function listPersonaFiles() {
+  return fs
+    .readdirSync(path.join(repoRoot, 'personas'))
+    .filter((f) => f.endsWith('.yaml') && !f.startsWith('_'));
+}
+
+export function loadAllPersonas() {
+  const out = {};
+  for (const f of listPersonaFiles()) {
+    const m = loadYaml(`personas/${f}`);
+    out[m.persona_id] = m;
   }
-  return indexPoolsByPoolId(pools);
+  return out;
+}
+
+function* walkPoolFiles() {
+  const root = path.join(repoRoot, 'synthetic-identity-pool');
+  for (const sub of fs.readdirSync(root, { withFileTypes: true })) {
+    if (!sub.isDirectory()) continue;
+    const subPath = path.join(root, sub.name);
+    for (const f of fs.readdirSync(subPath)) {
+      if (f.endsWith('.yaml')) yield path.join(sub.name, f);
+    }
+  }
+}
+
+export function loadAllPools() {
+  const raw = [];
+  for (const rel of walkPoolFiles()) {
+    raw.push(loadYaml(`synthetic-identity-pool/${rel}`));
+  }
+  return indexPools(raw);
 }
 
 export function loadSpec() {

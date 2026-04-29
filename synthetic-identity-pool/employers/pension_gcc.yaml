@@ -1,0 +1,6 @@
+pool_id: pension_gcc
+description: Synthetic GCC-state pension authority payer names. All fictional.
+employers:
+  - "UAE Synthetic Pension Authority"
+  - "Sharjah Synthetic Pension Fund"
+  - "Abu Dhabi Synthetic Retirement Fund"
