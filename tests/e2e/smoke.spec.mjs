@@ -153,6 +153,58 @@ test('tour walks through 5 steps and finishes cleanly', async ({ page }) => {
   await expect(page.locator('#tour-overlay')).toHaveCount(0);
 });
 
+test('Cmd+K opens find box and field result jumps to the field card', async ({ page }) => {
+  await page.goto('/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729');
+  await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
+  await page.locator('#find-btn').click();
+  await expect(page.locator('#find-overlay')).toBeVisible();
+  await page.locator('.find-input').fill('Payroll');
+  await expect(page.locator('.find-result').first()).toBeVisible();
+  // Click the first result (an enum match for Flags)
+  await page.locator('.find-result').first().click();
+  await expect(page.locator('#find-overlay')).toHaveCount(0);
+});
+
+test('Compare-LFIs shows two side-by-side panels with diff classes — EXP-16', async ({ page }) => {
+  await page.goto('/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729');
+  await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
+  await page.locator('.nav-endpoint', { hasText: '/transactions' }).first().click();
+  await page.locator('#view-compare').click();
+  await expect(page.locator('.compare-pane')).toBeVisible();
+  // Two halves visible.
+  await expect(page.locator('.compare-half')).toHaveCount(2);
+  // At least some diff cells must exist (Rich vs Sparse on Sara's transactions
+  // will differ across MerchantDetails / Flags / etc.).
+  expect(await page.locator('.diff-only-here').count()).toBeGreaterThan(0);
+  expect(await page.locator('.diff-missing').count()).toBeGreaterThan(0);
+});
+
+test('Stress-chip filter narrows the persona library', async ({ page }) => {
+  await page.goto('/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729');
+  await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
+  const fullCount = await page.locator('.persona-card').count();
+  // Click the first stress chip on Khalid's card (high DBR)
+  await page.locator('.persona-card', { hasText: 'Khalid' }).locator('.stress-chip', { hasText: 'high DBR' }).first().click();
+  const filteredCount = await page.locator('.persona-card').count();
+  expect(filteredCount).toBeLessThan(fullCount);
+  expect(filteredCount).toBeGreaterThan(0);
+  await page.locator('#stress-filter-clear').click();
+  expect(await page.locator('.persona-card').count()).toBe(fullCount);
+});
+
+test('Monthly summary shows 12-row roll-up on /transactions', async ({ page }) => {
+  await page.goto('/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729');
+  await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
+  await page.locator('.nav-endpoint', { hasText: '/transactions' }).first().click();
+  const rolled = page.locator('.tx-monthly');
+  await expect(rolled).toBeVisible();
+  await expect(rolled.locator('summary')).toContainText('Monthly summary');
+  // 12 month-rows (the persona generates 12 months of activity).
+  const rowCount = await rolled.locator('tbody tr').count();
+  expect(rowCount).toBeGreaterThanOrEqual(11);
+  expect(rowCount).toBeLessThanOrEqual(13);
+});
+
 test('field card shows all 9 elements + Report-an-issue link', async ({ page }) => {
   await page.goto('/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729');
   await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');

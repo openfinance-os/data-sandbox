@@ -66,6 +66,11 @@ const state = {
   // Active stress-coverage filter on the persona library — null when no
   // filter; otherwise a single term-slug from Appendix F vocabulary.
   stressFilter: null,
+  // EXP-16 Compare-LFIs — when state.view === 'compare', renderPayload
+  // builds two bundles (compareLeft and compareRight LFIs) and renders
+  // them side-by-side with diff highlighting.
+  compareLeft: 'rich',
+  compareRight: 'sparse',
 };
 
 function isDateField(name) {
@@ -291,10 +296,169 @@ function attachEventHandlers() {
     state.view = 'raw';
     renderPayload();
   });
+  document.getElementById('view-compare').addEventListener('click', () => {
+    state.view = 'compare';
+    renderPayload();
+  });
   document.getElementById('export-json').addEventListener('click', exportActiveJson);
   document.getElementById('export-csv').addEventListener('click', exportActiveCsv);
   document.getElementById('export-tar').addEventListener('click', exportTarball);
   document.getElementById('tour-btn').addEventListener('click', () => startTour());
+  document.getElementById('find-btn').addEventListener('click', openFind);
+  // ⌘K / Ctrl+K opens the find box from anywhere in the app.
+  window.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      openFind();
+    } else if (e.key === 'Escape' && document.getElementById('find-overlay')) {
+      closeFind();
+    }
+  });
+}
+
+// ---- Spec-wide find box -----------------------------------------------------------------
+
+function openFind() {
+  if (document.getElementById('find-overlay')) return;
+  const overlay = el('div', {
+    class: 'find-overlay',
+    attrs: { id: 'find-overlay', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Find' },
+  });
+  const card = el('div', { class: 'find-card' });
+  const input = el('input', {
+    class: 'find-input',
+    attrs: { type: 'search', placeholder: 'Search fields, enums, persona narratives…', 'aria-label': 'Find input', autocomplete: 'off' },
+  });
+  const ul = el('ul', { class: 'find-results', attrs: { role: 'listbox' } });
+  const hint = el('div', { class: 'find-hint' });
+  const left = el('span', { text: 'Click any result to jump' });
+  const right = el('span');
+  right.appendChild(document.createTextNode('Open with '));
+  right.appendChild(el('kbd', { text: '⌘K' }));
+  right.appendChild(document.createTextNode(' · close with '));
+  right.appendChild(el('kbd', { text: 'Esc' }));
+  hint.appendChild(left);
+  hint.appendChild(right);
+  card.appendChild(input);
+  card.appendChild(ul);
+  card.appendChild(hint);
+  overlay.appendChild(card);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeFind(); });
+
+  let activeIdx = 0;
+  let lastResults = [];
+  const refresh = () => {
+    const q = input.value.trim().toLowerCase();
+    lastResults = q.length === 0 ? [] : runFind(q).slice(0, 50);
+    renderResults();
+  };
+  const renderResults = () => {
+    ul.replaceChildren();
+    if (lastResults.length === 0) {
+      const empty = el('li', {
+        class: 'find-empty',
+        text: input.value.trim().length === 0
+          ? 'Try: TransactionType · Payroll · MerchantCategoryCode · Sara · multi_currency · expat'
+          : 'No matches.',
+      });
+      ul.appendChild(empty);
+      return;
+    }
+    lastResults.forEach((r, i) => {
+      const li = el('li', {
+        class: `find-result${i === activeIdx ? ' is-active' : ''}`,
+        attrs: { role: 'option', 'aria-selected': i === activeIdx ? 'true' : 'false' },
+      });
+      li.appendChild(el('div', { class: 'find-result-title', text: r.title }));
+      li.appendChild(el('div', { class: 'find-result-meta', text: r.meta }));
+      li.addEventListener('click', () => { applyFindResult(r); closeFind(); });
+      ul.appendChild(li);
+    });
+  };
+  input.addEventListener('input', () => { activeIdx = 0; refresh(); });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); activeIdx = Math.min(activeIdx + 1, Math.max(lastResults.length - 1, 0)); renderResults(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); activeIdx = Math.max(activeIdx - 1, 0); renderResults(); }
+    else if (e.key === 'Enter') {
+      e.preventDefault();
+      const r = lastResults[activeIdx];
+      if (r) { applyFindResult(r); closeFind(); }
+    }
+  });
+  document.body.appendChild(overlay);
+  setTimeout(() => input.focus(), 0);
+  refresh();
+}
+
+function closeFind() {
+  document.getElementById('find-overlay')?.remove();
+}
+
+// Build a flat searchable index across personas + spec endpoints + fields.
+function runFind(q) {
+  const out = [];
+  const lower = q.toLowerCase();
+  // Personas — name + archetype + narrative + stress_coverage
+  for (const [pid, p] of Object.entries(state.data.personas ?? {})) {
+    const hay = `${p.name} ${p.archetype} ${p.narrative ?? ''} ${(p.stress_coverage ?? []).join(' ')}`.toLowerCase();
+    if (hay.includes(lower)) {
+      out.push({
+        kind: 'persona',
+        id: pid,
+        title: p.name,
+        meta: `Persona · ${humanArchetype(p.archetype)}${(p.stress_coverage ?? []).length > 0 ? ' · ' + p.stress_coverage.join(', ') : ''}`,
+      });
+    }
+  }
+  // Endpoints — match on path
+  for (const path of Object.keys(state.spec.endpoints ?? {})) {
+    if (path.toLowerCase().includes(lower)) {
+      out.push({ kind: 'endpoint', endpoint: path, title: path, meta: 'Endpoint' });
+    }
+  }
+  // Fields — name / path / enum
+  for (const [path, e] of Object.entries(state.spec.endpoints ?? {})) {
+    for (const f of e.fields ?? []) {
+      if (f.type === 'object' || f.type === 'array') continue;
+      const enumStr = Array.isArray(f.enum) ? f.enum.join(' ') : '';
+      const hay = `${f.name} ${f.path} ${enumStr}`.toLowerCase();
+      if (hay.includes(lower)) {
+        const enumHit = enumStr.toLowerCase().includes(lower) && !f.name.toLowerCase().includes(lower);
+        out.push({
+          kind: 'field',
+          endpoint: path,
+          fieldName: f.name,
+          title: `${f.name}  ·  ${path}`,
+          meta: `${f.status}${f.format ? ' · ' + f.format : ''}${enumHit ? ` · enum match: ${f.enum.filter((v) => String(v).toLowerCase().includes(lower)).slice(0, 3).join(', ')}` : ''}`,
+        });
+        if (out.length > 200) return out;
+      }
+    }
+  }
+  return out;
+}
+
+function applyFindResult(r) {
+  if (r.kind === 'persona') {
+    state.personaId = r.id;
+    rebuildAndRender();
+    return;
+  }
+  if (r.kind === 'endpoint' || r.kind === 'field') {
+    state.endpoint = r.endpoint;
+    if (r.endpoint !== '/accounts' && r.endpoint !== '/parties') {
+      state.selectedAccountId = state.bundle.accounts[0]?.AccountId ?? null;
+    } else {
+      state.selectedAccountId = null;
+    }
+    clearTxState();
+    renderNavigator();
+    renderPayload();
+    if (r.kind === 'field') {
+      // Defer so the table is in the DOM before we open the field card.
+      setTimeout(() => openFieldCard(r.fieldName), 0);
+    }
+  }
 }
 
 // ---- Tell-me-a-story walkthrough — §5.4 ----------------------------------------------------
@@ -655,8 +819,16 @@ function renderPayload() {
 
   document.getElementById('view-rendered').classList.toggle('active', state.view === 'rendered');
   document.getElementById('view-raw').classList.toggle('active', state.view === 'raw');
+  document.getElementById('view-compare').classList.toggle('active', state.view === 'compare');
   document.getElementById('view-rendered').setAttribute('aria-selected', state.view === 'rendered');
   document.getElementById('view-raw').setAttribute('aria-selected', state.view === 'raw');
+  document.getElementById('view-compare').setAttribute('aria-selected', state.view === 'compare');
+
+  // Compare-LFIs branches off completely — different layout.
+  if (state.view === 'compare') {
+    renderCompareView(body);
+    return;
+  }
 
   // Filter + sort apply only to the /transactions view.
   const isTransactions = state.endpoint === '/accounts/{AccountId}/transactions';
@@ -963,6 +1135,194 @@ function toggleSort(column) {
     state.txSort = { column, dir: 'asc' };
   }
   renderPayload();
+}
+
+// ---- EXP-16 Compare-LFIs view -----------------------------------------------------------
+
+function renderCompareView(body) {
+  const persona = state.data.personas[state.personaId];
+  const now = new Date(state.data.buildInfo.nowIso);
+  const leftBundle = buildBundle({ persona, lfi: state.compareLeft, seed: state.seed, pools: state.data.pools, now });
+  const rightBundle = buildBundle({ persona, lfi: state.compareRight, seed: state.seed, pools: state.data.pools, now });
+
+  body.appendChild(renderCompareBar());
+
+  const leftRows = compareRowsFor(leftBundle);
+  const rightRows = compareRowsFor(rightBundle);
+  const stats = compareStats(leftRows, rightRows);
+  body.appendChild(el('div', {
+    class: 'compare-summary',
+    text: `${stats.totalCellsLeft} populated cells on ${state.compareLeft} · ${stats.totalCellsRight} on ${state.compareRight} · ${stats.diffCount} fields differ across ${Math.max(leftRows.length, rightRows.length)} rows. Cells highlighted: green = present only on this side, amber = changed, red = missing.`,
+  }));
+
+  // Union of column keys across both sides so each half renders the same
+  // columns. That's how a "missing" cell on Sparse gets a column to live in
+  // — without it, dropped fields disappear from Sparse's table entirely
+  // and the diff classification can't fire.
+  const allKeys = new Set();
+  for (const r of [...leftRows, ...rightRows]) {
+    for (const k of Object.keys(stripInternal(r))) allKeys.add(k);
+  }
+
+  const compareWrap = el('div', { class: 'compare-pane' });
+  compareWrap.appendChild(renderCompareHalf(leftBundle, leftRows, rightRows, state.compareLeft, allKeys));
+  compareWrap.appendChild(renderCompareHalf(rightBundle, rightRows, leftRows, state.compareRight, allKeys));
+  body.appendChild(compareWrap);
+}
+
+function renderCompareBar() {
+  const bar = el('div', { class: 'compare-bar', attrs: { role: 'toolbar' } });
+  bar.appendChild(el('span', { text: 'Compare LFIs:' }));
+  bar.appendChild(makeLfiSelect('compareLeft'));
+  bar.appendChild(el('span', { text: '↔' }));
+  bar.appendChild(makeLfiSelect('compareRight'));
+  bar.appendChild(el('button', {
+    class: 'swap',
+    text: 'Swap',
+    onClick: () => {
+      const tmp = state.compareLeft;
+      state.compareLeft = state.compareRight;
+      state.compareRight = tmp;
+      renderPayload();
+    },
+  }));
+  return bar;
+}
+
+function makeLfiSelect(key) {
+  const select = el('select', { attrs: { 'aria-label': key === 'compareLeft' ? 'Left LFI profile' : 'Right LFI profile' } });
+  for (const lfi of ['rich', 'median', 'sparse']) {
+    const opt = el('option', { text: lfi[0].toUpperCase() + lfi.slice(1), attrs: { value: lfi } });
+    if (state[key] === lfi) opt.selected = true;
+    select.appendChild(opt);
+  }
+  select.addEventListener('change', (e) => {
+    state[key] = e.target.value;
+    renderPayload();
+  });
+  return select;
+}
+
+function compareRowsFor(bundle) {
+  const acc = bundle.accounts.find((a) => a.AccountId === state.selectedAccountId) ?? bundle.accounts[0];
+  switch (state.endpoint) {
+    case '/accounts': return bundle.accounts;
+    case '/parties': return bundle.callingUserParty ? [bundle.callingUserParty] : [];
+    case '/accounts/{AccountId}': return acc ? [acc] : [];
+    case '/accounts/{AccountId}/balances':
+      return acc ? bundle.balances.filter((b) => b._accountId === acc.AccountId) : [];
+    case '/accounts/{AccountId}/transactions':
+      return acc ? bundle.transactions.filter((t) => t._accountId === acc.AccountId).slice(0, 60) : [];
+    case '/accounts/{AccountId}/standing-orders':
+      return acc ? bundle.standingOrders.filter((x) => x._accountId === acc.AccountId) : [];
+    case '/accounts/{AccountId}/direct-debits':
+      return acc ? bundle.directDebits.filter((x) => x._accountId === acc.AccountId) : [];
+    case '/accounts/{AccountId}/beneficiaries':
+      return acc ? bundle.beneficiaries.filter((x) => x._accountId === acc.AccountId) : [];
+    case '/accounts/{AccountId}/scheduled-payments':
+      return acc ? bundle.scheduledPayments.filter((x) => x._accountId === acc.AccountId) : [];
+    case '/accounts/{AccountId}/product':
+      return acc ? bundle.product.filter((x) => x._accountId === acc.AccountId) : [];
+    case '/accounts/{AccountId}/parties':
+      return acc ? bundle.parties.filter((x) => x._accountId === acc.AccountId) : [];
+    case '/accounts/{AccountId}/statements':
+      return acc ? bundle.statements.filter((x) => x._accountId === acc.AccountId) : [];
+    default: return [];
+  }
+}
+
+function rowKey(row) {
+  return row.TransactionId || row.AccountId || row.StandingOrderId || row.DirectDebitId
+    || row.BeneficiaryId || row.ScheduledPaymentId || row.ProductId || row.PartyId
+    || row.StatementId || row._accountId || JSON.stringify(row).slice(0, 64);
+}
+
+function compareStats(leftRows, rightRows) {
+  const leftByKey = new Map(leftRows.map((r) => [rowKey(r), r]));
+  const rightByKey = new Map(rightRows.map((r) => [rowKey(r), r]));
+  let totalCellsLeft = 0;
+  let totalCellsRight = 0;
+  let diffCount = 0;
+  for (const r of leftRows) {
+    for (const v of Object.values(stripInternal(r))) if (v != null) totalCellsLeft += 1;
+  }
+  for (const r of rightRows) {
+    for (const v of Object.values(stripInternal(r))) if (v != null) totalCellsRight += 1;
+  }
+  for (const [key, l] of leftByKey) {
+    const r = rightByKey.get(key);
+    if (!r) continue;
+    const sl = stripInternal(l);
+    const sr = stripInternal(r);
+    const allKeys = new Set([...Object.keys(sl), ...Object.keys(sr)]);
+    for (const k of allKeys) {
+      if (JSON.stringify(sl[k]) !== JSON.stringify(sr[k])) diffCount += 1;
+    }
+  }
+  return { totalCellsLeft, totalCellsRight, diffCount };
+}
+
+function renderCompareHalf(bundle, ownRows, otherRows, lfi, allKeys) {
+  const half = el('div', { class: 'compare-half' });
+  half.appendChild(el('div', {
+    class: 'compare-half-header',
+    text: `${lfi.toUpperCase()} · ${ownRows.length} row${ownRows.length === 1 ? '' : 's'}`,
+  }));
+  const inner = el('div', { class: 'payload-body', attrs: { tabindex: '0' } });
+  if (ownRows.length === 0) {
+    inner.appendChild(el('p', { text: 'No records.', attrs: { style: 'color:var(--text-muted);padding:8px' } }));
+    half.appendChild(inner);
+    void bundle;
+    return half;
+  }
+  const fieldsByName = new Map((leafFields(state.spec, state.endpoint) ?? []).map((f) => [f.name, f]));
+  const otherByKey = new Map(otherRows.map((r) => [rowKey(r), r]));
+
+  const wrap = el('div', { class: 'payload-rendered' });
+  const table = el('table');
+  const thead = el('thead');
+  const headRow = el('tr');
+  for (const k of allKeys) {
+    const th = el('th');
+    const f = fieldsByName.get(k);
+    if (f) th.dataset.status = f.status;
+    if (f) {
+      const badge = statusBadge(f.status);
+      th.appendChild(el('span', { class: `pill ${badge.shape}`, text: badge.label, attrs: { 'aria-label': badge.text } }));
+    }
+    th.appendChild(el('span', { class: 'field-name', text: k }));
+    headRow.appendChild(th);
+  }
+  thead.appendChild(headRow);
+  table.appendChild(thead);
+
+  const tbody = el('tbody');
+  for (const r of ownRows) {
+    const stripped = stripInternal(r);
+    const otherRow = otherByKey.get(rowKey(r));
+    const otherStripped = otherRow ? stripInternal(otherRow) : null;
+    const tr = el('tr');
+    for (const k of allKeys) {
+      const v = stripped[k];
+      const ov = otherStripped ? otherStripped[k] : undefined;
+      const td = el('td');
+      td.textContent = v == null ? '—' : (typeof v === 'object' ? JSON.stringify(v) : String(v));
+      if (otherStripped) {
+        const here = v != null;
+        const there = ov != null;
+        if (here && !there) td.classList.add('diff-only-here');
+        else if (!here && there) td.classList.add('diff-missing');
+        else if (here && there && JSON.stringify(v) !== JSON.stringify(ov)) td.classList.add('diff-changed');
+      }
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  }
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+  inner.appendChild(wrap);
+  half.appendChild(inner);
+  return half;
 }
 
 // ---- Monthly summary on /transactions ---------------------------------------------------
