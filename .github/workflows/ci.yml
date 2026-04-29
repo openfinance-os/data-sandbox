@@ -53,8 +53,8 @@ jobs:
       - run: npm run build:spec
       - run: node tools/build-data.mjs
       - run: npm run test:perf
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: lighthouse-report
-          path: .lighthouseci/
+      # Note: lhci uploads each run's report to temporary-public-storage
+      # (URLs printed in the job log). No local artifact upload needed —
+      # the previous `actions/upload-artifact` step warned about a missing
+      # .lighthouseci/ directory because lhci doesn't write one when the
+      # target is the public-storage cloud.
