@@ -1326,23 +1326,23 @@ function renderPayload() {
           type: 'button',
           title: n > 0
             ? `Jump to /transactions filtered by ${jumpFrom.label(r)} — ${n} match${n === 1 ? '' : 'es'} highlighted.`
-            : `No matching transactions found for ${jumpFrom.label(r)}.`,
+            : `Jump to /transactions filtered by ${jumpFrom.label(r)} — no matches under this LFI / seed (a real signal: under Sparse the filter token may not survive redaction). The banner explains what you'd see if matches existed.`,
         },
-        text: n > 0 ? `→ ${n} matching tx` : '— no matches',
+        text: n > 0 ? `→ ${n} matching tx` : '→ no matches',
         onClick: (e) => {
           e.stopPropagation();
-          if (n > 0) crossLinkToTransactions(r, jumpFrom);
+          crossLinkToTransactions(r, jumpFrom);
         },
       });
-      if (n === 0) btn.disabled = true;
       td.appendChild(btn);
       tr.appendChild(td);
-      // Whole-row click stays as a quick path for keyboard / muscle memory.
-      tr.style.cursor = n > 0 ? 'pointer' : 'default';
-      if (n > 0) {
-        tr.title = `Jump to /transactions filtered by ${jumpFrom.label(r)}`;
-        tr.addEventListener('click', () => crossLinkToTransactions(r, jumpFrom));
-      }
+      // Whole-row click always fires — even with zero matches the cross-link
+      // banner is informative ("0 matches highlighted") and keeps the EXP-12
+      // affordance consistent across rows. Empty rows just land on an
+      // unfiltered /transactions view with the banner.
+      tr.style.cursor = 'pointer';
+      tr.title = `Jump to /transactions filtered by ${jumpFrom.label(r)}`;
+      tr.addEventListener('click', () => crossLinkToTransactions(r, jumpFrom));
     }
     tbody.appendChild(tr);
   }
@@ -1936,32 +1936,32 @@ function renderPersonaOverview(body) {
 
 // ---- EXP-18 Underwriting Scenario panel -------------------------------------------------
 
-// Compact 4-stat strip docked above /transactions. Click any stat to
-// pivot to the full Underwriting Scenario panel for source fields and
-// formulas. Honours the EXP-18 low-volume guard with an inline notice.
+// Compact 4-stat strip docked above /transactions. Click "Open full panel →"
+// to pivot to the EXP-18 endpoint for source fields and formulas. Honours
+// the EXP-18 low-volume guard with an inline notice. Plain <div>, not
+// <details> — a focusable button inside <summary> would trip the
+// axe-core nested-interactive rule (WCAG 4.1.2 / EXP-23).
 function renderUnderwritingStrip() {
   const now = new Date(state.data.buildInfo.nowIso);
   const r = computeUnderwriting(state.bundle, now);
-  const strip = el('details', { class: 'uw-strip', attrs: { open: 'open', role: 'region', 'aria-label': 'Underwriting at-a-glance' } });
-  const summary = el('summary');
-  summary.appendChild(el('span', { class: 'uw-strip-eyebrow', text: 'Underwriting at-a-glance' }));
+  const strip = el('div', { class: 'uw-strip', attrs: { role: 'region', 'aria-label': 'Underwriting at-a-glance' } });
+  const head = el('div', { class: 'uw-strip-head' });
+  head.appendChild(el('span', { class: 'uw-strip-eyebrow', text: 'Underwriting at-a-glance' }));
   if (r.guard.triggered) {
-    summary.appendChild(el('span', { class: 'uw-strip-guard', text: 'Low-volume guard active' }));
+    head.appendChild(el('span', { class: 'uw-strip-guard', text: 'Low-volume guard active' }));
   }
-  summary.appendChild(el('button', {
+  head.appendChild(el('button', {
     class: 'uw-strip-jump',
     attrs: { type: 'button', title: 'Open the full Underwriting Scenario panel — formulas, source fields, contributors.' },
     text: 'Open full panel →',
-    onClick: (e) => {
-      e.preventDefault();
-      e.stopPropagation();
+    onClick: () => {
       state.endpoint = UNDERWRITING_PSEUDO;
       state.selectedAccountId = null;
       renderNavigator();
       renderPayload();
     },
   }));
-  strip.appendChild(summary);
+  strip.appendChild(head);
 
   const grid = el('div', { class: 'uw-strip-grid' });
   const stats = [

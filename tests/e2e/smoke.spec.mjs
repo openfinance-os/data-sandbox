@@ -169,7 +169,10 @@ test('Compare-LFIs shows two side-by-side panels with diff classes — EXP-16', 
   await page.goto('/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729');
   await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
   await page.locator('.nav-endpoint', { hasText: '/transactions' }).first().click();
-  await page.locator('#view-compare').click();
+  // Compare is decoupled from the rendered/raw view-mode toggle (PRD §UX
+  // audit recommendation #6) — '+ Compare' in the LFI segmented control
+  // turns on a partner LFI and pivots renderPayload to the side-by-side.
+  await page.locator('#compare-toggle').click();
   await expect(page.locator('.compare-pane')).toBeVisible();
   // Two halves visible.
   await expect(page.locator('.compare-half')).toHaveCount(2);

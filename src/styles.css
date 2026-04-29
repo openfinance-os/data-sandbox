@@ -1863,7 +1863,9 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
 
 /* Underwriting at-a-glance strip — compact 4-stat dock above /transactions
    so Sara's primary JTBD-1.1/1.2 signals are one glance away without
-   leaving the wire view. Click "Open full panel →" to pivot to EXP-18. */
+   leaving the wire view. Click "Open full panel →" to pivot to EXP-18.
+   Plain <div> (not <details>) — a focusable button inside <summary>
+   trips axe nested-interactive (WCAG 4.1.2). */
 .uw-strip {
   margin: 8px 12px;
   border: 1px solid var(--accent);
@@ -1871,23 +1873,14 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   background: var(--bg-card);
   font-size: 12px;
 }
-.uw-strip > summary {
+.uw-strip-head {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 6px 12px;
-  cursor: pointer;
-  list-style: none;
   background: var(--accent-soft);
   border-radius: 4px 4px 0 0;
 }
-.uw-strip > summary::-webkit-details-marker { display: none; }
-.uw-strip > summary::before {
-  content: '▾';
-  font-size: 10px;
-  color: var(--accent);
-}
-.uw-strip:not([open]) > summary::before { content: '▸'; }
 .uw-strip-eyebrow {
   font-size: 11px;
   text-transform: uppercase;
