@@ -144,6 +144,7 @@
   <ul>
     <li><strong>Stable persona-level URLs.</strong> Every share-URL encodes <code>(persona, lfi, seed)</code> and reproduces the same payload bundle deterministically across machines. URLs are stable across deployments — pin tested at every build.</li>
     <li><strong>Embed mode.</strong> A chrome-less variant lives at <code>/embed?persona=&lfi=&endpoint=&seed=&height=</code> for iframe consumption. oEmbed metadata published.</li>
+    <li><strong>TPP showcase journeys.</strong> If you are wiring sandbox personas into a TPP demo journey (sales deck, investor pitch, regulator demo, internal QA), see the <a href="integrate.html">integration guide</a> for the four plug points (iframe, npm, PyPI, raw HTTPS).</li>
     <li><strong>Cite the spec, not the sandbox.</strong> The sandbox is the show-don't-tell complement; the authoritative source is the upstream UAE Open Finance Standards v2.1 OpenAPI spec at the pinned SHA.</li>
     <li><strong>Always describe the data as synthetic.</strong> The footer watermark is on every export and embed; please carry it through to the citation.</li>
   </ul>

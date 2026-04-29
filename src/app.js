@@ -14,7 +14,7 @@ import {
   realLfisGuidance,
   bandForFieldName,
 } from './shared/spec-helpers.js';
-import { decodeFromUrl, encodeEmbed, encodePermalink } from './url.js';
+import { decodeFromUrl, encodeEmbed, encodeFixtureUrl, encodePermalink } from './url.js';
 import {
   envelopesFromBundle,
   csvForResource,
@@ -1931,7 +1931,131 @@ function renderPersonaOverview(body) {
   }
   wrap.appendChild(jumps);
 
+  // EXP-30 — TPP-developer affordance: render the "Use this persona in your
+  // demo" panel as the last element on the overview. Surfaces the four plug
+  // points (iframe, npm, pip, curl) so a TPP can lift this persona's payloads
+  // straight into a Nebras-mock-shaped demo flow without losing coherence.
+  wrap.appendChild(renderUseInDemoPanel());
+
   body.appendChild(wrap);
+}
+
+// ---- EXP-30 "Use this persona in your demo" --------------------------------------------
+
+function renderUseInDemoPanel() {
+  const personaId = state.personaId;
+  const lfi = state.lfi;
+  const seed = state.seed;
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const slugBase = typeof window !== 'undefined'
+    ? (window.location.origin + window.location.pathname.replace(/\/(index|embed)\.html$/, '')).replace(/\/$/, '')
+    : '';
+
+  // The curl snippet targets /accounts as the simplest entry — it has no
+  // {AccountId} dependency and is safe to demo without prior IDs.
+  const curlUrl = encodeFixtureUrl({ origin, personaId, lfi, seed, endpoint: '/accounts' });
+  const manifestUrl = `${origin}/fixtures/v1/manifest.json`;
+
+  const embedHref = slugBase + encodeEmbed({
+    personaId, lfi,
+    endpoint: '/accounts/{AccountId}/transactions',
+    seed, height: 600,
+  }).replace(/^\/embed/, '/embed.html');
+  const iframeSnippet = `<iframe src="${embedHref}" width="100%" height="600" loading="lazy" title="Open Finance Data Sandbox · ${personaId} · ${lfi}" referrerpolicy="no-referrer" style="border:1px solid #d9d5cb;border-radius:4px"></iframe>`;
+
+  const npmSnippet =
+`npm install @openfinance-os/sandbox-fixtures
+import { loadJourney } from '@openfinance-os/sandbox-fixtures';
+const j = loadJourney({ persona: '${personaId}', lfi: '${lfi}', seed: ${seed} });
+// j.endpoints['/accounts'], j.endpoints['/parties'],
+// j.endpoints['/accounts/{AccountId}/transactions'], ...`;
+
+  const pipSnippet =
+`pip install openfinance-os-sandbox-fixtures
+from openfinance_os_sandbox_fixtures import load_journey
+j = load_journey('${personaId}', lfi='${lfi}', seed=${seed})
+# j['endpoints']['/accounts'], j['endpoints']['/parties'],
+# j['endpoints']['/accounts/{AccountId}/transactions'], ...`;
+
+  const curlSnippet =
+`curl -fsS '${manifestUrl}'   # discover personas, LFIs, endpoints, version pin
+curl -fsS '${curlUrl}'`;
+
+  const details = el('details', { class: 'demo-panel', attrs: { 'aria-label': 'Use this persona in your demo' } });
+  const summary = el('summary', { class: 'demo-panel-summary' });
+  summary.appendChild(el('span', { class: 'demo-panel-eyebrow', text: 'For TPP demos' }));
+  summary.appendChild(el('span', { class: 'demo-panel-title', text: 'Use this persona in your demo' }));
+  details.appendChild(summary);
+
+  const note = el('p', { class: 'demo-panel-note' });
+  note.appendChild(document.createTextNode('Synthetic, illustrative data. '));
+  const strong = el('strong', { text: 'Not endorsed by Nebras / CBUAE / any LFI.' });
+  note.appendChild(strong);
+  note.appendChild(document.createTextNode(' Not a substitute for the Nebras-operated regulatory sandbox at certification time. '));
+  const link = el('a', { attrs: { href: 'integrate.html' }, text: 'Full integration guide →' });
+  note.appendChild(link);
+  details.appendChild(note);
+
+  const rows = [
+    {
+      eyebrow: 'Path 1 · iframe embed',
+      hint: 'Drop a chrome-less view into a slide deck, blog post, or LMS module.',
+      snippet: iframeSnippet,
+      copyLabel: 'Copy iframe',
+      doneLabel: 'Iframe snippet copied — paste into your HTML.',
+    },
+    {
+      eyebrow: 'Path 2 · npm — Node / TypeScript',
+      hint: 'Swap your Nebras-mock backend; loadJourney() returns the full coherent bundle.',
+      snippet: npmSnippet,
+      copyLabel: 'Copy npm snippet',
+      doneLabel: 'npm snippet copied.',
+    },
+    {
+      eyebrow: 'Path 3 · PyPI — Python',
+      hint: 'Notebook, FastAPI mock-server, ML pipeline.',
+      snippet: pipSnippet,
+      copyLabel: 'Copy pip snippet',
+      doneLabel: 'pip snippet copied.',
+    },
+    {
+      eyebrow: 'Path 4 · raw HTTPS — Swift / Kotlin / Postman / curl / .NET',
+      hint: 'Static JSON, CORS-permissive. Pin manifest.json.version for stability.',
+      snippet: curlSnippet,
+      copyLabel: 'Copy curl',
+      doneLabel: 'curl snippet copied.',
+    },
+  ];
+
+  for (const r of rows) {
+    const row = el('div', { class: 'demo-row' });
+    row.appendChild(el('div', { class: 'demo-row-eyebrow', text: r.eyebrow }));
+    row.appendChild(el('div', { class: 'demo-row-hint', text: r.hint }));
+    const pre = el('pre', { class: 'demo-row-pre' });
+    pre.appendChild(el('code', { text: r.snippet }));
+    row.appendChild(pre);
+    const btn = el('button', {
+      class: 'demo-row-copy',
+      attrs: { type: 'button' },
+      text: r.copyLabel,
+      onClick: () => copyDemoSnippet(r.snippet, r.doneLabel),
+    });
+    row.appendChild(btn);
+    details.appendChild(row);
+  }
+
+  return details;
+}
+
+function copyDemoSnippet(text, doneLabel) {
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(text).then(
+      () => showCopyToast(doneLabel),
+      () => fallbackCopy(text),
+    );
+  } else {
+    fallbackCopy(text);
+  }
 }
 
 // ---- EXP-18 Underwriting Scenario panel -------------------------------------------------

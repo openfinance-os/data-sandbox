@@ -26,6 +26,18 @@ export function encodeEmbed({ slugBase = '', personaId, lfi, endpoint, seed, hei
   return `${slugBase}/embed?${params.toString()}`;
 }
 
+// EXP-28 — raw HTTPS fixture URL. Mirrors the on-disk path the fixture
+// package writes: /fixtures/v1/bundles/<persona>/<lfi>/seed-<n>/<file>.json.
+// Filename encoding matches `safeName()` in tools/build-fixture-package.mjs.
+export function encodeFixtureUrl({ origin = '', personaId, lfi, seed, endpoint }) {
+  if (!personaId) throw new Error('personaId required');
+  const useLfi = VALID_LFI.has(lfi) ? lfi : DEFAULTS.lfi;
+  const useSeed = Number.isFinite(seed) ? seed : DEFAULTS.seed;
+  const safeName = (s) => s.replace(/^\//, '').replace(/\//g, '__').replace(/[{}]/g, '');
+  const file = `${safeName(endpoint || '/accounts')}.json`;
+  return `${origin}/fixtures/v1/bundles/${personaId}/${useLfi}/seed-${useSeed}/${file}`;
+}
+
 // Decode the current page URL into a state object. Tolerant: missing fields
 // return DEFAULTS, invalid lfi falls back to 'median', NaN seed → 1.
 export function decodeFromUrl(url) {

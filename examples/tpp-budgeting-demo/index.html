@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TPP Budgeting Demo · Open Finance Data Sandbox</title>
+<style>
+  :root {
+    --bg: #f7f4ec;
+    --bg-card: #ffffff;
+    --text: #1c1d1a;
+    --muted: #6b6a64;
+    --border: #d9d5cb;
+    --accent: #4b6c52;
+    --accent-fg: #ffffff;
+    --positive: #2f6c4a;
+    --negative: #a14242;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    margin: 0;
+    padding: 0;
+  }
+  .shell { max-width: 880px; margin: 0 auto; padding: 24px 18px 60px; }
+  .banner {
+    background: #fff7d4;
+    border: 1px solid #d6c374;
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin-bottom: 16px;
+    font-size: 12.5px;
+    line-height: 1.5;
+  }
+  h1 { font-size: 20px; margin: 8px 0 4px; }
+  h2 { font-size: 14px; margin: 18px 0 6px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+  .lede { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 18px;
+    align-items: end;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+  }
+  .controls label { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); display: block; margin-bottom: 4px; }
+  .controls select, .controls input { font: inherit; padding: 4px 8px; border: 1px solid var(--border); border-radius: 3px; background: var(--bg-card); }
+  .controls fieldset { border: none; padding: 0; margin: 0; }
+  .controls fieldset > div { display: flex; gap: 6px; }
+  .controls fieldset label { display: inline-flex; gap: 4px; align-items: center; font-size: 13px; text-transform: none; letter-spacing: 0; color: var(--text); }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px 16px;
+  }
+  .card h3 { margin: 0 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+  .stat { font-size: 20px; font-weight: 600; }
+  .stat-sub { font-size: 12px; color: var(--muted); }
+  .accounts li, .so li, .tx li { padding: 4px 0; border-bottom: 1px dashed var(--border); }
+  .accounts li:last-child, .so li:last-child, .tx li:last-child { border-bottom: none; }
+  .row { display: flex; justify-content: space-between; gap: 8px; }
+  .pos { color: var(--positive); }
+  .neg { color: var(--negative); }
+  .timeline { max-height: 260px; overflow-y: auto; }
+  .timeline-month {
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+    margin-top: 6px;
+  }
+  ul { list-style: none; padding: 0; margin: 0; }
+  .footer-note {
+    margin-top: 18px;
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .footer-note code { background: var(--bg-card); border: 1px solid var(--border); padding: 1px 4px; border-radius: 2px; font-size: 11px; }
+  .err {
+    background: #fee;
+    border: 1px solid #c33;
+    color: #600;
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin-bottom: 12px;
+    font-size: 12.5px;
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="banner">
+    <strong>SYNTHETIC.</strong> This is a worked example of a TPP demo journey
+    consuming the Open Finance Data Sandbox over raw HTTPS. Not a real budgeting
+    app. Not endorsed by Nebras or CBUAE. See the
+    <a href="../../src/integrate.html">integration guide</a>.
+  </div>
+  <h1>Sample TPP — "Khazaa Budgeting" demo</h1>
+  <p class="lede">
+    Imagine your TPP app shows a customer's accounts, balance, monthly inflow,
+    fixed commitments, and a transaction timeline. With the Nebras-operated
+    regulatory sandbox you'd have one account and a handful of transactions.
+    Here, every persona delivers a coherent multi-account, multi-month bundle.
+  </p>
+
+  <div class="controls">
+    <div>
+      <label for="persona">Persona</label>
+      <select id="persona"></select>
+    </div>
+    <fieldset>
+      <label>LFI populate-rate</label>
+      <div role="radiogroup">
+        <label><input type="radio" name="lfi" value="rich" /> Rich</label>
+        <label><input type="radio" name="lfi" value="median" checked /> Median</label>
+        <label><input type="radio" name="lfi" value="sparse" /> Sparse</label>
+      </div>
+    </fieldset>
+  </div>
+
+  <div id="err" class="err" hidden></div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Customer</h3>
+      <div class="stat" id="customer-name">—</div>
+      <div class="stat-sub" id="customer-sub">—</div>
+    </div>
+    <div class="card">
+      <h3>Total balance (AED equivalent)</h3>
+      <div class="stat" id="total-balance">—</div>
+      <div class="stat-sub" id="balance-sub">—</div>
+    </div>
+    <div class="card">
+      <h3>Accounts</h3>
+      <ul class="accounts" id="account-list"></ul>
+    </div>
+    <div class="card">
+      <h3>Fixed commitments</h3>
+      <ul class="so" id="so-list"></ul>
+    </div>
+    <div class="card" style="grid-column: 1 / -1;">
+      <h3>Transactions — last 90 days</h3>
+      <div class="timeline" id="tx-timeline"></div>
+    </div>
+  </div>
+
+  <p class="footer-note" id="footer-note">
+    Source: <code id="source-url">—</code>. Spec: <code id="spec-pin">—</code>.
+    Override origin via <code>?origin=https://example.com/commons/data-sandbox</code>.
+  </p>
+</div>
+<script type="module" src="app.js"></script>
+</body>
+</html>

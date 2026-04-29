@@ -31,6 +31,29 @@ export function loadFixture({ persona, lfi = 'median', seed, endpoint }) {
   if (!rel) throw new Error(`no fixture for endpoint ${endpoint} in ${key}`);
   return JSON.parse(readFileSync(path.join(here, rel), 'utf8'));
 }
+export function loadJourney({ persona, lfi = 'median', seed } = {}) {
+  const info = manifest.personas[persona];
+  if (!info) throw new Error(`unknown persona: ${persona}`);
+  const useSeed = seed ?? info.default_seed;
+  const key = `${persona}|${lfi}|${useSeed}`;
+  const fx = manifest.fixtures[key];
+  if (!fx) throw new Error(`no fixture for ${key}`);
+  const endpoints = {};
+  for (const [endpoint, rel] of Object.entries(fx.endpoints)) {
+    endpoints[endpoint] = JSON.parse(readFileSync(path.join(here, rel), 'utf8'));
+  }
+  return {
+    persona,
+    lfi,
+    seed: useSeed,
+    accountIds: fx.accountIds ?? [],
+    customerId: endpoints['/parties']?.Data?.Party?.PartyId ?? null,
+    specVersion: manifest.specVersion,
+    specSha: manifest.specSha,
+    version: manifest.version,
+    endpoints,
+  };
+}
 export function loadSpec() {
   return JSON.parse(readFileSync(path.join(here, 'spec.json'), 'utf8'));
 }

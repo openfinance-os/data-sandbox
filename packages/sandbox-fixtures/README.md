@@ -15,7 +15,7 @@ npm install @openfinance-os/sandbox-fixtures
 ## Use
 
 ```js
-import { loadFixture, listPersonas, listEndpoints, loadSpec } from '@openfinance-os/sandbox-fixtures';
+import { loadFixture, loadJourney, listPersonas, listEndpoints, loadSpec } from '@openfinance-os/sandbox-fixtures';
 
 const sara = loadFixture({
   persona: 'salaried_expat_mid',
@@ -23,6 +23,14 @@ const sara = loadFixture({
   endpoint: '/accounts/{AccountId}/transactions',
 });
 // → v2.1-shaped envelope: { Data: { AccountId, Transaction: [...] }, Links, Meta, _watermark, ... }
+
+const journey = loadJourney({ persona: 'salaried_expat_mid', lfi: 'median' });
+// → { persona, lfi, seed, accountIds, customerId, specVersion, specSha, version,
+//     endpoints: { '/accounts': envelope, '/parties': envelope,
+//       '/accounts/{AccountId}/balances': envelope, ... all endpoints, all coherent } }
+// AccountIds, CustomerId line up across every endpoint — drop-in replacement for
+// the data your TPP demo currently fetches from the Nebras-operated regulatory
+// sandbox, which ships intentionally thin mock data.
 
 listPersonas();
 // → ['salaried_expat_mid', 'salaried_emirati_affluent', ...]

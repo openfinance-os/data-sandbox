@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Integrate — Open Finance Data Sandbox</title>
+<link rel="stylesheet" href="styles.css" />
+<style>
+  body { background: var(--bg); }
+  .integrate-shell {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 24px 18px 80px;
+  }
+  .integrate-shell h1 { font-size: 22px; margin: 12px 0 4px; }
+  .integrate-shell h2 {
+    font-size: 16px;
+    margin-top: 32px;
+    margin-bottom: 8px;
+  }
+  .integrate-shell h3 {
+    font-size: 13px;
+    margin-top: 18px;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+  }
+  .integrate-shell p, .integrate-shell li { font-size: 14px; line-height: 1.55; }
+  .integrate-shell li { margin-bottom: 4px; }
+  .integrate-shell a { color: var(--accent); text-decoration: none; }
+  .integrate-shell a:hover { text-decoration: underline; }
+  .integrate-shell code {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12.5px;
+    background: var(--bg-card);
+    padding: 1px 5px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+  }
+  .integrate-shell pre {
+    margin: 8px 0;
+    padding: 10px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12.5px;
+    line-height: 1.55;
+    overflow-x: auto;
+  }
+  .integrate-shell pre code {
+    background: transparent;
+    padding: 0;
+    border: none;
+    font-size: inherit;
+  }
+  .lead { font-size: 15px; line-height: 1.6; color: var(--text); }
+  .back-link { font-size: 12px; color: var(--text-muted); }
+  .callout {
+    margin: 12px 0 20px;
+    padding: 12px 14px;
+    background: var(--bg-card);
+    border-left: 3px solid var(--accent);
+    border-radius: 3px;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  .callout strong { color: var(--text); }
+  .pick-table, .meta-grid {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+    font-size: 13px;
+  }
+  .pick-table th, .pick-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    vertical-align: top;
+  }
+  .pick-table th {
+    background: var(--bg-soft, var(--bg-card));
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .meta-grid {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 4px 16px;
+  }
+  .meta-grid dt {
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+  }
+  .meta-grid dd {
+    margin: 0;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="banner" role="status">
+  <strong>SYNTHETIC.</strong>
+  Data is generated from the UAE Open Finance Standards v2.1 OpenAPI spec — not from any real bank.
+  Median populate-rate is a Commons-curated ecosystem assumption, not endorsed by Nebras or CBUAE.
+</div>
+
+<main class="integrate-shell">
+  <p class="back-link"><a href="index.html">← Back to the sandbox</a></p>
+
+  <h1>Integrate the sandbox into a TPP demo journey</h1>
+  <p class="lead">
+    A guide for fintech engineers who already have a data-sharing journey
+    in their app — wired to the Nebras-operated regulatory sandbox for
+    conformance — and want richer, narratively-coherent payloads for
+    sales decks, investor pitches, regulator demos, and internal QA.
+  </p>
+
+  <div class="callout">
+    <strong>Disclaimer.</strong> Synthetic, illustrative data. <strong>Not endorsed by
+    Nebras, CBUAE, or any LFI.</strong> The Median populate-rate is a Commons-curated
+    ecosystem assumption, not a substitute for the authoritative test data
+    surface that the Nebras-operated regulatory sandbox provides at
+    certification time. Use these fixtures for <em>showcase</em> journeys,
+    not for compliance attestation.
+  </div>
+
+  <h2>What this gets you</h2>
+  <ul>
+    <li><strong>10 narratively-coherent personas</strong> — salaried expat, HNW
+        multi-currency, gig variable income, NSF distress, mortgage DBR-heavy,
+        joint-account family, SME cash-heavy, recent graduate thin-file, senior
+        retiree, salaried Emirati affluent. Each persona stresses a distinct
+        spec area (EXP-25).</li>
+    <li><strong>3 LFI populate-rate profiles</strong> per persona — Rich (most
+        optionals populated), Median (Commons-curated assumption), Sparse
+        (worst-case mandatory-only). Mandatory fields are never redacted by
+        the profile filter; only optional and conditional fields move.</li>
+    <li><strong>12 v2.1 Account Information endpoints</strong> per (persona × LFI):
+        <code>/accounts</code>, <code>/accounts/{AccountId}</code>,
+        <code>/accounts/{AccountId}/balances</code>,
+        <code>/accounts/{AccountId}/transactions</code>,
+        <code>/accounts/{AccountId}/standing-orders</code>,
+        <code>/accounts/{AccountId}/direct-debits</code>,
+        <code>/accounts/{AccountId}/beneficiaries</code>,
+        <code>/accounts/{AccountId}/scheduled-payments</code>,
+        <code>/accounts/{AccountId}/parties</code>,
+        <code>/accounts/{AccountId}/product</code>,
+        <code>/accounts/{AccountId}/statements</code>,
+        <code>/parties</code>.</li>
+    <li><strong>Cross-endpoint coherence</strong> — for one
+        <code>(persona, lfi, seed)</code> tuple, AccountIds, the calling
+        <code>PartyId</code>, transaction account-references and standing-order
+        / direct-debit links all resolve consistently across the bundle.
+        Verified per build by EXP-32.</li>
+    <li><strong>Determinism</strong> — same <code>(persona, lfi, seed)</code>
+        always yields byte-identical envelopes (EXP-05). Pin the seed, pin the
+        package, and your pitch demo runs the same way every time.</li>
+    <li><strong>Watermarks, in every export and envelope</strong> — every fixture
+        carries <code>_persona</code>, <code>_lfi</code>, <code>_seed</code>,
+        <code>_specSha</code>, <code>_retrievedAt</code> and a textual watermark
+        line. Carry these through screenshots and recordings.</li>
+  </ul>
+
+  <h2>Pick your plug point</h2>
+  <table class="pick-table" aria-label="Plug-point decision table">
+    <thead><tr><th>If you are…</th><th>Use…</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>In a browser demo and want to render a persona inside an iframe (sales deck, blog, LMS)</td>
+        <td>Path 1 — <a href="#path-iframe">iframe embed</a></td>
+      </tr>
+      <tr>
+        <td>In Node / TypeScript and want to swap your Nebras-mock backend</td>
+        <td>Path 2 — <a href="#path-npm">npm package</a></td>
+      </tr>
+      <tr>
+        <td>In Python (notebook, FastAPI mock, ML pipeline)</td>
+        <td>Path 3 — <a href="#path-pypi">PyPI package</a></td>
+      </tr>
+      <tr>
+        <td>In Swift / Kotlin / Postman / curl / Flutter / .NET</td>
+        <td>Path 4 — <a href="#path-raw">raw HTTPS fixtures</a></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 id="path-iframe">Path 1 — iframe embed</h2>
+  <p>
+    EXP-27 ships a chrome-less variant of the sandbox you can drop into any
+    HTML host. Use the <em>Use this persona in your demo</em> panel on a
+    persona page to copy a pre-filled snippet, or build the URL yourself:
+  </p>
+  <pre><code>&lt;iframe
+  src="https://openfinance-os.org/commons/data-sandbox/embed.html?persona=salaried_expat_mid&amp;lfi=median&amp;endpoint=/accounts/%7BAccountId%7D/transactions&amp;seed=4729&amp;height=600"
+  width="100%" height="600" loading="lazy"
+  title="Open Finance Data Sandbox — Sara · median"
+  referrerpolicy="no-referrer"
+  style="border:1px solid #d9d5cb;border-radius:4px"&gt;&lt;/iframe&gt;</code></pre>
+  <h3>Parameters</h3>
+  <ul>
+    <li><code>persona</code> — persona id (see <a href="index.html">the library</a>).</li>
+    <li><code>lfi</code> — <code>rich</code>, <code>median</code> (default), or <code>sparse</code>.</li>
+    <li><code>endpoint</code> — any v2.1 path string, including templated
+        <code>{AccountId}</code> form.</li>
+    <li><code>seed</code> — integer; defaults to the persona's
+        <code>default_seed</code>. Pin it for reproducible pitches.</li>
+    <li><code>height</code> — optional, in pixels; sets the iframe host height.</li>
+  </ul>
+
+  <h2 id="path-npm">Path 2 — npm <code>loadJourney()</code></h2>
+  <p>
+    The <code>@openfinance-os/sandbox-fixtures</code> package (EXP-20) bundles
+    every fixture, the parsed v2.1 spec, and a small loader. The
+    <code>loadJourney()</code> helper (EXP-29) returns the full coherent bundle
+    for one tuple in a single call — drop it in where your TPP demo currently
+    fetches from the Nebras-operated regulatory sandbox.
+  </p>
+  <pre><code>npm install @openfinance-os/sandbox-fixtures</code></pre>
+  <pre><code>// Wrap sandbox fixtures behind a Nebras-mock-shaped Express handler.
+// Your existing fetch-from-Nebras code keeps working unmodified.
+import express from 'express';
+import { loadJourney } from '@openfinance-os/sandbox-fixtures';
+
+const app = express();
+const journey = loadJourney({
+  persona: 'salaried_expat_mid',
+  lfi: 'median',
+  // seed: 4729,   // optional — defaults to the persona's default_seed
+});
+
+app.get('/open-finance/account-information/v2.1/accounts',
+  (_req, res) =&gt; res.json(journey.endpoints['/accounts']));
+
+app.get('/open-finance/account-information/v2.1/accounts/:id/transactions',
+  (req, res) =&gt; res.json(journey.endpoints[`/accounts/${req.params.id}/transactions`]));
+
+app.get('/open-finance/account-information/v2.1/parties',
+  (_req, res) =&gt; res.json(journey.endpoints['/parties']));
+
+app.listen(3000);</code></pre>
+  <p>
+    <code>journey.accountIds</code> tells you which IDs your demo can reference;
+    <code>journey.customerId</code> is the calling-party id for
+    <code>/parties</code>. <code>journey.specSha</code> and
+    <code>journey.version</code> are your pin points.
+  </p>
+
+  <h2 id="path-pypi">Path 3 — PyPI <code>load_journey()</code></h2>
+  <p>
+    Same data, same determinism, same coherence guarantees — Python edition.
+  </p>
+  <pre><code>pip install openfinance-os-sandbox-fixtures</code></pre>
+  <pre><code># A FastAPI shim that mirrors the v2.1 Account Information surface
+# but serves persona-coherent sandbox data.
+from fastapi import FastAPI
+from openfinance_os_sandbox_fixtures import load_journey
+
+app = FastAPI()
+j = load_journey("hnw_multicurrency", lfi="rich")  # Layla — multi-currency / FX-heavy
+
+@app.get("/open-finance/account-information/v2.1/accounts")
+def accounts():
+    return j["endpoints"]["/accounts"]
+
+@app.get("/open-finance/account-information/v2.1/accounts/{account_id}/balances")
+def balances(account_id: str):
+    return j["endpoints"][f"/accounts/{account_id}/balances"]
+
+@app.get("/open-finance/account-information/v2.1/parties")
+def parties():
+    return j["endpoints"]["/parties"]</code></pre>
+
+  <h2 id="path-raw">Path 4 — raw HTTPS fixtures</h2>
+  <p>
+    Fixtures are also published as static JSON at a stable, CORS-permissive
+    URL (EXP-28). Anything that speaks HTTP can consume them — Swift, Kotlin,
+    Flutter, .NET, Postman, plain <code>curl</code>.
+  </p>
+  <h3>URL contract</h3>
+  <pre><code>https://openfinance-os.org/commons/data-sandbox/fixtures/v1/manifest.json
+https://openfinance-os.org/commons/data-sandbox/fixtures/v1/spec.json
+https://openfinance-os.org/commons/data-sandbox/fixtures/v1/index.json
+https://openfinance-os.org/commons/data-sandbox/fixtures/v1/personas/&lt;persona&gt;.json
+https://openfinance-os.org/commons/data-sandbox/fixtures/v1/bundles/&lt;persona&gt;/&lt;lfi&gt;/seed-&lt;n&gt;/&lt;endpoint&gt;.json</code></pre>
+  <p>
+    Endpoint filenames replace <code>/</code> with <code>__</code> and strip
+    <code>{</code>/<code>}</code>. Examples:
+  </p>
+  <ul>
+    <li><code>/accounts</code> → <code>accounts.json</code></li>
+    <li><code>/parties</code> → <code>parties.json</code></li>
+    <li><code>/accounts/{AccountId}/transactions</code> → <code>accounts__AccountId__transactions.json</code></li>
+  </ul>
+  <h3>Discovery</h3>
+  <p>
+    Start with <code>index.json</code> — a TPP-friendly summary of which
+    personas, LFIs, endpoints, and version are live, plus the path contract:
+  </p>
+  <pre><code>curl -fsS https://openfinance-os.org/commons/data-sandbox/fixtures/v1/index.json</code></pre>
+  <h3>Postman walk-through</h3>
+  <ol>
+    <li><code>GET .../fixtures/v1/manifest.json</code> — capture
+        <code>fixtures["&lt;persona&gt;|median|&lt;seed&gt;"].accountIds[0]</code> into a Postman
+        environment variable <code>{{accountId}}</code>.</li>
+    <li><code>GET .../fixtures/v1/bundles/&lt;persona&gt;/median/seed-&lt;n&gt;/accounts.json</code>.</li>
+    <li><code>GET .../fixtures/v1/bundles/&lt;persona&gt;/median/seed-&lt;n&gt;/accounts__&#123;&#123;accountId&#125;&#125;__balances.json</code>
+        — note the doubly-encoded curlies are fine in raw URLs because the
+        on-disk filenames don't actually use <code>{</code>/<code>}</code>; resolve
+        the variable, then fetch the resolved path.</li>
+  </ol>
+  <h3>CORS</h3>
+  <p>
+    <code>/fixtures/v1/*</code> ships <code>Access-Control-Allow-Origin: *</code>,
+    so a browser-hosted TPP demo on a different origin can fetch directly. No
+    auth, no cookies, no consent flow — these are static JSON files. If your
+    org requires self-hosting, install the npm or PyPI package and ship the
+    fixtures inside your bundle.
+  </p>
+
+  <h2>Cross-endpoint coherence</h2>
+  <p>
+    Within a single <code>(persona, lfi, seed)</code> tuple, every
+    <code>AccountId</code> in <code>/accounts</code> resolves to a matching
+    <code>/accounts/{AccountId}/balances</code>,
+    <code>/accounts/{AccountId}/transactions</code>,
+    <code>/accounts/{AccountId}/standing-orders</code>,
+    <code>/accounts/{AccountId}/direct-debits</code>,
+    <code>/accounts/{AccountId}/beneficiaries</code>,
+    <code>/accounts/{AccountId}/scheduled-payments</code>,
+    <code>/accounts/{AccountId}/parties</code>,
+    <code>/accounts/{AccountId}/product</code>, and
+    <code>/accounts/{AccountId}/statements</code>; the calling
+    <code>PartyId</code> in <code>/parties</code> is consistent across the bundle.
+    EXP-32 enforces this in CI on every release.
+  </p>
+  <p>
+    This is the property the Nebras-operated regulatory sandbox does not
+    optimise for (intentionally — it is a conformance environment). It is
+    the reason a TPP showcase journey looks empty against Nebras mocks but
+    looks like a real customer against sandbox personas.
+  </p>
+
+  <h2>Determinism &amp; pinning</h2>
+  <p>
+    Every fixture is a pure function of
+    <code>(persona, lfi, seed, build-time now-anchor)</code>. To make your demo
+    reproducible across a sales-cycle:
+  </p>
+  <ul>
+    <li><strong>npm / PyPI</strong>: pin the package version
+        (<code>"@openfinance-os/sandbox-fixtures": "1.x.y"</code> or
+        <code>openfinance-os-sandbox-fixtures==1.x.y</code>). Versions are immutable.</li>
+    <li><strong>raw HTTPS</strong>: read <code>manifest.json.version</code> at
+        boot and snapshot if it changes. The <code>/fixtures/v1/</code> path is
+        latest-only within v1.</li>
+    <li><strong>Either way</strong>: pass an explicit <code>seed</code> in your
+        <code>loadJourney()</code> / <code>load_journey()</code> call, or rely
+        on the persona's <code>default_seed</code> and live with the assumption
+        that the default never changes within a major version.</li>
+  </ul>
+
+  <h2>Stability contract</h2>
+  <dl class="meta-grid">
+    <dt>Path slot</dt>
+    <dd>/fixtures/v1/ — major-version boundary</dd>
+    <dt>Within v1</dt>
+    <dd>Additive only: new personas, new endpoints, in-v2.1 spec-SHA bumps, populate-rate evolution.</dd>
+    <dt>Breaking change</dt>
+    <dd>New /v2/ slot + new package major. Old /v1/ stays live for ≥ 24 months (PRD §16).</dd>
+    <dt>Pin point (immutable)</dt>
+    <dd>npm/PyPI package version</dd>
+    <dt>Pin point (mutable, latest-only)</dt>
+    <dd>manifest.json.version on /fixtures/v1/manifest.json</dd>
+    <dt>Spec drift signal</dt>
+    <dd>manifest.json.specSha — bumps within 30 days of upstream Nebras releases on the ozone branch.</dd>
+  </dl>
+
+  <h2>Common pitfalls</h2>
+  <ul>
+    <li><strong>Populate rates are illustrative, not authoritative.</strong>
+        Median is a Commons-curated assumption — do not cite it as
+        "Open Finance UAE data shows X% coverage". Use <em>Sparse</em> to
+        stress-test your worst-case UI; use <em>Rich</em> to stress-test your
+        best-case parser.</li>
+    <li><strong>Watermarks must travel through screenshots and recordings.</strong>
+        Every envelope carries <code>_watermark</code>; every export carries the
+        same line in CSV/JSON/tarball form. Don't crop it out.</li>
+    <li><strong>Currency is AED-only by default.</strong> Use the
+        <code>hnw_multicurrency</code> persona to exercise multi-currency flows.</li>
+    <li><strong>Treat field gaps as a feature.</strong> Sparse-profile bundles
+        ship the mandatory-only shape. If your UI breaks because
+        <code>MerchantCategoryCode</code> is missing, that's the bug it found.</li>
+    <li><strong>This is not a TPP runtime.</strong> Sandbox fixtures do not
+        substitute for Nebras-sandbox conformance. Use them for showcase, not
+        certification.</li>
+  </ul>
+
+  <h2>Worked example</h2>
+  <p>
+    A single-page faux budgeting widget that consumes the raw HTTPS fixture
+    URLs and renders a coherent account list, balance summary, transaction
+    timeline, and fixed-commitments tile. Includes a Postman collection that
+    chains <code>{{accountId}}</code> from <code>/accounts</code> into the
+    per-account requests.
+  </p>
+  <ul>
+    <li><a href="../examples/tpp-budgeting-demo/index.html">▶ Run the live demo</a></li>
+    <li><a href="https://github.com/openfinance-os/data-sandbox/tree/main/examples/tpp-budgeting-demo" target="_blank" rel="noopener noreferrer">Source on GitHub</a> (<code>examples/tpp-budgeting-demo/</code>)</li>
+  </ul>
+
+  <h2>Live spec pin</h2>
+  <dl class="meta-grid" aria-label="Live build metadata">
+    <dt>Standards baseline</dt><dd>UAE Open Finance v2.1</dd>
+    <dt>Pinned spec SHA</dt><dd id="meta-sha">—</dd>
+    <dt>Retrieved</dt><dd id="meta-retrieved">—</dd>
+    <dt>Sandbox version</dt><dd id="meta-version">—</dd>
+    <dt>Generated at</dt><dd id="meta-generated">—</dd>
+  </dl>
+
+  <h2>Reporting issues</h2>
+  <p>
+    Found a coherence bug, a populate-rate band you disagree with, or a
+    Nebras-mock-shaped surface you wish the sandbox covered? File at
+    <a href="https://github.com/openfinance-os/data-sandbox/issues" target="_blank" rel="noopener noreferrer">github.com/openfinance-os/data-sandbox/issues</a>.
+    Triaged within 14 days.
+  </p>
+</main>
+
+<footer class="footer" role="contentinfo">
+  <span>SYNTHETIC · Open Finance Data Sandbox · OpenFinance-OS Commons · Standards v2.1 @ <span id="footer-sha">unknown</span></span>
+</footer>
+
+<script type="module" src="integrate.js"></script>
+</body>
+</html>

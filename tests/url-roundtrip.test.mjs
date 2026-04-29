@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { encodePermalink, encodeEmbed, decodeFromUrl, DEFAULTS } from '../src/url.js';
+import { encodePermalink, encodeEmbed, encodeFixtureUrl, decodeFromUrl, DEFAULTS } from '../src/url.js';
 
 describe('URL shapes — §6.8', () => {
   it('persona permalink encodes persona+lfi+seed', () => {
@@ -49,5 +49,39 @@ describe('URL shapes — §6.8', () => {
     expect(state.seed).toBe(12);
     expect(state.endpoint).toBe('/parties');
     expect(state.height).toBe(400);
+  });
+
+  // EXP-28 — the raw-fixture URL pattern TPP integrations use to fetch
+  // sandbox payloads over plain HTTPS (Postman, curl, mobile clients).
+  it('encodeFixtureUrl mirrors the on-disk path for templated endpoints', () => {
+    const url = encodeFixtureUrl({
+      origin: 'https://openfinance-os.org',
+      personaId: 'salaried_expat_mid',
+      lfi: 'median',
+      seed: 4729,
+      endpoint: '/accounts/{AccountId}/transactions',
+    });
+    expect(url).toBe('https://openfinance-os.org/fixtures/v1/bundles/salaried_expat_mid/median/seed-4729/accounts__AccountId__transactions.json');
+  });
+
+  it('encodeFixtureUrl handles bundle-level endpoints', () => {
+    const url = encodeFixtureUrl({
+      origin: 'https://openfinance-os.org',
+      personaId: 'hnw_multicurrency',
+      lfi: 'rich',
+      seed: 2046,
+      endpoint: '/accounts',
+    });
+    expect(url).toBe('https://openfinance-os.org/fixtures/v1/bundles/hnw_multicurrency/rich/seed-2046/accounts.json');
+  });
+
+  it('encodeFixtureUrl falls back to /accounts when endpoint omitted', () => {
+    const url = encodeFixtureUrl({
+      origin: '',
+      personaId: 'sara',
+      lfi: 'sparse',
+      seed: 1,
+    });
+    expect(url).toBe('/fixtures/v1/bundles/sara/sparse/seed-1/accounts.json');
   });
 });
