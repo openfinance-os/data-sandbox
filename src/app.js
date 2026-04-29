@@ -94,7 +94,9 @@ async function init() {
   // specVersion already starts with "v" — don't double-prefix.
   const v = String(state.spec.specVersion || '');
   const versionLabel = v.startsWith('v') ? v : `v${v}`;
-  document.getElementById('version-pin').textContent = `${versionLabel} @ ${(state.spec.pinSha || '').slice(0, 7)}`;
+  const pin = document.getElementById('version-pin');
+  pin.textContent = `${versionLabel} @ ${(state.spec.pinSha || '').slice(0, 7)}`;
+  pin.title = `Pinned spec SHA ${state.spec.pinSha}\nRetrieved ${state.spec.retrievedAt}\nUpstream: ${state.spec.upstreamRepo}/${state.spec.upstreamPath}`;
 
   buildPersonaList();
   syncControls();
@@ -362,6 +364,12 @@ function exportTarball() {
 }
 
 function rebuildAndRender() {
+  // 120ms fade — visually confirms "the data just changed" when the user
+  // switches persona / LFI / seed. Ignored when prefers-reduced-motion is set
+  // (the CSS rule kills the transition).
+  const body = document.getElementById('payload-body');
+  body?.classList.add('is-fading');
+
   const persona = state.data.personas[state.personaId];
   state.bundle = buildBundle({
     persona,
@@ -371,7 +379,6 @@ function rebuildAndRender() {
     now: new Date(state.data.buildInfo.nowIso),
   });
   state.selectedAccountId = state.bundle.accounts[0]?.AccountId ?? null;
-  // Persona/lfi/seed change clears any cross-link state — the bundle is new.
   state.txFilter = emptyTxFilter();
   state.txSort = { column: null, dir: 'asc' };
   state.txHighlight = new Set();
@@ -381,6 +388,8 @@ function rebuildAndRender() {
   renderPayload();
   renderCoverage();
   pushPermalink();
+
+  setTimeout(() => body?.classList.remove('is-fading'), 30);
 }
 
 function pushPermalink() {
@@ -406,8 +415,8 @@ function renderNavigator() {
   nav.replaceChildren();
 
   // Bundle-scoped endpoints get their own header section at the top.
-  const bundleSection = el('div', { class: 'nav-account' });
-  bundleSection.appendChild(el('div', { class: 'nav-account-header', text: 'Bundle-level' }));
+  const bundleSection = el('div', { class: 'nav-account is-bundle' });
+  bundleSection.appendChild(el('div', { class: 'nav-account-header', text: 'Bundle' }));
   for (const ep of BUNDLE_SCOPED_PATHS) {
     const isActive = state.endpoint === ep;
     bundleSection.appendChild(
@@ -471,6 +480,10 @@ function navButton({ endpoint, accountId, active, onSelect }) {
   if (accountId) {
     const cov = coverageForEndpoint(state.bundle, endpoint, accountId);
     if (cov.total > 0) {
+      // Coverage-band drives the gradient applied via CSS — amber → green
+      // so a 30% sub-meter reads as warmer than a 90% one.
+      const band = cov.pct < 25 ? 'low' : cov.pct < 66 ? 'medium' : 'high';
+      btn.dataset.coverageBand = band;
       const meter = el('span', { class: 'nav-submeter', attrs: { 'aria-label': `Coverage ${cov.pct}%` } });
       const fill = el('span', { class: 'nav-submeter-fill' });
       fill.style.width = `${cov.pct}%`;
@@ -581,17 +594,21 @@ function renderPayload() {
   const allKeys = new Set();
   for (const r of visible) for (const k of Object.keys(stripInternal(r))) allKeys.add(k);
 
-  const wrap = el('div', { class: 'payload-rendered' });
+  // Sticky leftmost column is most useful on /transactions (the only really
+  // wide table). Apply selectively rather than to every endpoint.
+  const stickyColClass = isTransactions ? ' has-sticky-col' : '';
+  const wrap = el('div', { class: `payload-rendered${stickyColClass}` });
   const table = el('table');
   const headRow = el('tr');
   for (const k of allKeys) {
     const th = el('th');
+    const f = fieldsByName.get(k);
+    if (f) th.dataset.status = f.status; // drives the status-stripe colour
     if (isTransactions) {
       th.classList.add('sortable');
       if (state.txSort.column === k) th.classList.add(`sort-${state.txSort.dir}`);
       th.addEventListener('click', () => toggleSort(k));
     }
-    const f = fieldsByName.get(k);
     if (f) {
       const badge = statusBadge(f.status);
       th.appendChild(

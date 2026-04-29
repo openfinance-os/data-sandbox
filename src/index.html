@@ -41,30 +41,34 @@
     <span class="brand-sub">OpenFinance-OS Commons</span>
   </div>
   <nav class="controls" aria-label="Persona controls">
-    <label class="control-group">
-      <span class="control-label">Persona</span>
-      <select id="persona-select" aria-label="Persona"></select>
-    </label>
-    <label class="control-group">
-      <span class="control-label">LFI profile</span>
-      <select id="lfi-select" aria-label="LFI profile">
-        <option value="rich">Rich</option>
-        <option value="median" selected>Median</option>
-        <option value="sparse">Sparse</option>
-      </select>
-    </label>
-    <label class="control-group">
-      <span class="control-label">Seed</span>
-      <input id="seed-input" type="number" value="4729" min="0" step="1" aria-label="Seed" />
-    </label>
-    <span class="version-pin" id="version-pin" title="Pinned spec SHA"></span>
-    <div class="coverage" aria-label="Coverage of optional fields">
-      <span class="coverage-label">Coverage</span>
-      <div class="coverage-bar"><span id="coverage-fill"></span></div>
-      <span class="coverage-pct" id="coverage-pct">—</span>
+    <div class="controls-scenario" aria-label="Scenario">
+      <label class="control-group">
+        <span class="control-label">Persona</span>
+        <select id="persona-select" aria-label="Persona"></select>
+      </label>
+      <label class="control-group">
+        <span class="control-label">LFI profile</span>
+        <select id="lfi-select" aria-label="LFI profile">
+          <option value="rich">Rich</option>
+          <option value="median" selected>Median</option>
+          <option value="sparse">Sparse</option>
+        </select>
+      </label>
+      <label class="control-group">
+        <span class="control-label">Seed</span>
+        <input id="seed-input" type="number" value="4729" min="0" step="1" aria-label="Seed" />
+      </label>
     </div>
-    <button class="topbar-btn" id="tour-btn" title="Walk through Sara's bundle in 5 steps" aria-label="Start guided tour">Tour</button>
-    <a class="topbar-btn" href="about.html" title="Methodology, citation guidance, stewardship">About</a>
+    <div class="controls-runstate" aria-label="Run state">
+      <div class="coverage" aria-label="Coverage of optional fields">
+        <span class="coverage-label">Coverage</span>
+        <div class="coverage-bar"><span id="coverage-fill"></span></div>
+        <span class="coverage-pct" id="coverage-pct">—</span>
+      </div>
+      <span class="version-pin" id="version-pin" title="Pinned spec SHA — hover for retrieval date"></span>
+      <button class="topbar-btn" id="tour-btn" title="Walk through Sara's bundle in 5 steps" aria-label="Start guided tour">Tour</button>
+      <a class="topbar-btn" href="about.html" title="Methodology, citation guidance, stewardship">About</a>
+    </div>
   </nav>
 </header>
 

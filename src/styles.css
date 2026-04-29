@@ -82,14 +82,32 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 6px;
   margin-left: auto;
 }
+
+/* Group the persona/LFI/seed scenario selector controls together, then
+   the run-state cluster (version pin + coverage + Tour + About) sits to
+   the right with a clear visual separation. */
+.controls-scenario,
+.controls-runstate {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.controls-scenario {
+  padding: 2px 8px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.controls-runstate { gap: 6px; }
 
 .control-group {
   display: flex;
   flex-direction: column;
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-muted);
 }
 
@@ -193,29 +211,46 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   .tour-overlay { transition: none; }
 }
 
+/* Coverage chip — promoted from a small bar to a more visible indicator
+   that shows both the populate-rate percentage and the colour-coded segment. */
 .coverage {
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 12px;
-  color: var(--text-muted);
-}
-
-.coverage-bar {
-  width: 80px;
-  height: 6px;
+  color: var(--text);
+  padding: 4px 10px 4px 8px;
   background: var(--bg-soft);
   border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.coverage-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+.coverage-bar {
+  width: 110px;
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
   border-radius: 999px;
   overflow: hidden;
 }
-
 #coverage-fill {
   display: block;
   height: 100%;
   width: 0%;
-  background: var(--accent);
+  background: linear-gradient(90deg, #c8862a 0%, #d8a13b 30%, #6a8f4a 65%, var(--accent) 100%);
   transition: width 200ms ease;
+}
+.coverage-pct {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  min-width: 36px;
+  text-align: right;
 }
 
 .three-pane {
@@ -299,13 +334,24 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
 }
 
 .nav-account {
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   padding-bottom: 6px;
   border-bottom: 1px dashed var(--border);
 }
 .nav-account:last-child { border-bottom: none; }
 
-.nav-account-header { font-weight: 600; }
+/* Section-header hierarchy — "BUNDLE-LEVEL" / "CURRENT ACCOUNT · …" sit
+   above the endpoint buttons in distinctly smaller typography. */
+.nav-account-header {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  padding-top: 2px;
+}
+.nav-account.is-bundle .nav-account-header { color: var(--accent); }
 .nav-endpoint {
   display: flex;
   align-items: center;
@@ -337,8 +383,14 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
 .nav-submeter-fill {
   display: block;
   height: 100%;
-  background: var(--accent);
+  background: var(--submeter-color, var(--accent));
 }
+/* Amber → olive → green gradient driven by the inline width of the fill,
+   so a 30% bar reads as warmer than a 90% bar. CSS-only — applied via
+   --submeter-color set on the parent .nav-endpoint at render time. */
+.nav-endpoint[data-coverage-band='low']    { --submeter-color: #c8862a; }
+.nav-endpoint[data-coverage-band='medium'] { --submeter-color: #6a8f4a; }
+.nav-endpoint[data-coverage-band='high']   { --submeter-color: var(--accent); }
 .nav-submeter-pct {
   font-size: 10px;
   color: var(--text-muted);
@@ -492,7 +544,8 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
 }
 
 .payload-rendered table {
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   width: 100%;
   font-size: 12px;
 }
@@ -501,15 +554,42 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   border-bottom: 1px solid var(--border);
   padding: 6px 8px;
   vertical-align: top;
+  background: var(--bg-card);
 }
+/* Alternating row striping for scannable wide tables. */
+.payload-rendered tbody tr:nth-child(odd) td { background: var(--bg); }
 .payload-rendered th {
-  background: var(--bg-soft);
   font-weight: 600;
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.03em;
   color: var(--text-muted);
+  border-top: 3px solid var(--border-strong);
+  background: var(--bg-soft);
 }
+/* Status stripe — the column-header top border carries the M/O/C colour
+   so the status reads at a glance even before the user hovers the pill. */
+.payload-rendered th[data-status='mandatory']   { border-top-color: var(--mandatory-bg); }
+.payload-rendered th[data-status='optional']    { border-top-color: var(--border-strong); border-top-style: dashed; }
+.payload-rendered th[data-status='conditional'] { border-top-color: var(--conditional-fg); }
+
+/* Sticky leftmost column on /transactions — anchors TransactionId so a wide
+   table can scroll horizontally without losing the row's identity. */
+.payload-rendered.has-sticky-col th:first-child,
+.payload-rendered.has-sticky-col td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  box-shadow: 1px 0 0 var(--border);
+}
+.payload-rendered.has-sticky-col tbody tr:nth-child(odd) td:first-child {
+  background: var(--bg);
+}
+.payload-rendered.has-sticky-col tbody tr:nth-child(even) td:first-child {
+  background: var(--bg-card);
+}
+.payload-rendered.has-sticky-col tr.tx-highlight td:first-child { background: var(--accent-soft); }
+
 .payload-rendered .field-name {
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   color: var(--accent);
@@ -520,6 +600,23 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   text-align: left;
 }
 .payload-rendered .field-name:hover { text-decoration: underline; }
+/* Smaller pill in column headers — the stripe carries the colour, the pill
+   carries the M/O/C label (a11y per EXP-23(g)). */
+.payload-rendered th .pill {
+  font-size: 9px;
+  padding: 1px 4px;
+  margin-right: 4px;
+  min-width: 12px;
+}
+
+/* 120ms fade on bundle changes — the table briefly fades while the new
+   bundle generates. Honours prefers-reduced-motion. */
+.payload-body { transition: opacity 120ms ease; }
+.payload-body.is-fading { opacity: 0.35; }
+@media (prefers-reduced-motion: reduce) {
+  .payload-body { transition: none; }
+  .payload-body.is-fading { opacity: 1; }
+}
 
 .payload-raw {
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
