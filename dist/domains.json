@@ -24,6 +24,18 @@
         "/parties",
         "/accounts/{AccountId}/statements"
       ]
+    },
+    {
+      "id": "insurance",
+      "label": "Insurance Data Sharing",
+      "status": "preview",
+      "pinSha": "bc1cd976956d97195c5000235125cb65aca6aec8",
+      "retrievedAt": "2026-04-30T04:03:31Z",
+      "specVersion": "v2.1-errata1",
+      "openapiVersion": "3.0.0",
+      "parsedJsonUrl": "/dist/SPEC.insurance.json",
+      "defaultEndpoint": null,
+      "endpoints": []
     }
   ]
 }

@@ -34,4 +34,23 @@ export const DOMAINS = [
       '/accounts/{AccountId}/statements',
     ],
   },
+  {
+    id: 'insurance',
+    label: 'Insurance Data Sharing',
+    // 'preview' = vendored from upstream but not yet endpoint-scoped. The UI
+    // domain selector should hide preview domains unless ?preview=1 is set.
+    // Flips to 'ga' once endpoint scoping + LFI bands + at least one
+    // insurance persona land (slices 5-6).
+    status: 'preview',
+    specPath: 'spec/uae-insurance-openapi.yaml',
+    pinPath: 'spec/SPEC_PIN.insurance.sha',
+    retrievedPath: 'spec/SPEC_PIN.insurance.retrieved',
+    outPath: 'dist/SPEC.insurance.json',
+    upstreamRepo: 'Nebras-Open-Finance/api-specs',
+    upstreamPath: 'dist/standards/v2.1-errata1/uae-insurance-openapi.yaml',
+    defaultEndpoint: null,
+    // Endpoint inventory comes in a follow-up slice (introspect via the
+    // parser, then tier into a 3-endpoint MVP).
+    inScopePaths: [],
+  },
 ];
