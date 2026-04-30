@@ -45,6 +45,7 @@ export const DOMAINS = [
     specPath: 'spec/uae-insurance-openapi.yaml',
     pinPath: 'spec/SPEC_PIN.insurance.sha',
     retrievedPath: 'spec/SPEC_PIN.insurance.retrieved',
+    bandsPath: 'spec/lfi-bands.insurance.yaml',
     outPath: 'dist/SPEC.insurance.json',
     upstreamRepo: 'Nebras-Open-Finance/api-specs',
     upstreamPath: 'dist/standards/v2.1-errata1/uae-insurance-openapi.yaml',
