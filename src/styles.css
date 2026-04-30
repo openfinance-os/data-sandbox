@@ -218,6 +218,43 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
 }
 .topbar-btn:hover { background: var(--accent-soft); }
 
+/* Topbar overflow menu — Integrate / About live behind a "More" disclosure
+   to free real estate. <details>/<summary> handles open-close without JS;
+   the <a> children sit in the popover (not inside <summary>) to avoid the
+   WCAG 4.1.2 nested-interactive trap. */
+.topbar-menu {
+  position: relative;
+}
+.topbar-menu > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.topbar-menu > summary::-webkit-details-marker { display: none; }
+.topbar-menu[open] > summary { background: var(--accent-soft); }
+.topbar-menu-content {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  min-width: 160px;
+  padding: 4px 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+}
+.topbar-menu-content a {
+  display: block;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--text);
+  text-decoration: none;
+}
+.topbar-menu-content a:hover,
+.topbar-menu-content a:focus { background: var(--accent-soft); outline: none; }
+
 /* Spec-wide find box — Cmd/Ctrl+K opens an overlay with a single input
    that searches field names, paths, enums, and persona narratives. */
 .find-overlay {
@@ -458,6 +495,25 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--text-muted);
+}
+/* Navigator-pane header carries the bundle-level Coverage meter inline,
+   so it lays out title + meter on one row and pads down for the meter. */
+.pane-header-with-coverage {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 12px;
+  flex-wrap: wrap;
+}
+.pane-header-with-coverage .pane-header-title {
+  flex: 0 0 auto;
+}
+.pane-header-with-coverage .coverage {
+  padding: 2px 8px;
+  font-size: 11px;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .persona-list-shell {
@@ -1627,89 +1683,6 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   padding: 1px 4px;
   margin: 0;
   cursor: help;
-}
-
-/* Coachmarks — first-load orientation tour for cold visitors arriving
-   from the Commons feed. Per EXP-22 the app does not write to local /
-   sessionStorage; the dismissal lives only in JS state, so a refresh
-   re-shows by design. The coachmarks fire only when the URL has no query
-   params (cold landing) and never re-fire once dismissed in the tab. */
-.coachmark-host { position: fixed; inset: 0; pointer-events: none; z-index: 220; }
-.coachmark-host:not([hidden]) { display: block; }
-/* No click-blocking backdrop — coachmarks orient, they don't gate. The
-   user can interact with the live target (LFI / persona / nav) while the
-   coachmark explains it; dismissal is via Skip / Got it / Esc. */
-.coachmark {
-  position: absolute;
-  background: var(--bg-card);
-  border: 1px solid var(--accent);
-  border-radius: 6px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
-  padding: 12px 14px;
-  width: 280px;
-  pointer-events: auto;
-  font-size: 13px;
-  line-height: 1.45;
-}
-.coachmark .cm-step {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
-  margin-bottom: 4px;
-}
-.coachmark h4 {
-  margin: 0 0 4px;
-  font-size: 14px;
-  color: var(--text);
-}
-.coachmark p {
-  margin: 0 0 8px;
-  font-size: 12px;
-  color: var(--text);
-}
-.coachmark .cm-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-}
-.coachmark .cm-actions button {
-  font: inherit;
-  font-size: 11px;
-  padding: 4px 10px;
-  border: 1px solid var(--border-strong);
-  border-radius: 3px;
-  background: var(--bg-card);
-  cursor: pointer;
-}
-.coachmark .cm-actions .cm-primary {
-  background: var(--accent);
-  color: var(--mandatory-fg);
-  border-color: var(--accent);
-}
-.coachmark .cm-actions .cm-skip {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-}
-.coachmark::after {
-  content: '';
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  background: var(--bg-card);
-  border-left: 1px solid var(--accent);
-  border-top: 1px solid var(--accent);
-  transform: rotate(45deg);
-}
-.coachmark[data-arrow='top']::after    { top: -7px; left: 32px; }
-.coachmark[data-arrow='left']::after   { left: -7px; top: 32px; transform: rotate(-45deg); }
-.coachmark[data-arrow='right']::after  { right: -7px; top: 32px; transform: rotate(135deg); }
-.coachmark[data-arrow='bottom']::after { bottom: -7px; left: 32px; transform: rotate(225deg); }
-
-@media (prefers-reduced-motion: reduce) {
-  .coachmark { transition: none; }
 }
 
 /* Toast for "Embed snippet copied" confirmation. */
