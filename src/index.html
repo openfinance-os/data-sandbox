@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="robots" content="noindex" />
-<title>Open Finance Data Sandbox · Phase 0</title>
+<title>Open Finance Data Sandbox</title>
 <link rel="stylesheet" href="styles.css" />
 <link rel="modulepreload" href="app.js" />
 <link rel="modulepreload" href="prng.js" />
@@ -81,16 +81,17 @@
       </details>
     </div>
     <div class="controls-runstate" aria-label="Run state">
-      <div class="coverage" id="coverage" aria-label="Coverage of optional fields by populate-rate band">
-        <span class="coverage-label" title="Populate-rate bands per §7.3 — Universal: every LFI populates · Common: ~70% · Variable: ~40% · Rare: ~10%. Hover any dot for the populated/total count.">Coverage</span>
-        <div class="coverage-bands" id="coverage-bands"></div>
-        <span class="coverage-pct" id="coverage-pct">—</span>
-      </div>
       <span class="version-pin" id="version-pin" title="Pinned spec SHA — hover for retrieval date"></span>
       <button class="topbar-btn" id="find-btn" title="Search fields, enums, and persona narratives (⌘K)" aria-label="Open find box">Find</button>
       <button class="topbar-btn" id="tour-btn" title="Walk through Sara's bundle in 5 steps" aria-label="Start guided tour">Tour</button>
-      <a class="topbar-btn" href="integrate.html" title="Integrate sandbox personas into a TPP demo journey — iframe / npm / pip / curl">Integrate</a>
-      <a class="topbar-btn" href="about.html" title="Methodology, citation guidance, stewardship">About</a>
+      <button class="topbar-btn" id="share-btn" title="Copy permalink to clipboard — the URL bar already reflects the active persona, LFI, and seed (EXP-17)" aria-label="Copy permalink">Share</button>
+      <details class="topbar-menu" id="topbar-more">
+        <summary class="topbar-btn" aria-label="More" title="More — Integrate, About">More</summary>
+        <div class="topbar-menu-content" role="menu">
+          <a role="menuitem" href="integrate.html" title="Integrate sandbox personas into a TPP demo journey — iframe / npm / pip / curl">Integrate</a>
+          <a role="menuitem" href="about.html" title="Methodology, citation guidance, stewardship">About</a>
+        </div>
+      </details>
     </div>
   </nav>
 </header>
@@ -110,7 +111,14 @@
   </section>
 
   <section class="pane navigator" aria-label="Account and endpoint navigator">
-    <div class="pane-header" id="nav-title">Accounts &amp; endpoints</div>
+    <div class="pane-header pane-header-with-coverage" id="nav-title">
+      <span class="pane-header-title">Accounts &amp; endpoints</span>
+      <div class="coverage" id="coverage" aria-label="Coverage of optional fields by populate-rate band">
+        <span class="coverage-label" title="Populate-rate bands per §7.3 — Universal: every LFI populates · Common: ~70% · Variable: ~40% · Rare: ~10%. Hover any dot for the populated/total count.">Coverage</span>
+        <div class="coverage-bands" id="coverage-bands"></div>
+        <span class="coverage-pct" id="coverage-pct">—</span>
+      </div>
+    </div>
     <div class="nav-tree" id="nav-tree" aria-label="Account &amp; endpoint navigator" tabindex="0"></div>
     <div class="payload-area">
       <div class="payload-toolbar">
@@ -150,7 +158,7 @@
       Field detail
       <span class="status-legend" aria-label="Status badge legend">
         <span class="legend-pill pill pill-solid" title="Mandatory — every LFI populates per spec.">M</span>
-        <span class="legend-pill pill pill-dashed" title="Optional — populate-rate varies; see Real-LFIs guidance and the populate-band coverage on the topbar.">O</span>
+        <span class="legend-pill pill pill-dashed" title="Optional — populate-rate varies; see Real-LFIs guidance and the populate-band coverage in the Accounts &amp; endpoints header.">O</span>
         <span class="legend-pill pill pill-conditional" title="Conditional — populated only when a parent-field rule fires. The card shows the rule.">C</span>
       </span>
     </div>
@@ -165,7 +173,6 @@
 </main>
 
 <div class="hovercard" id="hovercard" role="tooltip" hidden></div>
-<div class="coachmark-host" id="coachmark-host" hidden></div>
 
 <footer class="footer" role="contentinfo">
   <span>SYNTHETIC · Open Finance Data Sandbox · OpenFinance-OS Commons · Standards v2.1 @ <span id="footer-sha">unknown</span></span>

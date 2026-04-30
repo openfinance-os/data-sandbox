@@ -95,15 +95,10 @@ const state = {
   // controls under PDPL"). When true, the rendered table hides every
   // column whose field is not in the curated PII allowlist.
   piiOnly: false,
-  // Coachmark cascade state — first-load orientation for cold visitors.
-  // null = inactive, 0..N = active step. Per EXP-22 we cannot persist
-  // dismissal across reloads, so coachmarks fire only when the URL has
-  // no query params (cold landing) and never re-fire once dismissed in
-  // this tab session.
-  coachStep: null,
-  coachDismissed: false,
-  // Cold-landing welcome cards — same lifecycle as coachmarks (no
-  // storage). Dismissed in JS state once the visitor self-routes.
+  // Cold-landing welcome cards — first-load orientation for visitors arriving
+  // from the Commons feed. Per EXP-22 the app does not write to local /
+  // sessionStorage, so the dismissal lives only in JS state (a refresh re-shows
+  // by design) and the cards fire only when the URL has no query params.
   welcomeShown: false,
   welcomeDismissed: false,
 };
@@ -147,8 +142,8 @@ async function init() {
   state.data = await dataRes.json();
 
   // Cold landing = URL with no query params (visitor arriving from the
-  // Commons feed for the first time). Drives the first-load coachmark
-  // cascade since EXP-22 forbids storage-based "first-visit" detection.
+  // Commons feed for the first time). Drives the welcome cards since EXP-22
+  // forbids storage-based "first-visit" detection.
   const isColdLanding = window.location.search === '';
   state.welcomeShown = isColdLanding;
 
@@ -172,12 +167,6 @@ async function init() {
   syncControls();
   attachEventHandlers();
   rebuildAndRender();
-
-  if (isColdLanding) {
-    // Defer one frame so the topbar / persona list / payload are in the
-    // DOM before we measure target rectangles.
-    setTimeout(() => startCoachmarks(), 60);
-  }
 }
 
 function el(tag, opts = {}, ...children) {
@@ -510,6 +499,11 @@ function attachEventHandlers() {
   document.getElementById('export-embed')?.addEventListener('click', copyEmbedSnippet);
   document.getElementById('tour-btn').addEventListener('click', () => startTour());
   document.getElementById('find-btn').addEventListener('click', openFind);
+  // EXP-17 Share — pushPermalink keeps window.location.href canonical on every
+  // state change, so the live href is the right thing to put on the clipboard.
+  document.getElementById('share-btn').addEventListener('click', () => {
+    copyDemoSnippet(window.location.href, 'Permalink copied.');
+  });
   // ⌘K / Ctrl+K opens the find box from anywhere in the app.
   window.addEventListener('keydown', (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -517,7 +511,6 @@ function attachEventHandlers() {
       openFind();
     } else if (e.key === 'Escape') {
       if (document.getElementById('find-overlay')) closeFind();
-      else if (state.coachStep != null) dismissCoachmarks();
     }
   });
 }
@@ -2566,121 +2559,6 @@ function showCopyToast(text) {
   const t = el('div', { class: 'copy-toast', attrs: { role: 'status' }, text });
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 2400);
-}
-
-// ---- First-load coachmark cascade — orientation for cold visitors ----------------------
-
-const COACHMARKS = [
-  {
-    target: '#lfi-seg',
-    arrow: 'top',
-    title: 'LFI populate-rate — the central lever',
-    body: 'Rich, Median, or Sparse decides which optional fields are populated. Switch to Sparse to see the worst-case shape your downstream UI must handle.',
-  },
-  {
-    target: '#coverage',
-    arrow: 'top',
-    title: 'Coverage by populate-rate band',
-    body: 'Each strip is one §7.3 band — Universal, Common, Variable, Rare. Filled cells show how many curated probes are actually populated under the current LFI profile.',
-  },
-  {
-    target: '.persona-pane',
-    arrow: 'left',
-    title: 'Pick a persona that matches your job',
-    body: 'Use the chip rail at the top — Affordability, AML, Thin file, FX — to filter the library. Each card has a "Best for" line so you can spot the right one without reading every narrative.',
-  },
-  {
-    target: '#endpoint-label',
-    arrow: 'top',
-    title: 'Click any field name',
-    body: 'Hover for a quick preview. Click to pin the full card on the right — status, type, enum, example, conditional rule, and Real-LFIs guidance, all spec-driven from the pinned SHA.',
-  },
-  {
-    target: '#tour-btn',
-    arrow: 'top',
-    title: 'Want a longer walkthrough?',
-    body: 'Tour walks through Sara\'s bundle in five steps — salary marker, rent commitment, field card, Sparse drop-off. Find (⌘K) jumps to any field by name.',
-  },
-];
-
-function startCoachmarks() {
-  if (state.coachDismissed) return;
-  state.coachStep = 0;
-  document.getElementById('coachmark-host').hidden = false;
-  renderCoachmark();
-}
-
-function dismissCoachmarks() {
-  state.coachStep = null;
-  state.coachDismissed = true;
-  const host = document.getElementById('coachmark-host');
-  if (host) {
-    host.hidden = true;
-    host.replaceChildren();
-  }
-}
-
-function renderCoachmark() {
-  const host = document.getElementById('coachmark-host');
-  if (!host) return;
-  host.replaceChildren();
-  const step = COACHMARKS[state.coachStep];
-  if (!step) {
-    dismissCoachmarks();
-    return;
-  }
-  const target = document.querySelector(step.target);
-  if (!target) {
-    state.coachStep += 1;
-    renderCoachmark();
-    return;
-  }
-
-  const card = el('div', { class: 'coachmark', attrs: { role: 'dialog', 'aria-labelledby': 'cm-title', 'data-arrow': step.arrow } });
-  card.appendChild(el('div', { class: 'cm-step', text: `Step ${state.coachStep + 1} of ${COACHMARKS.length}` }));
-  card.appendChild(el('h4', { text: step.title, attrs: { id: 'cm-title' } }));
-  card.appendChild(el('p', { text: step.body }));
-  const actions = el('div', { class: 'cm-actions' });
-  actions.appendChild(el('button', { class: 'cm-skip', text: 'Skip', onClick: dismissCoachmarks }));
-  const right = el('div', { attrs: { style: 'display:flex;gap:6px' } });
-  if (state.coachStep > 0) {
-    right.appendChild(el('button', { text: 'Back', onClick: () => { state.coachStep -= 1; renderCoachmark(); } }));
-  }
-  const isLast = state.coachStep === COACHMARKS.length - 1;
-  right.appendChild(el('button', {
-    class: 'cm-primary',
-    text: isLast ? 'Got it' : 'Next →',
-    onClick: () => {
-      if (isLast) dismissCoachmarks();
-      else { state.coachStep += 1; renderCoachmark(); }
-    },
-  }));
-  actions.appendChild(right);
-  card.appendChild(actions);
-  host.appendChild(card);
-
-  // Position next to the target — prefer below for top-arrow, right of
-  // target for left-arrow, etc.
-  const r = target.getBoundingClientRect();
-  const cardW = 280;
-  const cardH = card.offsetHeight || 140;
-  let left = r.left;
-  let top = r.bottom + 12;
-  if (step.arrow === 'left') {
-    left = r.right + 14;
-    top = Math.max(8, r.top);
-  } else if (step.arrow === 'right') {
-    left = r.left - cardW - 14;
-    top = Math.max(8, r.top);
-  } else if (step.arrow === 'bottom') {
-    top = r.top - cardH - 12;
-  }
-  // Clamp to viewport.
-  left = Math.max(8, Math.min(window.innerWidth - cardW - 8, left));
-  top = Math.max(8, Math.min(window.innerHeight - cardH - 8, top));
-  card.style.left = `${left}px`;
-  card.style.top = `${top}px`;
-  card.querySelector('.cm-primary')?.focus();
 }
 
 init().catch((err) => {
