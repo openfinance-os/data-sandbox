@@ -1,4 +1,5 @@
 persona_id: senior_retiree
+domain: banking
 name: "Hassan — Senior / Retiree"
 archetype: senior_retiree
 default_seed: 7134

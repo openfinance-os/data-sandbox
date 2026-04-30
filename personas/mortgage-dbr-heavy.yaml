@@ -1,4 +1,5 @@
 persona_id: mortgage_dbr_heavy
+domain: banking
 name: "Yousef — Mortgage Holder (DBR Heavy)"
 archetype: dbr_stretched
 default_seed: 9203

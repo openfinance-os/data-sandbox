@@ -1,4 +1,5 @@
 persona_id: sme_cash_heavy
+domain: banking
 name: "Karim — SME Owner (Cash-Heavy Retail)"
 archetype: sme_cash
 default_seed: 6308

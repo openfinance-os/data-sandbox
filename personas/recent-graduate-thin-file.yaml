@@ -1,4 +1,5 @@
 persona_id: recent_graduate_thin_file
+domain: banking
 name: "Tanvi — Recent Graduate (Thin File)"
 archetype: thin_file
 default_seed: 1117

@@ -1,4 +1,5 @@
 persona_id: salaried_emirati_affluent
+domain: banking
 name: "Khalid — Salaried Emirati (Affluent)"
 archetype: salaried_affluent
 default_seed: 8821

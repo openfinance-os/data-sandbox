@@ -3,6 +3,9 @@
 #
 # Field meanings:
 #   persona_id          stable slug; matches filename without .yaml; used in URLs
+#   domain              which OF Data Sharing domain this persona targets
+#                       (banking | insurance). Phase 2.0 step 3: banking only;
+#                       insurance personas land in a later slice.
 #   name                human-readable display name
 #   archetype           short typology tag for filter/search
 #   stress_coverage     array of terms drawn from PRD Appendix F controlled vocabulary
@@ -16,6 +19,7 @@
 # manifests against this shape lives in tests/persona-manifest.test.mjs.
 
 persona_id: <slug>
+domain: <enum: banking|insurance>
 name: <string>
 archetype: <string>
 default_seed: <int>

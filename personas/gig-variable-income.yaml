@@ -1,4 +1,5 @@
 persona_id: gig_variable_income
+domain: banking
 name: "Priya — Gig / Variable Income"
 archetype: gig_worker
 default_seed: 5523

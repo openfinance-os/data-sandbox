@@ -1,4 +1,5 @@
 persona_id: joint_account_family
+domain: banking
 name: "Maria & Rohan — Joint Account / Family"
 archetype: joint_family
 default_seed: 6612

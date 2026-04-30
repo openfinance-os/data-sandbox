@@ -1,4 +1,5 @@
 persona_id: hnw_multicurrency
+domain: banking
 name: "Layla — HNW Multi-Currency Holder"
 archetype: hnw
 default_seed: 2046

@@ -14,6 +14,7 @@ function listManifests() {
 
 const REQUIRED_TOP_LEVEL = [
   'persona_id',
+  'domain',
   'name',
   'archetype',
   'default_seed',
@@ -22,6 +23,8 @@ const REQUIRED_TOP_LEVEL = [
   'income',
   'accounts',
 ];
+
+const ALLOWED_DOMAINS = new Set(['banking', 'insurance']);
 
 const ALLOWED_LFI_PROFILES = ['rich', 'median', 'sparse'];
 void ALLOWED_LFI_PROFILES;
@@ -35,6 +38,7 @@ describe('persona manifests — EXP-02', () => {
       expect(m, `${file} missing required key ${key}`).toHaveProperty(key);
     }
     expect(m.persona_id).toMatch(/^[a-z][a-z0-9_]*$/);
+    expect(ALLOWED_DOMAINS.has(m.domain), `${file} has invalid domain ${m.domain}`).toBe(true);
     // file name must match persona_id (with _ → -).
     const expectedFile = `${m.persona_id.replace(/_/g, '-')}.yaml`;
     expect(file).toBe(expectedFile);
