@@ -207,6 +207,7 @@ async function init() {
 
   buildJtbdRail();
   buildPersonaList();
+  renderDomainChip();
   syncControls();
   attachEventHandlers();
   rebuildAndRender();
@@ -937,6 +938,66 @@ function renderPreviewBundle() {
   const pre = el('pre', { class: 'preview-json' });
   pre.textContent = JSON.stringify(state.bundle, null, 2);
   body.appendChild(pre);
+
+  // The endpoint navigator and coverage strip are banking-shaped; clear
+  // them so a banking → insurance switch leaves no stale UI behind.
+  document.getElementById('nav-tree')?.replaceChildren();
+  document.getElementById('coverage-bands')?.replaceChildren();
+  const covPct = document.getElementById('coverage-pct');
+  if (covPct) covPct.textContent = '';
+  const epLabel = document.getElementById('endpoint-label');
+  if (epLabel) epLabel.textContent = dom?.label ?? state.domain;
+}
+
+// Slice 8b: visible domain selector. Only surfaces when ?preview=1 is in
+// the URL — matches the preview-gate in init(). The chip lists every
+// domain from dist/domains.json; preview-status domains carry a tag.
+function renderDomainChip() {
+  const chip = document.getElementById('domain-chip');
+  if (!chip) return;
+  if (!state.preview) {
+    chip.hidden = true;
+    return;
+  }
+  chip.hidden = false;
+  chip.replaceChildren();
+  for (const dom of Object.values(state.domains)) {
+    const opt = document.createElement('option');
+    opt.value = dom.id;
+    opt.textContent = dom.status === 'preview' ? `${dom.label} (preview)` : dom.label;
+    if (dom.id === state.domain) opt.selected = true;
+    chip.appendChild(opt);
+  }
+  // Use onchange (not addEventListener) so multiple renderDomainChip calls
+  // don't stack handlers.
+  chip.onchange = (e) => {
+    const next = e.target.value;
+    if (next !== state.domain) void switchDomain(next);
+  };
+}
+
+async function switchDomain(newDomain) {
+  const entry = state.domains?.[newDomain];
+  if (!entry) return;
+  const specRes = await fetch(`..${entry.parsedJsonUrl}`);
+  state.spec = await specRes.json();
+  state.domain = newDomain;
+  state.activePersonas = Object.fromEntries(
+    Object.entries(state.data.personas).filter(([, p]) => p.domain === newDomain)
+  );
+  state.personaId = Object.keys(state.activePersonas)[0];
+  state.endpoint = entry.defaultEndpoint || Object.keys(state.spec.endpoints)[0];
+  // Refresh topbar metadata to reflect the active spec.
+  const v = String(state.spec.specVersion || '');
+  const versionLabel = v.startsWith('v') ? v : `v${v}`;
+  const pin = document.getElementById('version-pin');
+  if (pin) {
+    pin.textContent = `${versionLabel} @ ${(state.spec.pinSha || '').slice(0, 7)}`;
+    pin.title = `Pinned spec SHA ${state.spec.pinSha}\nRetrieved ${state.spec.retrievedAt}\nUpstream: ${state.spec.upstreamRepo}/${state.spec.upstreamPath}`;
+  }
+  buildPersonaList();
+  renderDomainChip();
+  rebuildAndRender();
 }
 
 function pushPermalink() {
