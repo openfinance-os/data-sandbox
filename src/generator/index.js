@@ -20,7 +20,7 @@ import { generateScheduledPayments } from './scheduled-payments.js';
 import { generateParties } from './parties.js';
 import { generateStatements } from './statements.js';
 import { generateProducts } from './product.js';
-import { applyLfiProfile } from './lfi-profile.js';
+import { applyLfiProfile } from './banking/lfi-profile.js';
 import { buildInsuranceBundle } from './insurance/index.js';
 
 const DEFAULT_NOW = new Date(Date.UTC(2026, 3, 1, 0, 0, 0));

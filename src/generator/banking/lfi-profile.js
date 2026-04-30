@@ -1,9 +1,15 @@
-// LFI profile filter — §8.3, EXP-04.
+// Banking-domain LFI profile filter — §8.3, EXP-04.
 // Applies the Rich/Median/Sparse populate-rate calibration to a generated
-// bundle as a post-generation field-redaction filter. Mandatory fields are
-// never redacted (NG / EXP-04 acceptance).
+// banking bundle as a post-generation field-redaction filter. Mandatory
+// fields are never redacted (NG / EXP-04 acceptance).
+//
+// Per-domain redaction lives next to the per-domain generator. Insurance
+// has (will have) its own at src/generator/insurance/lfi-profile.js once
+// bands are calibrated (slice 6c). Path literals here are banking-shaped
+// (Account, Transaction, Balance) and tested-equal to
+// spec/lfi-bands.banking.yaml via tests/lfi-bands.test.mjs.
 
-import { mulberry32, seedFromTuple } from '../prng.js';
+import { mulberry32, seedFromTuple } from '../../prng.js';
 
 // v1 calibration of populate probabilities — single source of truth (§8.3).
 const MEDIAN_PROBABILITY = {
