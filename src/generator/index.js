@@ -1,5 +1,7 @@
 // Generator orchestrator — entry point that turns (persona, lfi, seed) into a
-// payload bundle covering the v1 endpoints (Phase 1 — all 12 endpoints).
+// payload bundle. Phase 2.0: dispatches to the per-domain generator based on
+// persona.domain. Banking covers 12 v2.1 Account-Information endpoints;
+// insurance covers the motor-MVP triad (slice 6b-ii).
 //
 // EXP-05 / §8.3 invariant: the bundle is a pure function of
 // (persona, lfi, seed, now). `now` defaults to a build-time anchor so that
@@ -19,6 +21,7 @@ import { generateParties } from './parties.js';
 import { generateStatements } from './statements.js';
 import { generateProducts } from './product.js';
 import { applyLfiProfile } from './lfi-profile.js';
+import { buildInsuranceBundle } from './insurance/index.js';
 
 const DEFAULT_NOW = new Date(Date.UTC(2026, 3, 1, 0, 0, 0));
 
@@ -55,7 +58,14 @@ function resolvePools(persona, indexedPools) {
   };
 }
 
-export function buildBundle({ persona, lfi, seed, pools, now = DEFAULT_NOW }) {
+export function buildBundle(args) {
+  const domain = args.persona?.domain ?? 'banking';
+  if (domain === 'banking') return buildBankingBundle(args);
+  if (domain === 'insurance') return buildInsuranceBundle(args);
+  throw new Error(`unknown persona domain: ${domain}`);
+}
+
+function buildBankingBundle({ persona, lfi, seed, pools, now = DEFAULT_NOW }) {
   // The generator's main RNG is independent of `lfi` — mandatory content must
   // be identical across Rich/Median/Sparse for the same (persona, seed). The
   // LFI profile's redaction PRNG is seeded separately in lfi-profile.js.
