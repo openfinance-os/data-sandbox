@@ -73,6 +73,7 @@ export function generateInsuranceIdentity({ persona, names, rng, now }) {
   const nationality = NATIONALITY_BY_POOL[persona.demographics.nationality_pool] ?? 'ARE';
 
   const policyHolder = {
+    Salutation: gender === 'Male' ? 'Mr' : 'Ms', // optional; LFI-redactable.
     FirstName: name.given,
     LastName: name.surname,
     Gender: gender,

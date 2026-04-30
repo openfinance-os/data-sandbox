@@ -13,20 +13,31 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getOptionalFieldBands } from '../src/generator/banking/lfi-profile.js';
+import { getOptionalFieldBands as bankingBands } from '../src/generator/banking/lfi-profile.js';
+import { getOptionalFieldBands as insuranceBands } from '../src/generator/insurance/lfi-profile.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..');
 
-describe('LFI bands — runtime vs SPEC.json', () => {
-  it('SPEC.json bandOverrides matches getOptionalFieldBands()', () => {
-    const spec = JSON.parse(fs.readFileSync(path.join(repoRoot, 'dist/SPEC.json'), 'utf8'));
-    expect(spec.bandOverrides).toBeTruthy();
+function bandsFromSpec(distPath) {
+  const spec = JSON.parse(fs.readFileSync(path.join(repoRoot, distPath), 'utf8'));
+  expect(spec.bandOverrides).toBeTruthy();
+  return spec.bandOverrides;
+}
 
-    const fromRuntime = Object.fromEntries(
-      getOptionalFieldBands().map(({ path: p, band }) => [p, band])
-    );
-    expect(spec.bandOverrides).toEqual(fromRuntime);
+function bandsFromRuntime(getOptionalFieldBands) {
+  return Object.fromEntries(
+    getOptionalFieldBands().map(({ path: p, band }) => [p, band])
+  );
+}
+
+describe('LFI bands — runtime vs SPEC.json', () => {
+  it('banking SPEC.json bandOverrides matches banking getOptionalFieldBands()', () => {
+    expect(bandsFromSpec('dist/SPEC.json')).toEqual(bandsFromRuntime(bankingBands));
+  });
+
+  it('insurance SPEC.json bandOverrides matches insurance getOptionalFieldBands()', () => {
+    expect(bandsFromSpec('dist/SPEC.insurance.json')).toEqual(bandsFromRuntime(insuranceBands));
   });
 });

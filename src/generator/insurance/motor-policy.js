@@ -154,5 +154,6 @@ export function generatePremium({ persona }) {
   return {
     TotalPremiumAmount: aed(total),
     PaymentFrequency: 'Annually',
+    PaymentMode: 'DirectDebit', // optional; LFI-redactable.
   };
 }

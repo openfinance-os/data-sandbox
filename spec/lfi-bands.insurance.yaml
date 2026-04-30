@@ -18,4 +18,12 @@
 #     MotorInsurancePolicy.Vehicle.MakeAndModel: Common
 #     MotorInsurancePolicy.AdditionalDrivers[].Name: Variable
 
-overrides: {}
+# Phase 2.0 slice 6c starter calibration. Conservative — paths are anchored
+# at the resource (PolicyHolder, Premium, Product) rather than the full
+# Data.* path so the redaction body in src/generator/insurance/lfi-profile.js
+# stays domain-shaped and short. SME review pending.
+overrides:
+  PolicyHolder.Salutation: Common
+  Premium.PaymentMode: Common
+  Product.AdditionalDrivers: Variable
+  Product.CarFinance: Variable

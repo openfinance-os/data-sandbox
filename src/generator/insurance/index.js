@@ -11,6 +11,7 @@ import {
   generateClaims,
   generatePremium,
 } from './motor-policy.js';
+import { applyInsuranceLfiProfile } from './lfi-profile.js';
 
 const DEFAULT_NOW = new Date(Date.UTC(2026, 3, 1, 0, 0, 0));
 
@@ -112,11 +113,7 @@ export function buildInsuranceBundle({ persona, lfi, seed, pools, now = DEFAULT_
     motorPolicies: [motorPolicyDetail],
     motorPolicySummaries: [motorPolicySummary],
     paymentDetails,
-    _lfiProfile: lfi,
   };
 
-  // No LFI redaction in 6b-ii-b — bands map is empty (slice 6a). Optional
-  // fields omitted by the generator stay omitted; mandatory fields untouched.
-  void seed;
-  return bundle;
+  return applyInsuranceLfiProfile({ bundle, personaId: persona.persona_id, lfi, seed });
 }

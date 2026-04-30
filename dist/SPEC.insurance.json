@@ -299,7 +299,12 @@
     "UserOAuth2Security": 20548,
     "LFIWebhookSecurity": 20566
   },
-  "bandOverrides": {},
+  "bandOverrides": {
+    "PolicyHolder.Salutation": "Common",
+    "Premium.PaymentMode": "Common",
+    "Product.AdditionalDrivers": "Variable",
+    "Product.CarFinance": "Variable"
+  },
   "endpoints": {
     "/motor-insurance-policies": {
       "method": "GET",
