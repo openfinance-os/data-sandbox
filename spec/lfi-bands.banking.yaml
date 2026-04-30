@@ -1,0 +1,23 @@
+# LFI populate-rate bands for Bank Data Sharing — §8.3, EXP-04.
+#
+# The spec parser walks the OpenAPI YAML and emits every field with a default
+# `band: 'Unknown'`. Entries here override the band for the listed dotted
+# field paths. Bands map to populate probabilities defined in
+# src/generator/lfi-profile.js:
+#   Universal=1.0, Common=0.7, Variable=0.4, Rare=0.1, Unknown=0.0.
+#
+# Mandatory fields are NEVER redacted regardless of band (EXP-04 / NG); these
+# overrides only affect optional fields. An anti-drift test asserts this YAML
+# matches the bands the redaction body actually applies.
+
+overrides:
+  Account.Nickname: Common
+  Account.OpeningDate: Common
+  Transaction.TransactionInformation: Universal
+  Transaction.ValueDateTime: Universal
+  Transaction.Flags: Common
+  Transaction.TransactionReference: Common
+  Transaction.MerchantDetails: Variable
+  Transaction.MerchantDetails.MerchantCategoryCode: Variable
+  Transaction.MerchantDetails.MerchantName: Common
+  Balance.CreditLine: Variable

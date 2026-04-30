@@ -226,6 +226,22 @@ export function parseDomain(config) {
     ? fs.readFileSync(retrievedPath, 'utf8').trim()
     : 'unknown';
 
+  // LFI populate-rate band overrides — optional. If the domain config doesn't
+  // specify a bandsPath, all fields default to band 'Unknown' (Sparse drops
+  // them; Median drops them; Rich keeps them only if non-Unknown — i.e. they
+  // get dropped under all profiles, which is the conservative pre-calibration
+  // default for a new domain).
+  let bandOverrides = {};
+  if (config.bandsPath) {
+    const bandsPath = path.join(repoRoot, config.bandsPath);
+    if (!fs.existsSync(bandsPath)) {
+      console.error(`[${config.id}] bands file not found at ${bandsPath}`);
+      process.exit(1);
+    }
+    const bandsDoc = yaml.load(fs.readFileSync(bandsPath, 'utf8')) ?? {};
+    bandOverrides = bandsDoc.overrides ?? {};
+  }
+
   const endpoints = {};
   const missing = [];
   for (const p of config.inScopePaths) {
@@ -248,6 +264,7 @@ export function parseDomain(config) {
     upstreamPath: config.upstreamPath,
     inScopePaths: config.inScopePaths,
     schemaLines,
+    bandOverrides,
     endpoints,
   });
 

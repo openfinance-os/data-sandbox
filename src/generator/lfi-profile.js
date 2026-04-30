@@ -14,21 +14,24 @@ const MEDIAN_PROBABILITY = {
   Unknown: 0.0,
 };
 
-// Phase 0 starter: a small allowlist of optional fields with their bands.
-// Phase 1 will move this into the spec parser so band lookups are spec-driven.
-// `path` is the dotted SPEC path; `band` is one of the keys above.
+// Optional-field band table — mirrors the bands the redaction body below
+// applies. Source of truth is spec/lfi-bands.banking.yaml (loaded by the spec
+// parser into dist/SPEC.json `bandOverrides`); tests/lfi-bands.test.mjs asserts
+// this constant matches the YAML so the two cannot drift.
+// Phase 2.1+: Insurance and other domains will pass their own bands map; the
+// redaction body's path literals will follow when generic walker lands.
 const OPTIONAL_FIELD_BANDS = [
   // Account
   { path: 'Account.Nickname', band: 'Common' },
   { path: 'Account.OpeningDate', band: 'Common' },
   // Transaction
   { path: 'Transaction.TransactionInformation', band: 'Universal' },
+  { path: 'Transaction.ValueDateTime', band: 'Universal' },
+  { path: 'Transaction.Flags', band: 'Common' },
+  { path: 'Transaction.TransactionReference', band: 'Common' },
   { path: 'Transaction.MerchantDetails', band: 'Variable' },
   { path: 'Transaction.MerchantDetails.MerchantCategoryCode', band: 'Variable' },
   { path: 'Transaction.MerchantDetails.MerchantName', band: 'Common' },
-  { path: 'Transaction.CreditorName', band: 'Common' },
-  { path: 'Transaction.Flags', band: 'Common' },
-  { path: 'Transaction.ValueDateTime', band: 'Universal' },
   // Balance
   { path: 'Balance.CreditLine', band: 'Variable' },
 ];

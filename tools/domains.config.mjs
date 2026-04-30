@@ -13,6 +13,7 @@ export const DOMAINS = [
     specPath: 'spec/uae-account-information-openapi.yaml',
     pinPath: 'spec/SPEC_PIN.sha',
     retrievedPath: 'spec/SPEC_PIN.retrieved',
+    bandsPath: 'spec/lfi-bands.banking.yaml',
     outPath: 'dist/SPEC.json',
     upstreamRepo: 'Nebras-Open-Finance/api-specs',
     upstreamPath: 'dist/standards/v2.1/uae-account-information-openapi.yaml',
