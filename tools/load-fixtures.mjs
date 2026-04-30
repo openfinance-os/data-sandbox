@@ -37,6 +37,16 @@ export function loadAllPersonas() {
   return out;
 }
 
+// Convenience filter — most banking-pipeline test sites want to skip
+// non-banking personas until the domain dispatcher lands in slice 6b-ii.
+export function loadPersonasByDomain(domain) {
+  const out = {};
+  for (const [id, m] of Object.entries(loadAllPersonas())) {
+    if (m.domain === domain) out[id] = m;
+  }
+  return out;
+}
+
 function* walkPoolFiles() {
   const root = path.join(repoRoot, 'synthetic-identity-pool');
   for (const sub of fs.readdirSync(root, { withFileTypes: true })) {

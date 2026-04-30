@@ -1,0 +1,44 @@
+persona_id: motor_comprehensive_mid
+domain: insurance
+name: "Omar — Motor Comprehensive (Mid Tier)"
+archetype: motor_comprehensive_financed
+default_seed: 4729
+stress_coverage:
+  - motor_comprehensive_financed
+
+demographics:
+  nationality_pool: emirati
+  age_band: 32-42
+  emirate: Dubai
+  has_visa: false
+
+vehicle:
+  make: Toyota
+  model: Corolla
+  year: 2023
+  body_type: Sedan
+  passenger_capacity: 5
+  valuation_aed: 75000
+  registration_emirate: Dubai
+
+policy:
+  type: Comprehensive
+  takaful: false
+  excess_aed: 1500
+  start_date_offset_days: 90
+  channel: Broker
+
+finance:
+  has_finance: true
+  bank_pool: counterparty_banks_domestic
+  amount_aed: 60000
+  outstanding_aed: 32000
+
+additional_drivers:
+  count: 1
+
+claims:
+  history_months: 12
+  claims_in_period: 0
+  approved_claims: 0
+  total_gross_aed: 0

@@ -11,7 +11,7 @@ import yaml from 'js-yaml';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import { buildBundle } from '../src/generator/index.js';
-import { loadAllPersonas, loadAllPools, loadSpec, repoRoot } from '../tools/load-fixtures.mjs';
+import { loadPersonasByDomain, loadAllPools, loadSpec, repoRoot } from '../tools/load-fixtures.mjs';
 
 const SPEC_PATH = path.join(repoRoot, 'spec/uae-account-information-openapi.yaml');
 
@@ -74,7 +74,9 @@ const PROFILES = ['rich', 'median', 'sparse'];
 describe('spec validation — EXP-10 (all 12 endpoints, every persona × LFI)', () => {
   const spec = yaml.load(fs.readFileSync(SPEC_PATH, 'utf8'));
   const parsed = loadSpec();
-  const personas = loadAllPersonas();
+  // Banking pipeline only — insurance personas validate via the insurance
+  // generator + spec in slice 6b-ii.
+  const personas = loadPersonasByDomain('banking');
   const pools = loadAllPools();
   const validators = Object.fromEntries(
     Object.entries(parsed.endpoints).map(([p, e]) => [p, compileSchema(spec, e.schemaRef)])

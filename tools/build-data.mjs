@@ -5,11 +5,13 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { loadAllPersonas, loadAllPools, repoRoot } from './load-fixtures.mjs';
+import { loadPersonasByDomain, loadAllPools, repoRoot } from './load-fixtures.mjs';
 
 const OUT = `${repoRoot}/dist/data.json`;
 
-const personas = loadAllPersonas();
+// Banking only — until the UI domain selector lands and data.json grows a
+// domain axis, the browser app only knows about banking personas.
+const personas = loadPersonasByDomain('banking');
 const pools = loadAllPools();
 
 const buildInfo = { nowIso: deriveNow() };
