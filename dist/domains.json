@@ -34,8 +34,12 @@
       "specVersion": "v2.1-errata1",
       "openapiVersion": "3.0.0",
       "parsedJsonUrl": "/dist/SPEC.insurance.json",
-      "defaultEndpoint": null,
-      "endpoints": []
+      "defaultEndpoint": "/motor-insurance-policies",
+      "endpoints": [
+        "/motor-insurance-policies",
+        "/motor-insurance-policies/{InsurancePolicyId}",
+        "/motor-insurance-policies/{InsurancePolicyId}/payment-details"
+      ]
     }
   ]
 }

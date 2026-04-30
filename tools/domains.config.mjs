@@ -48,9 +48,15 @@ export const DOMAINS = [
     outPath: 'dist/SPEC.insurance.json',
     upstreamRepo: 'Nebras-Open-Finance/api-specs',
     upstreamPath: 'dist/standards/v2.1-errata1/uae-insurance-openapi.yaml',
-    defaultEndpoint: null,
-    // Endpoint inventory comes in a follow-up slice (introspect via the
-    // parser, then tier into a 3-endpoint MVP).
-    inScopePaths: [],
+    defaultEndpoint: '/motor-insurance-policies',
+    // Phase 2.0 MVP: Motor line only — list, detail, payment-details. Mirrors
+    // banking's /accounts + /accounts/{id} + /transactions triad. The full
+    // 30-endpoint inventory across 7 insurance lines + consents lands in
+    // Phase 2.1.
+    inScopePaths: [
+      '/motor-insurance-policies',
+      '/motor-insurance-policies/{InsurancePolicyId}',
+      '/motor-insurance-policies/{InsurancePolicyId}/payment-details',
+    ],
   },
 ];
