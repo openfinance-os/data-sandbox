@@ -55,6 +55,14 @@ const BUNDLE_SCOPED_PATHS = ENDPOINTS.filter((e) => e.scope === 'bundle').map((e
 const state = {
   spec: null,
   data: null,
+  // Phase 2.0 multi-domain (slice 8). state.domain is 'banking' by default;
+  // 'insurance' is preview-status — surfaces only when ?preview=1 is in the URL.
+  // domains: id → manifest entry (label, status, parsedJsonUrl, defaultEndpoint).
+  // activePersonas: state.data.personas filtered to state.domain.
+  domain: 'banking',
+  preview: false,
+  domains: null,
+  activePersonas: null,
   personaId: null,
   lfi: 'median',
   seed: 4729,
@@ -139,13 +147,6 @@ function emptyTxFilter() {
 }
 
 async function init() {
-  const [specRes, dataRes] = await Promise.all([
-    fetch('../dist/SPEC.json'),
-    fetch('../dist/data.json'),
-  ]);
-  state.spec = await specRes.json();
-  state.data = await dataRes.json();
-
   // Cold landing = URL with no query params (visitor arriving from the
   // Commons feed for the first time). Drives the first-load coachmark
   // cascade since EXP-22 forbids storage-based "first-visit" detection.
@@ -153,11 +154,48 @@ async function init() {
   state.welcomeShown = isColdLanding;
 
   const url = decodeFromUrl(window.location.href);
-  state.personaId = url.personaId && state.data.personas[url.personaId]
+  state.preview = url.preview;
+
+  // Slice 8: domain manifest drives which SPEC.json to lazy-load. Banking
+  // remains the default; insurance (preview-status) only surfaces when the
+  // URL carries ?preview=1, otherwise we fall back to banking so the
+  // public sandbox stays unchanged.
+  const [domainsRes, dataRes] = await Promise.all([
+    fetch('../dist/domains.json'),
+    fetch('../dist/data.json'),
+  ]);
+  const domainsManifest = await domainsRes.json();
+  state.data = await dataRes.json();
+  state.domains = Object.fromEntries(domainsManifest.domains.map((d) => [d.id, d]));
+
+  let resolvedDomain = url.domain;
+  const requested = state.domains[resolvedDomain];
+  if (!requested || (requested.status === 'preview' && !state.preview)) {
+    resolvedDomain = 'banking';
+  }
+  state.domain = resolvedDomain;
+
+  const specEntry = state.domains[state.domain];
+  // parsedJsonUrl is "/dist/SPEC.<domain>.json"; the app is served from src/
+  // so we walk one level up.
+  const specRes = await fetch(`..${specEntry.parsedJsonUrl}`);
+  state.spec = await specRes.json();
+
+  state.activePersonas = Object.fromEntries(
+    Object.entries(state.data.personas).filter(([, p]) => p.domain === state.domain)
+  );
+
+  state.personaId = url.personaId && state.activePersonas[url.personaId]
     ? url.personaId
-    : Object.keys(state.data.personas)[0];
+    : Object.keys(state.activePersonas)[0];
   state.lfi = url.lfi;
   state.seed = url.seed;
+  // Default endpoint for the domain unless URL pins one.
+  if (state.domain !== 'banking') {
+    state.endpoint = url.endpoint && state.spec.endpoints[url.endpoint]
+      ? url.endpoint
+      : specEntry.defaultEndpoint || Object.keys(state.spec.endpoints)[0];
+  }
 
   document.getElementById('footer-sha').textContent = (state.spec.pinSha || 'unknown').slice(0, 7);
   // specVersion already starts with "v" — don't double-prefix.
@@ -304,7 +342,7 @@ function buildPersonaList() {
   }
 
   let visibleCount = 0;
-  for (const [id, p] of Object.entries(state.data.personas)) {
+  for (const [id, p] of Object.entries(state.activePersonas ?? state.data.personas)) {
     if (!personaMatchesActiveFilter(p)) continue;
     visibleCount += 1;
 
@@ -610,8 +648,10 @@ function closeFind() {
 function runFind(q) {
   const out = [];
   const lower = q.toLowerCase();
-  // Personas — name + archetype + narrative + stress_coverage
-  for (const [pid, p] of Object.entries(state.data.personas ?? {})) {
+  // Personas — name + archetype + narrative + stress_coverage. Search is
+  // scoped to the active domain so insurance personas don't bleed into a
+  // banking session.
+  for (const [pid, p] of Object.entries(state.activePersonas ?? state.data.personas ?? {})) {
     const hay = `${p.name} ${p.archetype} ${p.narrative ?? ''} ${(p.stress_coverage ?? []).join(' ')}`.toLowerCase();
     if (hay.includes(lower)) {
       out.push({
@@ -859,6 +899,17 @@ function rebuildAndRender() {
     pools: state.data.pools,
     now: new Date(state.data.buildInfo.nowIso),
   });
+
+  if (state.domain !== 'banking') {
+    // Slice 8 preview: insurance bundles render as a JSON inspector. Field
+    // cards / underwriting / compare / coverage are banking-shaped UI; they
+    // light up for insurance once 6c+ ships per-resource render components.
+    renderPreviewBundle();
+    pushPermalink();
+    setTimeout(() => body?.classList.remove('is-fading'), 30);
+    return;
+  }
+
   state.selectedAccountId = state.bundle.accounts[0]?.AccountId ?? null;
   state.txFilter = emptyTxFilter();
   state.txSort = { column: null, dir: 'asc' };
@@ -873,6 +924,21 @@ function rebuildAndRender() {
   setTimeout(() => body?.classList.remove('is-fading'), 30);
 }
 
+function renderPreviewBundle() {
+  const body = document.getElementById('payload-body');
+  if (!body) return;
+  body.replaceChildren();
+  const banner = el('div', { class: 'preview-banner' });
+  const dom = state.domains?.[state.domain];
+  banner.textContent =
+    `Preview — ${dom?.label ?? state.domain} · ${state.spec.specVersion} @ ${(state.spec.pinSha ?? '').slice(0, 7)}. ` +
+    `Bundle render is a JSON inspector for now; per-resource UI lands as the domain leaves preview.`;
+  body.appendChild(banner);
+  const pre = el('pre', { class: 'preview-json' });
+  pre.textContent = JSON.stringify(state.bundle, null, 2);
+  body.appendChild(pre);
+}
+
 function pushPermalink() {
   // Phase 0: keep the current pathname; only update the query string. Phase 1
   // will switch to the §6.8 permalink shape (/commons/[slug]/p/<id>?...) once
@@ -881,6 +947,10 @@ function pushPermalink() {
   params.set('persona', state.personaId);
   params.set('lfi', state.lfi);
   params.set('seed', String(state.seed));
+  // Slice 8: domain + preview round-trip. Banking is the default and stays
+  // implicit so existing permalinks remain unchanged.
+  if (state.domain && state.domain !== 'banking') params.set('domain', state.domain);
+  if (state.preview) params.set('preview', '1');
   const next = `${window.location.pathname}?${params.toString()}`;
   window.history.replaceState({}, '', next);
 }

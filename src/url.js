@@ -4,25 +4,52 @@
 export const DEFAULTS = {
   lfi: 'median',
   seed: 1,
+  domain: 'banking',
 };
 
 const VALID_LFI = new Set(['rich', 'median', 'sparse']);
+const VALID_DOMAINS = new Set(['banking', 'insurance']);
 
-export function encodePermalink({ slugBase = '/commons/sandbox', personaId, lfi, seed }) {
+export function encodePermalink({
+  slugBase = '/commons/sandbox',
+  personaId,
+  lfi,
+  seed,
+  domain,
+  preview,
+}) {
   if (!personaId) throw new Error('personaId required');
   const params = new URLSearchParams();
   params.set('lfi', VALID_LFI.has(lfi) ? lfi : DEFAULTS.lfi);
   params.set('seed', String(Number.isFinite(seed) ? seed : DEFAULTS.seed));
+  // domain only emitted when it differs from default (keeps banking permalinks unchanged).
+  if (VALID_DOMAINS.has(domain) && domain !== DEFAULTS.domain) {
+    params.set('domain', domain);
+  }
+  if (preview) params.set('preview', '1');
   return `${slugBase}/p/${personaId}?${params.toString()}`;
 }
 
-export function encodeEmbed({ slugBase = '', personaId, lfi, endpoint, seed, height }) {
+export function encodeEmbed({
+  slugBase = '',
+  personaId,
+  lfi,
+  endpoint,
+  seed,
+  height,
+  domain,
+  preview,
+}) {
   const params = new URLSearchParams();
   if (personaId) params.set('persona', personaId);
   if (lfi) params.set('lfi', VALID_LFI.has(lfi) ? lfi : DEFAULTS.lfi);
   if (endpoint) params.set('endpoint', endpoint);
   if (Number.isFinite(seed)) params.set('seed', String(seed));
   if (Number.isFinite(height)) params.set('height', String(height));
+  if (VALID_DOMAINS.has(domain) && domain !== DEFAULTS.domain) {
+    params.set('domain', domain);
+  }
+  if (preview) params.set('preview', '1');
   return `${slugBase}/embed?${params.toString()}`;
 }
 
@@ -67,7 +94,11 @@ export function decodeFromUrl(url) {
       ? Number(heightRaw)
       : null;
 
-  return { personaId, lfi, seed, endpoint, height };
+  const domainRaw = params.get('domain');
+  const domain = VALID_DOMAINS.has(domainRaw) ? domainRaw : DEFAULTS.domain;
+  const preview = params.get('preview') === '1';
+
+  return { personaId, lfi, seed, endpoint, height, domain, preview };
 }
 
 // Update window.location without full reload. Browser-only; safely no-ops in tests.

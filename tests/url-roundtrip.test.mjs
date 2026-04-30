@@ -84,4 +84,59 @@ describe('URL shapes — §6.8', () => {
     });
     expect(url).toBe('/fixtures/v1/bundles/sara/sparse/seed-1/accounts.json');
   });
+
+  // Slice 8 — multi-domain URL state. Banking is the default and stays
+  // implicit so existing permalinks remain unchanged; insurance only
+  // surfaces when ?preview=1 is set.
+  it('decode defaults domain to banking and preview to false', () => {
+    const state = decodeFromUrl('/commons/sandbox/p/sara');
+    expect(state.domain).toBe('banking');
+    expect(state.preview).toBe(false);
+  });
+
+  it('decode reads ?domain= and ?preview=1', () => {
+    const state = decodeFromUrl(
+      '/commons/sandbox/p/motor_comprehensive_mid?lfi=median&seed=4729&domain=insurance&preview=1'
+    );
+    expect(state.domain).toBe('insurance');
+    expect(state.preview).toBe(true);
+    expect(state.personaId).toBe('motor_comprehensive_mid');
+  });
+
+  it('decode normalises an unknown domain to banking', () => {
+    const state = decodeFromUrl('/commons/sandbox/p/sara?domain=open-wealth');
+    expect(state.domain).toBe('banking');
+  });
+
+  it('encodePermalink omits domain when banking (default)', () => {
+    const url = encodePermalink({ personaId: 'salaried_expat_mid', lfi: 'median', seed: 4729 });
+    expect(url).not.toContain('domain=');
+    expect(url).not.toContain('preview=');
+  });
+
+  it('encodePermalink emits domain + preview for insurance', () => {
+    const url = encodePermalink({
+      personaId: 'motor_comprehensive_mid',
+      lfi: 'median',
+      seed: 4729,
+      domain: 'insurance',
+      preview: true,
+    });
+    expect(url).toContain('domain=insurance');
+    expect(url).toContain('preview=1');
+  });
+
+  it('encodeEmbed emits domain + preview for insurance', () => {
+    const url = encodeEmbed({
+      personaId: 'motor_comprehensive_mid',
+      lfi: 'rich',
+      seed: 4729,
+      endpoint: '/motor-insurance-policies',
+      domain: 'insurance',
+      preview: true,
+    });
+    expect(url).toContain('domain=insurance');
+    expect(url).toContain('preview=1');
+    expect(url).toContain('endpoint=');
+  });
 });
