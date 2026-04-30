@@ -1,0 +1,29 @@
+{
+  "domains": [
+    {
+      "id": "banking",
+      "label": "Bank Data Sharing",
+      "status": "ga",
+      "pinSha": "bc1cd976956d97195c5000235125cb65aca6aec8",
+      "retrievedAt": "2026-04-28T19:01:20Z",
+      "specVersion": "v2.1",
+      "openapiVersion": "3.0.0",
+      "parsedJsonUrl": "/dist/SPEC.json",
+      "defaultEndpoint": "/accounts",
+      "endpoints": [
+        "/accounts",
+        "/accounts/{AccountId}",
+        "/accounts/{AccountId}/balances",
+        "/accounts/{AccountId}/transactions",
+        "/accounts/{AccountId}/standing-orders",
+        "/accounts/{AccountId}/direct-debits",
+        "/accounts/{AccountId}/beneficiaries",
+        "/accounts/{AccountId}/scheduled-payments",
+        "/accounts/{AccountId}/product",
+        "/accounts/{AccountId}/parties",
+        "/parties",
+        "/accounts/{AccountId}/statements"
+      ]
+    }
+  ]
+}

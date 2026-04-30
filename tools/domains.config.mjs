@@ -1,0 +1,36 @@
+// Domain config registry — drives tools/parse-spec.mjs and (later) dist/domains.json.
+// Phase 2.0 step 1: banking-only. Output for banking must remain byte-identical
+// to Phase 1 (regression-protected by tests/replay.test.mjs and the dist/SPEC.json
+// snapshot consumed by the UI).
+//
+// Adding a domain in Phase 2.1+ is a config addition here, not new code.
+
+export const DOMAINS = [
+  {
+    id: 'banking',
+    label: 'Bank Data Sharing',
+    status: 'ga',
+    specPath: 'spec/uae-account-information-openapi.yaml',
+    pinPath: 'spec/SPEC_PIN.sha',
+    retrievedPath: 'spec/SPEC_PIN.retrieved',
+    outPath: 'dist/SPEC.json',
+    upstreamRepo: 'Nebras-Open-Finance/api-specs',
+    upstreamPath: 'dist/standards/v2.1/uae-account-information-openapi.yaml',
+    defaultEndpoint: '/accounts',
+    // PRD Appendix C — v1 = 12 GETs.
+    inScopePaths: [
+      '/accounts',
+      '/accounts/{AccountId}',
+      '/accounts/{AccountId}/balances',
+      '/accounts/{AccountId}/transactions',
+      '/accounts/{AccountId}/standing-orders',
+      '/accounts/{AccountId}/direct-debits',
+      '/accounts/{AccountId}/beneficiaries',
+      '/accounts/{AccountId}/scheduled-payments',
+      '/accounts/{AccountId}/product',
+      '/accounts/{AccountId}/parties',
+      '/parties',
+      '/accounts/{AccountId}/statements',
+    ],
+  },
+];
