@@ -44,3 +44,28 @@ describe('replay determinism — EXP-05', () => {
     expect(JSON.stringify(r)).not.toBe(JSON.stringify(s));
   });
 });
+
+describe('replay determinism — Insurance domain (motor MVP)', () => {
+  const persona = loadPersona('motor_comprehensive_mid');
+  const pools = loadAllPools();
+
+  it.each(['rich', 'median', 'sparse'])(
+    'each LFI profile is internally deterministic (seed=4729) — %s',
+    (lfi) => {
+      const a = buildBundle({ persona, lfi, seed: 4729, pools });
+      const b = buildBundle({ persona, lfi, seed: 4729, pools });
+      expect(JSON.stringify(a)).toBe(JSON.stringify(b));
+    }
+  );
+
+  it('different seeds produce different bundles', () => {
+    const a = buildBundle({ persona, lfi: 'median', seed: 1, pools });
+    const b = buildBundle({ persona, lfi: 'median', seed: 2, pools });
+    expect(JSON.stringify(a)).not.toBe(JSON.stringify(b));
+  });
+
+  // Different-LFI-differs-bundle is deferred to slice 6c, when the spec-driven
+  // LFI redaction wires bands through to the insurance generator. With an
+  // empty bandOverrides map (slice 6a), Rich/Median/Sparse are byte-identical
+  // for insurance — the empty redaction map drops nothing.
+});
