@@ -22,6 +22,10 @@ jobs:
       # tests/fixture-package.test.mjs reads from packages/sandbox-fixtures/
       # which is generated, not checked in.
       - run: npm run build:fixtures
+      # tests/integrate-staging.test.mjs reads from _site/, which stage-site.mjs
+      # populates. The fixture-package step covers everything else build:site
+      # would do, so we only need the staging step here (avoids double work).
+      - run: node tools/stage-site.mjs
       - run: npm run lint
       - run: npm test
 
