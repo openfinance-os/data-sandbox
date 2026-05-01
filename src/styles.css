@@ -504,12 +504,109 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
 }
 
 .three-pane {
+  --pane-left: 240px;
+  --pane-right: 320px;
+  --pane-rail: 36px;
   display: grid;
-  grid-template-columns: 240px 1fr 320px;
+  grid-template-columns: var(--pane-left) 1fr var(--pane-right);
   gap: 0;
   flex: 1 1 auto;
   min-height: 0;       /* let internal panes overflow:auto kick in */
   overflow: hidden;
+  transition: grid-template-columns 200ms ease;
+}
+.three-pane.left-collapsed  { --pane-left: var(--pane-rail); }
+.three-pane.right-collapsed { --pane-right: var(--pane-rail); }
+@media (prefers-reduced-motion: reduce) {
+  .three-pane { transition: none; }
+}
+
+/* Collapse chevron in pane-header, vertical rail when collapsed. */
+.persona-pane > .pane-header,
+.field-detail > .pane-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.persona-pane > .pane-header .pane-header-text,
+.field-detail > .pane-header .pane-header-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.field-detail > .pane-header .status-legend {
+  float: none;
+  margin-top: 0;
+  flex: 0 0 auto;
+}
+.pane-collapse {
+  flex: 0 0 auto;
+  appearance: none;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 6px;
+  font-weight: 600;
+}
+.pane-collapse:hover,
+.pane-collapse:focus-visible {
+  background: var(--bg-card);
+  border-color: var(--border);
+  color: var(--text);
+  outline: none;
+}
+.pane-rail {
+  display: none;
+  flex: 1 1 auto;
+  width: 100%;
+  appearance: none;
+  background: var(--bg-soft);
+  border: none;
+  border-right: 1px solid var(--border);
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 8px 0;
+  align-items: center;
+  flex-direction: column;
+  gap: 8px;
+}
+.field-detail .pane-rail-right {
+  border-right: none;
+  border-left: 1px solid var(--border);
+}
+.pane-rail:hover,
+.pane-rail:focus-visible {
+  background: var(--bg-card);
+  color: var(--text);
+  outline: none;
+}
+.pane-rail .pane-rail-chevron { font-size: 14px; line-height: 1; }
+.pane-rail .pane-rail-label {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+}
+
+/* Collapsed state: hide pane internals, show rail. */
+.three-pane.left-collapsed  .persona-pane > .pane-header,
+.three-pane.left-collapsed  .persona-pane > .persona-list-shell,
+.three-pane.right-collapsed .field-detail > .pane-header,
+.three-pane.right-collapsed .field-detail > .field-detail-scroll {
+  display: none;
+}
+.three-pane.left-collapsed  .persona-pane > .pane-rail,
+.three-pane.right-collapsed .field-detail > .pane-rail {
+  display: flex;
 }
 
 .pane {
@@ -1739,7 +1836,8 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
 
 @media (max-width: 1099px) {
   .three-pane {
-    grid-template-columns: 220px 1fr;
+    --pane-left: 220px;
+    grid-template-columns: var(--pane-left) 1fr;
   }
   .field-detail {
     position: fixed;
@@ -1755,6 +1853,12 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
     box-shadow: -8px 0 16px rgba(0,0,0,0.08);
   }
   .field-detail.open { transform: translateX(0); }
+  /* Right-pane collapse is a no-op when the pane is a fixed overlay; keep
+     its header/contents visible regardless of the right-collapsed flag. */
+  .three-pane.right-collapsed .field-detail > .pane-header,
+  .three-pane.right-collapsed .field-detail > .field-detail-scroll { display: flex; }
+  .three-pane.right-collapsed .field-detail > .field-detail-scroll { display: block; }
+  .three-pane.right-collapsed .field-detail > .pane-rail { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
