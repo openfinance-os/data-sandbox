@@ -11,28 +11,42 @@ import { expandRecipe } from './persona-builder/expand.js';
 import { decodeRecipe } from './persona-builder/recipe.js';
 
 async function init() {
-  const [specRes, dataRes] = await Promise.all([
-    fetch('../dist/SPEC.json'),
+  const url = decodeFromUrl(window.location.href);
+  const [domainsRes, dataRes] = await Promise.all([
+    fetch('../dist/domains.json'),
     fetch('../dist/data.json'),
   ]);
-  const spec = await specRes.json();
+  const domainsManifest = await domainsRes.json();
   const data = await dataRes.json();
-  const url = decodeFromUrl(window.location.href);
+  const domains = Object.fromEntries(domainsManifest.domains.map((d) => [d.id, d]));
+  const domain = domains[url.domain] ? url.domain : 'banking';
+  const domainEntry = domains[domain];
+  const specRes = await fetch(`..${domainEntry.parsedJsonUrl}`);
+  const spec = await specRes.json();
+
+  // Filter the persona pool to the active domain so the default fallback
+  // can't bleed an insurance persona into a banking embed (or vice versa).
+  const activePersonas = Object.fromEntries(
+    Object.entries(data.personas).filter(([, p]) => (p.domain ?? 'banking') === domain)
+  );
 
   // Workstream B — materialise a custom persona from the URL recipe param.
-  if (url.personaId === CUSTOM_PERSONA_SLUG && url.recipe) {
+  // Custom personas are banking-only in v1.
+  if (url.personaId === CUSTOM_PERSONA_SLUG && url.recipe && domain === 'banking') {
     try {
-      data.personas[CUSTOM_PERSONA_SLUG] = expandRecipe(decodeRecipe(url.recipe), data.pools);
+      const expanded = expandRecipe(decodeRecipe(url.recipe), data.pools);
+      activePersonas[CUSTOM_PERSONA_SLUG] = expanded;
+      data.personas[CUSTOM_PERSONA_SLUG] = expanded;
     } catch (err) {
       console.warn('Custom persona recipe failed to expand:', err);
     }
   }
 
-  const personaId = url.personaId && data.personas[url.personaId]
+  const personaId = url.personaId && activePersonas[url.personaId]
     ? url.personaId
-    : Object.keys(data.personas)[0];
-  const persona = data.personas[personaId];
-  const endpoint = url.endpoint || '/accounts';
+    : Object.keys(activePersonas)[0];
+  const persona = activePersonas[personaId];
+  const endpoint = url.endpoint || domainEntry.defaultEndpoint || '/accounts';
   const lfi = url.lfi;
   const seed = url.seed;
   const height = url.height;
@@ -46,6 +60,7 @@ async function init() {
 
   const fullPath = window.location.pathname.replace(/embed\.html$/, 'index.html');
   const linkParams = new URLSearchParams({ persona: personaId, lfi, seed: String(seed) });
+  if (domain !== 'banking') linkParams.set('domain', domain);
   document.getElementById('embed-link').href = `${fullPath}?${linkParams.toString()}`;
 
   const bundle = buildBundle({
@@ -56,6 +71,14 @@ async function init() {
     now: new Date(data.buildInfo.nowIso),
   });
 
+  // Banking is the only domain with a per-resource embed renderer in v1.
+  // Other domains (insurance preview) render a JSON inspector with a link
+  // out to the full sandbox where the per-domain UI lives.
+  if (domain !== 'banking') {
+    renderJsonPreview(bundle, domainEntry);
+    return;
+  }
+
   // Pick a single account (first one) for per-account endpoints.
   const acc = bundle.accounts[0];
   const rows = rowsFor(bundle, endpoint, acc?.AccountId);
@@ -63,6 +86,21 @@ async function init() {
   const fieldsByName = new Map(fields.map((f) => [f.name, f]));
 
   renderTable(rows, fieldsByName);
+}
+
+function renderJsonPreview(bundle, domainEntry) {
+  const body = document.getElementById('embed-body');
+  body.replaceChildren();
+  const note = document.createElement('p');
+  note.textContent =
+    `Embed mode is banking-only in v1. ${domainEntry.label} renders as a JSON inspector here; ` +
+    `open the full sandbox for the spec-driven view.`;
+  note.style.cssText = 'color:var(--text-muted);font-size:12px;padding:8px 12px;margin:0';
+  body.appendChild(note);
+  const pre = document.createElement('pre');
+  pre.style.cssText = 'padding:12px;font-size:11px;overflow:auto;margin:0';
+  pre.textContent = JSON.stringify(bundle, null, 2);
+  body.appendChild(pre);
 }
 
 function rowsFor(bundle, endpoint, accountId) {
