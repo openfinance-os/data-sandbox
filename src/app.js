@@ -810,7 +810,7 @@ function applyFindResult(r) {
 const TOUR_STEPS = [
   {
     title: "Meet Sara",
-    body: "Sara is a salaried expat in Dubai. She has two accounts: a current account where her AED 25k salary lands on the 25th, and a credit card. The persona library on the left lets you swap her for nine other UAE archetypes — gig worker, SME, HNW multi-currency, joint family, and more.",
+    body: "Sara is a salaried expat in Dubai. She has two accounts: a current account where her AED 25k salary lands on the 25th, and a credit card. The persona library on the left lets you swap her for eleven other UAE archetypes — gig worker, SME, HNW multi-currency, joint family, corporate treasury, and more.",
     setup: () => setPersona('salaried_expat_mid', 'median'),
   },
   {

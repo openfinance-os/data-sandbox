@@ -61,6 +61,7 @@ const PROBE_BAND = Object.freeze({
   'Transaction.TransactionInformation': 'Universal',
   'Transaction.Flags': 'Common',
   'Transaction.ValueDateTime': 'Universal',
+  'Transaction.TransactionReference': 'Common',
   'Transaction.MerchantDetails': 'Variable',
   'Transaction.MerchantDetails.MerchantCategoryCode': 'Variable',
   'Transaction.MerchantDetails.MerchantName': 'Common',
@@ -77,6 +78,7 @@ function collectProbes(bundle) {
     probes.push(['Transaction.TransactionInformation', t.TransactionInformation != null]);
     probes.push(['Transaction.Flags', Array.isArray(t.Flags) && t.Flags.length > 0]);
     probes.push(['Transaction.ValueDateTime', t.ValueDateTime != null]);
+    probes.push(['Transaction.TransactionReference', t.TransactionReference != null]);
     probes.push(['Transaction.MerchantDetails', t.MerchantDetails != null]);
     if (t.MerchantDetails) {
       probes.push(['Transaction.MerchantDetails.MerchantCategoryCode', t.MerchantDetails.MerchantCategoryCode != null]);
@@ -139,6 +141,8 @@ function collectProbesForEndpoint(bundle, endpointPath, accountId) {
         if (t._accountId !== accountId) continue;
         out.push(['Transaction.TransactionInformation', t.TransactionInformation != null]);
         out.push(['Transaction.Flags', Array.isArray(t.Flags) && t.Flags.length > 0]);
+        out.push(['Transaction.ValueDateTime', t.ValueDateTime != null]);
+        out.push(['Transaction.TransactionReference', t.TransactionReference != null]);
         out.push(['Transaction.MerchantDetails', t.MerchantDetails != null]);
         if (t.MerchantDetails) {
           out.push(['Transaction.MerchantDetails.MerchantCategoryCode', t.MerchantDetails.MerchantCategoryCode != null]);
@@ -215,6 +219,7 @@ const FIELD_BANDS = Object.freeze({
   'Transaction.MerchantDetails.MerchantName': 'Common',
   'Transaction.Flags': 'Common',
   'Transaction.ValueDateTime': 'Universal',
+  'Transaction.TransactionReference': 'Common',
   'Balance.CreditLine': 'Variable',
 });
 

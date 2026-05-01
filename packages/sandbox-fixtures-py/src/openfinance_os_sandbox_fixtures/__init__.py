@@ -1,8 +1,9 @@
 """@openfinance-os/sandbox-fixtures — Python loader.
 
 Deterministic, v2.1-shaped UAE Open Finance synthetic fixtures.
-10 personas × 3 LFI profiles × 12+ endpoints, plus the parsed v2.1
-OpenAPI spec and the persona manifests. CC0 data, MIT loader code.
+12 banking personas × 3 LFI profiles × every Account-Information endpoint
+per persona's accounts (900+ envelopes), plus the parsed v2.1 OpenAPI
+spec and the persona manifests. CC0 data, MIT loader code.
 
 Mirror of the npm package `@openfinance-os/sandbox-fixtures`.
 
