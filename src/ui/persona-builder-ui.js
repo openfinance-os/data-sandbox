@@ -5,6 +5,7 @@
 
 import { RECIPE_DEFAULTS, validateRecipe } from '../persona-builder/recipe.js';
 import { expandRecipe } from '../persona-builder/expand.js';
+import { downloadCustomFixtureZip } from '../persona-builder/export-zip.js';
 import {
   INCOME_BANDS,
   SPEND_INTENSITIES,
@@ -273,6 +274,28 @@ export function mountPersonaBuilder({ pools, currentRecipe, onApply }) {
 
   closeBtn.onclick = close;
   cancelBtn.onclick = close;
+
+  // Workstream C plug-point 3 — "Download static fixtures" emits a
+  // layout-identical /fixtures/v1/bundles/<persona>/... zip the TPP can
+  // host on their own static origin (works for any language / framework,
+  // no JS runtime required). Wired up if the host page has the button.
+  const downloadBtn = document.getElementById('builder-download-zip');
+  if (downloadBtn) {
+    downloadBtn.onclick = () => {
+      const v = validateRecipe(recipe, pools);
+      if (!v.ok) {
+        validation.textContent = v.errors[0];
+        validation.classList.add('has-error');
+        return;
+      }
+      try {
+        downloadCustomFixtureZip({ recipe, pools, seed: 1 });
+      } catch (err) {
+        validation.textContent = `download failed: ${String(err.message ?? err)}`;
+        validation.classList.add('has-error');
+      }
+    };
+  }
 
   form.onsubmit = (ev) => {
     ev.preventDefault();

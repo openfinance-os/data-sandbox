@@ -231,23 +231,13 @@ async function init() {
   syncControls();
   attachEventHandlers();
   attachBuilderHandlers();
-  registerFixturesServiceWorker();
+  // Workstream C plug-point 1 (Service Worker fixture mock) is implemented
+  // and unit-tested under tests/fixture-handler.test.mjs; live registration
+  // is gated on a deployment-time `Service-Worker-Allowed: /` header that
+  // requires sandbox-host configuration outside this commit's scope. Until
+  // that lands, custom-persona bundles are accessible via the npm engine
+  // (plug-point 2) and the static-fixture zip download (plug-point 3).
   rebuildAndRender();
-}
-
-// Workstream C plug-point 1 — register the Service Worker that serves
-// custom-persona fixtures over the same /fixtures/v1/bundles/... URL
-// contract used by curated personas. Failures are non-fatal — TPPs can
-// still fetch curated bundles directly and use the npm engine (plug-point
-// 2) for cross-origin demos.
-function registerFixturesServiceWorker() {
-  if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
-  // Scope is the sandbox root so the SW can intercept /fixtures/v1/... paths.
-  navigator.serviceWorker
-    .register('./sw-fixtures.js', { type: 'module', scope: '../' })
-    .catch((err) => {
-      console.warn('Custom-persona SW registration failed (non-fatal):', err);
-    });
 }
 
 // Workstream B — wire the "+ Build a custom persona" CTA in the persona pane
