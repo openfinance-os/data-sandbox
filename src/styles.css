@@ -560,10 +560,13 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   color: var(--text);
   outline: none;
 }
+/* Rail is absolutely positioned inside the pane so it overlays — never stacks
+   with — the header. Toggling .left-collapsed / .right-collapsed flips
+   visibility via opacity + pointer-events; the pane content is hidden in
+   parallel so a single click target is exposed. */
 .pane-rail {
-  display: none;
-  flex: 1 1 auto;
-  width: 100%;
+  position: absolute;
+  inset: 0;
   appearance: none;
   background: var(--bg-soft);
   border: none;
@@ -575,9 +578,14 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   padding: 8px 0;
+  display: flex;
   align-items: center;
+  justify-content: flex-start;
   flex-direction: column;
   gap: 8px;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
 }
 .field-detail .pane-rail-right {
   border-right: none;
@@ -596,16 +604,26 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   white-space: nowrap;
 }
 
-/* Collapsed state: hide pane internals, show rail. */
+/* Pane needs position: relative so the absolutely positioned rail anchors to
+   the pane and not the viewport. */
+.persona-pane,
+.field-detail { position: relative; }
+
+/* Collapsed state: hide pane internals (visibility: hidden so the rail
+   overlay reveals a clean column) and bring the rail forward via opacity +
+   pointer-events. Display stays in flow, which avoids the CSS-class race
+   that previously left the rail and header simultaneously visible at high
+   viewport widths. */
 .three-pane.left-collapsed  .persona-pane > .pane-header,
 .three-pane.left-collapsed  .persona-pane > .persona-list-shell,
 .three-pane.right-collapsed .field-detail > .pane-header,
 .three-pane.right-collapsed .field-detail > .field-detail-scroll {
-  display: none;
+  visibility: hidden;
 }
 .three-pane.left-collapsed  .persona-pane > .pane-rail,
 .three-pane.right-collapsed .field-detail > .pane-rail {
-  display: flex;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .pane {
@@ -1855,9 +1873,11 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   /* Right-pane collapse is a no-op when the pane is a fixed overlay; keep
      its header/contents visible regardless of the right-collapsed flag. */
   .three-pane.right-collapsed .field-detail > .pane-header,
-  .three-pane.right-collapsed .field-detail > .field-detail-scroll { display: flex; }
-  .three-pane.right-collapsed .field-detail > .field-detail-scroll { display: block; }
-  .three-pane.right-collapsed .field-detail > .pane-rail { display: none; }
+  .three-pane.right-collapsed .field-detail > .field-detail-scroll { visibility: visible; }
+  .three-pane.right-collapsed .field-detail > .pane-rail {
+    opacity: 0;
+    pointer-events: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1874,9 +1894,12 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
      the feature here. Also force-restore the expanded layout in case the user
      resized down from a wider viewport with left-collapsed already set. */
   .persona-pane > .pane-header .pane-collapse { display: none; }
-  .three-pane.left-collapsed .persona-pane > .pane-header { display: flex; }
-  .three-pane.left-collapsed .persona-pane > .persona-list-shell { display: flex; }
-  .three-pane.left-collapsed .persona-pane > .pane-rail { display: none; }
+  .three-pane.left-collapsed .persona-pane > .pane-header { visibility: visible; }
+  .three-pane.left-collapsed .persona-pane > .persona-list-shell { visibility: visible; }
+  .three-pane.left-collapsed .persona-pane > .pane-rail {
+    opacity: 0;
+    pointer-events: none;
+  }
 }
 
 /* Real-LFIs guidance subtitle inside every non-mandatory column header.
