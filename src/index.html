@@ -98,7 +98,14 @@
 
 <main class="three-pane" id="three-pane">
   <section class="pane persona-pane" aria-label="Persona library">
-    <div class="pane-header">Persona library</div>
+    <div class="pane-header">
+      <span class="pane-header-text">Persona library</span>
+      <button class="pane-collapse" type="button" data-target="persona-pane" aria-label="Collapse persona library" aria-expanded="true" title="Collapse persona library">‹</button>
+    </div>
+    <button class="pane-rail" type="button" data-target="persona-pane" aria-label="Expand persona library" title="Expand persona library">
+      <span class="pane-rail-chevron" aria-hidden="true">›</span>
+      <span class="pane-rail-label">Persona library</span>
+    </button>
     <div class="persona-list-shell">
       <div class="jtbd-rail" id="jtbd-rail" role="toolbar" aria-label="Filter personas by job-to-be-done"></div>
       <div class="stress-filter-bar is-empty" id="stress-filter-bar">
@@ -155,13 +162,18 @@
 
   <aside class="pane field-detail" id="field-detail" aria-label="Field detail">
     <div class="pane-header">
-      Field detail
+      <button class="pane-collapse pane-collapse-right" type="button" data-target="field-detail" aria-label="Collapse field detail" aria-expanded="true" title="Collapse field detail">›</button>
+      <span class="pane-header-text">Field detail</span>
       <span class="status-legend" aria-label="Status badge legend">
         <span class="legend-pill pill pill-solid" title="Mandatory — every LFI populates per spec.">M</span>
         <span class="legend-pill pill pill-dashed" title="Optional — populate-rate varies; see Real-LFIs guidance and the populate-band coverage in the Accounts &amp; endpoints header.">O</span>
         <span class="legend-pill pill pill-conditional" title="Conditional — populated only when a parent-field rule fires. The card shows the rule.">C</span>
       </span>
     </div>
+    <button class="pane-rail pane-rail-right" type="button" data-target="field-detail" aria-label="Expand field detail" title="Expand field detail">
+      <span class="pane-rail-chevron" aria-hidden="true">‹</span>
+      <span class="pane-rail-label">Field detail</span>
+    </button>
     <div class="field-detail-scroll" tabindex="0">
       <div class="fc-empty" id="fc-empty">
         Hover any field name in the rendered view for a quick preview, or click to pin the full card here.

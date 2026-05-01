@@ -422,7 +422,32 @@ function syncControls() {
   }
 }
 
+// Side-pane collapse — frees screen real estate for the navigator. State
+// lives in JS only (EXP-22 forbids storage), so a refresh restores both
+// panes. Field-card opens auto-expand the right pane (matches the existing
+// .field-detail.open overlay behavior used at ≤1099 px).
+const PANE_COLLAPSE_CLASS = { 'persona-pane': 'left-collapsed', 'field-detail': 'right-collapsed' };
+function setPaneCollapsed(target, collapsed) {
+  const root = document.getElementById('three-pane');
+  if (!root) return;
+  const cls = PANE_COLLAPSE_CLASS[target];
+  if (!cls) return;
+  root.classList.toggle(cls, collapsed);
+  for (const btn of document.querySelectorAll(`.pane-collapse[data-target="${target}"]`)) {
+    btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+  }
+}
+function wirePaneCollapse() {
+  for (const btn of document.querySelectorAll('.pane-collapse')) {
+    btn.addEventListener('click', () => setPaneCollapsed(btn.dataset.target, true));
+  }
+  for (const rail of document.querySelectorAll('.pane-rail')) {
+    rail.addEventListener('click', () => setPaneCollapsed(rail.dataset.target, false));
+  }
+}
+
 function attachEventHandlers() {
+  wirePaneCollapse();
   document.getElementById('persona-select').addEventListener('change', (e) => {
     state.personaId = e.target.value;
     state.endpoint = OVERVIEW_PSEUDO;
@@ -2404,6 +2429,7 @@ function openFieldCard(name) {
   content.appendChild(reportRow);
 
   document.getElementById('field-detail').classList.add('open');
+  setPaneCollapsed('field-detail', false);
 }
 
 function formatExample(value) {
