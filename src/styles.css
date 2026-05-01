@@ -1869,6 +1869,14 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   .persona-pane {
     max-height: 200px;
   }
+  /* Single-column stacked layout — collapsing the persona-pane to a vertical
+     rail wouldn't free horizontal space and just buries the list, so disable
+     the feature here. Also force-restore the expanded layout in case the user
+     resized down from a wider viewport with left-collapsed already set. */
+  .persona-pane > .pane-header .pane-collapse { display: none; }
+  .three-pane.left-collapsed .persona-pane > .pane-header { display: flex; }
+  .three-pane.left-collapsed .persona-pane > .persona-list-shell { display: flex; }
+  .three-pane.left-collapsed .persona-pane > .pane-rail { display: none; }
 }
 
 /* Real-LFIs guidance subtitle inside every non-mandatory column header.
