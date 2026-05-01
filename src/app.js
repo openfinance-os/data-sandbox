@@ -56,7 +56,8 @@ const state = {
   spec: null,
   data: null,
   // Phase 2.0 multi-domain (slice 8). state.domain is 'banking' by default;
-  // 'insurance' is preview-status — surfaces only when ?preview=1 is in the URL.
+  // preview-status domains (e.g. insurance) are now visible in the chip and
+  // tagged "(preview)" in the option label.
   // domains: id → manifest entry (label, status, parsedJsonUrl, defaultEndpoint).
   // activePersonas: state.data.personas filtered to state.domain.
   domain: 'banking',
@@ -152,9 +153,7 @@ async function init() {
   state.preview = url.preview;
 
   // Slice 8: domain manifest drives which SPEC.json to lazy-load. Banking
-  // remains the default; insurance (preview-status) only surfaces when the
-  // URL carries ?preview=1, otherwise we fall back to banking so the
-  // public sandbox stays unchanged.
+  // remains the default; unknown domain values fall back to banking.
   const [domainsRes, dataRes] = await Promise.all([
     fetch('../dist/domains.json'),
     fetch('../dist/data.json'),
@@ -165,7 +164,7 @@ async function init() {
 
   let resolvedDomain = url.domain;
   const requested = state.domains[resolvedDomain];
-  if (!requested || (requested.status === 'preview' && !state.preview)) {
+  if (!requested) {
     resolvedDomain = 'banking';
   }
   state.domain = resolvedDomain;
@@ -967,16 +966,11 @@ function renderPreviewBundle() {
   if (epLabel) epLabel.textContent = dom?.label ?? state.domain;
 }
 
-// Slice 8b: visible domain selector. Only surfaces when ?preview=1 is in
-// the URL — matches the preview-gate in init(). The chip lists every
-// domain from dist/domains.json; preview-status domains carry a tag.
+// Slice 8b: visible domain selector. The chip lists every domain from
+// dist/domains.json; preview-status domains carry a "(preview)" tag.
 function renderDomainChip() {
   const chip = document.getElementById('domain-chip');
   if (!chip) return;
-  if (!state.preview) {
-    chip.hidden = true;
-    return;
-  }
   chip.hidden = false;
   chip.replaceChildren();
   for (const dom of Object.values(state.domains)) {
