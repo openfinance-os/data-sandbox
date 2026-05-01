@@ -139,4 +139,55 @@ describe('URL shapes — §6.8', () => {
     expect(url).toContain('preview=1');
     expect(url).toContain('endpoint=');
   });
+
+  // Workstream B — custom-persona URL shape carries a recipe.
+  it('encodePermalink emits ?recipe= for personaId=custom', () => {
+    const url = encodePermalink({
+      personaId: 'custom',
+      lfi: 'median',
+      seed: 1,
+      recipe: 'eyJzZWdtZW50IjoiU01FIn0',
+    });
+    expect(url).toContain('/p/custom?');
+    expect(url).toContain('recipe=eyJzZWdtZW50IjoiU01FIn0');
+  });
+
+  it('decodeFromUrl extracts recipe for personaId=custom', () => {
+    const state = decodeFromUrl('/commons/sandbox/p/custom?lfi=rich&seed=42&recipe=ABC');
+    expect(state.personaId).toBe('custom');
+    expect(state.recipe).toBe('ABC');
+    expect(state.lfi).toBe('rich');
+    expect(state.seed).toBe(42);
+  });
+
+  it('decodeFromUrl returns recipe=null for non-custom personas', () => {
+    const state = decodeFromUrl('/commons/sandbox/p/salaried_expat_mid?lfi=median&seed=1&recipe=ABC');
+    expect(state.personaId).toBe('salaried_expat_mid');
+    expect(state.recipe).toBeNull();
+  });
+
+  it('encodeEmbed carries recipe for personaId=custom', () => {
+    const url = encodeEmbed({
+      personaId: 'custom',
+      lfi: 'rich',
+      seed: 4729,
+      recipe: 'eyJzZWdtZW50IjoiQ29ycG9yYXRlIn0',
+    });
+    expect(url).toContain('persona=custom');
+    expect(url).toContain('recipe=');
+  });
+
+  it('custom permalink → decode round-trips', () => {
+    const url = encodePermalink({
+      personaId: 'custom',
+      lfi: 'sparse',
+      seed: 7,
+      recipe: 'eyJzZWdtZW50IjoiU01FIn0',
+    });
+    const state = decodeFromUrl(url);
+    expect(state.personaId).toBe('custom');
+    expect(state.lfi).toBe('sparse');
+    expect(state.seed).toBe(7);
+    expect(state.recipe).toBe('eyJzZWdtZW50IjoiU01FIn0');
+  });
 });
