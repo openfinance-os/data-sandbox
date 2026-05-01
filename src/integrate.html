@@ -6,7 +6,10 @@
 <title>Integrate — Open Finance Data Sandbox</title>
 <link rel="stylesheet" href="styles.css" />
 <style>
-  body { background: var(--bg); }
+  /* Override the app-shell viewport lock from styles.css — this page is a
+     long-form document and needs normal page scrolling. */
+  html, body { height: auto; overflow: auto; }
+  body { display: block; background: var(--bg); }
   .integrate-shell {
     max-width: 760px;
     margin: 0 auto;
