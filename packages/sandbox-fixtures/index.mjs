@@ -60,4 +60,25 @@ export function loadSpec() {
 export function loadPersonaManifest(personaId) {
   return JSON.parse(readFileSync(path.join(here, 'personas', `${personaId}.json`), 'utf8'));
 }
+
+// Workstream C plug-point 2 — runtime generator for custom personas. TPPs
+// installing this package can compose a recipe and run buildBundle inside
+// their own app, getting the same v2.1-shaped envelopes as the static
+// fixtures. Cross-origin friendly (no network call).
+let _poolsCache = null;
+export function getPools() {
+  if (_poolsCache) return _poolsCache;
+  _poolsCache = JSON.parse(readFileSync(path.join(here, 'pools.json'), 'utf8'));
+  return _poolsCache;
+}
+export { buildBundle } from './lib/generator/index.js';
+export { expandRecipe } from './lib/persona-builder/expand.js';
+export {
+  RECIPE_DEFAULTS,
+  encodeRecipe,
+  decodeRecipe,
+  recipeHash,
+  validateRecipe,
+} from './lib/persona-builder/recipe.js';
+
 export { manifest };

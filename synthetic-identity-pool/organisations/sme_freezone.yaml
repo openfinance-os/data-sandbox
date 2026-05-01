@@ -1,0 +1,23 @@
+# Synthetic legal-entity name pool — UAE free-zone SMEs. All names are
+# fictional and combine generic descriptors with UAE free-zone legal-form
+# suffixes (FZ-LLC, DMCC, FZE). None reference a real registered entity.
+# EXP-07: only place organisation names may originate.
+pool_id: sme_freezone
+description: Synthetic UAE free-zone SME legal-entity names used as account holders.
+organisations:
+  - "Aurora Cloud Systems FZ-LLC"
+  - "Bayan Software DMCC"
+  - "Cipher Labs FZ-LLC"
+  - "Datapeak Analytics FZ-LLC"
+  - "EmberSoft Studios FZ-LLC"
+  - "Falcon Edge Networks DMCC"
+  - "Glide Platforms FZ-LLC"
+  - "Helix Data Group FZ-LLC"
+  - "Indigo Ridge Tech FZ-LLC"
+  - "Jasmine AI FZ-LLC"
+  - "Kestrel Cloud FZ-LLC"
+  - "Lumen Stack DMCC"
+  - "Meridian Code Works FZ-LLC"
+  - "Nexus Build FZ-LLC"
+  - "Onyx Compute DMCC"
+  - "Polaris Engineering FZ-LLC"

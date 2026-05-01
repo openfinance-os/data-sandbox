@@ -168,6 +168,32 @@ describe('spec validation — EXP-10 (all 12 endpoints, every persona × LFI)', 
 
   const endpoints = Object.keys(parsed.endpoints);
   const personaIds = Object.keys(personas);
+
+  // Sanity check on the SME + Corporate personas: the bundle must surface
+  // the persona's segment on every account's AccountType and on the parties'
+  // PartyCategory. Catches regressions where accounts.js / parties.js
+  // accidentally hardcode 'Retail'.
+  describe('segment propagation — SME + Corporate', () => {
+    const businessIds = personaIds.filter(
+      (pid) => personas[pid].segment && personas[pid].segment !== 'Retail'
+    );
+    it.each(businessIds)(
+      '%s emits AccountType + PartyCategory matching persona.segment',
+      (pid) => {
+        const persona = personas[pid];
+        const bundle = buildBundle({ persona, lfi: 'rich', seed: persona.default_seed, pools });
+        expect(bundle.accounts.length).toBeGreaterThan(0);
+        for (const acc of bundle.accounts) {
+          expect(acc.AccountType).toBe(persona.segment);
+        }
+        for (const party of bundle.parties) {
+          expect(party.PartyCategory).toBe(persona.segment);
+        }
+        expect(bundle.callingUserParty.PartyCategory).toBe(persona.segment);
+      }
+    );
+  });
+
   describe.each(personaIds)('persona=%s', (pid) => {
     const persona = personas[pid];
     describe.each(PROFILES)('LFI=%s', (lfi) => {

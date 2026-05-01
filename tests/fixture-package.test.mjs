@@ -32,13 +32,13 @@ describe('EXP-20 fixture package — @openfinance-os/sandbox-fixtures', () => {
     expect(pkg.publishConfig.access).toBe('public');
   });
 
-  it('manifest.json indexes 10 personas × 3 LFIs', () => {
+  it('manifest.json indexes 12 personas × 3 LFIs', () => {
     const m = JSON.parse(fs.readFileSync(path.join(PKG_DIR, 'manifest.json'), 'utf8'));
     expect(m.package).toBe('@openfinance-os/sandbox-fixtures');
     expect(m.specVersion).toBe('v2.1');
     expect(m.specSha.length).toBeGreaterThan(20);
-    expect(Object.keys(m.personas).length).toBe(10);
-    expect(Object.keys(m.fixtures).length).toBe(30); // 10 × 3
+    expect(Object.keys(m.personas).length).toBe(12);
+    expect(Object.keys(m.fixtures).length).toBe(36); // 12 × 3
     for (const [key, fx] of Object.entries(m.fixtures)) {
       expect(key).toMatch(/^[a-z_]+\|(rich|median|sparse)\|\d+$/);
       // Every fixture entry has a non-empty endpoints map.
@@ -50,7 +50,7 @@ describe('EXP-20 fixture package — @openfinance-os/sandbox-fixtures', () => {
     const m = await import(path.join(PKG_DIR, 'index.mjs'));
     const personas = m.listPersonas();
     expect(personas).toContain('salaried_expat_mid');
-    expect(personas.length).toBe(10);
+    expect(personas.length).toBe(12);
     const sara = m.loadFixture({
       persona: 'salaried_expat_mid',
       lfi: 'median',
@@ -73,6 +73,37 @@ describe('EXP-20 fixture package — @openfinance-os/sandbox-fixtures', () => {
     expect(text).toContain('loadJourney');
     expect(text).toContain('listPersonas');
     expect(text).toContain('loadSpec');
+    expect(text).toContain('getPools');
+    expect(text).toContain('getEngine');
+  });
+
+  // EXP-28 / Workstream C plug-point 2 — TPPs install the package, compose
+  // a recipe, run the generator inside their own app. No network call.
+  it('runtime engine exports — expandRecipe + buildBundle + getPools work in-process', async () => {
+    const m = await import(path.join(PKG_DIR, 'index.mjs'));
+    const pools = m.getPools();
+    expect(pools.namesByPoolId).toBeDefined();
+    expect(pools.organisationsByPoolId).toBeDefined();
+    expect(pools.counterpartiesByPoolId).toBeDefined();
+
+    // SME custom persona — exercises the segment expansion path.
+    const persona = m.expandRecipe({ segment: 'SME' }, pools);
+    expect(persona.persona_id).toMatch(/^custom_/);
+    expect(persona.segment).toBe('SME');
+
+    const bundle = m.buildBundle({ persona, lfi: 'median', seed: 1, pools });
+    expect(bundle.accounts.length).toBeGreaterThan(0);
+    expect(bundle.accounts[0].AccountType).toBe('SME');
+    expect(bundle.parties[0].PartyCategory).toBe('SME');
+
+    // Determinism — EXP-05 holds across the package boundary.
+    const bundleAgain = m.buildBundle({ persona, lfi: 'median', seed: 1, pools });
+    expect(JSON.stringify(bundle)).toBe(JSON.stringify(bundleAgain));
+
+    // Recipe codec is exported.
+    const enc = m.encodeRecipe({ segment: 'Corporate' });
+    expect(typeof enc).toBe('string');
+    expect(m.decodeRecipe(enc).segment).toBe('Corporate');
   });
 
   // EXP-29 — TPP showcase consumers shouldn't have to loop endpoints
@@ -126,7 +157,7 @@ describe('EXP-20 fixture package — @openfinance-os/sandbox-fixtures', () => {
         validated += 1;
       }
     }
-    expect(validated).toBeGreaterThan(600); // 10 personas × 3 LFI × 12+ endpoints
+    expect(validated).toBeGreaterThan(720); // 12 personas × 3 LFI × ~20 endpoint files
   });
 
   it('a sampled fixture validates against the v2.1 OpenAPI schema', async () => {

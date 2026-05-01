@@ -28,6 +28,14 @@ const out = { personas, pools, buildInfo };
 
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, JSON.stringify(out));
+const poolCount =
+  Object.keys(pools.namesByPoolId).length +
+  Object.keys(pools.employersByPoolId).length +
+  Object.keys(pools.merchantsByCategory).length +
+  Object.keys(pools.counterpartyBanksByCategory).length +
+  Object.keys(pools.ibansByCategory).length +
+  Object.keys(pools.organisationsByPoolId ?? {}).length +
+  Object.keys(pools.counterpartiesByPoolId ?? {}).length;
 console.log(
-  `built ${Object.keys(personas).length} personas, ${Object.keys(pools.namesByPoolId).length + Object.keys(pools.employersByPoolId).length + Object.keys(pools.merchantsByCategory).length + Object.keys(pools.counterpartyBanksByCategory).length + Object.keys(pools.ibansByCategory).length} pools → ${path.relative(repoRoot, OUT)} (${(JSON.stringify(out).length / 1024).toFixed(1)} KB)`
+  `built ${Object.keys(personas).length} personas, ${poolCount} pools → ${path.relative(repoRoot, OUT)} (${(JSON.stringify(out).length / 1024).toFixed(1)} KB)`
 );

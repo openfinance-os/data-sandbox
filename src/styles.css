@@ -2215,3 +2215,177 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   color: var(--text-muted);
   background: var(--bg-card);
 }
+
+/* ---- Custom Persona Builder (Workstream B) ---- */
+.persona-list-footer {
+  border-top: 1px solid var(--border);
+  padding: 10px 12px 12px;
+  background: var(--bg);
+}
+.builder-cta {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px dashed var(--border-strong);
+  background: var(--bg-card);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.builder-cta:hover { border-style: solid; background: var(--bg); }
+.builder-cta-help {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+.persona-card.is-custom {
+  border-style: dashed;
+}
+.custom-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--bg);
+  color: var(--text-muted);
+  border: 1px solid var(--border-strong);
+  border-radius: 3px;
+  vertical-align: middle;
+}
+
+.builder-dialog {
+  max-width: 560px;
+  width: calc(100vw - 48px);
+  max-height: calc(100vh - 64px);
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--bg-card);
+  color: var(--text);
+}
+.builder-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.35);
+}
+.builder-form {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 64px);
+}
+.builder-head {
+  position: relative;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.builder-head h2 {
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+.builder-sub {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+.builder-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 22px;
+  color: var(--text-muted);
+  cursor: pointer;
+  line-height: 1;
+}
+.builder-body {
+  padding: 16px 20px;
+  overflow-y: auto;
+  flex: 1 1 auto;
+}
+.builder-section {
+  margin: 16px 0 8px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.builder-section:first-child { margin-top: 0; }
+.builder-row {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+.builder-row-label {
+  color: var(--text);
+  font-weight: 500;
+}
+.builder-row-help {
+  grid-column: 2;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin-top: -4px;
+}
+.builder-control {
+  width: 100%;
+  padding: 4px 6px;
+  font-size: 13px;
+  border: 1px solid var(--border-strong);
+  border-radius: 3px;
+  background: var(--bg);
+  color: var(--text);
+}
+.builder-checkbox { display: inline-flex; align-items: center; }
+.builder-checkgroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+.builder-checkgroup-item {
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.builder-foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+.builder-validation {
+  flex: 1 1 auto;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.builder-validation.has-error { color: #b00020; }
+.btn-primary {
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid var(--text);
+  background: var(--text);
+  color: var(--bg);
+  border-radius: 3px;
+  cursor: pointer;
+}
+.btn-secondary {
+  padding: 6px 14px;
+  font-size: 13px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-card);
+  color: var(--text);
+  border-radius: 3px;
+  cursor: pointer;
+}

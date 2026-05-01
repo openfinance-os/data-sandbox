@@ -17,6 +17,8 @@ packages/sandbox-fixtures/bundles/
 packages/sandbox-fixtures/personas/
 packages/sandbox-fixtures/manifest.json
 packages/sandbox-fixtures/spec.json
+packages/sandbox-fixtures/pools.json
+packages/sandbox-fixtures/lib/
 packages/sandbox-fixtures-py/src/openfinance_os_sandbox_fixtures/data/
 packages/sandbox-fixtures-py/dist/
 packages/sandbox-fixtures-py/build/

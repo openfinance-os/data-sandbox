@@ -1,0 +1,23 @@
+# Synthetic legal-entity name pool — UAE mainland SMEs. All names are
+# fictional and combine generic descriptors with UAE mainland legal-form
+# suffixes (LLC, Trading LLC). None reference a real registered entity.
+# EXP-07: only place organisation names may originate.
+pool_id: sme_mainland
+description: Synthetic UAE-mainland SME legal-entity names used as account holders.
+organisations:
+  - "Aurora Trading LLC"
+  - "Bayan General Trading LLC"
+  - "Cedar Crescent Foodstuff LLC"
+  - "Delta Marble & Tiles LLC"
+  - "Ember Auto Workshop LLC"
+  - "Falcon Stationery & Office Supplies LLC"
+  - "Glide Logistics & Transport LLC"
+  - "Helix Building Materials LLC"
+  - "Indigo Garments Trading LLC"
+  - "Jasmine Catering Services LLC"
+  - "Kestrel Hardware Trading LLC"
+  - "Lumen Print Works LLC"
+  - "Meridian Auto Spares LLC"
+  - "Nexus Furniture Trading LLC"
+  - "Onyx Foodstuff & Beverages LLC"
+  - "Polaris Engineering Works LLC"

@@ -1,0 +1,88 @@
+persona_id: sme_trading_business
+domain: banking
+name: "Aurora Trading LLC — SME Trading Business"
+archetype: sme_business
+default_seed: 4821
+segment: SME
+stress_coverage:
+  - power_of_attorney
+  - remittance_outflow
+
+demographics:
+  # Demographics describe the principal signatory whose name is drawn for
+  # the Party records. The organisation block carries the trading entity's
+  # legal name (used for AccountHolderName on the SME accounts).
+  nationality_pool: expat_arab
+  age_band: 38-50
+  emirate: dubai
+
+organisation:
+  legal_name_pool: sme_mainland
+  signatories:
+    - signatory_pool: expat_arab
+      account_role: Principal
+      party_type: Sole
+    - signatory_pool: expat_arab
+      account_role: PowerOfAttorney
+      party_type: Delegate
+
+income:
+  # The principal still draws a self-pay amount; the bulk of inflows is the
+  # cash_flow customer-inflow stream below. flag_payroll=false because the
+  # Flags=Payroll spec marker is for individual-side payroll, not B2B.
+  primary_employer_pool: tech_freezone
+  monthly_amount_aed: 22000
+  pay_day: 28
+  variability: medium
+  flag_payroll: false
+
+cash_flow:
+  customer_inflows:
+    counterparty_pool: b2b_local
+    monthly_amount_aed_band: [180000, 320000]
+    invoice_cadence: biweekly
+  supplier_outflows:
+    counterparty_pool: b2b_intl
+    monthly_amount_aed_band: [90000, 180000]
+  payroll_outflow_aed: 38000
+
+accounts:
+  - type: CurrentAccount
+    currency: AED
+    age_months: 84
+  - type: Savings
+    currency: AED
+    age_months: 60
+
+fixed_commitments:
+  - kind: direct_debit
+    purpose: utilities_dewa
+    amount_aed_band: [1800, 2800]
+    schedule: monthly_5
+  - kind: standing_order
+    purpose: warehouse_rent
+    amount_aed: 28000
+    schedule: monthly_27
+
+spend_profile:
+  groceries_aed_per_month_band: [0, 0]
+  fuel_aed_per_month_band: [800, 1400]
+  dining_per_month_count_band: [4, 12]
+
+fx_activity: true
+cash_deposit_activity: false
+
+distress_signals:
+  nsf_events_per_year_band: [0, 1]
+
+narrative: |
+  Aurora Trading LLC is a Dubai-mainland SME that imports finished goods
+  from international suppliers and resells to UAE wholesale customers.
+  Two signatories on the business accounts: the principal owner (Sole)
+  and a delegated power-of-attorney holder authorised to operate the
+  account on the principal's behalf. Customer inflows arrive on a
+  biweekly cadence from local B2B counterparties; supplier outflows go
+  cross-border in USD/EUR, exercising the FX-active edge of the v2.1
+  Bank Data Sharing transaction set. AccountType=SME, PartyCategory=SME,
+  PartyType=Delegate exercise the v2.1-errata1 business-account spec
+  surface that retail personas don't reach.

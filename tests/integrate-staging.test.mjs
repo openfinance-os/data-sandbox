@@ -52,8 +52,8 @@ describe('EXP-28..EXP-31 staging contract', () => {
 
     const manifest = JSON.parse(fs.readFileSync(need('fixtures/v1/manifest.json').p, 'utf8'));
     expect(manifest.specVersion).toBe('v2.1');
-    expect(Object.keys(manifest.personas).length).toBe(10);
-    expect(Object.keys(manifest.fixtures).length).toBe(30);
+    expect(Object.keys(manifest.personas).length).toBe(12);
+    expect(Object.keys(manifest.fixtures).length).toBe(36);
 
     const index = JSON.parse(fs.readFileSync(need('fixtures/v1/index.json').p, 'utf8'));
     expect(index.lfiProfiles).toEqual(['rich', 'median', 'sparse']);

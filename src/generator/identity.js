@@ -38,3 +38,11 @@ export function drawMerchant(rng, merchantPool) {
 export function drawCounterpartyBank(rng, bankPool) {
   return rngPick(rng, bankPool.banks);
 }
+
+export function drawOrganisationName(rng, organisationPool) {
+  return rngPick(rng, organisationPool.organisations);
+}
+
+export function drawCounterparty(rng, counterpartyPool) {
+  return rngPick(rng, counterpartyPool.counterparties);
+}

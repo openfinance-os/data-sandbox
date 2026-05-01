@@ -1,0 +1,23 @@
+# Synthetic B2B counterparty pool — UAE-domiciled trading partners. All names
+# are fictional. Used as customer-inflow / supplier-outflow counterparties on
+# SME and corporate transaction streams. None reference a real registered
+# entity. EXP-07: only place counterparty names may originate.
+pool_id: b2b_local
+description: Synthetic UAE-local B2B trading counterparties (customers + suppliers).
+counterparties:
+  - "Aurora Distribution LLC"
+  - "Bayan Wholesale Trading LLC"
+  - "Cedar Crescent Imports LLC"
+  - "Delta Logistics & Freight LLC"
+  - "Ember Industrial Supply LLC"
+  - "Falcon Retail Group LLC"
+  - "Glide Cargo Services LLC"
+  - "Helix Packaging LLC"
+  - "Indigo Wholesale FZ-LLC"
+  - "Jasmine Hospitality Procurement LLC"
+  - "Kestrel Equipment Rental LLC"
+  - "Lumen Office Solutions LLC"
+  - "Meridian Building Supply LLC"
+  - "Nexus Electronics Trading LLC"
+  - "Onyx Marine Services LLC"
+  - "Polaris Mechanical Works LLC"

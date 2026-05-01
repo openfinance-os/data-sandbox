@@ -9,34 +9,73 @@
 #   name                human-readable display name
 #   archetype           short typology tag for filter/search
 #   stress_coverage     array of terms drawn from PRD Appendix F controlled vocabulary
+#   segment             v2.1-errata1 AccountType/PartyCategory enum value:
+#                       Retail | SME | Corporate. Drives AccountType per account
+#                       and PartyCategory per party in the generated bundle.
+#                       Default: Retail.
 #   demographics.nationality_pool  references /synthetic-identity-pool/names/<pool>.yaml
 #   income.primary_employer_pool   references /synthetic-identity-pool/employers/<pool>.yaml
 #   income.flag_payroll            whether the salary credit carries v2.1 Flags=Payroll
+#   organisation                   present iff segment != Retail. Drives
+#                                  AccountHolderName on business accounts and
+#                                  the Organisation Party records. Fields here
+#                                  are deliberately minimal — only those the
+#                                  v2.1-errata1 BANK spec actually surfaces.
+#   organisation.legal_name_pool   references /synthetic-identity-pool/organisations/<pool>.yaml
+#   organisation.signatories[]     drives the Party array; values are spec
+#                                  enums (PartyType + AccountRole), enforced by
+#                                  tools/lint-persona-spec-conformance.mjs.
+#   cash_flow                      transaction-level steering for SME/Corporate
+#                                  personas (B2B inflows + supplier outflows
+#                                  + payroll outflow). Optional.
 #   accounts[].type                v2.1 AccountSubType (CurrentAccount/CreditCard/etc.)
+#   accounts[].account_type        optional per-account override of segment
+#                                  (Retail|SME|Corporate). Defaults to persona.segment.
 #   default_seed                   shipped default seed for stable persona-permalink (§6.8)
 #
 # This file is documentation, not enforced (yet). The test that validates
 # manifests against this shape lives in tests/persona-manifest.test.mjs.
+# Spec-conformance of segment/AccountType/PartyType/AccountRole values is
+# enforced by tools/lint-persona-spec-conformance.mjs (EXP-01).
 
 persona_id: <slug>
 domain: <enum: banking|insurance>
 name: <string>
 archetype: <string>
 default_seed: <int>
+segment: <enum: Retail|SME|Corporate>          # optional; default Retail
 stress_coverage:
   - <term-from-Appendix-F>
 demographics:
   nationality_pool: <pool_id>
   age_band: <int-int>          # e.g. "28-38"
   emirate: <enum: dubai|abu_dhabi|sharjah|other>
+organisation:                                  # required iff segment != Retail
+  legal_name_pool: <pool_id>                   # /synthetic-identity-pool/organisations/<pool>.yaml
+  signatories:                                 # at least one entry
+    - signatory_pool: <pool_id>                # /synthetic-identity-pool/names/<pool>.yaml
+      account_role: <one of AEExternalAccountRoleCode enum values; usually
+                    Principal | SecondaryOwner | PowerOfAttorney |
+                    SeniorManagingOfficial | Administrator>
+      party_type: <enum: Sole|Joint|Delegate>  # AEExternalPartyTypeCode
 income:
   primary_employer_pool: <pool_id>
   monthly_amount_aed: <int>
   pay_day: <int 1-31>
   variability: <enum: none|low|medium|high>
   flag_payroll: <bool>
+cash_flow:                                     # optional; SME/Corporate only
+  customer_inflows:
+    counterparty_pool: <pool_id>               # /synthetic-identity-pool/counterparties/<pool>.yaml
+    monthly_amount_aed_band: <[int, int]>
+    invoice_cadence: <enum: weekly|biweekly|monthly|irregular>
+  supplier_outflows:
+    counterparty_pool: <pool_id>
+    monthly_amount_aed_band: <[int, int]>
+  payroll_outflow_aed: <int?>
 accounts:
   - type: <CurrentAccount|Savings|CreditCard|Mortgage|Finance>
+    account_type: <Retail|SME|Corporate>?      # optional override; default = segment
     currency: <ISO 4217>
     age_months: <int>
     credit_limit_aed: <int?>   # only on CreditCard

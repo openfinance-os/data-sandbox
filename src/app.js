@@ -14,7 +14,10 @@ import {
   realLfisGuidance,
   bandForFieldName,
 } from './shared/spec-helpers.js';
-import { decodeFromUrl, encodeEmbed, encodeFixtureUrl, encodePermalink } from './url.js';
+import { decodeFromUrl, encodeEmbed, encodeFixtureUrl, encodePermalink, CUSTOM_PERSONA_SLUG } from './url.js';
+import { expandRecipe } from './persona-builder/expand.js';
+import { decodeRecipe, encodeRecipe, RECIPE_DEFAULTS } from './persona-builder/recipe.js';
+import { mountPersonaBuilder } from './ui/persona-builder-ui.js';
 import {
   envelopesFromBundle,
   csvForResource,
@@ -185,6 +188,28 @@ async function init() {
     Object.entries(state.data.personas).filter(([, p]) => p.domain === state.domain)
   );
 
+  // Workstream B — materialise a custom persona from the URL recipe param,
+  // if present. The generator pipeline is persona-agnostic; injecting the
+  // expanded persona into state.data.personas + state.activePersonas under
+  // the 'custom' key lets the rest of the app behave identically to a
+  // curated persona. The recipe itself stays in state.recipe so
+  // pushPermalink can re-encode it on share / URL update.
+  if (
+    state.domain === 'banking' &&
+    url.personaId === CUSTOM_PERSONA_SLUG &&
+    url.recipe
+  ) {
+    try {
+      const recipe = decodeRecipe(url.recipe);
+      const customPersona = expandRecipe(recipe, state.data.pools);
+      state.data.personas[CUSTOM_PERSONA_SLUG] = customPersona;
+      state.activePersonas[CUSTOM_PERSONA_SLUG] = customPersona;
+      state.recipe = recipe;
+    } catch (err) {
+      console.warn('Custom persona recipe failed to expand:', err);
+    }
+  }
+
   state.personaId = url.personaId && state.activePersonas[url.personaId]
     ? url.personaId
     : Object.keys(state.activePersonas)[0];
@@ -210,7 +235,42 @@ async function init() {
   renderDomainChip();
   syncControls();
   attachEventHandlers();
+  attachBuilderHandlers();
+  // Workstream C plug-point 1 (Service Worker fixture mock) is implemented
+  // and unit-tested under tests/fixture-handler.test.mjs; live registration
+  // is gated on a deployment-time `Service-Worker-Allowed: /` header that
+  // requires sandbox-host configuration outside this commit's scope. Until
+  // that lands, custom-persona bundles are accessible via the npm engine
+  // (plug-point 2) and the static-fixture zip download (plug-point 3).
   rebuildAndRender();
+}
+
+// Workstream B — wire the "+ Build a custom persona" CTA in the persona pane
+// to the builder dialog. The dialog is mounted lazily on first open so the
+// initial render stays cheap; subsequent opens reuse the same instance.
+let builderInstance = null;
+function attachBuilderHandlers() {
+  const btn = document.getElementById('open-builder-btn');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    if (!builderInstance) {
+      builderInstance = mountPersonaBuilder({
+        pools: state.data.pools,
+        currentRecipe: state.recipe,
+        onApply: ({ recipe, persona }) => {
+          state.data.personas[CUSTOM_PERSONA_SLUG] = persona;
+          state.activePersonas[CUSTOM_PERSONA_SLUG] = persona;
+          state.recipe = recipe;
+          state.personaId = CUSTOM_PERSONA_SLUG;
+          state.endpoint = OVERVIEW_PSEUDO;
+          state.selectedAccountId = null;
+          buildPersonaList();
+          rebuildAndRender();
+        },
+      });
+    }
+    builderInstance.open(state.recipe ?? { ...RECIPE_DEFAULTS });
+  });
 }
 
 function el(tag, opts = {}, ...children) {
@@ -341,10 +401,11 @@ function buildPersonaList() {
     if (!personaMatchesActiveFilter(p)) continue;
     visibleCount += 1;
 
+    const isCustom = id === CUSTOM_PERSONA_SLUG;
     const card = el(
       'div',
       {
-        class: 'persona-card',
+        class: `persona-card${isCustom ? ' is-custom' : ''}`,
         attrs: { role: 'listitem' },
         dataset: { personaId: id },
         onClick: (e) => {
@@ -357,7 +418,10 @@ function buildPersonaList() {
           rebuildAndRender();
         },
       },
-      el('div', { class: 'persona-name', text: p.name }),
+      el('div', { class: 'persona-name' },
+        document.createTextNode(p.name),
+        isCustom ? el('span', { class: 'custom-badge', text: 'Custom (not curated)' }) : null,
+      ),
       el('div', { class: 'persona-archetype', text: humanArchetype(p.archetype) }),
     );
     const bestFor = bestForLine(p);
@@ -1034,6 +1098,11 @@ function pushPermalink() {
   // implicit so existing permalinks remain unchanged.
   if (state.domain && state.domain !== 'banking') params.set('domain', state.domain);
   if (state.preview) params.set('preview', '1');
+  // Workstream B — emit the recipe param when the active persona is the
+  // ephemeral custom one, so the URL fully describes the bundle.
+  if (state.personaId === CUSTOM_PERSONA_SLUG && state.recipe) {
+    params.set('recipe', encodeRecipe(state.recipe));
+  }
   const next = `${window.location.pathname}?${params.toString()}`;
   window.history.replaceState({}, '', next);
 }

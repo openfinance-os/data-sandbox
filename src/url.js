@@ -1,5 +1,10 @@
 // URL state encoder/decoder — EXP-17 + §6.8.
 // Three URL shapes: persona permalink, share (= permalink), embed.
+//
+// Custom personas (Workstream B): personaId='custom' + recipe=<base64url-json>
+// is a reserved shape that materialises an ephemeral persona from the
+// dimensions in the recipe. The slug 'custom' is reserved and never used by
+// a curated persona.
 
 export const DEFAULTS = {
   lfi: 'median',
@@ -9,6 +14,7 @@ export const DEFAULTS = {
 
 const VALID_LFI = new Set(['rich', 'median', 'sparse']);
 const VALID_DOMAINS = new Set(['banking', 'insurance']);
+export const CUSTOM_PERSONA_SLUG = 'custom';
 
 export function encodePermalink({
   slugBase = '/commons/sandbox',
@@ -17,6 +23,7 @@ export function encodePermalink({
   seed,
   domain,
   preview,
+  recipe,
 }) {
   if (!personaId) throw new Error('personaId required');
   const params = new URLSearchParams();
@@ -27,6 +34,7 @@ export function encodePermalink({
     params.set('domain', domain);
   }
   if (preview) params.set('preview', '1');
+  if (personaId === CUSTOM_PERSONA_SLUG && recipe) params.set('recipe', recipe);
   return `${slugBase}/p/${personaId}?${params.toString()}`;
 }
 
@@ -39,6 +47,7 @@ export function encodeEmbed({
   height,
   domain,
   preview,
+  recipe,
 }) {
   const params = new URLSearchParams();
   if (personaId) params.set('persona', personaId);
@@ -50,6 +59,7 @@ export function encodeEmbed({
     params.set('domain', domain);
   }
   if (preview) params.set('preview', '1');
+  if (personaId === CUSTOM_PERSONA_SLUG && recipe) params.set('recipe', recipe);
   return `${slugBase}/embed?${params.toString()}`;
 }
 
@@ -97,8 +107,9 @@ export function decodeFromUrl(url) {
   const domainRaw = params.get('domain');
   const domain = VALID_DOMAINS.has(domainRaw) ? domainRaw : DEFAULTS.domain;
   const preview = params.get('preview') === '1';
+  const recipe = personaId === CUSTOM_PERSONA_SLUG ? params.get('recipe') : null;
 
-  return { personaId, lfi, seed, endpoint, height, domain, preview };
+  return { personaId, lfi, seed, endpoint, height, domain, preview, recipe };
 }
 
 // Update window.location without full reload. Browser-only; safely no-ops in tests.

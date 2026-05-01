@@ -1,0 +1,25 @@
+# Synthetic B2B counterparty pool — international trading partners. All names
+# are fictional and combine generic descriptors with non-UAE legal-form
+# suffixes (Ltd, GmbH, BV, S.A., Inc, Pte Ltd). Used for cross-border
+# customer-inflow / supplier-outflow streams on FX-active SME / corporate
+# personas. None reference a real registered entity. EXP-07: only place
+# counterparty names may originate.
+pool_id: b2b_intl
+description: Synthetic international B2B trading counterparties (customers + suppliers).
+counterparties:
+  - "Aurora Trading Ltd"
+  - "Bayan Supplies GmbH"
+  - "Cedar Crescent Imports BV"
+  - "Delta Logistics S.A."
+  - "Ember Industrial Inc"
+  - "Falcon Retail Pte Ltd"
+  - "Glide Cargo Services Ltd"
+  - "Helix Packaging GmbH"
+  - "Indigo Wholesale BV"
+  - "Jasmine Procurement Ltd"
+  - "Kestrel Equipment S.A."
+  - "Lumen Office Solutions Inc"
+  - "Meridian Building Supply Pte Ltd"
+  - "Nexus Electronics Ltd"
+  - "Onyx Marine GmbH"
+  - "Polaris Mechanical Works BV"

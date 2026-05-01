@@ -39,8 +39,8 @@ describe('EXP-32 cross-endpoint coherence', () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(PKG_DIR, 'manifest.json'), 'utf8'));
   const fixtureEntries = Object.entries(manifest.fixtures);
 
-  it('the test matrix covers 10 personas × 3 LFIs', () => {
-    expect(fixtureEntries.length).toBe(30);
+  it('the test matrix covers 12 personas × 3 LFIs', () => {
+    expect(fixtureEntries.length).toBe(36);
   });
 
   for (const [key, fx] of fixtureEntries) {
