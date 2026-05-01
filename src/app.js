@@ -143,6 +143,12 @@ function emptyTxFilter() {
 }
 
 async function init() {
+  // Wire the pane-collapse chevrons before any await so they remain live even
+  // if the data/spec fetches fail (e.g. when the user serves the repo from
+  // src/ alone and ../dist isn't reachable). The chevrons live in static HTML
+  // and don't depend on any async state.
+  wirePaneCollapse();
+
   // Cold landing = URL with no query params (visitor arriving from the
   // Commons feed for the first time). Drives the welcome cards since EXP-22
   // forbids storage-based "first-visit" detection.
@@ -471,6 +477,11 @@ function setPaneCollapsed(target, collapsed) {
   const cls = PANE_COLLAPSE_CLASS[target];
   if (!cls) return;
   root.classList.toggle(cls, collapsed);
+  // At ≤1099 px the field-detail is a slide-in overlay (.open), not a grid
+  // column — its chevron means "dismiss" there, so drop .open too.
+  if (target === 'field-detail' && collapsed) {
+    document.getElementById('field-detail').classList.remove('open');
+  }
   for (const btn of document.querySelectorAll(`.pane-collapse[data-target="${target}"]`)) {
     btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
   }
@@ -485,7 +496,6 @@ function wirePaneCollapse() {
 }
 
 function attachEventHandlers() {
-  wirePaneCollapse();
   document.getElementById('persona-select').addEventListener('change', (e) => {
     state.personaId = e.target.value;
     state.endpoint = OVERVIEW_PSEUDO;
