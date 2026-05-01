@@ -1,40 +1,23 @@
 #!/usr/bin/env node
 // Phase 0 spec parser — EXP-01.
-// Reads the vendored UAE OF v2.1 OpenAPI YAML and emits a flat, frontend-friendly
-// SPEC.json keyed by endpoint path. Every field carries its mandatory/optional
-// status derived from the spec's `required` arrays. Hand-authored field tables
-// are forbidden by tools/lint-no-handauthored-fields.mjs; this is the only
-// allowed source of field metadata.
+// Reads the vendored UAE OF v2.1 OpenAPI YAML(s) and emits flat, frontend-friendly
+// SPEC.<domain>.json files keyed by endpoint path. Every field carries its
+// mandatory/optional status derived from the spec's `required` arrays.
+// Hand-authored field tables are forbidden by tools/lint-no-handauthored-fields.mjs;
+// this is the only allowed source of field metadata.
+//
+// Phase 2.0: domain config moved to tools/domains.config.mjs. Banking output
+// remains byte-identical to Phase 1 (regression-protected by tests/replay.test.mjs).
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import yaml from 'js-yaml';
+import { DOMAINS } from './domains.config.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..');
-
-const SPEC_PATH = path.join(repoRoot, 'spec/uae-account-information-openapi.yaml');
-const PIN_PATH = path.join(repoRoot, 'spec/SPEC_PIN.sha');
-const RETRIEVED_PATH = path.join(repoRoot, 'spec/SPEC_PIN.retrieved');
-const OUT_PATH = path.join(repoRoot, 'dist/SPEC.json');
-
-// In-scope endpoints (PRD Appendix C — v1 = 12 GETs).
-const IN_SCOPE_PATHS = [
-  '/accounts',
-  '/accounts/{AccountId}',
-  '/accounts/{AccountId}/balances',
-  '/accounts/{AccountId}/transactions',
-  '/accounts/{AccountId}/standing-orders',
-  '/accounts/{AccountId}/direct-debits',
-  '/accounts/{AccountId}/beneficiaries',
-  '/accounts/{AccountId}/scheduled-payments',
-  '/accounts/{AccountId}/product',
-  '/accounts/{AccountId}/parties',
-  '/parties',
-  '/accounts/{AccountId}/statements',
-];
 
 /** Resolve a $ref like "#/components/schemas/X" to the referenced node. */
 function resolveRef(spec, ref) {
@@ -218,31 +201,57 @@ function buildSchemaLineIndex(yamlText) {
   return idx;
 }
 
-function main() {
-  if (!fs.existsSync(SPEC_PATH)) {
-    console.error(`spec not vendored at ${SPEC_PATH}`);
+/**
+ * Parse one domain's spec YAML and emit its dist/SPEC.<domain>.json.
+ * Pure function: reads from the paths in `config`, writes to `config.outPath`.
+ * Returns a manifest entry suitable for inclusion in dist/domains.json.
+ */
+export function parseDomain(config) {
+  const specPath = path.join(repoRoot, config.specPath);
+  const pinPath = path.join(repoRoot, config.pinPath);
+  const retrievedPath = path.join(repoRoot, config.retrievedPath);
+  const outPath = path.join(repoRoot, config.outPath);
+
+  if (!fs.existsSync(specPath)) {
+    console.error(`[${config.id}] spec not vendored at ${specPath}`);
     process.exit(1);
   }
 
-  const yamlText = fs.readFileSync(SPEC_PATH, 'utf8');
+  const yamlText = fs.readFileSync(specPath, 'utf8');
   const spec = yaml.load(yamlText);
   const schemaLines = buildSchemaLineIndex(yamlText);
 
-  const pinSha = fs.existsSync(PIN_PATH) ? fs.readFileSync(PIN_PATH, 'utf8').trim() : 'unknown';
-  const retrievedAt = fs.existsSync(RETRIEVED_PATH)
-    ? fs.readFileSync(RETRIEVED_PATH, 'utf8').trim()
+  const pinSha = fs.existsSync(pinPath) ? fs.readFileSync(pinPath, 'utf8').trim() : 'unknown';
+  const retrievedAt = fs.existsSync(retrievedPath)
+    ? fs.readFileSync(retrievedPath, 'utf8').trim()
     : 'unknown';
+
+  // LFI populate-rate band overrides — optional. If the domain config doesn't
+  // specify a bandsPath, all fields default to band 'Unknown' (Sparse drops
+  // them; Median drops them; Rich keeps them only if non-Unknown — i.e. they
+  // get dropped under all profiles, which is the conservative pre-calibration
+  // default for a new domain).
+  let bandOverrides = {};
+  if (config.bandsPath) {
+    const bandsPath = path.join(repoRoot, config.bandsPath);
+    if (!fs.existsSync(bandsPath)) {
+      console.error(`[${config.id}] bands file not found at ${bandsPath}`);
+      process.exit(1);
+    }
+    const bandsDoc = yaml.load(fs.readFileSync(bandsPath, 'utf8')) ?? {};
+    bandOverrides = bandsDoc.overrides ?? {};
+  }
 
   const endpoints = {};
   const missing = [];
-  for (const p of IN_SCOPE_PATHS) {
+  for (const p of config.inScopePaths) {
     const e = extractEndpointFields(spec, p);
     if (e) endpoints[p] = e;
     else missing.push(p);
   }
 
   if (missing.length > 0) {
-    console.error('endpoints missing from spec:', missing);
+    console.error(`[${config.id}] endpoints missing from spec:`, missing);
     process.exit(1);
   }
 
@@ -251,23 +260,50 @@ function main() {
     openapiVersion: spec.openapi ?? 'unknown',
     pinSha,
     retrievedAt,
-    upstreamRepo: 'Nebras-Open-Finance/api-specs',
-    upstreamPath: 'dist/standards/v2.1/uae-account-information-openapi.yaml',
-    inScopePaths: IN_SCOPE_PATHS,
+    upstreamRepo: config.upstreamRepo,
+    upstreamPath: config.upstreamPath,
+    inScopePaths: config.inScopePaths,
     schemaLines,
+    bandOverrides,
     endpoints,
   });
 
-  fs.mkdirSync(path.dirname(OUT_PATH), { recursive: true });
-  fs.writeFileSync(OUT_PATH, JSON.stringify(out, null, 2));
+  fs.mkdirSync(path.dirname(outPath), { recursive: true });
+  fs.writeFileSync(outPath, JSON.stringify(out, null, 2));
 
-  // Summary.
   const totalFields = Object.values(endpoints).reduce((n, e) => n + e.fields.length, 0);
   const mandatory = Object.values(endpoints).flatMap((e) =>
     e.fields.filter((f) => f.status === 'mandatory')
   ).length;
   console.log(
-    `parsed ${Object.keys(endpoints).length} endpoints, ${totalFields} fields (${mandatory} mandatory) → ${path.relative(repoRoot, OUT_PATH)}`
+    `[${config.id}] parsed ${Object.keys(endpoints).length} endpoints, ${totalFields} fields (${mandatory} mandatory) → ${path.relative(repoRoot, outPath)}`
+  );
+
+  return {
+    id: config.id,
+    label: config.label,
+    status: config.status,
+    pinSha,
+    retrievedAt,
+    specVersion: out.specVersion,
+    openapiVersion: out.openapiVersion,
+    parsedJsonUrl: '/' + path.relative(repoRoot, outPath).split(path.sep).join('/'),
+    defaultEndpoint: config.defaultEndpoint,
+    endpoints: config.inScopePaths,
+  };
+}
+
+function main() {
+  const manifestEntries = DOMAINS.map(parseDomain);
+
+  const domainsManifestPath = path.join(repoRoot, 'dist/domains.json');
+  const manifest = {
+    domains: manifestEntries,
+  };
+  fs.mkdirSync(path.dirname(domainsManifestPath), { recursive: true });
+  fs.writeFileSync(domainsManifestPath, JSON.stringify(manifest, null, 2));
+  console.log(
+    `wrote domains manifest (${manifestEntries.length} domain${manifestEntries.length === 1 ? '' : 's'}) → ${path.relative(repoRoot, domainsManifestPath)}`
   );
 }
 

@@ -1,0 +1,60 @@
+# Insurance persona manifest schema — Phase 2.0.
+# Mirrors personas/_schema.yaml (banking) for domain: insurance.
+#
+# Each personas/*.yaml with `domain: insurance` must conform to this shape.
+# Validated in CI by tests/persona-manifest.test.mjs.
+#
+# The persona describes INPUTS to the motor-policy generator, not the
+# generated output. Identity bits (PolicyHolder name, Emirates ID, Visa,
+# mobile, email, address) are synthesized by the generator from
+# demographics.nationality_pool + emirate. Persona only declares the
+# narrative parameters that drive a coherent motor-insurance bundle.
+#
+# Phase 2.0 MVP covers the Motor line only (3 endpoints). Other insurance
+# lines (Health, Home, Life, Renters, Travel, Employment) will extend this
+# schema as their generators land in Phase 2.1.
+
+persona_id: <slug>
+domain: insurance
+name: <string>
+archetype: <string>                # e.g. motor_comprehensive_financed
+default_seed: <int>
+stress_coverage:
+  - <term>                         # insurance-specific Appendix-F vocab
+
+demographics:
+  nationality_pool: <pool_id>      # references /synthetic-identity-pool/names/<pool>.yaml
+  age_band: <int-int>              # e.g. "30-40"
+  emirate: <enum: AbuDhabi|Ajman|Dubai|Fujairah|RasAlKhaimah|Sharjah|UmmAlQuwain>
+  has_visa: <bool>                 # emirati: false; expat: true
+
+vehicle:
+  make: <string>                   # e.g. "Toyota"
+  model: <string>                  # e.g. "Corolla"
+  year: <int>                      # 4-digit model year
+  body_type: <string>              # e.g. "Sedan", "SUV"
+  passenger_capacity: <int>        # incl. driver
+  valuation_aed: <int>             # current market value
+  registration_emirate: <enum: AbuDhabi|Ajman|Dubai|Fujairah|RasAlKhaimah|Sharjah|UmmAlQuwain>
+
+policy:
+  type: <enum: Comprehensive|ThirdPartyLiability>
+  takaful: <bool>                  # Sharia-compliant?
+  excess_aed: <int>
+  start_date_offset_days: <int>    # days before `now` anchor (deterministic)
+  channel: <enum: Direct|Broker|Aggregator>
+
+finance:                           # optional section — omit if no car finance
+  has_finance: <bool>
+  bank_pool: <pool_id?>            # references /synthetic-identity-pool/banks/<pool>.yaml
+  amount_aed: <int?>
+  outstanding_aed: <int?>
+
+additional_drivers:
+  count: <int>                     # 0..3
+
+claims:
+  history_months: <int>            # length of claims-summary window
+  claims_in_period: <int>          # total claims in the window
+  approved_claims: <int>           # subset of claims_in_period
+  total_gross_aed: <int>           # sum of approved-claim payouts

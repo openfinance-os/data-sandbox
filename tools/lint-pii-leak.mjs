@@ -4,9 +4,11 @@
 // Scans every persona × LFI=Median × seed=4729 bundle for identity leaks.
 
 import { buildBundle } from '../src/generator/index.js';
-import { loadAllPersonas, loadAllPools } from './load-fixtures.mjs';
+import { loadPersonasByDomain, loadAllPools } from './load-fixtures.mjs';
 
-const personas = loadAllPersonas();
+// Banking pipeline only; insurance probes ship with the insurance generator
+// (slice 6b-ii) and have their own pool-membership audit.
+const personas = loadPersonasByDomain('banking');
 const pools = loadAllPools();
 
 // Build the universe of permitted strings from all loaded pools. Names are

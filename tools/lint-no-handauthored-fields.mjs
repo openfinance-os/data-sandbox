@@ -5,7 +5,7 @@
 // Heuristic: scan src/ for object literals that map field names to literal
 // "mandatory"/"optional"/"conditional" strings — that's the shape a
 // hand-authored status table would take. The OPTIONAL_FIELD_BANDS table in
-// src/generator/lfi-profile.js is *populate-rate band*, not status, and is
+// src/generator/banking/lfi-profile.js is *populate-rate band*, not status, and is
 // allowed by an explicit allowlist; status badges remain spec-driven.
 
 import fs from 'node:fs';

@@ -9,6 +9,8 @@ import { loadAllPersonas, loadAllPools, repoRoot } from './load-fixtures.mjs';
 
 const OUT = `${repoRoot}/dist/data.json`;
 
+// All domains. The UI filters by state.domain at runtime (slice 8 onward).
+// Each persona record carries its own `domain` field (banking | insurance).
 const personas = loadAllPersonas();
 const pools = loadAllPools();
 

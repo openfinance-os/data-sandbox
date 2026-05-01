@@ -1,0 +1,29 @@
+# LFI populate-rate bands for Insurance Data Sharing — §8.3, EXP-04.
+#
+# Phase 2.0 preview ships with NO band overrides. Every optional field in the
+# insurance schemas defaults to band 'Unknown', which means Rich/Median/Sparse
+# all drop it. The first insurance generator (slice 6b) will populate only
+# mandatory fields, and we'll calibrate optional-field bands here as the
+# generator grows.
+#
+# Bands map to populate probabilities defined in src/generator/lfi-profile.js:
+#   Universal=1.0, Common=0.7, Variable=0.4, Rare=0.1, Unknown=0.0.
+#
+# Mandatory fields are NEVER redacted regardless of band (EXP-04 / NG); these
+# overrides only affect optional fields. To add an override, drop a dotted
+# field path into `overrides:` below — e.g.:
+#
+#   overrides:
+#     MotorInsurancePolicy.PolicyName: Universal
+#     MotorInsurancePolicy.Vehicle.MakeAndModel: Common
+#     MotorInsurancePolicy.AdditionalDrivers[].Name: Variable
+
+# Phase 2.0 slice 6c starter calibration. Conservative — paths are anchored
+# at the resource (PolicyHolder, Premium, Product) rather than the full
+# Data.* path so the redaction body in src/generator/insurance/lfi-profile.js
+# stays domain-shaped and short. SME review pending.
+overrides:
+  PolicyHolder.Salutation: Common
+  Premium.PaymentMode: Common
+  Product.AdditionalDrivers: Variable
+  Product.CarFinance: Variable

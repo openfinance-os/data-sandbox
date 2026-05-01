@@ -218,6 +218,43 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
 }
 .topbar-btn:hover { background: var(--accent-soft); }
 
+/* Phase 2.0 multi-domain selector — only rendered when ?preview=1
+   (matches the preview-gate in src/app.js init()). Banking remains the
+   default; insurance options are tagged "(preview)" in the option label. */
+.domain-chip {
+  font-size: 11px;
+  padding: 3px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-card);
+  color: var(--text);
+  font-family: inherit;
+  cursor: pointer;
+}
+.domain-chip[hidden] { display: none; }
+
+.preview-banner {
+  background: var(--accent-soft);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+.preview-json {
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 12px;
+  overflow-x: auto;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  white-space: pre;
+  color: var(--text);
+}
+
 /* Topbar overflow menu — Integrate / About live behind a "More" disclosure
    to free real estate. <details>/<summary> handles open-close without JS;
    the <a> children sit in the popover (not inside <summary>) to avoid the

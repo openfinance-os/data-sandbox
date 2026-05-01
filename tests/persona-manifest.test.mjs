@@ -12,16 +12,35 @@ function listManifests() {
     .filter((f) => f.endsWith('.yaml') && !f.startsWith('_'));
 }
 
-const REQUIRED_TOP_LEVEL = [
-  'persona_id',
-  'name',
-  'archetype',
-  'default_seed',
-  'stress_coverage',
-  'demographics',
-  'income',
-  'accounts',
-];
+// Domain-specific required top-level keys. Common keys live at the top of
+// each list; the tail is domain-shaped (banking has income+accounts;
+// insurance has vehicle+policy — see personas/_schema.{banking,insurance}.yaml).
+const REQUIRED_BY_DOMAIN = {
+  banking: [
+    'persona_id',
+    'domain',
+    'name',
+    'archetype',
+    'default_seed',
+    'stress_coverage',
+    'demographics',
+    'income',
+    'accounts',
+  ],
+  insurance: [
+    'persona_id',
+    'domain',
+    'name',
+    'archetype',
+    'default_seed',
+    'stress_coverage',
+    'demographics',
+    'vehicle',
+    'policy',
+  ],
+};
+
+const ALLOWED_DOMAINS = new Set(Object.keys(REQUIRED_BY_DOMAIN));
 
 const ALLOWED_LFI_PROFILES = ['rich', 'median', 'sparse'];
 void ALLOWED_LFI_PROFILES;
@@ -31,7 +50,9 @@ describe('persona manifests — EXP-02', () => {
   it.each(manifests)('%s conforms to the schema shape', (file) => {
     const m = yaml.load(fs.readFileSync(path.join(MANIFEST_DIR, file), 'utf8'));
 
-    for (const key of REQUIRED_TOP_LEVEL) {
+    expect(ALLOWED_DOMAINS.has(m.domain), `${file} has invalid domain ${m.domain}`).toBe(true);
+    const required = REQUIRED_BY_DOMAIN[m.domain];
+    for (const key of required) {
       expect(m, `${file} missing required key ${key}`).toHaveProperty(key);
     }
     expect(m.persona_id).toMatch(/^[a-z][a-z0-9_]*$/);
@@ -41,11 +62,19 @@ describe('persona manifests — EXP-02', () => {
     expect(Array.isArray(m.stress_coverage)).toBe(true);
     expect(m.stress_coverage.length).toBeGreaterThan(0);
     expect(typeof m.default_seed).toBe('number');
-    expect(Array.isArray(m.accounts)).toBe(true);
-    expect(m.accounts.length).toBeGreaterThan(0);
-    for (const a of m.accounts) {
-      expect(a).toHaveProperty('type');
-      expect(a).toHaveProperty('currency');
+
+    if (m.domain === 'banking') {
+      expect(Array.isArray(m.accounts)).toBe(true);
+      expect(m.accounts.length).toBeGreaterThan(0);
+      for (const a of m.accounts) {
+        expect(a).toHaveProperty('type');
+        expect(a).toHaveProperty('currency');
+      }
+    } else if (m.domain === 'insurance') {
+      expect(m.vehicle).toHaveProperty('make');
+      expect(m.vehicle).toHaveProperty('model');
+      expect(typeof m.vehicle.year).toBe('number');
+      expect(['Comprehensive', 'ThirdPartyLiability']).toContain(m.policy.type);
     }
   });
 

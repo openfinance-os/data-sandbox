@@ -44,3 +44,29 @@ describe('replay determinism — EXP-05', () => {
     expect(JSON.stringify(r)).not.toBe(JSON.stringify(s));
   });
 });
+
+describe('replay determinism — Insurance domain (motor MVP)', () => {
+  const persona = loadPersona('motor_comprehensive_mid');
+  const pools = loadAllPools();
+
+  it.each(['rich', 'median', 'sparse'])(
+    'each LFI profile is internally deterministic (seed=4729) — %s',
+    (lfi) => {
+      const a = buildBundle({ persona, lfi, seed: 4729, pools });
+      const b = buildBundle({ persona, lfi, seed: 4729, pools });
+      expect(JSON.stringify(a)).toBe(JSON.stringify(b));
+    }
+  );
+
+  it('different seeds produce different bundles', () => {
+    const a = buildBundle({ persona, lfi: 'median', seed: 1, pools });
+    const b = buildBundle({ persona, lfi: 'median', seed: 2, pools });
+    expect(JSON.stringify(a)).not.toBe(JSON.stringify(b));
+  });
+
+  it('different LFIs produce different bundles for the same seed', () => {
+    const r = buildBundle({ persona, lfi: 'rich', seed: 4729, pools });
+    const s = buildBundle({ persona, lfi: 'sparse', seed: 4729, pools });
+    expect(JSON.stringify(r)).not.toBe(JSON.stringify(s));
+  });
+});

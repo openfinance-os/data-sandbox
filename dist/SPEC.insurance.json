@@ -1,0 +1,2726 @@
+{
+  "specVersion": "v2.1-errata1",
+  "openapiVersion": "3.0.0",
+  "pinSha": "bc1cd976956d97195c5000235125cb65aca6aec8",
+  "retrievedAt": "2026-04-30T04:03:31Z",
+  "upstreamRepo": "Nebras-Open-Finance/api-specs",
+  "upstreamPath": "dist/standards/v2.1-errata1/uae-insurance-openapi.yaml",
+  "inScopePaths": [
+    "/motor-insurance-policies",
+    "/motor-insurance-policies/{InsurancePolicyId}",
+    "/motor-insurance-policies/{InsurancePolicyId}/payment-details"
+  ],
+  "schemaLines": {
+    "post": 4674,
+    "get": 4939,
+    "patch": 4774,
+    "AEInsuranceParameters.AEInsurancePolicyId": 5027,
+    "AEInsuranceParameters.AEInsuranceQuoteId": 5034,
+    "Authorization": 5041,
+    "BaseConsentId": 5048,
+    "ConsentId": 5056,
+    "AEActiveCurrencyAmount": 5098,
+    "AEActiveOrHistoricAmount": 5110,
+    "AEActiveOrHistoricCurrencyCode": 5117,
+    "AEConsentPermissionCodes": 5125,
+    "AEConsentPermissions": 5135,
+    "AEConsentStatusCode": 5159,
+    "AECreateEmploymentInsuranceQuoteRequestBody1": 5168,
+    "AECreateEmploymentInsuranceQuoteRequestBody1Signed": 5176,
+    "AECreateHealthInsuranceQuoteRequestBody1": 5204,
+    "AECreateHealthInsuranceQuoteRequestBody1Signed": 5212,
+    "AECreateHealthInsuranceQuoteResponseBody": 5240,
+    "AECreateHomeInsuranceQuoteRequestBody1": 5260,
+    "AECreateHomeInsuranceQuoteRequestBody1Signed": 5268,
+    "AECreateInsurancePolicyLinks1": 5296,
+    "AECreateInsuranceQuoteResponseBody1": 5313,
+    "AECreateLifeInsuranceQuoteRequestBody1": 5333,
+    "AECreateLifeInsuranceQuoteRequestBody1Signed": 5341,
+    "AECreateMotorInsuranceQuoteRequestBody1": 5369,
+    "AECreateMotorInsuranceQuoteRequestBody1Signed": 5377,
+    "AECreateRentersInsuranceQuoteRequestBody1": 5405,
+    "AECreateRentersInsuranceQuoteRequestBody1Signed": 5413,
+    "AECreateTravelInsuranceQuoteRequestBody1": 5441,
+    "AECreateTravelInsuranceQuoteRequestBody1Signed": 5449,
+    "AECustomErrorCode": 5477,
+    "AECustomerPrimaryLanguage": 5480,
+    "AEDocumentProperties": 5487,
+    "AEDurationYearsAndMonths": 5535,
+    "AEEmploymentInsurancePolicyProperties1": 5540,
+    "AEEmploymentInsuranceQuoteAcceptQuoteRequestProperties": 5884,
+    "AEEmploymentInsuranceQuoteAdditionalCompensationProperties": 6253,
+    "AEEmploymentInsuranceQuoteEmploymentProperties": 6267,
+    "AEEmploymentInsuranceQuotePolicyHolderProperties": 6325,
+    "AEEmploymentInsuranceQuotePolicyProperties": 6394,
+    "AEEmploymentInsuranceQuoteRequestProperties": 6445,
+    "AEEngineProperties": 6513,
+    "AEError400": 6574,
+    "AEError400Codes": 6578,
+    "AEError400ResponseBody": 6597,
+    "AEError400ResponseBodySigned": 6635,
+    "AEError403": 6663,
+    "AEError403Codes": 6667,
+    "AEError403ResponseBody": 6676,
+    "AEError403ResponseBodySigned": 6714,
+    "AEError500": 6742,
+    "AEError500ResponseBody": 6746,
+    "AEError500ResponseBodySigned": 6784,
+    "AEErrorGenericCodes": 6812,
+    "AEHealthInsuranceCreateQuoteResponseProperties": 6817,
+    "AEHealthInsuranceDataSharingClaimsHistoryStatusCodes": 6826,
+    "AEHealthInsuranceDataSharingInsuredParty": 6855,
+    "AEHealthInsuranceMedicalHistoryProperties": 7007,
+    "AEHealthInsurancePolicyProperties1": 7124,
+    "AEHealthInsurancePremium": 7465,
+    "AEHealthInsurancePremiumAdditionalFees": 7522,
+    "AEHealthInsuranceProductData": 7544,
+    "AEHealthInsuranceQuoteAcceptQuoteRequestProperties": 7698,
+    "AEHealthInsuranceQuoteEmployment": 8278,
+    "AEHealthInsuranceQuoteInsuredParty": 8299,
+    "AEHealthInsuranceQuotePolicyholder": 8380,
+    "AEHealthInsuranceQuoteProperties": 8459,
+    "AEHealthInsuranceQuoteReadApplicationApprovedResponseProperties": 8608,
+    "AEHealthInsuranceQuoteReadApplicationPendingResponseProperties": 8619,
+    "AEHealthInsuranceQuoteReadAvailableResponseProperties": 8630,
+    "AEHealthInsuranceQuoteReadCompletedResponseProperties": 8641,
+    "AEHealthInsuranceQuoteReadCustomerCancelledResponseProperties": 8652,
+    "AEHealthInsuranceQuoteReadExpiredResponseProperties": 8663,
+    "AEHealthInsuranceQuoteReadKYCCapturedResponseProperties": 8674,
+    "AEHealthInsuranceQuoteReadLFICancelledResponseProperties": 8685,
+    "AEHealthInsuranceQuoteReadPaymentRequiredResponseProperties": 8696,
+    "AEHealthInsuranceQuoteReadPendingResponseProperties": 8707,
+    "AEHealthInsuranceQuoteReadPolicyIssuedResponseProperties": 8729,
+    "AEHealthInsuranceQuoteReadRejectedResponseProperties": 8740,
+    "AEHealthInsuranceQuoteReadResponseBody1": 8751,
+    "AEHealthInsuranceQuoteReadResponseProperties": 8765,
+    "AEHealthInsuranceQuoteRequestProperties": 8796,
+    "AEHealthInsuranceQuoteResponseAvailableProperties": 8948,
+    "AEHealthInsuranceQuoteResponsePendingProperties": 9103,
+    "AEHealthInsuranceQuoteTypeOfSmokingCodes": 9126,
+    "AEHealthInsuranceSalaryBandCode": 9136,
+    "AEHealthInsuranceSponsorProperties": 9143,
+    "AEHomeInsuranceBuildingsCoverProperties": 9172,
+    "AEHomeInsuranceDomesticHelperIndividualDetailsProperties": 9179,
+    "AEHomeInsuranceDomesticHelperProperties": 9210,
+    "AEHomeInsuranceMortgageProperties": 9224,
+    "AEHomeInsurancePolicyProperties1": 9247,
+    "AEHomeInsuranceProductData": 9285,
+    "AEHomeInsuranceQuoteAcceptQuoteRequestProperties": 9681,
+    "AEHomeInsuranceQuoteExistingHomeInsuranceProperties": 10282,
+    "AEHomeInsuranceQuotePolicyHolderProperties": 10305,
+    "AEHomeInsuranceQuotePolicyProperties": 10383,
+    "AEHomeInsuranceQuotePropertyDetailsProperties": 10429,
+    "AEHomeInsuranceQuoteRequestProperties": 10487,
+    "AEInsuranceAcceptedByUserQuoteStatusCodes": 10601,
+    "AEInsuranceAccountSchemeName": 10606,
+    "AEInsuranceAddress": 10612,
+    "AEInsuranceAddressLine": 10689,
+    "AEInsuranceAddressProperties": 10693,
+    "AEInsuranceBankIdentification": 10755,
+    "AEInsuranceBasmahProgramFee": 10773,
+    "AEInsuranceCashAccount": 10795,
+    "AEInsuranceCommission": 10815,
+    "AEInsuranceCountryCode": 10840,
+    "AEInsuranceCreatePolicy1": 10844,
+    "AEInsuranceCreatePolicyData1": 10852,
+    "AEInsuranceCreateQuoteResponseProperties": 10900,
+    "AEInsuranceCustomerActivitiesAerialSports": 10909,
+    "AEInsuranceCustomerActivitiesLandSports": 10925,
+    "AEInsuranceCustomerActivitiesWaterSports": 10952,
+    "AEInsuranceCustomerActivitiesWinterSports": 10963,
+    "AEInsuranceCustomerHighRiskActivityProperties": 10974,
+    "AEInsuranceCustomerPassportNumberType": 11022,
+    "AEInsuranceCustomerQuoteProperties": 11025,
+    "AEInsuranceDataSharingClaimsSummaryProperties": 11099,
+    "AEInsuranceDataSharingClaimsWithLossCauseProperties": 11136,
+    "AEInsuranceDataSharingContentsCoverDetails": 11296,
+    "AEInsuranceDataSharingCustomerBasicProperties": 11366,
+    "AEInsuranceDataSharingPaymentFrequencyCode": 11463,
+    "AEInsuranceDataSharingPaymentModeCode": 11472,
+    "AEInsuranceDataSharingPersonalBelongings": 11482,
+    "AEInsuranceDataSharingPremiumProperties": 11553,
+    "AEInsuranceDocumentRequirement": 11698,
+    "AEInsuranceEmailAddressType": 11702,
+    "AEInsuranceEmirate": 11706,
+    "AEInsuranceEmiratesIdPassportOptionalVisa": 11716,
+    "AEInsuranceEmploymentStatus": 11736,
+    "AEInsuranceExistingInsuranceProperties": 11749,
+    "AEInsuranceGender": 11772,
+    "AEInsuranceHCVProgramFee": 11778,
+    "AEInsuranceHeightType": 11802,
+    "AEInsuranceICPProgramFee": 11804,
+    "AEInsuranceIdentityEmiratesIdOptionalVisa": 11828,
+    "AEInsuranceIdentityTypes": 11843,
+    "AEInsuranceInsurancePolicyResponseData1": 11848,
+    "AEInsuranceMaritalStatus": 11891,
+    "AEInsuranceNationalIdentifierProperties": 11900,
+    "AEInsurancePassportOptionalVisa": 11914,
+    "AEInsurancePassportProperties": 11929,
+    "AEInsurancePaymentDetails": 11956,
+    "AEInsurancePaymentFrequency": 11976,
+    "AEInsurancePercentageValue": 11987,
+    "AEInsurancePhoneNumberType": 11992,
+    "AEInsurancePolicies1": 11996,
+    "AEInsurancePolicyStatusCodes": 12033,
+    "AEInsurancePremiumDiscountApplied": 12068,
+    "AEInsurancePremiumDiscountOffers": 12089,
+    "AEInsurancePremiumJWE": 12113,
+    "AEInsurancePremiumProperties": 12119,
+    "AEInsurancePropertyClaimOutcomeCodes": 12171,
+    "AEInsuranceQuoteContentsCoverDetails": 12179,
+    "AEInsuranceQuoteIdType": 12240,
+    "AEInsuranceQuoteImportantQuestions": 12243,
+    "AEInsuranceQuotePersonalBelongings": 12264,
+    "AEInsuranceQuotePolicyCover": 12336,
+    "AEInsuranceQuotePreviousApplications": 12377,
+    "AEInsuranceQuoteProperties": 12401,
+    "AEInsuranceQuotePropertyClaims": 12550,
+    "AEInsuranceQuoteReadApplicationApprovedResponseProperties": 12587,
+    "AEInsuranceQuoteReadApplicationPendingResponseProperties": 12598,
+    "AEInsuranceQuoteReadAvailableResponseProperties": 12609,
+    "AEInsuranceQuoteReadCompletedResponseProperties": 12620,
+    "AEInsuranceQuoteReadCustomerCancelledResponseProperties": 12631,
+    "AEInsuranceQuoteReadExpiredResponseProperties": 12642,
+    "AEInsuranceQuoteReadKYCCapturedResponseProperties": 12653,
+    "AEInsuranceQuoteReadLFICancelledResponseProperties": 12664,
+    "AEInsuranceQuoteReadPaymentRequiredResponseProperties": 12675,
+    "AEInsuranceQuoteReadPendingResponseProperties": 12686,
+    "AEInsuranceQuoteReadPolicyIssuedResponseProperties": 12708,
+    "AEInsuranceQuoteReadRejectedResponseProperties": 12719,
+    "AEInsuranceQuoteReadResponseBody1": 12730,
+    "AEInsuranceQuoteReadResponseProperties": 12744,
+    "AEInsuranceQuoteReferenceType": 12775,
+    "AEInsuranceQuoteResponseAvailableProperties": 12778,
+    "AEInsuranceQuoteResponsePendingProperties": 12933,
+    "AEInsuranceQuoteTypeOfCover": 12956,
+    "AEInsuranceQuoteUri": 12963,
+    "AEInsuranceQuoteVerifiedIdentityProperties": 12966,
+    "AEInsuranceRelationshipToInsuredPartyCodes": 13046,
+    "AEInsuranceResourceIdentifierType": 13055,
+    "AEInsuranceSafetySecurityFeatures": 13061,
+    "AEInsuranceSalutationCodes": 13116,
+    "AEInsuranceServiceRating": 13126,
+    "AEInsuranceServiceRatingRateOrRatio": 13275,
+    "AEInsuranceSpecialConditions": 13280,
+    "AEInsuranceSupplementaryData": 13284,
+    "AEInsuranceVATPercentage": 13290,
+    "AEInsuranceVisaProperties": 13295,
+    "AEInsuranceWeightType": 13334,
+    "AELifeInsuranceLifeStyleProperties": 13336,
+    "AELifeInsurancePolicies1": 13402,
+    "AELifeInsurancePolicyProperties1": 13438,
+    "AELifeInsurancePolicyStatusCodes": 14265,
+    "AELifeInsuranceQuoteAcceptQuoteRequestProperties": 14279,
+    "AELifeInsuranceQuoteCustomerProperties": 14986,
+    "AELifeInsuranceQuoteEmploymentProperties": 15125,
+    "AELifeInsuranceQuoteInsuredPartiesProperties": 15166,
+    "AELifeInsuranceQuotePolicyProperties": 15286,
+    "AELifeInsuranceQuoteRequestProperties": 15376,
+    "AEMotorInsuranceDataSharingCarRegistration": 15468,
+    "AEMotorInsuranceEngineTypeCodes": 15492,
+    "AEMotorInsurancePolicyProperties1": 15499,
+    "AEMotorInsuranceProductData": 15744,
+    "AEMotorInsuranceQuoteAcceptQuoteRequestProperties": 16124,
+    "AEMotorInsuranceQuoteCarRegistrationProperties": 16645,
+    "AEMotorInsuranceQuoteCoverTypes": 16668,
+    "AEMotorInsuranceQuoteOptionalCoverAddOnsProperties": 16674,
+    "AEMotorInsuranceQuotePolicyProperties": 16725,
+    "AEMotorInsuranceQuoteRequestProperties": 16767,
+    "AEOnBehalfOf": 17214,
+    "AEOnBehalfOfIdentifierType": 17231,
+    "AEPatchConsent": 17235,
+    "AEPatchConsentStatus1": 17251,
+    "AEReadEmploymentInsurancePolicy1": 17255,
+    "AEReadEmploymentInsurancePolicy1Signed": 17269,
+    "AEReadHealthInsurancePolicy1": 17297,
+    "AEReadHealthInsurancePolicy1Signed": 17311,
+    "AEReadHomeInsurancePolicy1": 17339,
+    "AEReadHomeInsurancePolicy1Signed": 17353,
+    "AEReadInsuranceConsent1": 17381,
+    "AEReadInsuranceConsent1Properties": 17397,
+    "AEReadInsuranceConsent1Signed": 17485,
+    "AEReadInsuranceConsents1": 17513,
+    "AEReadInsuranceConsents1Signed": 17529,
+    "AEReadInsurancePolicies1": 17557,
+    "AEReadLifeInsurancePolicies1": 17571,
+    "AEReadLifeInsurancePolicy1": 17585,
+    "AEReadLifeInsurancePolicy1Signed": 17599,
+    "AEReadMotorInsurancePolicy1": 17627,
+    "AEReadMotorInsurancePolicy1Signed": 17641,
+    "AEReadPaymentDetails1": 17669,
+    "AEReadPaymentDetails1Signed": 17683,
+    "AEReadRentersInsurancePolicy1": 17711,
+    "AEReadRentersInsurancePolicy1Signed": 17725,
+    "AEReadTravelInsurancePolicy1": 17753,
+    "AEReadTravelInsurancePolicy1Signed": 17767,
+    "AERentersInsuranceImportantQuestions": 17795,
+    "AERentersInsurancePolicyProperties1": 17819,
+    "AERentersInsuranceQuoteAcceptQuoteRequestProperties": 18249,
+    "AERentersInsuranceQuoteDomesticHelperIndividualDetailsProperties": 18641,
+    "AERentersInsuranceQuoteDomesticHelperProperties": 18671,
+    "AERentersInsuranceQuoteExistingInsuranceProperties": 18685,
+    "AERentersInsuranceQuoteLeaseProperties": 18707,
+    "AERentersInsuranceQuotePolicyHolderProperties": 18753,
+    "AERentersInsuranceQuotePolicyProperties": 18832,
+    "AERentersInsuranceQuoteRequestProperties": 18866,
+    "AERevokedByCode": 19014,
+    "AETravelInsuranceDestinationCountry": 19021,
+    "AETravelInsurancePolicyProperties1": 19024,
+    "AETravelInsuranceQuoteAcceptQuoteRequestProperties": 19342,
+    "AETravelInsuranceQuoteHighRiskActivityProperties": 19803,
+    "AETravelInsuranceQuoteInsuredTravelersProperties": 19817,
+    "AETravelInsuranceQuoteOptionalTravelCoverOptionProperties": 19873,
+    "AETravelInsuranceQuotePolicyHolderProperties": 19916,
+    "AETravelInsuranceQuotePolicyProperties": 19961,
+    "AETravelInsuranceQuoteRequestProperties": 20073,
+    "AEUpdateConsent1": 20270,
+    "AEUpdateConsent1Signed": 20281,
+    "AEWebhook": 20309,
+    "EventNotification": 20327,
+    "First": 20337,
+    "Last": 20341,
+    "LinksResource": 20345,
+    "LinksSelf": 20362,
+    "Meta": 20371,
+    "MetaTotalPages": 20375,
+    "Next": 20383,
+    "Prev": 20387,
+    "Self": 20391,
+    "TotalPages": 20395,
+    "UpdateEmploymentInsuranceQuoteStatusMessageProperties": 20400,
+    "UpdateHealthInsuranceQuoteStatusMessageProperties": 20417,
+    "UpdateHomeInsuranceQuoteStatusMessageProperties": 20434,
+    "UpdateLifeInsuranceQuoteStatusMessageProperties": 20451,
+    "UpdateMotorInsuranceQuoteStatusMessageProperties": 20468,
+    "UpdateRentersInsuranceQuoteStatusMessageProperties": 20485,
+    "UpdateTravelInsuranceQuoteStatusMessageProperties": 20502,
+    "uuid": 20519,
+    "TPPOAuth2Security": 20528,
+    "UserOAuth2Security": 20548,
+    "LFIWebhookSecurity": 20566
+  },
+  "bandOverrides": {
+    "PolicyHolder.Salutation": "Common",
+    "Premium.PaymentMode": "Common",
+    "Product.AdditionalDrivers": "Variable",
+    "Product.CarFinance": "Variable"
+  },
+  "endpoints": {
+    "/motor-insurance-policies": {
+      "method": "GET",
+      "summary": "Retrieve motor insurance policies",
+      "operationId": "MotorInsurancePolicies_list",
+      "schemaRef": "#/components/schemas/AEReadInsurancePolicies1",
+      "fields": [
+        {
+          "path": "Data",
+          "name": "Data",
+          "type": "object",
+          "status": "mandatory"
+        },
+        {
+          "path": "Data.Policies",
+          "name": "Policies",
+          "type": "array",
+          "status": "mandatory"
+        },
+        {
+          "path": "Data.Policies[]",
+          "name": "Policies[]",
+          "type": "object",
+          "status": "optional"
+        },
+        {
+          "path": "Data.Policies[].InsurancePolicyId",
+          "name": "InsurancePolicyId",
+          "type": "string",
+          "format": "uuid",
+          "minLength": 1,
+          "maxLength": 128,
+          "status": "mandatory",
+          "description": "Unique identifier for a given insurance policy"
+        },
+        {
+          "path": "Data.Policies[].PolicyNumber",
+          "name": "PolicyNumber",
+          "type": "string",
+          "status": "mandatory",
+          "description": "The policy number assigned by the LFI."
+        },
+        {
+          "path": "Data.Policies[].PolicyStatus",
+          "name": "PolicyStatus",
+          "type": "string",
+          "enum": [
+            "New",
+            "Renewed",
+            "Expired",
+            "Lapsed",
+            "Cancelled",
+            "PaidUp",
+            "Converted",
+            "Surrendered",
+            "DeathClaim",
+            "RiderClaim"
+          ],
+          "status": "mandatory",
+          "description": "The status of the policy, with the following definitions:\n\n* `New`: New policy issued\n\n* `Renewed`: The reissuing of the same policy for a subsequent term\n\n* `Expired`: Policy has been expired by date\n\n* `Lapsed`: No longer valid policy\n\n* `Cancelled`: Policy cancelled by insurer or insured\n\n* `PaidUp`: Policy paid up in full\n\n* `Converted`: Policy converted to another plan\n\n* `Surrendered`: Policy has been surrendered\n\n* `DeathClaim`: Policy paid due to death (only for Life)\n\n* `RiderClaim`: Rider paid (only for Life)\n"
+        },
+        {
+          "path": "Data.Policies[].PolicyStartDate",
+          "name": "PolicyStartDate",
+          "type": "string",
+          "format": "date",
+          "status": "mandatory",
+          "description": "Policy start date"
+        },
+        {
+          "path": "Data.Policies[].PolicyEndDate",
+          "name": "PolicyEndDate",
+          "type": "string",
+          "format": "date",
+          "status": "optional",
+          "description": "Policy end date"
+        },
+        {
+          "path": "Links",
+          "name": "Links",
+          "type": "object",
+          "status": "mandatory",
+          "description": "Links relevant to the resource"
+        },
+        {
+          "path": "Links.Self",
+          "name": "Self",
+          "type": "string",
+          "format": "uri",
+          "status": "mandatory",
+          "description": "A link to the current resource"
+        },
+        {
+          "path": "Links.First",
+          "name": "First",
+          "type": "string",
+          "format": "uri",
+          "status": "optional",
+          "description": "A link to the first page in a paginated result set"
+        },
+        {
+          "path": "Links.Prev",
+          "name": "Prev",
+          "type": "string",
+          "format": "uri",
+          "status": "optional",
+          "description": "A link to the previous page in a paginated result set"
+        },
+        {
+          "path": "Links.Next",
+          "name": "Next",
+          "type": "string",
+          "format": "uri",
+          "status": "optional",
+          "description": "A link to the next page in a paginated result set"
+        },
+        {
+          "path": "Links.Last",
+          "name": "Last",
+          "type": "string",
+          "format": "uri",
+          "status": "optional",
+          "description": "A link to the last page in a paginated result set"
+        },
+        {
+          "path": "Meta",
+          "name": "Meta",
+          "type": "object",
+          "status": "mandatory"
+        },
+        {
+          "path": "Meta.TotalPages",
+          "name": "TotalPages",
+          "type": "integer",
+          "format": "int32",
+          "status": "mandatory",
+          "description": "Total number of pages where a result set is paginated"
+        }
+      ]
+    },
+    "/motor-insurance-policies/{InsurancePolicyId}": {
+      "method": "GET",
+      "summary": "Retrieve a motor insurance policy",
+      "operationId": "MotorInsurancePoliciesById_read",
+      "schemaRef": "#/components/schemas/AEReadMotorInsurancePolicy1",
+      "fields": [
+        {
+          "path": "Data",
+          "name": "Data",
+          "type": "object",
+          "status": "mandatory"
+        },
+        {
+          "path": "Data.InsurancePolicyId",
+          "name": "InsurancePolicyId",
+          "type": "string",
+          "format": "uuid",
+          "minLength": 1,
+          "maxLength": 128,
+          "status": "mandatory",
+          "description": "Unique identifier for a given insurance policy"
+        },
+        {
+          "path": "Data.PolicyHolder",
+          "name": "PolicyHolder",
+          "type": "object",
+          "status": "optional"
+        },
+        {
+          "path": "Data.PolicyHolder.Salutation",
+          "name": "Salutation",
+          "type": "string",
+          "enum": [
+            "Mr",
+            "Mrs",
+            "Ms",
+            "Miss",
+            "Dr",
+            "Prof",
+            "Other"
+          ],
+          "status": "optional"
+        },
+        {
+          "path": "Data.PolicyHolder.FirstName",
+          "name": "FirstName",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 70,
+          "status": "mandatory",
+          "description": "First Name of the individual."
+        },
+        {
+          "path": "Data.PolicyHolder.MiddleName",
+          "name": "MiddleName",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 70,
+          "status": "optional",
+          "description": "Middle Name of the individual."
+        },
+        {
+          "path": "Data.PolicyHolder.LastName",
+          "name": "LastName",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 70,
+          "status": "mandatory",
+          "description": "Last Name (Surname) of the individual."
+        },
+        {
+          "path": "Data.PolicyHolder.Gender",
+          "name": "Gender",
+          "type": "string",
+          "enum": [
+            "Male",
+            "Female",
+            "Other"
+          ],
+          "status": "mandatory"
+        },
+        {
+          "path": "Data.PolicyHolder.DateOfBirth",
+          "name": "DateOfBirth",
+          "type": "string",
+          "format": "date",
+          "status": "mandatory",
+          "description": "Date of birth of the individual."
+        },
+        {
+          "path": "Data.PolicyHolder.MaritalStatus",
+          "name": "MaritalStatus",
+          "type": "string",
+          "enum": [
+            "Single",
+            "Married",
+            "Divorced",
+            "Widowed",
+            "Separated",
+            "Other"
+          ],
+          "status": "optional"
+        },
+        {
+          "path": "Data.PolicyHolder.ResidentialLocation",
+          "name": "ResidentialLocation",
+          "type": "string",
+          "status": "optional",
+          "description": "Residential Location of the individual."
+        },
+        {
+          "path": "Data.PolicyHolder.LandlineNumber",
+          "name": "LandlineNumber",
+          "type": "string",
+          "pattern": "^\\+?[1-9]\\d{1,14}$",
+          "status": "optional"
+        },
+        {
+          "path": "Data.PolicyHolder.Nationality",
+          "name": "Nationality",
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "status": "mandatory",
+          "description": "The nationality of the individual based on the ISO 3166-1 alpha-3 codes"
+        },
+        {
+          "path": "Data.PolicyHolder.PrimaryLanguage",
+          "name": "PrimaryLanguage",
+          "type": "string",
+          "enum": [
+            "English",
+            "Arabic",
+            "Other"
+          ],
+          "status": "optional",
+          "description": "Primary language spoken by the insurance policy customer"
+        },
+        {
+          "path": "Data.PolicyHolder.MobileNumber",
+          "name": "MobileNumber",
+          "type": "string",
+          "pattern": "^\\+?[1-9]\\d{1,14}$",
+          "status": "mandatory"
+        },
+        {
+          "path": "Data.PolicyHolder.EmailAddress",
+          "name": "EmailAddress",
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+          "status": "mandatory"
+        },
+        {
+          "path": "Data.PolicyHolder.Address",
+          "name": "Address",
+          "type": "array",
+          "status": "mandatory",
+          "description": "Customer's address details"
+        },
+        {
+          "path": "Data.PolicyHolder.Address[]",
+          "name": "Address[]",
+          "type": "object",
+          "status": "optional"
+        },
+        {
+          "path": "Data.PolicyHolder.Address[].AddressType",
+          "name": "AddressType",
+          "type": "string",
+          "enum": [
+            "Billing",
+            "Business",
+            "Correspondence",
+            "DeliveryTo",
+            "MailTo",
+            "POBox",
+            "Postal",
+            "Permanent",
+            "Residential",
+            "Statement",
+            "Other"
+          ],
+          "status": "optional",
+          "description": "The type of address."
+        },
+        {
+          "path": "Data.PolicyHolder.Address[].AddressLine",
+          "name": "AddressLine",
+          "type": "array",
+          "status": "mandatory",
+          "description": "Information that locates and identifies a specific address for a transaction entry, that is presented in free format text.\n\nThis value should be used where the address is provided or stored as a single string."
+        },
+        {
+          "path": "Data.PolicyHolder.Address[].AddressLine[]",
+          "name": "AddressLine[]",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 70,
+          "status": "optional"
+        },
+        {
+          "path": "Data.PolicyHolder.Address[].BuildingNumber",
+          "name": "BuildingNumber",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16,
+          "status": "optional",
+          "description": "The unit, apartment, or villa number within a building or community"
+        },
+        {
+          "path": "Data.PolicyHolder.Address[].BuildingName",
+          "name": "BuildingName",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "status": "optional",
+          "description": "Name of the building or house."
+        },
+        {
+          "path": "Data.PolicyHolder.Address[].Floor",
+          "name": "Floor",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 70,
+          "status": "optional",
+          "description": "Floor or storey within a building."
+        },
+        {
+          "path": "Data.PolicyHolder.Address[].StreetName",
+          "name": "StreetName",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "status": "optional",
+          "description": "The name of the street or road where the property is located"
+        },
+        {
+          "path": "Data.PolicyHolder.Address[].DistrictName",
+          "name": "DistrictName",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "status": "optional",
+          "description": "The district, community, or neighbourhood where the property is located"
+        },
+        {
+          "path": "Data.PolicyHolder.Address[].PostBox",
+          "name": "PostBox",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16,
+          "status": "optional",
+          "description": "The P.O. Box number assigned to the recipient for mail delivery"
+        },
+        {
+          "path": "Data.PolicyHolder.Address[].TownName",
+          "name": "TownName",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "status": "optional",
+          "description": "Name of a built-up area, such as a town or city"
+        },
+        {
+          "path": "Data.PolicyHolder.Address[].CountrySubDivision",
+          "name": "CountrySubDivision",
+          "type": "string",
+          "enum": [
+            "AbuDhabi",
+            "Ajman",
+            "Dubai",
+            "Fujairah",
+            "RasAlKhaimah",
+            "Sharjah",
+            "UmmAlQuwain"
+          ],
+          "status": "optional"
+        },
+        {
+          "path": "Data.PolicyHolder.Address[].Country",
+          "name": "Country",
+          "type": "string",
+          "pattern": "[A-Z]{2}",
+          "status": "mandatory",
+          "description": "Country code that conforms with ISO 3166, 3 character alpha code"
+        },
+        {
+          "path": "Data.PolicyHolder.PreviousNameDetails",
+          "name": "PreviousNameDetails",
+          "type": "object",
+          "status": "optional",
+          "description": "Required if the applicant or policy was known by a previous name. One of MaidenName or AliasName must be populated. This property can be omitted if the customer confirms they held no previous names."
+        },
+        {
+          "path": "Data.PolicyHolder.PreviousNameDetails.MaidenName",
+          "name": "MaidenName",
+          "type": "string",
+          "status": "optional",
+          "description": "The maiden name of the customer"
+        },
+        {
+          "path": "Data.PolicyHolder.PreviousNameDetails.AliasName",
+          "name": "AliasName",
+          "type": "string",
+          "status": "optional",
+          "description": "Any name, whether legal or casual, that the customer uses or has used on any forms in addition to their birth name.  This includes shortened versions of their name."
+        },
+        {
+          "path": "Data.PolicyHolder.SecondNationality",
+          "name": "SecondNationality",
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "status": "optional",
+          "description": "Confirmation of the policyholder's second nationality when they have dual nationality"
+        },
+        {
+          "path": "Data.PolicyHolder.CountryOfBirth",
+          "name": "CountryOfBirth",
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "status": "optional",
+          "description": "Place of Birth of the Insured Person"
+        },
+        {
+          "path": "Data.Identity",
+          "name": "Identity",
+          "type": "object",
+          "status": "optional",
+          "description": "Details of the Emirates ID held by the policyholder or insured person."
+        },
+        {
+          "path": "Data.Identity.EmiratesId",
+          "name": "EmiratesId",
+          "type": "object",
+          "status": "mandatory"
+        },
+        {
+          "path": "Data.Identity.EmiratesId.EmiratesIdNumber",
+          "name": "EmiratesIdNumber",
+          "type": "string",
+          "pattern": "^784-?[0-9]{4}-?[0-9]{7}-?[0-9]{1}$",
+          "status": "mandatory",
+          "description": "Emirates identification number"
+        },
+        {
+          "path": "Data.Identity.EmiratesId.EmiratesIdExpiryDate",
+          "name": "EmiratesIdExpiryDate",
+          "type": "string",
+          "format": "date",
+          "status": "optional",
+          "description": "Emirates ID expiry date"
+        },
+        {
+          "path": "Data.Identity.Visa",
+          "name": "Visa",
+          "type": "object",
+          "status": "optional"
+        },
+        {
+          "path": "Data.Identity.Visa.VisaType",
+          "name": "VisaType",
+          "type": "string",
+          "enum": [
+            "Employment",
+            "Residence",
+            "Business",
+            "Investor",
+            "Freelance",
+            "VirtualWork",
+            "Retirement",
+            "Student",
+            "Family",
+            "Green",
+            "Golden",
+            "Blue"
+          ],
+          "status": "mandatory",
+          "description": "The type of visa issues, based on an available code list"
+        },
+        {
+          "path": "Data.Identity.Visa.VisaNumber",
+          "name": "VisaNumber",
+          "type": "string",
+          "pattern": "^[0-9]+$",
+          "status": "mandatory",
+          "description": "Visa number"
+        },
+        {
+          "path": "Data.Identity.Visa.IssueDate",
+          "name": "IssueDate",
+          "type": "string",
+          "format": "date",
+          "status": "optional",
+          "description": "The visa issue date"
+        },
+        {
+          "path": "Data.Identity.Visa.ExpiryDate",
+          "name": "ExpiryDate",
+          "type": "string",
+          "format": "date",
+          "status": "optional",
+          "description": "The visa expiry date"
+        },
+        {
+          "path": "Data.Identity.Visa.IssuingEmirate",
+          "name": "IssuingEmirate",
+          "type": "string",
+          "enum": [
+            "AbuDhabi",
+            "Ajman",
+            "Dubai",
+            "Fujairah",
+            "RasAlKhaimah",
+            "Sharjah",
+            "UmmAlQuwain"
+          ],
+          "status": "optional"
+        },
+        {
+          "path": "Data.Product",
+          "name": "Product",
+          "type": "object",
+          "status": "optional"
+        },
+        {
+          "path": "Data.Product.Policy",
+          "name": "Policy",
+          "type": "object",
+          "status": "mandatory",
+          "description": "Details of the policy."
+        },
+        {
+          "path": "Data.Product.Policy.TypeOfPolicy",
+          "name": "TypeOfPolicy",
+          "type": "string",
+          "enum": [
+            "Comprehensive",
+            "ThirdPartyLiability"
+          ],
+          "status": "mandatory",
+          "description": "Specifies whether the motor insurance policy is Comprehensive or Third Party Liability."
+        },
+        {
+          "path": "Data.Product.Policy.RegistrationType",
+          "name": "RegistrationType",
+          "type": "string",
+          "enum": [
+            "New",
+            "RenewalOfExistingVehicle"
+          ],
+          "status": "optional",
+          "description": "Indicates whether the policy is for a brand new car, renewal of registration and insurance or a change of ownership (purchasing a pre-owned / 'second-hand' car)"
+        },
+        {
+          "path": "Data.Product.Policy.PolicyStartDate",
+          "name": "PolicyStartDate",
+          "type": "string",
+          "format": "date",
+          "status": "mandatory",
+          "description": "Policy start date"
+        },
+        {
+          "path": "Data.Product.Policy.PolicyEndDate",
+          "name": "PolicyEndDate",
+          "type": "string",
+          "format": "date",
+          "status": "optional",
+          "description": "Policy end date"
+        },
+        {
+          "path": "Data.Product.Policy.CarUsage",
+          "name": "CarUsage",
+          "type": "string",
+          "enum": [
+            "Private",
+            "Commercial"
+          ],
+          "status": "mandatory",
+          "description": "The primary purpose of the vehicle usage"
+        },
+        {
+          "path": "Data.Product.Policy.CarValuation",
+          "name": "CarValuation",
+          "type": "object",
+          "status": "optional",
+          "description": "The Currency and Amount relating to the Payment, Refund or Request to Pay"
+        },
+        {
+          "path": "Data.Product.Policy.CarValuation.Currency",
+          "name": "Currency",
+          "type": "string",
+          "pattern": "^[A-Z]{3,3}$",
+          "status": "mandatory",
+          "description": "A 3 character alphabetic code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'."
+        },
+        {
+          "path": "Data.Product.Policy.CarValuation.Amount",
+          "name": "Amount",
+          "type": "string",
+          "pattern": "^\\d{1,16}\\.\\d{2}$",
+          "status": "mandatory",
+          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217."
+        },
+        {
+          "path": "Data.Product.Policy.PolicyNumber",
+          "name": "PolicyNumber",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "status": "mandatory",
+          "description": "The official reference number assigned to the policy by the LFI for identification and tracking and is known by User"
+        },
+        {
+          "path": "Data.Product.Policy.PurchaseDate",
+          "name": "PurchaseDate",
+          "type": "string",
+          "format": "date",
+          "status": "mandatory",
+          "description": "The date when the insurance policy was purchased by the policyholder."
+        },
+        {
+          "path": "Data.Product.Policy.Takaful",
+          "name": "Takaful",
+          "type": "boolean",
+          "status": "mandatory",
+          "description": "Indicates whether the policy is Sharia compliant."
+        },
+        {
+          "path": "Data.Product.Policy.ProductName",
+          "name": "ProductName",
+          "type": "string",
+          "status": "mandatory",
+          "description": "Business name of the policy product as provided externally to the customer."
+        },
+        {
+          "path": "Data.Product.Policy.PolicyExcess",
+          "name": "PolicyExcess",
+          "type": "object",
+          "status": "optional",
+          "description": "The Currency and Amount relating to the Payment, Refund or Request to Pay"
+        },
+        {
+          "path": "Data.Product.Policy.PolicyExcess.Currency",
+          "name": "Currency",
+          "type": "string",
+          "pattern": "^[A-Z]{3,3}$",
+          "status": "mandatory",
+          "description": "A 3 character alphabetic code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'."
+        },
+        {
+          "path": "Data.Product.Policy.PolicyExcess.Amount",
+          "name": "Amount",
+          "type": "string",
+          "pattern": "^\\d{1,16}\\.\\d{2}$",
+          "status": "mandatory",
+          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217."
+        },
+        {
+          "path": "Data.Product.Policy.PolicyCoverAndBenefits",
+          "name": "PolicyCoverAndBenefits",
+          "type": "array",
+          "status": "mandatory",
+          "description": "Cover and benefits provided by the policy."
+        },
+        {
+          "path": "Data.Product.Policy.PolicyCoverAndBenefits[]",
+          "name": "PolicyCoverAndBenefits[]",
+          "type": "object",
+          "status": "optional"
+        },
+        {
+          "path": "Data.Product.Policy.PolicyCoverAndBenefits[].CoverType",
+          "name": "CoverType",
+          "type": "string",
+          "status": "mandatory",
+          "description": "Type of cover as defined in company systems."
+        },
+        {
+          "path": "Data.Product.Policy.PolicyCoverAndBenefits[].Description",
+          "name": "Description",
+          "type": "string",
+          "status": "mandatory",
+          "description": "Description of the cover / benefit."
+        },
+        {
+          "path": "Data.Product.Policy.PolicyCoverAndBenefits[].Required",
+          "name": "Required",
+          "type": "boolean",
+          "status": "mandatory",
+          "description": "To confirm whether the cover or benefit is required as part of the base insurance policy or is optional."
+        },
+        {
+          "path": "Data.Product.Policy.PolicyCoverAndBenefits[].CoverLimit",
+          "name": "CoverLimit",
+          "type": "object",
+          "status": "optional",
+          "description": "The Currency and Amount relating to the Payment, Refund or Request to Pay"
+        },
+        {
+          "path": "Data.Product.Policy.PolicyCoverAndBenefits[].CoverLimit.Currency",
+          "name": "Currency",
+          "type": "string",
+          "pattern": "^[A-Z]{3,3}$",
+          "status": "mandatory",
+          "description": "A 3 character alphabetic code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'."
+        },
+        {
+          "path": "Data.Product.Policy.PolicyCoverAndBenefits[].CoverLimit.Amount",
+          "name": "Amount",
+          "type": "string",
+          "pattern": "^\\d{1,16}\\.\\d{2}$",
+          "status": "mandatory",
+          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217."
+        },
+        {
+          "path": "Data.Product.Policy.PolicyCoverAndBenefits[].CoverInclusionsAndExclusions",
+          "name": "CoverInclusionsAndExclusions",
+          "type": "array",
+          "status": "optional",
+          "description": "included inclusions and exclusions for cover type."
+        },
+        {
+          "path": "Data.Product.Policy.PolicyCoverAndBenefits[].CoverInclusionsAndExclusions[]",
+          "name": "CoverInclusionsAndExclusions[]",
+          "type": "object",
+          "status": "optional"
+        },
+        {
+          "path": "Data.Product.Policy.PolicyCoverAndBenefits[].CoverInclusionsAndExclusions[].InclusionAndExclusionDescription",
+          "name": "InclusionAndExclusionDescription",
+          "type": "string",
+          "status": "mandatory",
+          "description": "Description of the inclusion or exclusion."
+        },
+        {
+          "path": "Data.Product.Policy.PolicyCoverAndBenefits[].CoverExcess",
+          "name": "CoverExcess",
+          "type": "object",
+          "status": "optional",
+          "description": "The Currency and Amount relating to the Payment, Refund or Request to Pay"
+        },
+        {
+          "path": "Data.Product.Policy.PolicyCoverAndBenefits[].CoverExcess.Currency",
+          "name": "Currency",
+          "type": "string",
+          "pattern": "^[A-Z]{3,3}$",
+          "status": "mandatory",
+          "description": "A 3 character alphabetic code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'."
+        },
+        {
+          "path": "Data.Product.Policy.PolicyCoverAndBenefits[].CoverExcess.Amount",
+          "name": "Amount",
+          "type": "string",
+          "pattern": "^\\d{1,16}\\.\\d{2}$",
+          "status": "mandatory",
+          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217."
+        },
+        {
+          "path": "Data.Product.Policy.PolicyCoverAndBenefits[].CoverID",
+          "name": "CoverID",
+          "type": "string",
+          "status": "optional",
+          "description": "Insurers internal unique ID for specific cover."
+        },
+        {
+          "path": "Data.Product.Policy.PolicyPurchaseChannelType",
+          "name": "PolicyPurchaseChannelType",
+          "type": "string",
+          "enum": [
+            "Direct",
+            "Agent",
+            "Broker",
+            "Bank",
+            "InvFinInst",
+            "TPA",
+            "OnlineInsideUAE",
+            "OnlineOutsideUAE",
+            "Aggregation",
+            "Outside",
+            "Other"
+          ],
+          "status": "mandatory",
+          "description": "Sales channel of policy."
+        },
+        {
+          "path": "Data.Product.VehicleDetails",
+          "name": "VehicleDetails",
+          "type": "object",
+          "status": "mandatory"
+        },
+        {
+          "path": "Data.Product.VehicleDetails.EngineNumber",
+          "name": "EngineNumber",
+          "type": "string",
+          "status": "optional",
+          "description": "The identification of the motor vehicle engine"
+        },
+        {
+          "path": "Data.Product.VehicleDetails.ModelYear",
+          "name": "ModelYear",
+          "type": "string",
+          "pattern": "^[0-9]{4}$",
+          "status": "mandatory",
+          "description": "The manufacturing year of the vehicle."
+        },
+        {
+          "path": "Data.Product.VehicleDetails.Make",
+          "name": "Make",
+          "type": "string",
+          "status": "mandatory",
+          "description": "The brand or manufacturer of the vehicle."
+        },
+        {
+          "path": "Data.Product.VehicleDetails.Model",
+          "name": "Model",
+          "type": "string",
+          "status": "mandatory",
+          "description": "The specific model name of the vehicle."
+        },
+        {
+          "path": "Data.Product.VehicleDetails.Trim",
+          "name": "Trim",
+          "type": "string",
+          "status": "mandatory",
+          "description": "The variant or trim level of the vehicle, indicating features and specifications"
+        },
+        {
+          "path": "Data.Product.VehicleDetails.BodyType",
+          "name": "BodyType",
+          "type": "string",
+          "enum": [
+            "Saloon",
+            "4WD",
+            "Pickup",
+            "Truck",
+            "TrailerHead",
+            "Trailer",
+            "Water",
+            "Fuel Tanker",
+            "Buses",
+            "Dumper",
+            "Agriculture",
+            "Forklift",
+            "Heavy Equipment",
+            "Motorcycle",
+            "Others"
+          ],
+          "status": "mandatory",
+          "description": "The type motor vehicle like saloon, Station/SUV, coupe "
+        },
+        {
+          "path": "Data.Product.VehicleDetails.Color",
+          "name": "Color",
+          "type": "string",
+          "status": "optional",
+          "description": "The exterior colour of the vehicle."
+        },
+        {
+          "path": "Data.Product.VehicleDetails.LoadingCapacity",
+          "name": "LoadingCapacity",
+          "type": "string",
+          "status": "optional",
+          "description": "The maximum weight the vehicle can carry, including passengers and cargo"
+        },
+        {
+          "path": "Data.Product.VehicleDetails.Weight",
+          "name": "Weight",
+          "type": "integer",
+          "status": "optional",
+          "description": "The total weight of the vehicle when empty to nearest kilograms"
+        },
+        {
+          "path": "Data.Product.VehicleDetails.CountryOfOrigin",
+          "name": "CountryOfOrigin",
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "status": "optional",
+          "description": "The country where the vehicle was manufactured"
+        },
+        {
+          "path": "Data.Product.VehicleDetails.NoOfPassengersIncDriver",
+          "name": "NoOfPassengersIncDriver",
+          "type": "integer",
+          "status": "mandatory",
+          "description": "The number of passengers that can be carried in the car"
+        },
+        {
+          "path": "Data.Product.VehicleDetails.Mileage",
+          "name": "Mileage",
+          "type": "integer",
+          "status": "optional",
+          "description": "Vehicle mileage to nearest kilometre"
+        },
+        {
+          "path": "Data.Product.VehicleDetails.EngineProperties",
+          "name": "EngineProperties",
+          "type": "object",
+          "status": "optional",
+          "description": "Properties of the vehicle engine."
+        },
+        {
+          "path": "Data.Product.VehicleDetails.EngineProperties.EngineType",
+          "name": "EngineType",
+          "type": "string",
+          "enum": [
+            "Electric",
+            "Hybrid",
+            "InternalCombustionEngine"
+          ],
+          "status": "optional",
+          "description": "Details of the engine type for the vehicle."
+        },
+        {
+          "path": "Data.Product.VehicleDetails.EngineProperties.BatteryCapacity",
+          "name": "BatteryCapacity",
+          "type": "string",
+          "status": "optional",
+          "description": "The capacity of the battery."
+        },
+        {
+          "path": "Data.Product.VehicleDetails.EngineProperties.MotorPower",
+          "name": "MotorPower",
+          "type": "string",
+          "status": "optional",
+          "description": "The power of the vehicle motor."
+        },
+        {
+          "path": "Data.Product.VehicleDetails.EngineProperties.EngineCapacity",
+          "name": "EngineCapacity",
+          "type": "string",
+          "status": "optional",
+          "description": "The engine displacement volume in cubic centimetres (cc)."
+        },
+        {
+          "path": "Data.Product.VehicleDetails.EngineProperties.CylinderCapacity",
+          "name": "CylinderCapacity",
+          "type": "string",
+          "status": "optional",
+          "description": "The number of cylinders"
+        },
+        {
+          "path": "Data.Product.VehicleDetails.ChassisNumber",
+          "name": "ChassisNumber",
+          "type": "string",
+          "minLength": 17,
+          "maxLength": 17,
+          "status": "optional",
+          "description": "The chassis number (Vehicle Identification Number - VIN) of the motor vehicle to be insured"
+        },
+        {
+          "path": "Data.Product.VehicleDetails.PlateCode",
+          "name": "PlateCode",
+          "type": "string",
+          "status": "optional",
+          "description": "Plate code of the vehicle registration plate that identifies the Emirate where the vehicle is registered"
+        },
+        {
+          "path": "Data.Product.VehicleDetails.PlateNumber",
+          "name": "PlateNumber",
+          "type": "string",
+          "status": "optional",
+          "description": "Vehicle registration plate number"
+        },
+        {
+          "path": "Data.Product.VehicleDetails.PlateSource",
+          "name": "PlateSource",
+          "type": "string",
+          "enum": [
+            "AUH",
+            "DXB",
+            "SHJ",
+            "AJM",
+            "UAQ",
+            "RAK",
+            "FUJ"
+          ],
+          "status": "optional",
+          "description": "The abbreviation of the Emirate where a vehicle's license plate is registered"
+        },
+        {
+          "path": "Data.Product.VehicleDetails.Transmission",
+          "name": "Transmission",
+          "type": "string",
+          "enum": [
+            "Automatic",
+            "Manual"
+          ],
+          "status": "optional",
+          "description": "The type of transmission system in the vehicle"
+        },
+        {
+          "path": "Data.Product.VehicleDetails.Specification",
+          "name": "Specification",
+          "type": "string",
+          "enum": [
+            "GCC",
+            "NonGCC"
+          ],
+          "status": "optional",
+          "description": "Confirm whether the car specification is a Gulf Cooperation Council (GCC) specification."
+        },
+        {
+          "path": "Data.Product.CarRegistration",
+          "name": "CarRegistration",
+          "type": "object",
+          "status": "mandatory",
+          "description": "Details of car registration."
+        },
+        {
+          "path": "Data.Product.CarRegistration.EmirateOfRegistration",
+          "name": "EmirateOfRegistration",
+          "type": "string",
+          "enum": [
+            "AbuDhabi",
+            "Ajman",
+            "Dubai",
+            "Fujairah",
+            "RasAlKhaimah",
+            "Sharjah",
+            "UmmAlQuwain"
+          ],
+          "status": "mandatory"
+        },
+        {
+          "path": "Data.Product.CarRegistration.DateOfFirstRegistration",
+          "name": "DateOfFirstRegistration",
+          "type": "string",
+          "format": "date",
+          "status": "optional",
+          "description": "Date the motor vehicle was first registered"
+        },
+        {
+          "path": "Data.Product.CarRegistration.RegistrationExpiry",
+          "name": "RegistrationExpiry",
+          "type": "string",
+          "format": "date",
+          "status": "optional",
+          "description": "Date when the current registration expires."
+        },
+        {
+          "path": "Data.Product.CarRegistration.ValidMulkiyaHeld",
+          "name": "ValidMulkiyaHeld",
+          "type": "boolean",
+          "status": "optional",
+          "description": "Confirmation whether the Mulkiya (vehicle registration card) is held by the applicant/customer. The Mulkiya document is collected by the LFI if the Customer elects to proceed with the quote."
+        },
+        {
+          "path": "Data.Product.DrivingLicenseHistory",
+          "name": "DrivingLicenseHistory",
+          "type": "object",
+          "status": "mandatory",
+          "description": "Details of policyholder driving license history."
+        },
+        {
+          "path": "Data.Product.DrivingLicenseHistory.DrivingLicenseNumber",
+          "name": "DrivingLicenseNumber",
+          "type": "string",
+          "status": "mandatory",
+          "description": "The policyholder or applicant driving license number."
+        },
+        {
+          "path": "Data.Product.DrivingLicenseHistory.DrivingLicenseIssuingEmirate",
+          "name": "DrivingLicenseIssuingEmirate",
+          "type": "string",
+          "enum": [
+            "AbuDhabi",
+            "Ajman",
+            "Dubai",
+            "Fujairah",
+            "RasAlKhaimah",
+            "Sharjah",
+            "UmmAlQuwain"
+          ],
+          "status": "optional"
+        },
+        {
+          "path": "Data.Product.DrivingLicenseHistory.TimeDrivingInUAE",
+          "name": "TimeDrivingInUAE",
+          "type": "string",
+          "format": "duration",
+          "pattern": "^P(\\d+Y)?(\\d+M)?$",
+          "status": "optional"
+        },
+        {
+          "path": "Data.Product.DrivingLicenseHistory.DrivingLicenseIssueDate",
+          "name": "DrivingLicenseIssueDate",
+          "type": "string",
+          "format": "date",
+          "status": "optional",
+          "description": "The date when the policyholder or applicant UAE driving license was issued."
+        },
+        {
+          "path": "Data.Product.DrivingLicenseHistory.HomeCountryDrivingLicenseNumber",
+          "name": "HomeCountryDrivingLicenseNumber",
+          "type": "string",
+          "status": "optional",
+          "description": "The driving license number that was issued by the customer's home country"
+        },
+        {
+          "path": "Data.Product.DrivingLicenseHistory.TrafficIdNumber",
+          "name": "TrafficIdNumber",
+          "type": "string",
+          "status": "optional",
+          "description": "The Traffic Code Number (TC number) as detailed on the vehicle registration card (Mulkiya) or the driver's driving licence."
+        },
+        {
+          "path": "Data.Product.DrivingLicenseHistory.HomeCountryDrivingExperience",
+          "name": "HomeCountryDrivingExperience",
+          "type": "string",
+          "format": "duration",
+          "pattern": "^P(\\d+Y)?(\\d+M)?$",
+          "status": "optional"
+        },
+        {
+          "path": "Data.Product.AdditionalDrivers",
+          "name": "AdditionalDrivers",
+          "type": "array",
+          "status": "optional",
+          "description": "Details of additional drivers on the policy. Omitted if no additional drivers are insured."
+        },
+        {
+          "path": "Data.Product.AdditionalDrivers[]",
+          "name": "AdditionalDrivers[]",
+          "type": "object",
+          "status": "optional"
+        },
+        {
+          "path": "Data.Product.AdditionalDrivers[].RelationshipToMainDriver",
+          "name": "RelationshipToMainDriver",
+          "type": "string",
+          "enum": [
+            "Spouse",
+            "Parent",
+            "Sibling",
+            "Child",
+            "Friend",
+            "Employee",
+            "Other"
+          ],
+          "status": "optional",
+          "description": "The additional driver's relationship to the main driver"
+        },
+        {
+          "path": "Data.Product.AdditionalDrivers[].FullName",
+          "name": "FullName",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "status": "mandatory",
+          "description": "Full name of the additional driver"
+        },
+        {
+          "path": "Data.Product.AdditionalDrivers[].DateOfBirth",
+          "name": "DateOfBirth",
+          "type": "string",
+          "format": "date",
+          "status": "optional",
+          "description": "Date of birth of the individual."
+        },
+        {
+          "path": "Data.Product.AdditionalDrivers[].Gender",
+          "name": "Gender",
+          "type": "string",
+          "enum": [
+            "Male",
+            "Female",
+            "Other"
+          ],
+          "status": "optional"
+        },
+        {
+          "path": "Data.Product.AdditionalDrivers[].Nationality",
+          "name": "Nationality",
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "status": "optional",
+          "description": "The nationality of the individual based on the ISO 3166-1 alpha-3 codes"
+        },
+        {
+          "path": "Data.Product.AdditionalDrivers[].DrivingLicenseNumber",
+          "name": "DrivingLicenseNumber",
+          "type": "string",
+          "status": "optional",
+          "description": "The policyholder or applicant driving license number."
+        },
+        {
+          "path": "Data.Product.AdditionalDrivers[].DrivingLicenseIssuingEmirate",
+          "name": "DrivingLicenseIssuingEmirate",
+          "type": "string",
+          "enum": [
+            "AbuDhabi",
+            "Ajman",
+            "Dubai",
+            "Fujairah",
+            "RasAlKhaimah",
+            "Sharjah",
+            "UmmAlQuwain"
+          ],
+          "status": "optional"
+        },
+        {
+          "path": "Data.Product.AdditionalDrivers[].TimeDrivingInUAE",
+          "name": "TimeDrivingInUAE",
+          "type": "string",
+          "format": "duration",
+          "pattern": "^P(\\d+Y)?(\\d+M)?$",
+          "status": "optional"
+        },
+        {
+          "path": "Data.Product.AdditionalDrivers[].DrivingLicenseIssueDate",
+          "name": "DrivingLicenseIssueDate",
+          "type": "string",
+          "format": "date",
+          "status": "optional",
+          "description": "The date when the policyholder or applicant UAE driving license was issued."
+        },
+        {
+          "path": "Data.Product.AdditionalDrivers[].EmiratesIdNumber",
+          "name": "EmiratesIdNumber",
+          "type": "string",
+          "pattern": "^784-?[0-9]{4}-?[0-9]{7}-?[0-9]{1}$",
+          "status": "optional",
+          "description": "Emirates identification number"
+        },
+        {
+          "path": "Data.Product.CarFinance",
+          "name": "CarFinance",
+          "type": "object",
+          "status": "optional",
+          "description": "Details of any finance on the insured vehicle. Omitted if no finance held or recorded."
+        },
+        {
+          "path": "Data.Product.CarFinance.BankName",
+          "name": "BankName",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 70,
+          "status": "mandatory",
+          "description": "Confirm the Bank or registered finance company providing the car finance."
+        },
+        {
+          "path": "Data.Product.CarFinance.FinanceAmount",
+          "name": "FinanceAmount",
+          "type": "object",
+          "status": "optional",
+          "description": "The Currency and Amount relating to the Payment, Refund or Request to Pay"
+        },
+        {
+          "path": "Data.Product.CarFinance.FinanceAmount.Currency",
+          "name": "Currency",
+          "type": "string",
+          "pattern": "^[A-Z]{3,3}$",
+          "status": "mandatory",
+          "description": "A 3 character alphabetic code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'."
+        },
+        {
+          "path": "Data.Product.CarFinance.FinanceAmount.Amount",
+          "name": "Amount",
+          "type": "string",
+          "pattern": "^\\d{1,16}\\.\\d{2}$",
+          "status": "mandatory",
+          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217."
+        },
+        {
+          "path": "Data.Product.CarFinance.FinanceStartDate",
+          "name": "FinanceStartDate",
+          "type": "string",
+          "format": "date",
+          "status": "optional",
+          "description": "Finance start date"
+        },
+        {
+          "path": "Data.Product.CarFinance.FinanceEndDate",
+          "name": "FinanceEndDate",
+          "type": "string",
+          "format": "date",
+          "status": "optional",
+          "description": "Finance end date"
+        },
+        {
+          "path": "Data.Product.CarFinance.FinanceTerm",
+          "name": "FinanceTerm",
+          "type": "integer",
+          "status": "optional",
+          "description": "The finance term in months"
+        },
+        {
+          "path": "Data.Product.CarFinance.FinanceInterestRate",
+          "name": "FinanceInterestRate",
+          "type": "number",
+          "status": "optional",
+          "description": "Finance interest rate"
+        },
+        {
+          "path": "Data.Product.CarFinance.OutstandingFinanceBalance",
+          "name": "OutstandingFinanceBalance",
+          "type": "object",
+          "status": "optional",
+          "description": "The Currency and Amount relating to the Payment, Refund or Request to Pay"
+        },
+        {
+          "path": "Data.Product.CarFinance.OutstandingFinanceBalance.Currency",
+          "name": "Currency",
+          "type": "string",
+          "pattern": "^[A-Z]{3,3}$",
+          "status": "mandatory",
+          "description": "A 3 character alphabetic code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'."
+        },
+        {
+          "path": "Data.Product.CarFinance.OutstandingFinanceBalance.Amount",
+          "name": "Amount",
+          "type": "string",
+          "pattern": "^\\d{1,16}\\.\\d{2}$",
+          "status": "mandatory",
+          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217."
+        },
+        {
+          "path": "Data.Claims",
+          "name": "Claims",
+          "type": "object",
+          "status": "optional",
+          "description": "Details of claims made against the insurance policy. Requires the `ReadCustomerClaims` permission to be granted by the User."
+        },
+        {
+          "path": "Data.Claims.Summary",
+          "name": "Summary",
+          "type": "array",
+          "status": "mandatory",
+          "description": "Summary of previous claims. `NumberOfPreviousMonths` value must appear only once.\n\nIf no claims have been made then an array element with `NumberOfPreviousMonths` set to zero must be provided, and all claim amounts must be set to zero, to provide a positive assertion that no claims have been made. Currency must be set to AED for this case."
+        },
+        {
+          "path": "Data.Claims.Summary[]",
+          "name": "Summary[]",
+          "type": "object",
+          "status": "optional",
+          "description": "Summary of previous claims. `NumberOfPreviousMonths` value must appear only once, and can be provided based on LFI reporting periods and policy behaviors.\n\nIf no claims have been made then an array element with `NumberOfPreviousMonths` set to zero must be provided, and all claim amounts must be set to zero, to provide a positive assertion that no claims have been made. Currency must be set to AED for this case."
+        },
+        {
+          "path": "Data.Claims.Summary[].NumberOfMonthsInPeriod",
+          "name": "NumberOfMonthsInPeriod",
+          "type": "integer",
+          "status": "mandatory",
+          "description": "The number of months in the summary period."
+        },
+        {
+          "path": "Data.Claims.Summary[].Claims",
+          "name": "Claims",
+          "type": "integer",
+          "status": "mandatory",
+          "description": "Number of claims made during the period."
+        },
+        {
+          "path": "Data.Claims.Summary[].ApprovedClaims",
+          "name": "ApprovedClaims",
+          "type": "integer",
+          "status": "mandatory",
+          "description": "Number of claims approved during the period."
+        },
+        {
+          "path": "Data.Claims.Summary[].TotalGrossApprovedClaimAmount",
+          "name": "TotalGrossApprovedClaimAmount",
+          "type": "object",
+          "status": "mandatory",
+          "description": "The Currency and Amount relating to the Payment, Refund or Request to Pay"
+        },
+        {
+          "path": "Data.Claims.Summary[].TotalGrossApprovedClaimAmount.Currency",
+          "name": "Currency",
+          "type": "string",
+          "pattern": "^[A-Z]{3,3}$",
+          "status": "mandatory",
+          "description": "A 3 character alphabetic code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'."
+        },
+        {
+          "path": "Data.Claims.Summary[].TotalGrossApprovedClaimAmount.Amount",
+          "name": "Amount",
+          "type": "string",
+          "pattern": "^\\d{1,16}\\.\\d{2}$",
+          "status": "mandatory",
+          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217."
+        },
+        {
+          "path": "Data.Claims.Summary[].TotalGrossPaidAmount",
+          "name": "TotalGrossPaidAmount",
+          "type": "object",
+          "status": "mandatory",
+          "description": "The Currency and Amount relating to the Payment, Refund or Request to Pay"
+        },
+        {
+          "path": "Data.Claims.Summary[].TotalGrossPaidAmount.Currency",
+          "name": "Currency",
+          "type": "string",
+          "pattern": "^[A-Z]{3,3}$",
+          "status": "mandatory",
+          "description": "A 3 character alphabetic code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'."
+        },
+        {
+          "path": "Data.Claims.Summary[].TotalGrossPaidAmount.Amount",
+          "name": "Amount",
+          "type": "string",
+          "pattern": "^\\d{1,16}\\.\\d{2}$",
+          "status": "mandatory",
+          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217."
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory",
+          "name": "ClaimsHistory",
+          "type": "array",
+          "status": "optional",
+          "description": "Claims history. Only required if claims have been made against the policy."
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[]",
+          "name": "ClaimsHistory[]",
+          "type": "object",
+          "status": "optional"
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].ClaimUniqueID",
+          "name": "ClaimUniqueID",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "status": "mandatory",
+          "description": "Unique reference that identifies the claim"
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].ClaimDate",
+          "name": "ClaimDate",
+          "type": "string",
+          "format": "date",
+          "status": "mandatory",
+          "description": "The original date the claim was submitted."
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].TotalGrossClaimAmount",
+          "name": "TotalGrossClaimAmount",
+          "type": "object",
+          "status": "mandatory",
+          "description": "The Currency and Amount relating to the Payment, Refund or Request to Pay"
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].TotalGrossClaimAmount.Currency",
+          "name": "Currency",
+          "type": "string",
+          "pattern": "^[A-Z]{3,3}$",
+          "status": "mandatory",
+          "description": "A 3 character alphabetic code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'."
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].TotalGrossClaimAmount.Amount",
+          "name": "Amount",
+          "type": "string",
+          "pattern": "^\\d{1,16}\\.\\d{2}$",
+          "status": "mandatory",
+          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217."
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].ClaimPayments",
+          "name": "ClaimPayments",
+          "type": "array",
+          "status": "optional",
+          "description": "The amounts paid with amount, currency, and date."
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].ClaimPayments[]",
+          "name": "ClaimPayments[]",
+          "type": "object",
+          "status": "optional"
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].ClaimPayments[].Currency",
+          "name": "Currency",
+          "type": "string",
+          "pattern": "^[A-Z]{3,3}$",
+          "status": "mandatory",
+          "description": "A 3 character alphabetic code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'."
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].ClaimPayments[].Amount",
+          "name": "Amount",
+          "type": "string",
+          "pattern": "^\\d{1,16}\\.\\d{2}$",
+          "status": "mandatory",
+          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217."
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].ClaimPayments[].PaymentDate",
+          "name": "PaymentDate",
+          "type": "string",
+          "format": "date",
+          "status": "mandatory",
+          "description": "The date on which the claim payment was made."
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].DeductibleGrossClaimAmount",
+          "name": "DeductibleGrossClaimAmount",
+          "type": "object",
+          "status": "optional",
+          "description": "The Currency and Amount relating to the Payment, Refund or Request to Pay"
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].DeductibleGrossClaimAmount.Currency",
+          "name": "Currency",
+          "type": "string",
+          "pattern": "^[A-Z]{3,3}$",
+          "status": "mandatory",
+          "description": "A 3 character alphabetic code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'."
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].DeductibleGrossClaimAmount.Amount",
+          "name": "Amount",
+          "type": "string",
+          "pattern": "^\\d{1,16}\\.\\d{2}$",
+          "status": "mandatory",
+          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217."
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].PolicyClaimedBenefits",
+          "name": "PolicyClaimedBenefits",
+          "type": "array",
+          "status": "mandatory",
+          "description": "All the claimed policy benefits."
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].PolicyClaimedBenefits[]",
+          "name": "PolicyClaimedBenefits[]",
+          "type": "object",
+          "status": "optional"
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].PolicyClaimedBenefits[].ClaimedBenefitType",
+          "name": "ClaimedBenefitType",
+          "type": "string",
+          "status": "mandatory"
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].PolicyClaimedBenefits[].ClaimedBenefitDescription",
+          "name": "ClaimedBenefitDescription",
+          "type": "string",
+          "status": "mandatory"
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].ClaimApprovalDate",
+          "name": "ClaimApprovalDate",
+          "type": "string",
+          "format": "date",
+          "status": "optional",
+          "description": "The most recent approval date for any portion of the claim."
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].ClaimLastUpdateDate",
+          "name": "ClaimLastUpdateDate",
+          "type": "string",
+          "format": "date",
+          "status": "mandatory",
+          "description": "Last update date of the claim."
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].DirectGrossClaimAmount",
+          "name": "DirectGrossClaimAmount",
+          "type": "object",
+          "status": "optional",
+          "description": "The Currency and Amount relating to the Payment, Refund or Request to Pay"
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].DirectGrossClaimAmount.Currency",
+          "name": "Currency",
+          "type": "string",
+          "pattern": "^[A-Z]{3,3}$",
+          "status": "mandatory",
+          "description": "A 3 character alphabetic code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'."
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].DirectGrossClaimAmount.Amount",
+          "name": "Amount",
+          "type": "string",
+          "pattern": "^\\d{1,16}\\.\\d{2}$",
+          "status": "mandatory",
+          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217."
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].ThirdPartyGrossClaimAmount",
+          "name": "ThirdPartyGrossClaimAmount",
+          "type": "object",
+          "status": "optional",
+          "description": "The Currency and Amount relating to the Payment, Refund or Request to Pay"
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].ThirdPartyGrossClaimAmount.Currency",
+          "name": "Currency",
+          "type": "string",
+          "pattern": "^[A-Z]{3,3}$",
+          "status": "mandatory",
+          "description": "A 3 character alphabetic code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'."
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].ThirdPartyGrossClaimAmount.Amount",
+          "name": "Amount",
+          "type": "string",
+          "pattern": "^\\d{1,16}\\.\\d{2}$",
+          "status": "mandatory",
+          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217."
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].ThirdPartyRecoveryCompany",
+          "name": "ThirdPartyRecoveryCompany",
+          "type": "string",
+          "status": "optional",
+          "description": "Name of recovery third party insurance company."
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].ThirdPartyRecoveryStatus",
+          "name": "ThirdPartyRecoveryStatus",
+          "type": "string",
+          "enum": [
+            "Approved",
+            "Reopened",
+            "RecoveryOpened",
+            "Paid",
+            "RecoveryReopenedAndClaimClosed",
+            "Rejected",
+            "InProgress"
+          ],
+          "status": "optional",
+          "description": "Status of recovery."
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].LossAdjusterGrossClaimAmount",
+          "name": "LossAdjusterGrossClaimAmount",
+          "type": "object",
+          "status": "optional",
+          "description": "The Currency and Amount relating to the Payment, Refund or Request to Pay"
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].LossAdjusterGrossClaimAmount.Currency",
+          "name": "Currency",
+          "type": "string",
+          "pattern": "^[A-Z]{3,3}$",
+          "status": "mandatory",
+          "description": "A 3 character alphabetic code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'."
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].LossAdjusterGrossClaimAmount.Amount",
+          "name": "Amount",
+          "type": "string",
+          "pattern": "^\\d{1,16}\\.\\d{2}$",
+          "status": "mandatory",
+          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217."
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].OutstandingPayAmount",
+          "name": "OutstandingPayAmount",
+          "type": "object",
+          "status": "optional",
+          "description": "The Currency and Amount relating to the Payment, Refund or Request to Pay"
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].OutstandingPayAmount.Currency",
+          "name": "Currency",
+          "type": "string",
+          "pattern": "^[A-Z]{3,3}$",
+          "status": "mandatory",
+          "description": "A 3 character alphabetic code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'."
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].OutstandingPayAmount.Amount",
+          "name": "Amount",
+          "type": "string",
+          "pattern": "^\\d{1,16}\\.\\d{2}$",
+          "status": "mandatory",
+          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217."
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].Status",
+          "name": "Status",
+          "type": "string",
+          "enum": [
+            "Open",
+            "Outstanding",
+            "Closed",
+            "Reopened",
+            "Cancelled",
+            "Deleted",
+            "Rejected"
+          ],
+          "status": "mandatory",
+          "description": "The status of the claim, based on the following CBUAE standard definitions:\n\n* `Open`: Once the claim is submitted.\n\n* `Outstanding`: The claim is under processing.\n\n* `Closed`: Once the claim is settled & closed.\n\n* `Reopened`: The claim is reopened.\n\n* `Cancelled`: The claim cancelled.\n\n* `Deleted`: The claim entered incorrectly and deleted.\n\n* `Rejected`: Company rejected the claim."
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].IncidentStartDate",
+          "name": "IncidentStartDate",
+          "type": "string",
+          "format": "date",
+          "status": "mandatory",
+          "description": "Start date of the incident."
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].PoliceReportNumber",
+          "name": "PoliceReportNumber",
+          "type": "string",
+          "status": "optional",
+          "description": "Police report number related to the incident"
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].AccidentType",
+          "name": "AccidentType",
+          "type": "string",
+          "status": "optional",
+          "description": "As per CBUAE schema, accident type as provided within company systems"
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].IsTotalLoss",
+          "name": "IsTotalLoss",
+          "type": "boolean",
+          "status": "optional",
+          "description": "Is the vehicle total loss?"
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].TotalLossType",
+          "name": "TotalLossType",
+          "type": "string",
+          "status": "optional",
+          "description": "Financial total loss is where the insurance company will declare a vehicle to be a total loss when the preliminary cost of repairs reaches some pre-determined percentage of the vehicles value: usually 50%."
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].SeverityOfAccident",
+          "name": "SeverityOfAccident",
+          "type": "string",
+          "status": "optional",
+          "description": "As per CBUAE schema, severity of accident"
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].IncidentDateTime",
+          "name": "IncidentDateTime",
+          "type": "string",
+          "format": "date-time",
+          "status": "optional",
+          "description": "Incident date and time"
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].ClaimantAtFault",
+          "name": "ClaimantAtFault",
+          "type": "boolean",
+          "status": "optional",
+          "description": "Is the claimant at fault?"
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].ClaimantPercentageAtFault",
+          "name": "ClaimantPercentageAtFault",
+          "type": "number",
+          "format": "decimal",
+          "status": "optional"
+        },
+        {
+          "path": "Data.Claims.ClaimsHistory[].CrashCause",
+          "name": "CrashCause",
+          "type": "string",
+          "enum": [
+            "Collision",
+            "MaliciousDamage",
+            "OverTurning",
+            "OffRoad",
+            "WindscreenDamage",
+            "Parked",
+            "UnknownDamage",
+            "TyreBurst",
+            "Theft",
+            "Fire",
+            "Other"
+          ],
+          "status": "optional",
+          "description": "Cause of crash."
+        },
+        {
+          "path": "Data.Claims.NoClaimsDiscountLength",
+          "name": "NoClaimsDiscountLength",
+          "type": "integer",
+          "status": "optional",
+          "description": "The total number of years the insured has held a No Claims Discount (NCD) without making a claim."
+        },
+        {
+          "path": "Data.Claims.NoClaimsDiscountAvailable",
+          "name": "NoClaimsDiscountAvailable",
+          "type": "boolean",
+          "status": "mandatory",
+          "description": "Indicates whether the insured's No Claims Discount (NCD) is currently available for transfer or application to the new policy"
+        },
+        {
+          "path": "Data.Premium",
+          "name": "Premium",
+          "type": "object",
+          "status": "optional",
+          "description": "Details of the insurance policy premium."
+        },
+        {
+          "path": "Data.Premium.PremiumAmount",
+          "name": "PremiumAmount",
+          "type": "object",
+          "status": "optional",
+          "description": "The Currency and Amount relating to the Payment, Refund or Request to Pay"
+        },
+        {
+          "path": "Data.Premium.PremiumAmount.Currency",
+          "name": "Currency",
+          "type": "string",
+          "pattern": "^[A-Z]{3,3}$",
+          "status": "mandatory",
+          "description": "A 3 character alphabetic code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'."
+        },
+        {
+          "path": "Data.Premium.PremiumAmount.Amount",
+          "name": "Amount",
+          "type": "string",
+          "pattern": "^\\d{1,16}\\.\\d{2}$",
+          "status": "mandatory",
+          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217."
+        },
+        {
+          "path": "Data.Premium.VatAmount",
+          "name": "VatAmount",
+          "type": "object",
+          "status": "optional",
+          "description": "The Currency and Amount relating to the Payment, Refund or Request to Pay"
+        },
+        {
+          "path": "Data.Premium.VatAmount.Currency",
+          "name": "Currency",
+          "type": "string",
+          "pattern": "^[A-Z]{3,3}$",
+          "status": "mandatory",
+          "description": "A 3 character alphabetic code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'."
+        },
+        {
+          "path": "Data.Premium.VatAmount.Amount",
+          "name": "Amount",
+          "type": "string",
+          "pattern": "^\\d{1,16}\\.\\d{2}$",
+          "status": "mandatory",
+          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217."
+        },
+        {
+          "path": "Data.Premium.TotalPremiumAmount",
+          "name": "TotalPremiumAmount",
+          "type": "object",
+          "status": "mandatory",
+          "description": "The Currency and Amount relating to the Payment, Refund or Request to Pay"
+        },
+        {
+          "path": "Data.Premium.TotalPremiumAmount.Currency",
+          "name": "Currency",
+          "type": "string",
+          "pattern": "^[A-Z]{3,3}$",
+          "status": "mandatory",
+          "description": "A 3 character alphabetic code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'."
+        },
+        {
+          "path": "Data.Premium.TotalPremiumAmount.Amount",
+          "name": "Amount",
+          "type": "string",
+          "pattern": "^\\d{1,16}\\.\\d{2}$",
+          "status": "mandatory",
+          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217."
+        },
+        {
+          "path": "Data.Premium.PaymentFrequency",
+          "name": "PaymentFrequency",
+          "type": "string",
+          "enum": [
+            "Annually",
+            "OneTime",
+            "Monthly",
+            "Quarterly",
+            "BiAnnual",
+            "Other"
+          ],
+          "status": "mandatory"
+        },
+        {
+          "path": "Data.Premium.PaymentMode",
+          "name": "PaymentMode",
+          "type": "string",
+          "enum": [
+            "DirectDebit",
+            "StandingOrder",
+            "CreditCard",
+            "BankTransfer",
+            "OpenFinance",
+            "Cash",
+            "Other"
+          ],
+          "status": "optional"
+        },
+        {
+          "path": "Data.Premium.NextDue",
+          "name": "NextDue",
+          "type": "string",
+          "format": "date",
+          "status": "optional",
+          "description": "The date the next Premium is due"
+        },
+        {
+          "path": "Data.Premium.LastReceived",
+          "name": "LastReceived",
+          "type": "object",
+          "status": "optional",
+          "description": "The details of the last premium received"
+        },
+        {
+          "path": "Data.Premium.LastReceived.ReceivedDate",
+          "name": "ReceivedDate",
+          "type": "string",
+          "format": "date",
+          "status": "optional",
+          "description": "The date the last premium was received"
+        },
+        {
+          "path": "Data.Premium.LastReceived.PremiumAmount",
+          "name": "PremiumAmount",
+          "type": "object",
+          "status": "optional",
+          "description": "The Currency and Amount relating to the Payment, Refund or Request to Pay"
+        },
+        {
+          "path": "Data.Premium.LastReceived.PremiumAmount.Currency",
+          "name": "Currency",
+          "type": "string",
+          "pattern": "^[A-Z]{3,3}$",
+          "status": "mandatory",
+          "description": "A 3 character alphabetic code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'."
+        },
+        {
+          "path": "Data.Premium.LastReceived.PremiumAmount.Amount",
+          "name": "Amount",
+          "type": "string",
+          "pattern": "^\\d{1,16}\\.\\d{2}$",
+          "status": "mandatory",
+          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217."
+        },
+        {
+          "path": "Data.Premium.OutstandingBalance",
+          "name": "OutstandingBalance",
+          "type": "object",
+          "status": "optional",
+          "description": "The Currency and Amount relating to the Payment, Refund or Request to Pay"
+        },
+        {
+          "path": "Data.Premium.OutstandingBalance.Currency",
+          "name": "Currency",
+          "type": "string",
+          "pattern": "^[A-Z]{3,3}$",
+          "status": "mandatory",
+          "description": "A 3 character alphabetic code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'."
+        },
+        {
+          "path": "Data.Premium.OutstandingBalance.Amount",
+          "name": "Amount",
+          "type": "string",
+          "pattern": "^\\d{1,16}\\.\\d{2}$",
+          "status": "mandatory",
+          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217."
+        },
+        {
+          "path": "Data.Premium.Discount",
+          "name": "Discount",
+          "type": "object",
+          "status": "optional",
+          "description": "Details of any discount applied."
+        },
+        {
+          "path": "Data.Premium.Discount.DiscountName",
+          "name": "DiscountName",
+          "type": "string",
+          "status": "optional",
+          "description": "The name of the discount applied to the insurance premium"
+        },
+        {
+          "path": "Data.Premium.Discount.DiscountPercentage",
+          "name": "DiscountPercentage",
+          "type": "number",
+          "format": "decimal",
+          "status": "optional"
+        },
+        {
+          "path": "Data.Premium.Discount.DiscountAmount",
+          "name": "DiscountAmount",
+          "type": "object",
+          "status": "optional",
+          "description": "The Currency and Amount relating to the Payment, Refund or Request to Pay"
+        },
+        {
+          "path": "Data.Premium.Discount.DiscountAmount.Currency",
+          "name": "Currency",
+          "type": "string",
+          "pattern": "^[A-Z]{3,3}$",
+          "status": "mandatory",
+          "description": "A 3 character alphabetic code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'."
+        },
+        {
+          "path": "Data.Premium.Discount.DiscountAmount.Amount",
+          "name": "Amount",
+          "type": "string",
+          "pattern": "^\\d{1,16}\\.\\d{2}$",
+          "status": "mandatory",
+          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217."
+        },
+        {
+          "path": "Data.Premium.Adjustments",
+          "name": "Adjustments",
+          "type": "array",
+          "status": "optional",
+          "description": "Details of any adjustments to the premium."
+        },
+        {
+          "path": "Data.Premium.Adjustments[]",
+          "name": "Adjustments[]",
+          "type": "object",
+          "status": "optional"
+        },
+        {
+          "path": "Data.Premium.Adjustments[].AdjustmentDate",
+          "name": "AdjustmentDate",
+          "type": "string",
+          "format": "date",
+          "status": "optional",
+          "description": "When the premium has been adjusted confirmation of the date the adjustment was made"
+        },
+        {
+          "path": "Data.Premium.Adjustments[].Reason",
+          "name": "Reason",
+          "type": "string",
+          "status": "optional",
+          "description": "The reason why the premium has been adjusted"
+        },
+        {
+          "path": "Data.Premium.Adjustments[].AdjustmentAmount",
+          "name": "AdjustmentAmount",
+          "type": "object",
+          "status": "optional",
+          "description": "The Currency and Amount relating to the Payment, Refund or Request to Pay"
+        },
+        {
+          "path": "Data.Premium.Adjustments[].AdjustmentAmount.Currency",
+          "name": "Currency",
+          "type": "string",
+          "pattern": "^[A-Z]{3,3}$",
+          "status": "mandatory",
+          "description": "A 3 character alphabetic code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'."
+        },
+        {
+          "path": "Data.Premium.Adjustments[].AdjustmentAmount.Amount",
+          "name": "Amount",
+          "type": "string",
+          "pattern": "^\\d{1,16}\\.\\d{2}$",
+          "status": "mandatory",
+          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217."
+        },
+        {
+          "path": "Data.Premium.PaymentHistory",
+          "name": "PaymentHistory",
+          "type": "array",
+          "status": "optional",
+          "description": "Details of payment history."
+        },
+        {
+          "path": "Data.Premium.PaymentHistory[]",
+          "name": "PaymentHistory[]",
+          "type": "object",
+          "status": "optional"
+        },
+        {
+          "path": "Data.Premium.PaymentHistory[].PaymentDate",
+          "name": "PaymentDate",
+          "type": "string",
+          "format": "date",
+          "status": "optional",
+          "description": "The date when the premium payment was made."
+        },
+        {
+          "path": "Data.Premium.PaymentHistory[].PremiumAmount",
+          "name": "PremiumAmount",
+          "type": "object",
+          "status": "optional",
+          "description": "The Currency and Amount relating to the Payment, Refund or Request to Pay"
+        },
+        {
+          "path": "Data.Premium.PaymentHistory[].PremiumAmount.Currency",
+          "name": "Currency",
+          "type": "string",
+          "pattern": "^[A-Z]{3,3}$",
+          "status": "mandatory",
+          "description": "A 3 character alphabetic code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'."
+        },
+        {
+          "path": "Data.Premium.PaymentHistory[].PremiumAmount.Amount",
+          "name": "Amount",
+          "type": "string",
+          "pattern": "^\\d{1,16}\\.\\d{2}$",
+          "status": "mandatory",
+          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217."
+        },
+        {
+          "path": "Data.Premium.PaymentHistory[].ReceiptNumber",
+          "name": "ReceiptNumber",
+          "type": "string",
+          "status": "optional",
+          "description": "The unique reference number associated with the premium payment receipt."
+        },
+        {
+          "path": "Data.Premium.PaymentHistory[].InstallmentNumber",
+          "name": "InstallmentNumber",
+          "type": "string",
+          "status": "optional",
+          "description": "The instalment number if the premium was paid in multiple instalments"
+        },
+        {
+          "path": "Data.Premium.PaymentHistory[].PaymentMode",
+          "name": "PaymentMode",
+          "type": "string",
+          "enum": [
+            "DirectDebit",
+            "StandingOrder",
+            "CreditCard",
+            "BankTransfer",
+            "OpenFinance",
+            "Cash",
+            "Other"
+          ],
+          "status": "optional"
+        },
+        {
+          "path": "Data.Premium.PaymentHistory[].PaymentStatus",
+          "name": "PaymentStatus",
+          "type": "string",
+          "enum": [
+            "Paid",
+            "Pending",
+            "Failed",
+            "Refunded",
+            "Outstanding"
+          ],
+          "status": "optional",
+          "description": "The status of the premium payment installment"
+        },
+        {
+          "path": "Data.Premium.RenewalPremium",
+          "name": "RenewalPremium",
+          "type": "object",
+          "status": "optional",
+          "description": "Details of renewal premium."
+        },
+        {
+          "path": "Data.Premium.RenewalPremium.RenewalDate",
+          "name": "RenewalDate",
+          "type": "string",
+          "format": "date",
+          "status": "optional",
+          "description": "The date when the existing insurance policy is scheduled for renewal"
+        },
+        {
+          "path": "Data.Premium.RenewalPremium.RenewalAmount",
+          "name": "RenewalAmount",
+          "type": "object",
+          "status": "optional",
+          "description": "The Currency and Amount relating to the Payment, Refund or Request to Pay"
+        },
+        {
+          "path": "Data.Premium.RenewalPremium.RenewalAmount.Currency",
+          "name": "Currency",
+          "type": "string",
+          "pattern": "^[A-Z]{3,3}$",
+          "status": "mandatory",
+          "description": "A 3 character alphabetic code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'."
+        },
+        {
+          "path": "Data.Premium.RenewalPremium.RenewalAmount.Amount",
+          "name": "Amount",
+          "type": "string",
+          "pattern": "^\\d{1,16}\\.\\d{2}$",
+          "status": "mandatory",
+          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217."
+        },
+        {
+          "path": "Data.Premium.RenewalPremium.VatAmount",
+          "name": "VatAmount",
+          "type": "object",
+          "status": "optional",
+          "description": "The Currency and Amount relating to the Payment, Refund or Request to Pay"
+        },
+        {
+          "path": "Data.Premium.RenewalPremium.VatAmount.Currency",
+          "name": "Currency",
+          "type": "string",
+          "pattern": "^[A-Z]{3,3}$",
+          "status": "mandatory",
+          "description": "A 3 character alphabetic code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'."
+        },
+        {
+          "path": "Data.Premium.RenewalPremium.VatAmount.Amount",
+          "name": "Amount",
+          "type": "string",
+          "pattern": "^\\d{1,16}\\.\\d{2}$",
+          "status": "mandatory",
+          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217."
+        },
+        {
+          "path": "Data.Premium.RenewalPremium.TotalRenewalAmount",
+          "name": "TotalRenewalAmount",
+          "type": "object",
+          "status": "optional",
+          "description": "The Currency and Amount relating to the Payment, Refund or Request to Pay"
+        },
+        {
+          "path": "Data.Premium.RenewalPremium.TotalRenewalAmount.Currency",
+          "name": "Currency",
+          "type": "string",
+          "pattern": "^[A-Z]{3,3}$",
+          "status": "mandatory",
+          "description": "A 3 character alphabetic code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'."
+        },
+        {
+          "path": "Data.Premium.RenewalPremium.TotalRenewalAmount.Amount",
+          "name": "Amount",
+          "type": "string",
+          "pattern": "^\\d{1,16}\\.\\d{2}$",
+          "status": "mandatory",
+          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217."
+        },
+        {
+          "path": "Data.Premium.RenewalPremium.PaymentFrequency",
+          "name": "PaymentFrequency",
+          "type": "string",
+          "enum": [
+            "Annually",
+            "OneTime",
+            "Monthly",
+            "Quarterly",
+            "BiAnnual",
+            "Other"
+          ],
+          "status": "optional"
+        },
+        {
+          "path": "Links",
+          "name": "Links",
+          "type": "object",
+          "status": "mandatory",
+          "description": "Links relevant to the resource"
+        },
+        {
+          "path": "Links.Self",
+          "name": "Self",
+          "type": "string",
+          "format": "uri",
+          "status": "mandatory",
+          "description": "A link to the current resource"
+        },
+        {
+          "path": "Meta",
+          "name": "Meta",
+          "type": "object",
+          "status": "mandatory",
+          "description": "Metadata relevant to the resource"
+        }
+      ]
+    },
+    "/motor-insurance-policies/{InsurancePolicyId}/payment-details": {
+      "method": "GET",
+      "summary": "Retrieve motor insurance policy payment details",
+      "operationId": "MotorInsurancePolicyByIdBankAccountDetails_read",
+      "schemaRef": "#/components/schemas/AEReadPaymentDetails1",
+      "fields": [
+        {
+          "path": "Data",
+          "name": "Data",
+          "type": "object",
+          "status": "mandatory"
+        },
+        {
+          "path": "Data.Account",
+          "name": "Account",
+          "type": "object",
+          "status": "mandatory"
+        },
+        {
+          "path": "Data.Account.Identification",
+          "name": "Identification",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 34,
+          "status": "mandatory",
+          "description": "Account identification"
+        },
+        {
+          "path": "Data.Account.SchemeName",
+          "name": "SchemeName",
+          "type": "string",
+          "enum": [
+            "AccountNumber",
+            "IBAN"
+          ],
+          "status": "mandatory",
+          "description": "Name of the identification scheme for the account"
+        },
+        {
+          "path": "Data.Account.Name",
+          "name": "Name",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 70,
+          "status": "mandatory",
+          "description": "Account Name"
+        },
+        {
+          "path": "Data.Bank",
+          "name": "Bank",
+          "type": "object",
+          "status": "mandatory"
+        },
+        {
+          "path": "Data.Bank.BICFI",
+          "name": "BICFI",
+          "type": "string",
+          "pattern": "^[A-Z0-9]{4,4}[A-Z]{2,2}[A-Z0-9]{2,2}([A-Z0-9]{3,3}){0,1}$",
+          "status": "optional",
+          "description": "Bank Identification Code (BIC)"
+        },
+        {
+          "path": "Data.Bank.Name",
+          "name": "Name",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "status": "optional",
+          "description": "Bank Name"
+        },
+        {
+          "path": "Data.Bank.Identification",
+          "name": "Identification",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "status": "optional",
+          "description": "Branch Name"
+        },
+        {
+          "path": "Data.AccountType",
+          "name": "AccountType",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 35,
+          "status": "optional",
+          "description": "Account Type"
+        },
+        {
+          "path": "Links",
+          "name": "Links",
+          "type": "object",
+          "status": "mandatory",
+          "description": "Links relevant to the resource"
+        },
+        {
+          "path": "Links.Self",
+          "name": "Self",
+          "type": "string",
+          "format": "uri",
+          "status": "mandatory",
+          "description": "A link to the current resource"
+        },
+        {
+          "path": "Meta",
+          "name": "Meta",
+          "type": "object",
+          "status": "mandatory",
+          "description": "Metadata relevant to the resource"
+        }
+      ]
+    }
+  }
+}

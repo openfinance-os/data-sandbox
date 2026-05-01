@@ -21,12 +21,17 @@
 <link rel="modulepreload" href="generator/parties.js" />
 <link rel="modulepreload" href="generator/statements.js" />
 <link rel="modulepreload" href="generator/product.js" />
-<link rel="modulepreload" href="generator/lfi-profile.js" />
+<link rel="modulepreload" href="generator/banking/lfi-profile.js" />
+<link rel="modulepreload" href="generator/insurance/index.js" />
+<link rel="modulepreload" href="generator/insurance/identity.js" />
+<link rel="modulepreload" href="generator/insurance/motor-policy.js" />
+<link rel="modulepreload" href="generator/insurance/lfi-profile.js" />
 <link rel="modulepreload" href="shared/spec-helpers.js" />
 <link rel="modulepreload" href="shared/watermark.js" />
 <link rel="modulepreload" href="ui/export.js" />
 <link rel="preload" href="../dist/SPEC.json" as="fetch" crossorigin="anonymous" />
 <link rel="preload" href="../dist/data.json" as="fetch" crossorigin="anonymous" />
+<link rel="preload" href="../dist/domains.json" as="fetch" crossorigin="anonymous" />
 </head>
 <body>
 <div class="banner" role="status" aria-label="Synthetic data notice">
@@ -81,6 +86,7 @@
       </details>
     </div>
     <div class="controls-runstate" aria-label="Run state">
+      <select class="domain-chip" id="domain-chip" hidden aria-label="Open Finance domain"></select>
       <span class="version-pin" id="version-pin" title="Pinned spec SHA — hover for retrieval date"></span>
       <button class="topbar-btn" id="find-btn" title="Search fields, enums, and persona narratives (⌘K)" aria-label="Open find box">Find</button>
       <button class="topbar-btn" id="tour-btn" title="Walk through Sara's bundle in 5 steps" aria-label="Start guided tour">Tour</button>

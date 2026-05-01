@@ -36,7 +36,7 @@ const ASSETS = [
   'src/generator/parties.js',
   'src/generator/statements.js',
   'src/generator/product.js',
-  'src/generator/lfi-profile.js',
+  'src/generator/banking/lfi-profile.js',
   'src/ui/export.js',
   'dist/SPEC.json',
   'dist/data.json',

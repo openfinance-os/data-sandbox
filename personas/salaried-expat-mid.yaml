@@ -1,4 +1,5 @@
 persona_id: salaried_expat_mid
+domain: banking
 name: "Sara — Salaried Expat (Mid Tier)"
 archetype: salaried_expat
 default_seed: 4729

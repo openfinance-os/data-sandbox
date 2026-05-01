@@ -1,9 +1,15 @@
-// LFI profile filter — §8.3, EXP-04.
+// Banking-domain LFI profile filter — §8.3, EXP-04.
 // Applies the Rich/Median/Sparse populate-rate calibration to a generated
-// bundle as a post-generation field-redaction filter. Mandatory fields are
-// never redacted (NG / EXP-04 acceptance).
+// banking bundle as a post-generation field-redaction filter. Mandatory
+// fields are never redacted (NG / EXP-04 acceptance).
+//
+// Per-domain redaction lives next to the per-domain generator. Insurance
+// has (will have) its own at src/generator/insurance/lfi-profile.js once
+// bands are calibrated (slice 6c). Path literals here are banking-shaped
+// (Account, Transaction, Balance) and tested-equal to
+// spec/lfi-bands.banking.yaml via tests/lfi-bands.test.mjs.
 
-import { mulberry32, seedFromTuple } from '../prng.js';
+import { mulberry32, seedFromTuple } from '../../prng.js';
 
 // v1 calibration of populate probabilities — single source of truth (§8.3).
 const MEDIAN_PROBABILITY = {
@@ -14,21 +20,24 @@ const MEDIAN_PROBABILITY = {
   Unknown: 0.0,
 };
 
-// Phase 0 starter: a small allowlist of optional fields with their bands.
-// Phase 1 will move this into the spec parser so band lookups are spec-driven.
-// `path` is the dotted SPEC path; `band` is one of the keys above.
+// Optional-field band table — mirrors the bands the redaction body below
+// applies. Source of truth is spec/lfi-bands.banking.yaml (loaded by the spec
+// parser into dist/SPEC.json `bandOverrides`); tests/lfi-bands.test.mjs asserts
+// this constant matches the YAML so the two cannot drift.
+// Phase 2.1+: Insurance and other domains will pass their own bands map; the
+// redaction body's path literals will follow when generic walker lands.
 const OPTIONAL_FIELD_BANDS = [
   // Account
   { path: 'Account.Nickname', band: 'Common' },
   { path: 'Account.OpeningDate', band: 'Common' },
   // Transaction
   { path: 'Transaction.TransactionInformation', band: 'Universal' },
+  { path: 'Transaction.ValueDateTime', band: 'Universal' },
+  { path: 'Transaction.Flags', band: 'Common' },
+  { path: 'Transaction.TransactionReference', band: 'Common' },
   { path: 'Transaction.MerchantDetails', band: 'Variable' },
   { path: 'Transaction.MerchantDetails.MerchantCategoryCode', band: 'Variable' },
   { path: 'Transaction.MerchantDetails.MerchantName', band: 'Common' },
-  { path: 'Transaction.CreditorName', band: 'Common' },
-  { path: 'Transaction.Flags', band: 'Common' },
-  { path: 'Transaction.ValueDateTime', band: 'Universal' },
   // Balance
   { path: 'Balance.CreditLine', band: 'Variable' },
 ];

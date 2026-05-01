@@ -9,7 +9,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildBundle } from '../src/generator/index.js';
 import { envelopesFromBundle } from '../src/ui/export.js';
-import { loadAllPersonas, loadAllPools } from './load-fixtures.mjs';
+import { loadPersonasByDomain, loadAllPools } from './load-fixtures.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -48,7 +48,9 @@ if (fs.existsSync(OUT)) fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(path.join(OUT, 'bundles'), { recursive: true });
 fs.mkdirSync(path.join(OUT, 'personas'), { recursive: true });
 
-const personas = loadAllPersonas();
+// Banking only — insurance fixtures land with the insurance generator
+// (slice 6b-ii); they get their own bundles/<domain>/<persona>/... layout.
+const personas = loadPersonasByDomain('banking');
 const pools = loadAllPools();
 const now = new Date(NOW_ANCHOR);
 

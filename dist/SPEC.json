@@ -278,6 +278,18 @@
     "UserOAuth2Security": 6190,
     "LFIWebhookSecurity": 6207
   },
+  "bandOverrides": {
+    "Account.Nickname": "Common",
+    "Account.OpeningDate": "Common",
+    "Transaction.TransactionInformation": "Universal",
+    "Transaction.ValueDateTime": "Universal",
+    "Transaction.Flags": "Common",
+    "Transaction.TransactionReference": "Common",
+    "Transaction.MerchantDetails": "Variable",
+    "Transaction.MerchantDetails.MerchantCategoryCode": "Variable",
+    "Transaction.MerchantDetails.MerchantName": "Common",
+    "Balance.CreditLine": "Variable"
+  },
   "endpoints": {
     "/accounts": {
       "method": "GET",

@@ -1,4 +1,5 @@
 persona_id: nsf_distressed
+domain: banking
 name: "Hadi — NSF / Distressed Borrower"
 archetype: distressed
 default_seed: 4407

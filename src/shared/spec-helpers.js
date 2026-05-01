@@ -53,7 +53,7 @@ export function coverageForEndpoint(bundle, endpointPath, accountId) {
 }
 
 // Probe path → populate-rate band (§7.3). Single source of truth shared
-// with src/generator/lfi-profile.js so band breakdowns and redaction
+// with src/generator/banking/lfi-profile.js so band breakdowns and redaction
 // decisions never drift apart.
 const PROBE_BAND = Object.freeze({
   'Account.Nickname': 'Common',
