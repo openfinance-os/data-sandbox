@@ -1,0 +1,100 @@
+persona_id: corporate_treasury_listed
+domain: banking
+name: "Polaris Industrial Holdings PJSC — Corporate Treasury"
+archetype: corporate_treasury
+default_seed: 7142
+segment: Corporate
+stress_coverage:
+  - pep_kyc_claims
+  - verified_claims_block
+
+demographics:
+  # Principal signatory demographics — used to draw the natural-person name
+  # on the Party records. The organisation block carries the corporate
+  # entity's legal name (used for AccountHolderName on the corporate accounts).
+  nationality_pool: emirati
+  age_band: 45-58
+  emirate: abu_dhabi
+
+organisation:
+  legal_name_pool: corporate_listed
+  signatories:
+    - signatory_pool: emirati
+      account_role: SeniorManagingOfficial
+      party_type: Joint
+    - signatory_pool: emirati
+      account_role: PowerOfAttorney
+      party_type: Joint
+    - signatory_pool: expat_arab
+      account_role: Administrator
+      party_type: Delegate
+
+income:
+  primary_employer_pool: tech_freezone
+  monthly_amount_aed: 95000
+  pay_day: 25
+  variability: low
+  flag_payroll: false
+
+cash_flow:
+  customer_inflows:
+    counterparty_pool: b2b_local
+    monthly_amount_aed_band: [2400000, 4200000]
+    invoice_cadence: monthly
+  supplier_outflows:
+    counterparty_pool: b2b_intl
+    monthly_amount_aed_band: [1100000, 2300000]
+  payroll_outflow_aed: 680000
+
+accounts:
+  - type: CurrentAccount
+    currency: AED
+    age_months: 240
+  - type: CurrentAccount
+    currency: USD
+    age_months: 180
+  - type: Savings
+    currency: AED
+    age_months: 144
+  - type: Finance
+    currency: AED
+    age_months: 96
+
+fixed_commitments:
+  - kind: standing_order
+    purpose: corporate_office_lease
+    amount_aed: 185000
+    schedule: monthly_27
+  - kind: direct_debit
+    purpose: utilities_dewa
+    amount_aed_band: [22000, 35000]
+    schedule: monthly_5
+  - kind: direct_debit
+    purpose: insurance_premium_corporate
+    amount_aed: 48000
+    schedule: monthly_15
+
+spend_profile:
+  groceries_aed_per_month_band: [0, 0]
+  fuel_aed_per_month_band: [4000, 8000]
+  dining_per_month_count_band: [8, 20]
+
+fx_activity: true
+cash_deposit_activity: false
+
+distress_signals:
+  nsf_events_per_year_band: [0, 0]
+
+narrative: |
+  Polaris Industrial Holdings PJSC is a UAE-listed corporate holding group
+  with multi-currency operating accounts and a long-dated corporate-finance
+  facility. Three signatories exercise the spec's full PartyType /
+  AccountRole vocabulary: a senior managing official and a power-of-
+  attorney holder operate the accounts jointly (any-two operating mandate
+  realised in spec terms as PartyType=Joint), with an administrator on
+  Delegate authority for day-to-day operations. Customer inflows are
+  monthly invoiced from B2B counterparties; supplier outflows are
+  cross-border in USD/EUR. The persona exercises corporate-grade KYC and
+  identity-assurance fields (PartyCategory=Corporate plus the verified-
+  claims block on the Party records) that retail and SME personas don't
+  reach.

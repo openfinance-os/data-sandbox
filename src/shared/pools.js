@@ -12,6 +12,8 @@ export function indexPools(rawPools) {
   const merchantsByCategory = {};
   const counterpartyBanksByCategory = {};
   const ibansByCategory = {};
+  const organisationsByPoolId = {};
+  const counterpartiesByPoolId = {};
 
   for (const p of rawPools) {
     if (!p || typeof p.pool_id !== 'string') continue;
@@ -25,6 +27,10 @@ export function indexPools(rawPools) {
       counterpartyBanksByCategory[p.pool_id] = p;
     } else if (Array.isArray(p.prefix_options)) {
       ibansByCategory[p.pool_id] = p;
+    } else if (Array.isArray(p.organisations)) {
+      organisationsByPoolId[p.pool_id] = p;
+    } else if (Array.isArray(p.counterparties)) {
+      counterpartiesByPoolId[p.pool_id] = p;
     }
   }
   return {
@@ -33,5 +39,7 @@ export function indexPools(rawPools) {
     merchantsByCategory,
     counterpartyBanksByCategory,
     ibansByCategory,
+    organisationsByPoolId,
+    counterpartiesByPoolId,
   };
 }

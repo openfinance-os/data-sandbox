@@ -94,4 +94,32 @@ describe('persona manifests — EXP-02', () => {
       for (const t of m.stress_coverage) seen.add(t);
     }
   });
+
+  // Segment + organisation invariants — added with the SME / Corporate
+  // expansion. Spec enum-conformance is enforced separately by
+  // tools/lint-persona-spec-conformance.mjs.
+  it.each(manifests)('%s — segment / organisation shape is consistent', (file) => {
+    const m = yaml.load(fs.readFileSync(path.join(MANIFEST_DIR, file), 'utf8'));
+    if (m.domain !== 'banking') return;
+    const segment = m.segment ?? 'Retail';
+    expect(['Retail', 'SME', 'Corporate']).toContain(segment);
+    if (segment !== 'Retail') {
+      expect(m.organisation, `${file} segment=${segment} requires organisation block`).toBeTruthy();
+      expect(typeof m.organisation.legal_name_pool).toBe('string');
+      expect(Array.isArray(m.organisation.signatories)).toBe(true);
+      expect(m.organisation.signatories.length).toBeGreaterThan(0);
+      for (const sig of m.organisation.signatories) {
+        expect(typeof sig.signatory_pool).toBe('string');
+        expect(typeof sig.account_role).toBe('string');
+        expect(typeof sig.party_type).toBe('string');
+      }
+    }
+    if (Array.isArray(m.accounts)) {
+      for (const a of m.accounts) {
+        if (a.account_type != null) {
+          expect(['Retail', 'SME', 'Corporate']).toContain(a.account_type);
+        }
+      }
+    }
+  });
 });

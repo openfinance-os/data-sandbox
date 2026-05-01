@@ -1,0 +1,24 @@
+# Synthetic legal-entity name pool — UAE corporate-tier holding-style names.
+# All names are fictional. They combine generic descriptors with PJSC / Holding
+# / Group / Industries suffixes typical for larger UAE corporates. None
+# reference a real registered entity. EXP-07: only place organisation names
+# may originate.
+pool_id: corporate_listed
+description: Synthetic UAE corporate-tier legal-entity names used as account holders.
+organisations:
+  - "Aurora Industries PJSC"
+  - "Bayan Holding PJSC"
+  - "Cedar Crescent Group PJSC"
+  - "Delta Maritime Holdings PJSC"
+  - "Ember Energy Group PJSC"
+  - "Falcon Capital Holdings PJSC"
+  - "Glide Logistics Group PJSC"
+  - "Helix Industries PJSC"
+  - "Indigo Real Estate Holding PJSC"
+  - "Jasmine Hospitality Group PJSC"
+  - "Kestrel Aviation Holdings PJSC"
+  - "Lumen Telecom Group PJSC"
+  - "Meridian Construction PJSC"
+  - "Nexus Investments Holding PJSC"
+  - "Onyx Petroleum Group PJSC"
+  - "Polaris Industrial Holdings PJSC"

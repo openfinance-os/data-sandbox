@@ -24,6 +24,12 @@ for (const p of Object.values(pools.namesByPoolId)) {
     }
   }
 }
+// Organisation legal names are also valid AccountHolderName / AccountIdentifiers
+// values for SME / Corporate accounts. They never blend with personal names
+// — they're a disjoint set drawn from /synthetic-identity-pool/organisations/.
+for (const p of Object.values(pools.organisationsByPoolId ?? {})) {
+  for (const name of p.organisations) allowedFullNames.add(name);
+}
 const allowed = new Set();
 for (const p of Object.values(pools.employersByPoolId)) {
   for (const e of p.employers) allowed.add(e);
@@ -33,6 +39,9 @@ for (const p of Object.values(pools.merchantsByCategory)) {
 }
 for (const p of Object.values(pools.counterpartyBanksByCategory)) {
   for (const b of p.banks) allowed.add(b.name);
+}
+for (const p of Object.values(pools.counterpartiesByPoolId ?? {})) {
+  for (const c of p.counterparties) allowed.add(c);
 }
 
 const NAME_PROBE_AT = new Set([

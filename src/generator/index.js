@@ -9,7 +9,7 @@
 // bundles.
 
 import { makePrng } from '../prng.js';
-import { drawName } from './identity.js';
+import { drawName, drawOrganisationName } from './identity.js';
 import { generateAccounts } from './accounts.js';
 import { generateBalances } from './balances.js';
 import { generateTransactions } from './transactions.js';
@@ -46,9 +46,34 @@ function resolvePools(persona, indexedPools) {
   if (employerPoolId && !employerPool) {
     throw new Error(`employer pool '${employerPoolId}' not found for persona ${persona.persona_id}`);
   }
+  const orgPoolId = persona.organisation?.legal_name_pool;
+  const orgPool = orgPoolId
+    ? (indexedPools.organisationsByPoolId ?? {})[orgPoolId]
+    : null;
+  if (orgPoolId && !orgPool) {
+    throw new Error(
+      `organisation pool '${orgPoolId}' not found for persona ${persona.persona_id}`
+    );
+  }
+  // Resolve signatory name pools eagerly so parties.js can draw without
+  // having to plumb the indexed-pools structure through.
+  const signatoryPools = [];
+  for (const sig of persona.organisation?.signatories ?? []) {
+    const poolId = sig.signatory_pool;
+    if (!poolId) continue;
+    const pool = indexedPools.namesByPoolId[poolId];
+    if (!pool) {
+      throw new Error(
+        `signatory name pool '${poolId}' not found for persona ${persona.persona_id}`
+      );
+    }
+    signatoryPools.push(pool);
+  }
   return {
     names: namePool,
     employers: employerPool,
+    organisation: orgPool,
+    signatoryPools,
     groceries: indexedPools.merchantsByCategory[DEFAULT_GROCERIES],
     fuel: indexedPools.merchantsByCategory[DEFAULT_FUEL],
     dining: indexedPools.merchantsByCategory[DEFAULT_DINING],
@@ -79,8 +104,13 @@ function buildBankingBundle({ persona, lfi, seed, pools, now = DEFAULT_NOW }) {
     namePoolId: persona.demographics.nationality_pool,
   };
 
+  // Resolve organisation legal name + signatory names deterministically up
+  // front so accounts.js and parties.js can read from persona._resolved
+  // without re-drawing.
+  const enrichedPersona = enrichPersona(persona, p, rng);
+
   const accounts = generateAccounts({
-    persona,
+    persona: enrichedPersona,
     identity,
     rng,
     pools: { counterpartyBanks: p.counterpartyBanks, ibans: p.ibans },
@@ -133,7 +163,7 @@ function buildBankingBundle({ persona, lfi, seed, pools, now = DEFAULT_NOW }) {
     now,
   });
   const productRecords = generateProducts({ accounts });
-  const partyResult = generateParties({ persona, accounts, identity, rng, now });
+  const partyResult = generateParties({ persona: enrichedPersona, accounts, identity, rng, now });
   const statements = generateStatements({ accounts, transactions, rng, now });
 
   const bundle = {
@@ -154,6 +184,34 @@ function buildBankingBundle({ persona, lfi, seed, pools, now = DEFAULT_NOW }) {
   };
 
   return applyLfiProfile({ bundle, personaId: persona.persona_id, lfi, seed });
+}
+
+// Resolve organisation legal name + signatory display names deterministically
+// from the persona's pool refs, so downstream generators can read a stable
+// `_resolved` block instead of re-drawing.
+function enrichPersona(persona, p, rng) {
+  if (!persona.organisation) return persona;
+  const legalName = p.organisation
+    ? drawOrganisationName(rng, p.organisation)
+    : null;
+  const signatories = (persona.organisation.signatories ?? []).map((sig, i) => {
+    const namePool = p.signatoryPools[i];
+    const name = namePool ? drawName(rng, namePool) : null;
+    return {
+      ...sig,
+      _resolved: name
+        ? { fullName: name.full, given: name.given, surname: name.surname }
+        : null,
+    };
+  });
+  return {
+    ...persona,
+    organisation: {
+      ...persona.organisation,
+      _resolved: { legalName },
+      signatories,
+    },
+  };
 }
 
 export { DEFAULT_NOW };
