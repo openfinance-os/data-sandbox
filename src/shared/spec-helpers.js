@@ -210,7 +210,12 @@ export function realLfisGuidance(field, lfiBand) {
   }
 }
 
-const FIELD_BANDS = Object.freeze({
+// Banking-domain fallback. The authoritative source is now
+// spec.bandOverrides (parsed from spec/lfi-bands.<domain>.yaml at build
+// time); this constant is only used when the caller passes no spec — i.e.
+// in legacy / test paths that don't have one to hand. New domains pick up
+// their bands automatically from spec.bandOverrides without touching JS.
+const FALLBACK_FIELD_BANDS = Object.freeze({
   'Account.Nickname': 'Common',
   'Account.OpeningDate': 'Common',
   'Transaction.TransactionInformation': 'Universal',
@@ -223,14 +228,13 @@ const FIELD_BANDS = Object.freeze({
   'Balance.CreditLine': 'Variable',
 });
 
-export function bandForFieldName(name, endpointPath) {
-  // Handful of UI-discoverable mappings — Phase 1 starter set, sourced from
-  // the same allowlist the LFI profile filter uses (single source of truth).
+export function bandForFieldName(name, endpointPath, spec) {
+  const bands = spec?.bandOverrides ?? FALLBACK_FIELD_BANDS;
   const segs = endpointPath.split('/').filter(Boolean);
   const resourceHint = segs[segs.length - 1] || '';
   const trial = `${capitalise(resourceHint.replace(/-/g, ' ').replace(/\s+/g, ''))}.${name}`;
-  if (FIELD_BANDS[trial]) return FIELD_BANDS[trial];
-  for (const [k, v] of Object.entries(FIELD_BANDS)) {
+  if (bands[trial]) return bands[trial];
+  for (const [k, v] of Object.entries(bands)) {
     if (k.endsWith(`.${name}`)) return v;
   }
   return null;

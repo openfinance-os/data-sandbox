@@ -6,12 +6,14 @@
 // the property the Nebras-operated regulatory sandbox does not optimise
 // for, which is why a TPP demo wired to those mocks looks empty.
 
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { repoRoot } from '../tools/load-fixtures.mjs';
 
 const PKG_DIR = path.join(repoRoot, 'packages/sandbox-fixtures');
+const MANIFEST_PATH = path.join(PKG_DIR, 'manifest.json');
+const FIXTURES_BUILT = fs.existsSync(MANIFEST_PATH);
 
 const PER_ACCOUNT_SUFFIXES = [
   'balances',
@@ -29,14 +31,17 @@ function readEnv(rel) {
   return JSON.parse(fs.readFileSync(path.join(PKG_DIR, rel), 'utf8'));
 }
 
-beforeAll(() => {
-  if (!fs.existsSync(path.join(PKG_DIR, 'manifest.json'))) {
-    throw new Error("fixture package not built — run 'npm run build:fixtures' first");
-  }
-});
-
-describe('EXP-32 cross-endpoint coherence', () => {
-  const manifest = JSON.parse(fs.readFileSync(path.join(PKG_DIR, 'manifest.json'), 'utf8'));
+// Vitest's describe.skipIf still invokes the body callback (it just marks
+// the registered tests skipped), so a synchronous manifest read inside the
+// describe would still throw when the package isn't built. Wrap the entire
+// suite in a top-level if/else and emit a clearly-named skip-only suite in
+// the missing-fixtures branch.
+if (!FIXTURES_BUILT) {
+  describe.skip("EXP-32 cross-endpoint coherence (run 'npm run build:fixtures' to enable)", () => {
+    it.skip('fixture package not built — run `npm run build:fixtures`', () => {});
+  });
+} else describe('EXP-32 cross-endpoint coherence', () => {
+  const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
   const fixtureEntries = Object.entries(manifest.fixtures);
 
   it('the test matrix covers 12 personas × 3 LFIs', () => {

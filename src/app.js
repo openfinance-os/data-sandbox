@@ -215,8 +215,14 @@ async function init() {
     : Object.keys(state.activePersonas)[0];
   state.lfi = url.lfi;
   state.seed = url.seed;
-  // Default endpoint for the domain unless URL pins one.
-  if (state.domain !== 'banking') {
+  // EXP-17: honour the URL's pinned endpoint when it's recognised by the
+  // active domain's spec or one of the two banking pseudo-endpoints
+  // (overview, underwriting). Falls back to the domain default otherwise.
+  if (state.domain === 'banking') {
+    const isPseudo = url.endpoint === OVERVIEW_PSEUDO || url.endpoint === UNDERWRITING_PSEUDO;
+    const isSpecEndpoint = url.endpoint && ENDPOINTS.some((e) => e.path === url.endpoint);
+    if (isPseudo || isSpecEndpoint) state.endpoint = url.endpoint;
+  } else {
     state.endpoint = url.endpoint && state.spec.endpoints[url.endpoint]
       ? url.endpoint
       : specEntry.defaultEndpoint || Object.keys(state.spec.endpoints)[0];
@@ -1098,6 +1104,20 @@ function pushPermalink() {
   // implicit so existing permalinks remain unchanged.
   if (state.domain && state.domain !== 'banking') params.set('domain', state.domain);
   if (state.preview) params.set('preview', '1');
+  // EXP-17: encode the active endpoint so Share copies "where the user
+  // currently is", not the cold-landing default. Account scope is implicit —
+  // selectedAccountId is always the first account of the active persona on
+  // hydrate, so we don't need to round-trip it. The two pseudo-endpoints
+  // (overview, underwriting) are the cold-landing defaults; emitting them
+  // would just clutter the URL, so they stay implicit.
+  if (
+    state.endpoint &&
+    state.endpoint !== '/accounts' &&
+    state.endpoint !== OVERVIEW_PSEUDO &&
+    state.endpoint !== UNDERWRITING_PSEUDO
+  ) {
+    params.set('endpoint', state.endpoint);
+  }
   // Workstream B — emit the recipe param when the active persona is the
   // ephemeral custom one, so the URL fully describes the bundle.
   if (state.personaId === CUSTOM_PERSONA_SLUG && state.recipe) {
@@ -1461,7 +1481,7 @@ function renderPayload() {
     // for non-mandatory fields where the guidance is non-trivial; mandatory
     // fields' "Always present per spec" is already implied by the M pill.
     if (f && f.status !== 'mandatory') {
-      const band = bandForFieldName(k, state.endpoint);
+      const band = bandForFieldName(k, state.endpoint, state.spec);
       th.appendChild(el('span', {
         class: 'col-guidance',
         text: realLfisGuidance(f, band),
@@ -1534,7 +1554,7 @@ function renderPayload() {
           field: f,
           lfi: state.lfi,
           persona,
-          band: bandForFieldName(k, state.endpoint),
+          band: bandForFieldName(k, state.endpoint, state.spec),
         });
       }
       tr.appendChild(td);
@@ -2559,7 +2579,7 @@ function openFieldCard(name) {
 
   const rows = rowsForActiveEndpoint();
   const example = rows.find((r) => r[name] != null)?.[name];
-  const band = bandForFieldName(name, state.endpoint);
+  const band = bandForFieldName(name, state.endpoint, state.spec);
   const guidance = realLfisGuidance(f, band);
   const citation = specCitationUrl(state.spec, f);
   // Concrete conditional-rule prose for fields in the curated lookup;
@@ -2704,7 +2724,7 @@ function showHoverPreview(anchor, fieldName) {
   if (!f) return;
   const card = document.getElementById('hovercard');
   if (!card) return;
-  const band = bandForFieldName(fieldName, state.endpoint);
+  const band = bandForFieldName(fieldName, state.endpoint, state.spec);
   const badge = statusBadge(f.status);
 
   card.replaceChildren();

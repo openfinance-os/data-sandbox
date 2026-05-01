@@ -1,10 +1,21 @@
 // /about page — fills the metadata grid from the live SPEC.json so the
 // version pin / retrieved date / SHA never drift from what the sandbox is
-// actually serving.
+// actually serving. Multi-domain (Phase 2.0): fetches the per-domain SPEC
+// indicated by ?domain=…, falling back to banking. The footer SHA always
+// shows the active domain's pin.
 
 async function init() {
-  const res = await fetch('../dist/SPEC.json');
-  const spec = await res.json();
+  const params = new URLSearchParams(window.location.search);
+  const requestedDomain = params.get('domain');
+  const domainsRes = await fetch('../dist/domains.json');
+  const domainsManifest = await domainsRes.json();
+  const domains = Object.fromEntries(domainsManifest.domains.map((d) => [d.id, d]));
+  const domainId = domains[requestedDomain] ? requestedDomain : 'banking';
+  const domain = domains[domainId];
+
+  const specRes = await fetch(`..${domain.parsedJsonUrl}`);
+  const spec = await specRes.json();
+
   const sha = (spec.pinSha || 'unknown').slice(0, 7);
   document.getElementById('footer-sha').textContent = sha;
   document.getElementById('meta-openapi').textContent = spec.openapiVersion ?? '—';
@@ -21,6 +32,13 @@ async function init() {
   }
   document.getElementById('meta-fields').textContent = String(total);
   document.getElementById('meta-mandatory').textContent = String(mandatory);
+
+  // Surface the active domain so a reader landing on /about?domain=insurance
+  // can tell the metadata grid is not banking.
+  const baseline = document.querySelector('.meta-grid dd:first-of-type');
+  if (baseline && domain.label) {
+    baseline.textContent = `${domain.label} (${domain.status === 'preview' ? 'preview' : 'GA'}) — ${baseline.textContent}`;
+  }
 }
 
 init().catch((err) => {
