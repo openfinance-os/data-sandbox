@@ -6,7 +6,9 @@
 
 import { buildBundle } from './generator/index.js';
 import { leafFields, statusBadge } from './shared/spec-helpers.js';
-import { decodeFromUrl } from './url.js';
+import { decodeFromUrl, CUSTOM_PERSONA_SLUG } from './url.js';
+import { expandRecipe } from './persona-builder/expand.js';
+import { decodeRecipe } from './persona-builder/recipe.js';
 
 async function init() {
   const [specRes, dataRes] = await Promise.all([
@@ -16,6 +18,15 @@ async function init() {
   const spec = await specRes.json();
   const data = await dataRes.json();
   const url = decodeFromUrl(window.location.href);
+
+  // Workstream B — materialise a custom persona from the URL recipe param.
+  if (url.personaId === CUSTOM_PERSONA_SLUG && url.recipe) {
+    try {
+      data.personas[CUSTOM_PERSONA_SLUG] = expandRecipe(decodeRecipe(url.recipe), data.pools);
+    } catch (err) {
+      console.warn('Custom persona recipe failed to expand:', err);
+    }
+  }
 
   const personaId = url.personaId && data.personas[url.personaId]
     ? url.personaId

@@ -14,7 +14,9 @@ import {
   realLfisGuidance,
   bandForFieldName,
 } from './shared/spec-helpers.js';
-import { decodeFromUrl, encodeEmbed, encodeFixtureUrl, encodePermalink } from './url.js';
+import { decodeFromUrl, encodeEmbed, encodeFixtureUrl, encodePermalink, CUSTOM_PERSONA_SLUG } from './url.js';
+import { expandRecipe } from './persona-builder/expand.js';
+import { decodeRecipe, encodeRecipe } from './persona-builder/recipe.js';
 import {
   envelopesFromBundle,
   csvForResource,
@@ -179,6 +181,28 @@ async function init() {
   state.activePersonas = Object.fromEntries(
     Object.entries(state.data.personas).filter(([, p]) => p.domain === state.domain)
   );
+
+  // Workstream B — materialise a custom persona from the URL recipe param,
+  // if present. The generator pipeline is persona-agnostic; injecting the
+  // expanded persona into state.data.personas + state.activePersonas under
+  // the 'custom' key lets the rest of the app behave identically to a
+  // curated persona. The recipe itself stays in state.recipe so
+  // pushPermalink can re-encode it on share / URL update.
+  if (
+    state.domain === 'banking' &&
+    url.personaId === CUSTOM_PERSONA_SLUG &&
+    url.recipe
+  ) {
+    try {
+      const recipe = decodeRecipe(url.recipe);
+      const customPersona = expandRecipe(recipe, state.data.pools);
+      state.data.personas[CUSTOM_PERSONA_SLUG] = customPersona;
+      state.activePersonas[CUSTOM_PERSONA_SLUG] = customPersona;
+      state.recipe = recipe;
+    } catch (err) {
+      console.warn('Custom persona recipe failed to expand:', err);
+    }
+  }
 
   state.personaId = url.personaId && state.activePersonas[url.personaId]
     ? url.personaId
@@ -1005,6 +1029,11 @@ function pushPermalink() {
   // implicit so existing permalinks remain unchanged.
   if (state.domain && state.domain !== 'banking') params.set('domain', state.domain);
   if (state.preview) params.set('preview', '1');
+  // Workstream B — emit the recipe param when the active persona is the
+  // ephemeral custom one, so the URL fully describes the bundle.
+  if (state.personaId === CUSTOM_PERSONA_SLUG && state.recipe) {
+    params.set('recipe', encodeRecipe(state.recipe));
+  }
   const next = `${window.location.pathname}?${params.toString()}`;
   window.history.replaceState({}, '', next);
 }
