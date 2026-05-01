@@ -11,6 +11,15 @@ import { expandRecipe } from './persona-builder/expand.js';
 import { decodeRecipe } from './persona-builder/recipe.js';
 
 async function init() {
+  // Workstream C plug-point 1 — best-effort SW registration so embedded
+  // demos can fetch /fixtures/v1/bundles/custom/... URLs identically to
+  // curated bundles. Failure is non-fatal.
+  if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+    navigator.serviceWorker
+      .register('./sw-fixtures.js', { type: 'module', scope: '../' })
+      .catch(() => {});
+  }
+
   const [specRes, dataRes] = await Promise.all([
     fetch('../dist/SPEC.json'),
     fetch('../dist/data.json'),
