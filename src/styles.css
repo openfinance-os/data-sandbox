@@ -218,9 +218,8 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
 }
 .topbar-btn:hover { background: var(--accent-soft); }
 
-/* Phase 2.0 multi-domain selector — only rendered when ?preview=1
-   (matches the preview-gate in src/app.js init()). Banking remains the
-   default; insurance options are tagged "(preview)" in the option label. */
+/* Phase 2.0 multi-domain selector. Banking is the default; preview-status
+   domains (e.g. insurance) are tagged "(preview)" in the option label. */
 .domain-chip {
   font-size: 11px;
   padding: 3px 6px;
