@@ -73,6 +73,37 @@ describe('EXP-20 fixture package — @openfinance-os/sandbox-fixtures', () => {
     expect(text).toContain('loadJourney');
     expect(text).toContain('listPersonas');
     expect(text).toContain('loadSpec');
+    expect(text).toContain('getPools');
+    expect(text).toContain('getEngine');
+  });
+
+  // EXP-28 / Workstream C plug-point 2 — TPPs install the package, compose
+  // a recipe, run the generator inside their own app. No network call.
+  it('runtime engine exports — expandRecipe + buildBundle + getPools work in-process', async () => {
+    const m = await import(path.join(PKG_DIR, 'index.mjs'));
+    const pools = m.getPools();
+    expect(pools.namesByPoolId).toBeDefined();
+    expect(pools.organisationsByPoolId).toBeDefined();
+    expect(pools.counterpartiesByPoolId).toBeDefined();
+
+    // SME custom persona — exercises the segment expansion path.
+    const persona = m.expandRecipe({ segment: 'SME' }, pools);
+    expect(persona.persona_id).toMatch(/^custom_/);
+    expect(persona.segment).toBe('SME');
+
+    const bundle = m.buildBundle({ persona, lfi: 'median', seed: 1, pools });
+    expect(bundle.accounts.length).toBeGreaterThan(0);
+    expect(bundle.accounts[0].AccountType).toBe('SME');
+    expect(bundle.parties[0].PartyCategory).toBe('SME');
+
+    // Determinism — EXP-05 holds across the package boundary.
+    const bundleAgain = m.buildBundle({ persona, lfi: 'median', seed: 1, pools });
+    expect(JSON.stringify(bundle)).toBe(JSON.stringify(bundleAgain));
+
+    // Recipe codec is exported.
+    const enc = m.encodeRecipe({ segment: 'Corporate' });
+    expect(typeof enc).toBe('string');
+    expect(m.decodeRecipe(enc).segment).toBe('Corporate');
   });
 
   // EXP-29 — TPP showcase consumers shouldn't have to loop endpoints

@@ -10,8 +10,6 @@
 // seed tuple so two recipes yielding the same persona shape but different
 // dimension choices never collide on PRNG state.
 
-import { DEFAULTS as URL_DEFAULTS } from '../url.js';
-
 export const SEGMENTS = ['Retail', 'SME', 'Corporate'];
 export const PARTY_TYPES = ['Sole', 'Joint', 'Delegate'];
 export const ACCOUNT_KINDS = ['CurrentAccount', 'Savings', 'CreditCard', 'Mortgage', 'Finance'];
@@ -175,5 +173,3 @@ export function validateRecipe(recipe, indexedPools) {
   }
   return errors.length === 0 ? { ok: true } : { ok: false, errors };
 }
-
-void URL_DEFAULTS;

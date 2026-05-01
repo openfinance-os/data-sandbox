@@ -60,4 +60,24 @@ function loadSpec() { return JSON.parse(fs.readFileSync(path.join(here, 'spec.js
 function loadPersonaManifest(personaId) {
   return JSON.parse(fs.readFileSync(path.join(here, 'personas', personaId + '.json'), 'utf8'));
 }
-module.exports = { manifest, listPersonas, getPersonaInfo, listEndpoints, loadFixture, loadJourney, loadSpec, loadPersonaManifest };
+let _poolsCache = null;
+function getPools() {
+  if (_poolsCache) return _poolsCache;
+  _poolsCache = JSON.parse(fs.readFileSync(path.join(here, 'pools.json'), 'utf8'));
+  return _poolsCache;
+}
+// CJS re-export of the runtime engine. Uses dynamic import so the CJS
+// loader can pull in the ESM lib modules without requiring callers to
+// install a transpiler.
+async function getEngine() {
+  const gen = await import('./lib/generator/index.js');
+  const exp = await import('./lib/persona-builder/expand.js');
+  const rec = await import('./lib/persona-builder/recipe.js');
+  return { buildBundle: gen.buildBundle, expandRecipe: exp.expandRecipe,
+    RECIPE_DEFAULTS: rec.RECIPE_DEFAULTS, encodeRecipe: rec.encodeRecipe,
+    decodeRecipe: rec.decodeRecipe, recipeHash: rec.recipeHash, validateRecipe: rec.validateRecipe };
+}
+module.exports = {
+  manifest, listPersonas, getPersonaInfo, listEndpoints, loadFixture,
+  loadJourney, loadSpec, loadPersonaManifest, getPools, getEngine,
+};

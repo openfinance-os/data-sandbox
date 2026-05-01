@@ -134,6 +134,31 @@ fs.copyFileSync(path.join(repoRoot, 'dist/SPEC.json'), path.join(OUT, 'spec.json
 
 fs.writeFileSync(path.join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 2));
 
+// Workstream C plug-point 2 — vendor the runtime engine (generator + persona-
+// builder + prng + pool indexer) into the package so TPPs can run a custom
+// persona inside their own app without any network call. We copy the source
+// modules verbatim and serialise the indexed pools to a JSON the loader
+// hydrates lazily.
+const LIB_DIR = path.join(OUT, 'lib');
+fs.mkdirSync(LIB_DIR, { recursive: true });
+function copyDirRecursive(src, dst) {
+  fs.mkdirSync(dst, { recursive: true });
+  for (const ent of fs.readdirSync(src, { withFileTypes: true })) {
+    const sFull = path.join(src, ent.name);
+    const dFull = path.join(dst, ent.name);
+    if (ent.isDirectory()) copyDirRecursive(sFull, dFull);
+    else if (ent.isFile() && /\.(mjs|js)$/.test(ent.name)) fs.copyFileSync(sFull, dFull);
+  }
+}
+copyDirRecursive(path.join(repoRoot, 'src/generator'), path.join(LIB_DIR, 'generator'));
+copyDirRecursive(path.join(repoRoot, 'src/persona-builder'), path.join(LIB_DIR, 'persona-builder'));
+copyDirRecursive(path.join(repoRoot, 'src/shared'), path.join(LIB_DIR, 'shared'));
+fs.copyFileSync(path.join(repoRoot, 'src/prng.js'), path.join(LIB_DIR, 'prng.js'));
+
+// Serialise the indexed pools so consumers can call getPools() without
+// re-walking the YAML tree. Stable order preserved by the indexer.
+fs.writeFileSync(path.join(OUT, 'pools.json'), JSON.stringify(pools));
+
 // package.json — declares the npm package.
 const pkgJson = {
   name: '@openfinance-os/sandbox-fixtures',
@@ -150,10 +175,12 @@ const pkgJson = {
     '.': { import: './index.mjs', require: './index.cjs', default: './index.mjs' },
     './manifest.json': './manifest.json',
     './spec.json': './spec.json',
+    './pools.json': './pools.json',
     './bundles/*': './bundles/*',
     './personas/*': './personas/*',
+    './lib/*': './lib/*',
   },
-  files: ['index.mjs', 'index.cjs', 'manifest.json', 'spec.json', 'bundles/', 'personas/', 'README.md'],
+  files: ['index.mjs', 'index.cjs', 'index.d.ts', 'manifest.json', 'spec.json', 'pools.json', 'bundles/', 'personas/', 'lib/', 'README.md'],
   publishConfig: { access: 'public' },
 };
 fs.writeFileSync(path.join(OUT, 'package.json'), JSON.stringify(pkgJson, null, 2));
@@ -221,6 +248,27 @@ export function loadSpec() {
 export function loadPersonaManifest(personaId) {
   return JSON.parse(readFileSync(path.join(here, 'personas', \`\${personaId}.json\`), 'utf8'));
 }
+
+// Workstream C plug-point 2 — runtime generator for custom personas. TPPs
+// installing this package can compose a recipe and run buildBundle inside
+// their own app, getting the same v2.1-shaped envelopes as the static
+// fixtures. Cross-origin friendly (no network call).
+let _poolsCache = null;
+export function getPools() {
+  if (_poolsCache) return _poolsCache;
+  _poolsCache = JSON.parse(readFileSync(path.join(here, 'pools.json'), 'utf8'));
+  return _poolsCache;
+}
+export { buildBundle } from './lib/generator/index.js';
+export { expandRecipe } from './lib/persona-builder/expand.js';
+export {
+  RECIPE_DEFAULTS,
+  encodeRecipe,
+  decodeRecipe,
+  recipeHash,
+  validateRecipe,
+} from './lib/persona-builder/recipe.js';
+
 export { manifest };
 `;
 fs.writeFileSync(path.join(OUT, 'index.mjs'), indexMjs);
@@ -288,7 +336,27 @@ function loadSpec() { return JSON.parse(fs.readFileSync(path.join(here, 'spec.js
 function loadPersonaManifest(personaId) {
   return JSON.parse(fs.readFileSync(path.join(here, 'personas', personaId + '.json'), 'utf8'));
 }
-module.exports = { manifest, listPersonas, getPersonaInfo, listEndpoints, loadFixture, loadJourney, loadSpec, loadPersonaManifest };
+let _poolsCache = null;
+function getPools() {
+  if (_poolsCache) return _poolsCache;
+  _poolsCache = JSON.parse(fs.readFileSync(path.join(here, 'pools.json'), 'utf8'));
+  return _poolsCache;
+}
+// CJS re-export of the runtime engine. Uses dynamic import so the CJS
+// loader can pull in the ESM lib modules without requiring callers to
+// install a transpiler.
+async function getEngine() {
+  const gen = await import('./lib/generator/index.js');
+  const exp = await import('./lib/persona-builder/expand.js');
+  const rec = await import('./lib/persona-builder/recipe.js');
+  return { buildBundle: gen.buildBundle, expandRecipe: exp.expandRecipe,
+    RECIPE_DEFAULTS: rec.RECIPE_DEFAULTS, encodeRecipe: rec.encodeRecipe,
+    decodeRecipe: rec.decodeRecipe, recipeHash: rec.recipeHash, validateRecipe: rec.validateRecipe };
+}
+module.exports = {
+  manifest, listPersonas, getPersonaInfo, listEndpoints, loadFixture,
+  loadJourney, loadSpec, loadPersonaManifest, getPools, getEngine,
+};
 `;
 fs.writeFileSync(path.join(OUT, 'index.cjs'), indexCjs);
 
@@ -337,6 +405,49 @@ export function loadJourney(opts: {
 }): Journey;
 export function loadSpec(): unknown;
 export function loadPersonaManifest(personaId: string): unknown;
+
+// Workstream C plug-point 2 — runtime engine for custom personas.
+export interface IndexedPools {
+  namesByPoolId: Record<string, unknown>;
+  employersByPoolId: Record<string, unknown>;
+  merchantsByCategory: Record<string, unknown>;
+  counterpartyBanksByCategory: Record<string, unknown>;
+  ibansByCategory: Record<string, unknown>;
+  organisationsByPoolId: Record<string, unknown>;
+  counterpartiesByPoolId: Record<string, unknown>;
+}
+export interface CustomRecipe {
+  segment?: 'Retail' | 'SME' | 'Corporate';
+  name_pool?: string;
+  age_band?: string;
+  emirate?: string;
+  income_band?: string;
+  flag_payroll?: boolean;
+  employer_pool?: string;
+  products?: string[];
+  card_limit?: 'low' | 'mid' | 'high';
+  spend_intensity?: 'low' | 'med' | 'high';
+  fx_activity?: boolean;
+  cash_deposit?: boolean;
+  distress?: 'none' | 'occasional' | 'frequent';
+  legal_name_pool?: string;
+  signatory_pool?: string;
+  signatory_account_role?: string;
+  signatory_party_type?: 'Sole' | 'Joint' | 'Delegate';
+  cash_flow_intensity?: 'low' | 'med' | 'high';
+  customer_inflow_pool?: string;
+  supplier_outflow_pool?: string;
+  invoice_cadence?: 'weekly' | 'biweekly' | 'monthly' | 'irregular';
+  stress_tags?: string[];
+}
+export const RECIPE_DEFAULTS: Required<CustomRecipe>;
+export function encodeRecipe(recipe: CustomRecipe): string;
+export function decodeRecipe(encoded: string): CustomRecipe;
+export function recipeHash(recipe: CustomRecipe): string;
+export function validateRecipe(recipe: CustomRecipe, pools: IndexedPools): { ok: true } | { ok: false; errors: string[] };
+export function getPools(): IndexedPools;
+export function expandRecipe(recipe: CustomRecipe, pools: IndexedPools): unknown;
+export function buildBundle(opts: { persona: unknown; lfi: 'rich' | 'median' | 'sparse'; seed: number; pools: IndexedPools; now?: Date }): unknown;
 `;
 fs.writeFileSync(path.join(OUT, 'index.d.ts'), indexDts);
 

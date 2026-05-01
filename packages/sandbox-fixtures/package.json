@@ -29,16 +29,21 @@
     },
     "./manifest.json": "./manifest.json",
     "./spec.json": "./spec.json",
+    "./pools.json": "./pools.json",
     "./bundles/*": "./bundles/*",
-    "./personas/*": "./personas/*"
+    "./personas/*": "./personas/*",
+    "./lib/*": "./lib/*"
   },
   "files": [
     "index.mjs",
     "index.cjs",
+    "index.d.ts",
     "manifest.json",
     "spec.json",
+    "pools.json",
     "bundles/",
     "personas/",
+    "lib/",
     "README.md"
   ],
   "publishConfig": {

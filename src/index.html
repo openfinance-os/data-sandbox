@@ -113,6 +113,15 @@
         <button id="stress-filter-clear" type="button" aria-label="Clear stress filter">Clear</button>
       </div>
       <div class="persona-list" id="persona-list" role="list" tabindex="0"></div>
+      <div class="persona-list-footer">
+        <button type="button" id="open-builder-btn" class="builder-cta" aria-haspopup="dialog">
+          + Build a custom persona
+        </button>
+        <p class="builder-cta-help">
+          Compose a one-off persona from segment, pools, and bands. Ephemeral —
+          shareable via URL, never committed to the curated library.
+        </p>
+      </div>
     </div>
   </section>
 
@@ -179,6 +188,26 @@
 </main>
 
 <div class="hovercard" id="hovercard" role="tooltip" hidden></div>
+
+<dialog id="builder-dialog" class="builder-dialog" aria-labelledby="builder-title">
+  <form method="dialog" class="builder-form" id="builder-form">
+    <header class="builder-head">
+      <h2 id="builder-title">Build a custom persona</h2>
+      <p class="builder-sub">
+        Spec-driven dimensions; identity drawn from /synthetic-identity-pool/.
+        Output is ephemeral and marked
+        <span class="custom-badge">Custom (not curated)</span> across the UI.
+      </p>
+      <button type="button" class="builder-close" id="builder-close" aria-label="Close">×</button>
+    </header>
+    <div class="builder-body" id="builder-body"></div>
+    <footer class="builder-foot">
+      <span class="builder-validation" id="builder-validation"></span>
+      <button type="button" id="builder-cancel" class="btn-secondary">Cancel</button>
+      <button type="submit" id="builder-apply" class="btn-primary">Apply &amp; preview</button>
+    </footer>
+  </form>
+</dialog>
 
 <footer class="footer" role="contentinfo">
   <span>SYNTHETIC · Open Finance Data Sandbox · OpenFinance-OS Commons · Standards v2.1 @ <span id="footer-sha">unknown</span></span>

@@ -16,7 +16,8 @@ import {
 } from './shared/spec-helpers.js';
 import { decodeFromUrl, encodeEmbed, encodeFixtureUrl, encodePermalink, CUSTOM_PERSONA_SLUG } from './url.js';
 import { expandRecipe } from './persona-builder/expand.js';
-import { decodeRecipe, encodeRecipe } from './persona-builder/recipe.js';
+import { decodeRecipe, encodeRecipe, RECIPE_DEFAULTS } from './persona-builder/recipe.js';
+import { mountPersonaBuilder } from './ui/persona-builder-ui.js';
 import {
   envelopesFromBundle,
   csvForResource,
@@ -229,7 +230,36 @@ async function init() {
   renderDomainChip();
   syncControls();
   attachEventHandlers();
+  attachBuilderHandlers();
   rebuildAndRender();
+}
+
+// Workstream B — wire the "+ Build a custom persona" CTA in the persona pane
+// to the builder dialog. The dialog is mounted lazily on first open so the
+// initial render stays cheap; subsequent opens reuse the same instance.
+let builderInstance = null;
+function attachBuilderHandlers() {
+  const btn = document.getElementById('open-builder-btn');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    if (!builderInstance) {
+      builderInstance = mountPersonaBuilder({
+        pools: state.data.pools,
+        currentRecipe: state.recipe,
+        onApply: ({ recipe, persona }) => {
+          state.data.personas[CUSTOM_PERSONA_SLUG] = persona;
+          state.activePersonas[CUSTOM_PERSONA_SLUG] = persona;
+          state.recipe = recipe;
+          state.personaId = CUSTOM_PERSONA_SLUG;
+          state.endpoint = OVERVIEW_PSEUDO;
+          state.selectedAccountId = null;
+          buildPersonaList();
+          rebuildAndRender();
+        },
+      });
+    }
+    builderInstance.open(state.recipe ?? { ...RECIPE_DEFAULTS });
+  });
 }
 
 function el(tag, opts = {}, ...children) {
@@ -360,10 +390,11 @@ function buildPersonaList() {
     if (!personaMatchesActiveFilter(p)) continue;
     visibleCount += 1;
 
+    const isCustom = id === CUSTOM_PERSONA_SLUG;
     const card = el(
       'div',
       {
-        class: 'persona-card',
+        class: `persona-card${isCustom ? ' is-custom' : ''}`,
         attrs: { role: 'listitem' },
         dataset: { personaId: id },
         onClick: (e) => {
@@ -376,7 +407,10 @@ function buildPersonaList() {
           rebuildAndRender();
         },
       },
-      el('div', { class: 'persona-name', text: p.name }),
+      el('div', { class: 'persona-name' },
+        document.createTextNode(p.name),
+        isCustom ? el('span', { class: 'custom-badge', text: 'Custom (not curated)' }) : null,
+      ),
       el('div', { class: 'persona-archetype', text: humanArchetype(p.archetype) }),
     );
     const bestFor = bestForLine(p);
