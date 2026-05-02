@@ -4,29 +4,68 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository status
 
-This repo is **discovery-stage and PRD-only**. There is no source code, no build, no tests, and no git history yet. The single live artefact is `PRD_OF_Data_Explorer.md` (v0.9, draft), which fully specifies the product to be built. Treat the PRD as the source of truth for any implementation work; do not invent architecture that contradicts it.
+Phase 1 has shipped and Phase 1.5 is largely in. The repo contains source, tests, build tooling, two distribution packages (npm + PyPI), a worked TPP integration example, and a stage-to-`_site/` pipeline. The PRD remains the source of truth for new features and decisions — **do not invent behaviour that contradicts it.**
 
-The companion documents listed in PRD §15 Appendix E live alongside the main PRD in this repo:
+Key documents in the repo:
+- `PRD_OF_Data_Explorer.md` (v0.9, draft) — the product spec.
+- `IMPLEMENTATION_PLAN.md` — current execution plan.
+- `PHASE2_INSURANCE_PLAN.md` — Phase 2 insurance-domain plan (motor MVP partially landed).
+- `CHANGELOG.md` — running log of shipped slices.
 - `PRD_OF_Data_Explorer_Review.md` — historical (Tier-1 items folded into v0.5–v0.8; remainder closed in v0.9).
 - `PRD_OF_Data_Explorer_Spec_Validation.md` — applies to the prototype HTML, not the PRD.
 - `PRD_OF_Data_Explorer_Deployment.md` — superseded (hosting locked to OF-OS Commons per D-05).
-- `of-sandbox-prototype.html` — current single-file prototype; basis for the v1 build.
+- `of-sandbox-prototype.html` — original single-file prototype; basis for the v1 build.
 
 ## What the product is
 
 An interactive, **client-side static** sandbox that lets a TPP-perspective user load synthetic UAE customer personas and explore every UAE Open Finance Bank Data Sharing payload they would receive — with mandatory/optional/conditional field treatment derived live from the published OpenAPI spec. Hosted as a contribution to OpenFinance-OS Commons. Bank Data Sharing only in v1; Open Wealth/Insurance/Service Initiation are v2+.
 
-## Planned architecture (PRD §6)
+## Architecture (PRD §6, as built)
 
-When code lands, expect:
+- **Frontend**: vanilla HTML/CSS/JS, no build chain. Sources under `src/`. Entry: `src/index.html` + `src/app.js`. The `/integrate` page (`src/integrate.html` + `src/integrate.js`) documents the four TPP plug-points.
+- **Synthetic generator**: runs entirely in the browser (and in Node for tests). Deterministic seeded PRNG (mulberry32) at `src/prng.js`. Entry: `buildBundle()` at `src/generator/index.js:86`, dispatching to `src/generator/banking/` or `src/generator/insurance/`. `(persona_id, lfi_profile, seed)` → bundle is a pure function.
+- **Spec source**: vendored at `spec/uae-account-information-openapi.yaml` from `github.com/Nebras-Open-Finance/api-specs:ozone:dist/standards/v2.1/`, **pinned by commit SHA**. Insurance baseline at `spec/uae-insurance-openapi.yaml`. The pinned SHA is exposed in `dist/SPEC.json#pinSha`, the UI top bar, `/about`, and the fixture-package manifest.
+- **Build-time tooling** (`tools/`): `parse-spec.mjs` walks the vendored YAML and emits `dist/SPEC.json` (banking) + `dist/SPEC.insurance.json`; `build-data.mjs` builds `dist/data.json` (personas + pools); `build-fixture-package.mjs` + `build-fixture-package-py.mjs` generate the npm and PyPI packages; `stage-site.mjs` assembles `_site/` for static deployment. Six lints (`lint-no-handauthored-fields`, `lint-no-institution-leak`, `lint-pii-leak`, `lint-no-glyph-only`, `lint-persona-spec-conformance`, `lint-stress-coverage-uniqueness`) enforce the load-bearing invariants.
+- **No backend, no database, no auth.** Static deployment to OF-OS Commons. Anonymous PostHog analytics only.
+- **Persona definitions**: YAML manifests under `personas/`, one per persona. Loader: `tools/load-fixtures.mjs` (`loadPersona`, `loadAllPersonas`, `loadPersonasByDomain`). Each manifest declares a `stress_coverage` field per EXP-25.
+- **Synthetic identity pool**: `synthetic-identity-pool/` — names/IBANs/phones/DOBs drawn from here only (EXP-07, enforced by `lint-pii-leak`).
+- **Custom-persona builder**: `src/persona-builder/` — recipe codec (`recipe.js`: `encodeRecipe`/`decodeRecipe`/`recipeHash`/`validateRecipe`), expansion engine, and Service-Worker fixture handler (`fixture-handler.js`). The SW (`src/sw-fixtures.js`) intercepts `/fixtures/v1/bundles/custom/<recipeHash>/<lfi>/seed-<n>/<file>.json?recipe=<base64url>` and returns generated v2.1 envelopes with CORS.
 
-- **Frontend**: vanilla HTML/CSS/JS in v1, no build chain. React/Svelte only considered at v1.5 if maintenance surface justifies it.
-- **Synthetic generator**: runs entirely in the browser. Deterministic seeded PRNG (mulberry32). `(persona_id, lfi_profile, seed)` → bundle is a pure function.
-- **Spec source**: vendored copy of `uae-account-information-openapi.yaml` from `github.com/Nebras-Open-Finance/api-specs:ozone:dist/standards/v2.1/`, **pinned by commit SHA**. The pinned SHA is shown in the UI top bar and on `/about`.
-- **Build-time tooling**: small Python/Node script parses the vendored YAML and emits a JSON `SPEC` object the frontend consumes. This is what makes status badges spec-driven (see "load-bearing invariants" below).
-- **No backend, no database, no auth.** Static deployment. Anonymous PostHog analytics only.
-- **Persona definitions**: YAML manifests under `/personas/`, one per persona; schema is sketched in PRD §8.2 and §3.3. Each manifest declares a `stress_coverage` field per EXP-25.
-- **Synthetic identity pool**: `/synthetic-identity-pool/` — names/IBANs/phones/DOBs all drawn from this pool, never elsewhere (EXP-07).
+## Repo layout
+
+- `src/` — frontend sources (vanilla JS) + Service Worker.
+- `spec/` — vendored OpenAPI YAMLs (banking v2.1, insurance) + `lfi-bands.banking.yaml`.
+- `tools/` — spec parser, data builder, fixture-package builders, site stager, lints.
+- `personas/` — YAML persona manifests (12 banking + 1 insurance = 13 total).
+- `synthetic-identity-pool/` — name/IBAN/phone/DOB pools.
+- `tests/` — Vitest suites (spec validation, replay, LFI bands, fixture-package, integrate-staging, journey-coherence, etc.) + Playwright e2e under `tests/e2e/`.
+- `packages/sandbox-fixtures/` — `@openfinance-os/sandbox-fixtures` (npm). Exports: `loadFixture`, `loadJourney`, `buildBundle`, `expandRecipe`, `encodeRecipe`, `recipeHash`, `validateRecipe`, `listPersonas`, `listEndpoints`, `loadSpec`, `getPools`, `manifest`.
+- `packages/sandbox-fixtures-py/` — PyPI mirror (same fixture data, Python loader).
+- `examples/tpp-budgeting-demo/` — worked TPP integration (HTML + `app.js` + Postman collection).
+- `dist/` — build outputs (`SPEC.json`, `SPEC.insurance.json`, `data.json`, `domains.json`); gitignored.
+- `_site/` — staged static site for deployment, including `_site/fixtures/v1/{bundles,personas,manifest.json,index.json,spec.json}` and `_site/_headers` (CORS + cache); gitignored.
+
+## Commands
+
+- `npm run ci` — verify spec shape → parse spec → all lints → vitest. Runs without needing a built site.
+- `npm run build:spec` — parse vendored YAMLs to `dist/SPEC*.json`.
+- `npm run build:fixtures` — build the npm + PyPI fixture packages (unblocks the EXP-20 / EXP-32 test suites).
+- `npm run build:site` — full pipeline: build:spec → build:data → fixture packages → stage `_site/` (unblocks the EXP-28..31 staging-contract tests).
+- `npm test` — vitest. After `build:site`, all suites unblock (729 tests, 0 skipped); without it, three suites skip with messages pointing at the right command.
+- `npm run test:e2e` — Playwright smoke + a11y.
+- `npm run test:perf` — Lighthouse CI (EXP-24 budget).
+- `npm run serve` — quick `python3 -m http.server` on `src/` for local dev.
+
+## TPP plug-points (EXP-20 / EXP-27 / EXP-28..32)
+
+Documented end-to-end in `src/integrate.html`; verified in the test harness. Four ways a TPP gets persona data, all returning the same v2.1 envelope shape (`Data` / `Links` / `Meta`):
+
+1. **Static fixtures** — `…/fixtures/v1/bundles/<persona>/<lfi>/seed-<n>/<endpoint>.json`. Built by `stage-site.mjs`. `_site/_headers` declares `Access-Control-Allow-Origin: *` and `Cache-Control: public, max-age=600` on `/fixtures/v1/*`.
+2. **Service Worker dynamic** for custom personas (recipe-driven) — `src/sw-fixtures.js` + `src/persona-builder/fixture-handler.js`. Returns 409 on recipe-hash tamper.
+3. **Embed iframe** (chrome-less) — `src/embed.html` + `src/embed.js`, EXP-27.
+4. **npm / PyPI package** — `packages/sandbox-fixtures{,-py}/`, EXP-20.
+
+The worked TPP example at `examples/tpp-budgeting-demo/app.js` is the canonical fetch chain (`/parties` + `/accounts` parallel, then per-account fan-out).
 
 ## Load-bearing invariants — DO NOT violate
 
@@ -57,10 +96,10 @@ The PRD assigns every requirement an `EXP-NN` ID (PRD §4). When discussing or i
 
 ## Phasing
 
-- **Phase 0 (spike)**: 1 persona × 3 endpoints, mandatory/optional badging only.
-- **Phase 1 (v1)**: 10 personas × all 12 v2.1 Account Information endpoints × 3 LFI profiles. Endpoints listed in PRD Appendix C.
-- **Phase 1.5**: Compare-LFIs mode, Underwriting Scenario panel, persona library to 13, fixture package `@openfinance-os/sandbox-fixtures` published to npm + PyPI (MIT code, CC0 data).
-- **Phase 2**: Open Wealth + Insurance, community persona PRs.
+- **Phase 0 (spike)** — done.
+- **Phase 1 (v1)** — done. 12 banking personas × all 12 v2.1 Account Information endpoints × 3 LFI profiles. Endpoints listed in PRD Appendix C.
+- **Phase 1.5** — largely landed: Compare-LFIs mode, Underwriting Scenario panel, custom-persona builder, Service-Worker fixture mock, fixture package `@openfinance-os/sandbox-fixtures` (npm) and `openfinance-os-sandbox-fixtures` (PyPI mirror) — MIT code, CC0 data. Persona library at 13 (12 banking + 1 insurance MVP).
+- **Phase 2** — in progress. Insurance domain motor-comprehensive MVP shipped (`spec/uae-insurance-openapi.yaml`, `personas/motor-comprehensive-mid.yaml`, `tests/spec-validation.insurance.test.mjs`); see `PHASE2_INSURANCE_PLAN.md`. Open Wealth + community persona PRs still ahead.
 
 ## Working with the user
 
@@ -70,4 +109,4 @@ The PRD assigns every requirement an `EXP-NN` ID (PRD §4). When discussing or i
 
 ## Filesystem note
 
-The repo directory name has a **trailing space**: `open-finance-data-sandbox ` (the harness sometimes reports it without). Quote the path when shelling out, e.g. `ls "/Users/michartmann/Documents/GitHub/open-finance-data-sandbox /"`.
+On the maintainer's local checkout the repo directory has a **trailing space**: `open-finance-data-sandbox ` — quote the path when shelling out (e.g. `ls "/Users/michartmann/Documents/GitHub/open-finance-data-sandbox /"`). In sandbox/CI environments the repo is checked out cleanly (e.g. `/home/user/data-sandbox`) with no trailing space.
