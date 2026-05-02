@@ -6,6 +6,12 @@ default_seed: 9203
 stress_coverage:
   - high_dbr
   - mortgage_long_dated
+  # salary_assigned_lending (Appendix F vocab) — Yousef's >60% DBR is the
+  # salary-assignment stress case (the regulatory mechanism UAE banks rely
+  # on for mortgage lending), distinguishing him globally from
+  # salaried_emirati_affluent who shares high_dbr + mortgage_long_dated but
+  # at 60k income lands well under the CBUAE 50% DBR cap.
+  - salary_assigned_lending
 
 demographics:
   nationality_pool: expat_arab

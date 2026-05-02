@@ -3,6 +3,29 @@
 All notable changes to the Open Finance Data Sandbox.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follows [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Added — Phase 2.0 multi-domain + Workstreams A / B / C
+
+- **Insurance Data Sharing preview domain** alongside Bank Data Sharing. `dist/domains.json` manifest drives the active SPEC fetch; the Motor MVP triad (`/motor-insurance-policies`, `/motor-insurance-policies/{id}`, `/motor-insurance-policies/{id}/payment-details`) renders as a JSON inspector pending per-resource UI in 6c+. Insurance LFI bands curated in `spec/lfi-bands.insurance.yaml`; mandatory-field protection enforced.
+- **Workstream A — segment expansion.** Persona library widened from 10 to **12 banking personas** with the addition of `corporate_treasury_listed` and `sme_trading_business`, plus the Retail / SME / Corporate segment dimension wired through the manifest schema, generator, and lints.
+- **Workstream B — Custom Persona Builder.** `<dialog>`-mounted drawer composes a recipe (segment, identity, organisation, financial profile, products, stress tags) into an ephemeral persona. Recipe is base64url-encoded into a `recipe=` URL param so custom permalinks are shareable; canonicalised + djb2-hashed for stable IDs. URL-driven materialisation in both `app.js` and `embed.js`.
+- **Workstream C — TPP plug-points.**
+  - **Plug-point 1**: Service Worker (`src/sw-fixtures.js`) intercepts `/fixtures/v1/bundles/custom/<hash>/<lfi>/seed-<n>/<file>.json?recipe=...` and serves on-demand custom-persona fixtures with permissive CORS. Live registration deferred until deployment-time `Service-Worker-Allowed: /` lands.
+  - **Plug-point 2**: npm runtime engine — `expandRecipe` + `buildBundle` + `getPools` exposed from `@openfinance-os/sandbox-fixtures` so a Node consumer can synthesise custom personas without a Service Worker.
+  - **Plug-point 3**: Static-fixture zip download — STORE-only ZIP writer (`src/persona-builder/zip-writer.js`) packs the (1 persona × 3 LFI × all endpoints) matrix into a `/fixtures/v1/bundles/<persona>/...`-shaped tree the TPP can host on their own static origin.
+
+### Fixed
+
+- **Persona spend volumes were inert.** Personas declared `groceries_aed_per_month_band` / `fuel_aed_per_month_band` (AED bands) but the generator was reading `*_per_month_count_band` (counts), so every persona except `senior_retiree` defaulted to `[4,9]` groceries / `[2,5]` fuel txs/month. Generator now derives a count from the AED band when no explicit count band is declared, dividing mid-band by the merchant pool's mean typical-tx amount; realised monthly grocery AED now lands inside each persona's declared band.
+- **Embed mode was banking-only.** `src/embed.js` hard-coded `dist/SPEC.json` and didn't filter the persona pool by domain; an insurance permalink would have rendered an insurance bundle against the banking spec. Embed now resolves domain through `dist/domains.json` and renders a JSON-inspector preview for non-banking domains.
+- **Coverage and field-card lookups missed `Transaction.TransactionReference`** (added to `PROBE_BAND` / `collectProbes` / `FIELD_BANDS`) and the per-endpoint coverage probe missed `Transaction.ValueDateTime` (added to `collectProbesForEndpoint('/transactions')`); the YAML `spec/lfi-bands.banking.yaml` was already correct.
+- **`whyEmpty` median copy.** Was "Generator's RNG rolled unfavourably for this row" — but the LFI redactor caches keep/drop per `(path, band)` per bundle, so an absent field is uniformly absent across every row of one `(persona, lfi, seed)`. Reworded to "The simulated LFI didn't populate this field for this bundle (re-roll seed to resample)".
+
+### Distribution
+
+- **`@openfinance-os/sandbox-fixtures`** — fixture corpus widened to **12 banking personas × 3 LFI profiles** = **36 keys** in `manifest.json`, **912 envelope files** (per-account endpoints multiply by account count). Spec pin unchanged at `bc1cd97`.
+
 ## [1.1.0] — 2026-04-29
 
 ### Added — EXP-20 fixture package distribution

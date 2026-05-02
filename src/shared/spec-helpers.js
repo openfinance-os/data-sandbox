@@ -61,6 +61,7 @@ const PROBE_BAND = Object.freeze({
   'Transaction.TransactionInformation': 'Universal',
   'Transaction.Flags': 'Common',
   'Transaction.ValueDateTime': 'Universal',
+  'Transaction.TransactionReference': 'Common',
   'Transaction.MerchantDetails': 'Variable',
   'Transaction.MerchantDetails.MerchantCategoryCode': 'Variable',
   'Transaction.MerchantDetails.MerchantName': 'Common',
@@ -77,6 +78,7 @@ function collectProbes(bundle) {
     probes.push(['Transaction.TransactionInformation', t.TransactionInformation != null]);
     probes.push(['Transaction.Flags', Array.isArray(t.Flags) && t.Flags.length > 0]);
     probes.push(['Transaction.ValueDateTime', t.ValueDateTime != null]);
+    probes.push(['Transaction.TransactionReference', t.TransactionReference != null]);
     probes.push(['Transaction.MerchantDetails', t.MerchantDetails != null]);
     if (t.MerchantDetails) {
       probes.push(['Transaction.MerchantDetails.MerchantCategoryCode', t.MerchantDetails.MerchantCategoryCode != null]);
@@ -139,6 +141,8 @@ function collectProbesForEndpoint(bundle, endpointPath, accountId) {
         if (t._accountId !== accountId) continue;
         out.push(['Transaction.TransactionInformation', t.TransactionInformation != null]);
         out.push(['Transaction.Flags', Array.isArray(t.Flags) && t.Flags.length > 0]);
+        out.push(['Transaction.ValueDateTime', t.ValueDateTime != null]);
+        out.push(['Transaction.TransactionReference', t.TransactionReference != null]);
         out.push(['Transaction.MerchantDetails', t.MerchantDetails != null]);
         if (t.MerchantDetails) {
           out.push(['Transaction.MerchantDetails.MerchantCategoryCode', t.MerchantDetails.MerchantCategoryCode != null]);
@@ -206,7 +210,12 @@ export function realLfisGuidance(field, lfiBand) {
   }
 }
 
-const FIELD_BANDS = Object.freeze({
+// Banking-domain fallback. The authoritative source is now
+// spec.bandOverrides (parsed from spec/lfi-bands.<domain>.yaml at build
+// time); this constant is only used when the caller passes no spec — i.e.
+// in legacy / test paths that don't have one to hand. New domains pick up
+// their bands automatically from spec.bandOverrides without touching JS.
+const FALLBACK_FIELD_BANDS = Object.freeze({
   'Account.Nickname': 'Common',
   'Account.OpeningDate': 'Common',
   'Transaction.TransactionInformation': 'Universal',
@@ -215,17 +224,17 @@ const FIELD_BANDS = Object.freeze({
   'Transaction.MerchantDetails.MerchantName': 'Common',
   'Transaction.Flags': 'Common',
   'Transaction.ValueDateTime': 'Universal',
+  'Transaction.TransactionReference': 'Common',
   'Balance.CreditLine': 'Variable',
 });
 
-export function bandForFieldName(name, endpointPath) {
-  // Handful of UI-discoverable mappings — Phase 1 starter set, sourced from
-  // the same allowlist the LFI profile filter uses (single source of truth).
+export function bandForFieldName(name, endpointPath, spec) {
+  const bands = spec?.bandOverrides ?? FALLBACK_FIELD_BANDS;
   const segs = endpointPath.split('/').filter(Boolean);
   const resourceHint = segs[segs.length - 1] || '';
   const trial = `${capitalise(resourceHint.replace(/-/g, ' ').replace(/\s+/g, ''))}.${name}`;
-  if (FIELD_BANDS[trial]) return FIELD_BANDS[trial];
-  for (const [k, v] of Object.entries(FIELD_BANDS)) {
+  if (bands[trial]) return bands[trial];
+  for (const [k, v] of Object.entries(bands)) {
     if (k.endsWith(`.${name}`)) return v;
   }
   return null;

@@ -62,8 +62,13 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
         runningBalance.balance -= amount;
       }
 
-      const groceriesBand = persona.spend_profile?.groceries_per_month_count_band ?? [4, 9];
-      const groceriesCount = rngInt(rng, groceriesBand[0], groceriesBand[1] + 1);
+      const groceriesCount = monthlyCountFromSpend({
+        rng,
+        countBand: persona.spend_profile?.groceries_per_month_count_band,
+        aedBand: persona.spend_profile?.groceries_aed_per_month_band,
+        pool: pools.groceries,
+        defaultBand: [4, 9],
+      });
       for (let i = 0; i < groceriesCount; i++) {
         const merchant = drawMerchant(rng, pools.groceries);
         const amount = rngInt(rng, merchant.typical_amount_aed_band[0], merchant.typical_amount_aed_band[1] + 1);
@@ -74,8 +79,13 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
         }));
         runningBalance.balance -= amount;
       }
-      const fuelBand = persona.spend_profile?.fuel_per_month_count_band ?? [2, 5];
-      const fuelCount = rngInt(rng, fuelBand[0], fuelBand[1] + 1);
+      const fuelCount = monthlyCountFromSpend({
+        rng,
+        countBand: persona.spend_profile?.fuel_per_month_count_band,
+        aedBand: persona.spend_profile?.fuel_aed_per_month_band,
+        pool: pools.fuel,
+        defaultBand: [2, 5],
+      });
       for (let i = 0; i < fuelCount; i++) {
         const merchant = drawMerchant(rng, pools.fuel);
         const amount = rngInt(rng, merchant.typical_amount_aed_band[0], merchant.typical_amount_aed_band[1] + 1);
@@ -395,6 +405,36 @@ function makePosTransaction({ rng, account, date, amount, merchant, mcc, isCredi
 function maybePending(date, now, rng) {
   if (now && pendingForRecent(date, now, rng)) return 'Pending';
   return 'Booked';
+}
+
+// Resolve a per-month transaction count from a persona's spend_profile.
+// Personas may declare either an explicit count band (`*_per_month_count_band`)
+// or an AED-spend band (`*_aed_per_month_band`). The AED form is what most
+// curated personas use; we derive a count from the band's mid-point divided
+// by the merchant pool's average typical-tx amount.
+function monthlyCountFromSpend({ rng, countBand, aedBand, pool, defaultBand }) {
+  if (Array.isArray(countBand) && countBand.length === 2) {
+    return rngInt(rng, countBand[0], countBand[1] + 1);
+  }
+  if (Array.isArray(aedBand) && aedBand.length === 2) {
+    const monthlyAed = rngInt(rng, aedBand[0], aedBand[1] + 1);
+    if (monthlyAed === 0) return 0;
+    const avgTx = poolAverageTypicalAed(pool);
+    if (!Number.isFinite(avgTx) || avgTx <= 0) return rngInt(rng, defaultBand[0], defaultBand[1] + 1);
+    return Math.max(1, Math.round(monthlyAed / avgTx));
+  }
+  return rngInt(rng, defaultBand[0], defaultBand[1] + 1);
+}
+
+function poolAverageTypicalAed(pool) {
+  const merchants = pool?.merchants ?? [];
+  if (merchants.length === 0) return NaN;
+  let sum = 0;
+  for (const m of merchants) {
+    const band = m.typical_amount_aed_band;
+    if (Array.isArray(band) && band.length === 2) sum += (band[0] + band[1]) / 2;
+  }
+  return sum / merchants.length;
 }
 
 void rngPick;

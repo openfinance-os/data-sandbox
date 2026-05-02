@@ -1,7 +1,7 @@
 {
   "name": "@openfinance-os/sandbox-fixtures",
   "version": "0.0.1",
-  "description": "Deterministic, v2.1-shaped UAE Open Finance synthetic fixtures from the Open Finance Data Sandbox. 10 personas × 3 LFI profiles × 12 endpoints = 360 envelopes. CC0 data, MIT loader code.",
+  "description": "Deterministic, v2.1-shaped UAE Open Finance synthetic fixtures from the Open Finance Data Sandbox. 12 banking personas × 3 LFI profiles × every Account-Information endpoint = 900+ envelopes. CC0 data, MIT loader code.",
   "keywords": [
     "open-finance",
     "uae",

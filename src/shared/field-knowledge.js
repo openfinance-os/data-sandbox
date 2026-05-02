@@ -117,7 +117,11 @@ export function whyEmpty({ field, lfi, persona, band, parentPopulated, condition
   if (lfi === 'median' && band) {
     const median = { Universal: 1.0, Common: 0.7, Variable: 0.4, Rare: 0.1, Unknown: 0.0 }[band] ?? 0;
     if (median < 1.0) {
-      return `Optional with band="${band}" — Median populate probability ${median}. Generator's RNG rolled unfavourably for this row.`;
+      // The Median LFI redactor decides keep/drop once per (field, band) per
+      // bundle — modelling a single ecosystem LFI that either populates the
+      // field or doesn't — so an absent field is uniformly absent across
+      // every row in the active bundle.
+      return `Optional with band="${band}" — Median populate probability ${median}. The simulated LFI didn't populate this field for this bundle (re-roll seed to resample).`;
     }
   }
   if (parentPopulated === false) {
