@@ -20,8 +20,11 @@ playwright-report/
 test-results/
 coverage/
 
-# Frontend / docs / e2e (irrelevant to MCP runtime)
-src/
+# Docs / e2e / git (not needed in build context).
+# NOTE: src/ is intentionally NOT excluded — tools/build-fixture-package.mjs
+# imports from src/generator/ and src/ui/export.js at build time. The
+# multistage Dockerfile already keeps src/ out of the final runtime image by
+# only COPY-ing packages/, node_modules, and root manifests from the builder.
 tests/e2e/
 .github/
 .git/
