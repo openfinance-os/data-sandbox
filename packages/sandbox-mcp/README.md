@@ -6,13 +6,13 @@ The intended use: run Claude as a **dynamic PFM** against a synthetic customer. 
 
 > **All data is synthetic.** No real customer, no real institution. Every tool response carries a `_watermark` field such as `SYNTHETIC — Open Finance Data Sandbox · OpenFinance-OS Commons · persona:salaried_expat_mid lfi:median seed:4729 retrieved:2026-04-01T00:00:00.000Z`. Preserve this watermark in any export or summary.
 
-## Scope (v1)
+## Scope
 
 - **Banking only** — Bank Data Sharing v2.1, all 12 Account-Information endpoints. Insurance defers to a later release.
 - **12 curated personas** — no custom-persona builder yet.
 - **Read-only** — no writes, no Service Initiation.
 - **Anonymous** — no auth, no API keys, no OAuth. The data is synthetic so there is nothing real to protect.
-- **Stdio transport only** — `npx @openfinance-os/sandbox-mcp`. The hosted HTTP transport and Claude marketplace listing are gated on PRD decision D-11.
+- **Two transports** — stdio (default, for `npx` / Claude Desktop / Claude Code) and Streamable HTTP (for the Claude marketplace listing and any browser-side client). PRD decision D-13.
 
 ## Install
 
@@ -20,7 +20,27 @@ The intended use: run Claude as a **dynamic PFM** against a synthetic customer. 
 npx -y @openfinance-os/sandbox-mcp --help
 ```
 
-### Claude Desktop
+### Claude marketplace (HTTP)
+
+The hosted endpoint is published at `mcp.openfinance-os.org/sandbox`. Install via the connector directory; no API key required.
+
+To run your own HTTP instance:
+
+```sh
+npx -y @openfinance-os/sandbox-mcp --transport http --port 8787 --host 127.0.0.1
+# → sandbox-mcp listening on http://127.0.0.1:8787/mcp
+```
+
+Health check:
+
+```sh
+curl http://127.0.0.1:8787/health
+# → {"ok":true,"sessions":0}
+```
+
+The endpoint is the [Streamable HTTP](https://spec.modelcontextprotocol.io/specification/basic/transports/#streamable-http) transport at `/mcp`. CORS is permissive (`*`), `Mcp-Session-Id` round-trips, and one process serves many concurrent MCP sessions with per-session state isolation.
+
+### Claude Desktop (stdio)
 
 Add to `claude_desktop_config.json`:
 
@@ -37,7 +57,7 @@ Add to `claude_desktop_config.json`:
 
 Restart Claude Desktop, then run the bundled `pick-a-persona` prompt.
 
-### Claude Code
+### Claude Code (stdio)
 
 ```sh
 claude mcp add open-finance-sandbox -- npx -y @openfinance-os/sandbox-mcp

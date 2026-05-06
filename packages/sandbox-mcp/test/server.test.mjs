@@ -3,7 +3,6 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { manifest } from '@openfinance-os/sandbox-fixtures';
 import { createServer } from '../src/server.mjs';
-import { clearSession } from '../src/session.mjs';
 
 const EXPECTED_TOOLS = [
   'list_personas',
@@ -41,7 +40,6 @@ describe('sandbox-mcp server', () => {
   let server;
 
   beforeEach(async () => {
-    clearSession();
     ({ client, server } = await connect());
   });
 

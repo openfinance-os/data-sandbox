@@ -3,7 +3,6 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { listPersonas } from '@openfinance-os/sandbox-fixtures';
 import { createServer } from '../src/server.mjs';
-import { clearSession } from '../src/session.mjs';
 
 async function connect() {
   const server = createServer();
@@ -25,13 +24,11 @@ describe('sandbox-mcp determinism (EXP-05)', () => {
     const lfis = ['rich', 'median', 'sparse'];
     for (const persona of personas) {
       for (const lfi of lfis) {
-        clearSession();
         const a = await connect();
         const journeyA = await loadJourney(a.client, persona, lfi);
         await a.client.close();
         await a.server.close();
 
-        clearSession();
         const b = await connect();
         const journeyB = await loadJourney(b.client, persona, lfi);
         await b.client.close();
@@ -43,7 +40,6 @@ describe('sandbox-mcp determinism (EXP-05)', () => {
   });
 
   it('every endpoint envelope in load_journey carries _watermark and _specSha (EXP-19)', async () => {
-    clearSession();
     const { client, server } = await connect();
     await client.callTool({
       name: 'set_session',

@@ -9,7 +9,7 @@ import {
   manifest,
 } from '@openfinance-os/sandbox-fixtures';
 import { z } from 'zod';
-import { getSession, setSession, peekSession } from './session.mjs';
+import { createSessionStore } from './session.mjs';
 import { registerPrompts } from './prompts.mjs';
 
 const PKG_NAME = '@openfinance-os/sandbox-mcp';
@@ -122,6 +122,7 @@ export function createServer() {
     { name: PKG_NAME, version: PKG_VERSION },
     { instructions: PFM_INSTRUCTIONS },
   );
+  const session = createSessionStore();
 
   // ── Persona / session tools ────────────────────────────────────────────────
 
@@ -167,7 +168,7 @@ export function createServer() {
       },
     },
     async ({ persona, lfi, seed }) => {
-      const s = setSession({ persona, lfi, seed });
+      const s = session.set({ persona, lfi, seed });
       return textResult(
         `session set → persona:${s.persona} (${s.personaName}) lfi:${s.lfi} seed:${s.seed}`,
       );
@@ -183,7 +184,7 @@ export function createServer() {
       inputSchema: {},
     },
     async () => {
-      const s = peekSession();
+      const s = session.peek();
       if (!s) return textResult('no active session — call set_session first.');
       return textResult(JSON.stringify(s, null, 2));
     },
@@ -200,7 +201,7 @@ export function createServer() {
       inputSchema: {},
     },
     async () => {
-      const s = getSession();
+      const s = session.get();
       const env = loadFixture({ persona: s.persona, lfi: s.lfi, seed: s.seed, endpoint: '/parties' });
       return envelope(s.persona, s.lfi, s.seed, '/parties', env);
     },
@@ -214,7 +215,7 @@ export function createServer() {
       inputSchema: {},
     },
     async () => {
-      const s = getSession();
+      const s = session.get();
       const env = loadFixture({ persona: s.persona, lfi: s.lfi, seed: s.seed, endpoint: '/accounts' });
       return envelope(s.persona, s.lfi, s.seed, '/accounts', env);
     },
@@ -236,7 +237,7 @@ export function createServer() {
       inputSchema: accountIdOptional,
     },
     async ({ accountId }) => {
-      const s = getSession();
+      const s = session.get();
       const id = resolveAccountId(s, accountId);
       const results = fetchPerAccount(s, '/balances', id);
       const text = results
@@ -275,7 +276,7 @@ export function createServer() {
       },
     },
     async ({ accountId, since, until, minAmount, maxAmount, category }) => {
-      const s = getSession();
+      const s = session.get();
       const id = resolveAccountId(s, accountId);
       const results = fetchPerAccount(s, '/transactions', id);
       const text = results
@@ -301,7 +302,7 @@ export function createServer() {
       name,
       { title, description, inputSchema: accountIdOptional },
       async ({ accountId }) => {
-        const s = getSession();
+        const s = session.get();
         const id = resolveAccountId(s, accountId);
         const results = fetchPerAccount(s, suffix, id);
         const text = results
@@ -360,7 +361,7 @@ export function createServer() {
       inputSchema: accountIdRequired,
     },
     async ({ accountId }) => {
-      const s = getSession();
+      const s = session.get();
       const id = resolveAccountId(s, accountId);
       const env = loadFixture({
         persona: s.persona,
@@ -381,7 +382,7 @@ export function createServer() {
       inputSchema: accountIdRequired,
     },
     async ({ accountId }) => {
-      const s = getSession();
+      const s = session.get();
       const id = resolveAccountId(s, accountId);
       const env = loadFixture({
         persona: s.persona,
@@ -402,7 +403,7 @@ export function createServer() {
       inputSchema: {},
     },
     async () => {
-      const s = getSession();
+      const s = session.get();
       const j = loadJourney({ persona: s.persona, lfi: s.lfi, seed: s.seed });
       return textResult(JSON.stringify(j, null, 2));
     },
