@@ -1,0 +1,27 @@
+# Fly.io deployment config for @openfinance-os/sandbox-mcp.
+# The Dockerfile lives under packages/sandbox-mcp/, so Fly's launcher needs
+# this file at the repo root to know where to find it.
+
+app = "REPLACE_ME_APP_NAME"
+primary_region = "REPLACE_ME_REGION"   # e.g. "fra" (Frankfurt) or "iad" (US-East)
+
+[build]
+  dockerfile = "packages/sandbox-mcp/Dockerfile"
+
+[http_service]
+  internal_port = 8787
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[http_service.checks]]
+  interval = "30s"
+  timeout = "5s"
+  grace_period = "10s"
+  method = "GET"
+  path = "/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
