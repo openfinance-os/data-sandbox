@@ -2,8 +2,8 @@
 # The Dockerfile lives under packages/sandbox-mcp/, so Fly's launcher needs
 # this file at the repo root to know where to find it.
 
-app = "REPLACE_ME_APP_NAME"
-primary_region = "REPLACE_ME_REGION"   # e.g. "fra" (Frankfurt) or "iad" (US-East)
+app = "openfinance-sandbox-mcp"
+primary_region = "fra"
 
 [build]
   dockerfile = "packages/sandbox-mcp/Dockerfile"
