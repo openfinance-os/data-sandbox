@@ -31,7 +31,7 @@ export function createSessionStore() {
     return active;
   }
 
-  function setCustom({ persona, lfi, seed, journey, recipeHash, personaName }) {
+  function setCustom({ persona, lfi, seed, journey, recipe, recipeHash, personaName }) {
     if (!LFI_PROFILES.has(lfi)) {
       throw new Error(`unknown lfi profile: ${lfi}`);
     }
@@ -41,6 +41,7 @@ export function createSessionStore() {
       lfi,
       seed,
       personaName,
+      recipe,
       recipeHash,
       journey,
     };

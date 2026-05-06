@@ -107,6 +107,25 @@ describe('custom persona builder (build_persona)', () => {
     expect(textOf(r)).toMatch(/recipe validation failed/);
   });
 
+  it('get_session echoes the merged recipe for a custom session', async () => {
+    const recipe = { income_band: 'affluent', spend_intensity: 'high' };
+    await client.callTool({
+      name: 'build_persona',
+      arguments: { recipe, lfi: 'rich', seed: 42 },
+    });
+    const session = JSON.parse(
+      textOf(await client.callTool({ name: 'get_session', arguments: {} })),
+    );
+    expect(session.kind).toBe('custom');
+    expect(session.recipe).toMatchObject({
+      ...RECIPE_DEFAULTS,
+      income_band: 'affluent',
+      spend_intensity: 'high',
+    });
+    // The verbose journey is still omitted from the echo.
+    expect(session).not.toHaveProperty('journey');
+  });
+
   it('exposes the recipe://schema resource', async () => {
     const { resources } = await client.listResources();
     const uris = resources.map((r) => r.uri);

@@ -2,11 +2,20 @@
 //
 // Anonymous (D-13): no auth, no API key, no OAuth. The data is fully synthetic
 // so there is nothing to protect, and that matches PRD §6.4 ("the sandbox runs
-// anonymously"). CORS is wide-open for the same reason.
+// anonymously").
 //
-// One Node process serves many concurrent MCP sessions; each session gets a
-// fresh `createServer()` (and therefore its own per-instance session store)
-// keyed by the Mcp-Session-Id header.
+// Production hardening:
+//   • Session TTL — idle sessions are evicted after MCP_SESSION_IDLE_TTL_MS
+//     (default 30 min). Caps memory growth on a public anonymous endpoint.
+//   • Session cap — at most MCP_MAX_SESSIONS concurrent sessions (default
+//     1024). When full, the oldest-by-last-activity is evicted (LRU).
+//   • DNS rebinding protection — Host header is validated against
+//     allowedHosts. The browser-localhost-with-malicious-DNS attack vector
+//     is the main reason; defence-in-depth for hosted instances too.
+//   • Structured request logging — `[ts] METHOD /path status duration session`
+//     to stderr (stdio mode uses stdout; mustn't collide).
+//   • Graceful close — stops the listener, closes every active session
+//     transport + server, clears the sweep timer.
 
 import http from 'node:http';
 import { randomUUID } from 'node:crypto';
@@ -19,6 +28,9 @@ const HEALTH_PATH = '/health';
 const SESSION_HEADER = 'mcp-session-id';
 
 const MAX_BODY_BYTES = 1_000_000; // 1 MB — JSON-RPC messages are tiny
+const DEFAULT_IDLE_TTL_MS = Number(process.env.MCP_SESSION_IDLE_TTL_MS) || 30 * 60 * 1000;
+const DEFAULT_MAX_SESSIONS = Number(process.env.MCP_MAX_SESSIONS) || 1024;
+const SWEEP_INTERVAL_MS = 60 * 1000;
 
 function applyCors(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -69,9 +81,87 @@ function jsonRpcError(id, code, message) {
   return { jsonrpc: '2.0', id: id ?? null, error: { code, message } };
 }
 
-export function createHttpHandler() {
-  // sessionId → { transport, server }
+function shortId(id) {
+  if (!id) return '-';
+  return id.slice(0, 8);
+}
+
+function defaultLogger(line) {
+  process.stderr.write(`${line}\n`);
+}
+
+function buildAllowedHosts({ host, port, extraAllowedHosts }) {
+  const set = new Set([
+    `127.0.0.1:${port}`,
+    `localhost:${port}`,
+    `[::1]:${port}`,
+  ]);
+  if (host && host !== '0.0.0.0' && host !== '::') {
+    set.add(`${host}:${port}`);
+  }
+  for (const h of extraAllowedHosts ?? []) {
+    set.add(h);
+    // Allow either bare hostname or host:port; be lenient.
+  }
+  return [...set];
+}
+
+export function createHttpHandler({
+  idleTtlMs = DEFAULT_IDLE_TTL_MS,
+  maxSessions = DEFAULT_MAX_SESSIONS,
+  sweepIntervalMs = SWEEP_INTERVAL_MS,
+  allowedHosts,
+  allowedOrigins,
+  enableDnsRebindingProtection = true,
+  log = defaultLogger,
+} = {}) {
+  // sessionId → { transport, server, lastActivity }
   const sessions = new Map();
+
+  function touch(sessionId) {
+    const entry = sessions.get(sessionId);
+    if (entry) entry.lastActivity = Date.now();
+  }
+
+  function evictOldestIfFull() {
+    if (sessions.size < maxSessions) return;
+    let oldestId = null;
+    let oldestTs = Infinity;
+    for (const [id, entry] of sessions) {
+      if (entry.lastActivity < oldestTs) {
+        oldestTs = entry.lastActivity;
+        oldestId = id;
+      }
+    }
+    if (oldestId) {
+      log(`session-evict ${shortId(oldestId)} reason=cap`);
+      destroySession(oldestId);
+    }
+  }
+
+  async function destroySession(sessionId) {
+    const entry = sessions.get(sessionId);
+    if (!entry) return;
+    sessions.delete(sessionId);
+    try {
+      await entry.transport.close();
+    } catch {}
+    try {
+      await entry.server.close();
+    } catch {}
+  }
+
+  function sweep() {
+    const cutoff = Date.now() - idleTtlMs;
+    for (const [id, entry] of sessions) {
+      if (entry.lastActivity < cutoff) {
+        log(`session-evict ${shortId(id)} reason=idle`);
+        destroySession(id);
+      }
+    }
+  }
+  const sweepTimer = setInterval(sweep, sweepIntervalMs);
+  sweepTimer.unref();
 
   async function handle(req, res) {
     applyCors(res);
@@ -96,7 +186,6 @@ export function createHttpHandler() {
     }
 
     const sessionId = req.headers[SESSION_HEADER];
-    let entry = sessionId ? sessions.get(sessionId) : null;
 
     if (req.method === 'POST') {
       let body;
@@ -107,20 +196,25 @@ export function createHttpHandler() {
         return;
       }
 
+      let entry = sessionId ? sessions.get(sessionId) : null;
+
       if (!entry && isInitializeRequest(body)) {
+        evictOldestIfFull();
         const server = createServer();
         const transport = new StreamableHTTPServerTransport({
           sessionIdGenerator: () => randomUUID(),
+          enableDnsRebindingProtection,
+          allowedHosts,
+          allowedOrigins,
           onsessioninitialized: (id) => {
-            sessions.set(id, { transport, server });
+            sessions.set(id, { transport, server, lastActivity: Date.now() });
           },
           onsessionclosed: (id) => {
             sessions.delete(id);
           },
         });
         await server.connect(transport);
-        entry = { transport, server };
-        await entry.transport.handleRequest(req, res, body);
+        await transport.handleRequest(req, res, body);
         return;
       }
 
@@ -137,15 +231,18 @@ export function createHttpHandler() {
         return;
       }
 
+      touch(sessionId);
       await entry.transport.handleRequest(req, res, body);
       return;
     }
 
     if (req.method === 'GET' || req.method === 'DELETE') {
+      const entry = sessionId ? sessions.get(sessionId) : null;
       if (!entry) {
         sendJson(res, 400, { error: 'no active session for that Mcp-Session-Id' });
         return;
       }
+      touch(sessionId);
       await entry.transport.handleRequest(req, res);
       return;
     }
@@ -156,6 +253,8 @@ export function createHttpHandler() {
   }
 
   async function dispatch(req, res) {
+    const start = Date.now();
+    const sessionId = req.headers[SESSION_HEADER];
     try {
       await handle(req, res);
     } catch (err) {
@@ -164,37 +263,76 @@ export function createHttpHandler() {
       } else {
         res.end();
       }
+    } finally {
+      const duration = Date.now() - start;
+      const path = (req.url || '').split('?')[0];
+      log(
+        `${new Date().toISOString()} ${req.method} ${path} ${res.statusCode} ${duration}ms session=${shortId(sessionId)}`,
+      );
     }
   }
 
-  return { dispatch, sessions };
+  async function closeAll() {
+    clearInterval(sweepTimer);
+    const ids = [...sessions.keys()];
+    await Promise.all(ids.map((id) => destroySession(id)));
+  }
+
+  return { dispatch, sessions, closeAll, sweep };
 }
 
-export async function startHttp({ port = 8787, host = '127.0.0.1' } = {}) {
-  const { dispatch, sessions } = createHttpHandler();
-  const server = http.createServer((req, res) => {
-    dispatch(req, res);
-  });
-
+export async function startHttp({
+  port = 8787,
+  host = '127.0.0.1',
+  idleTtlMs,
+  maxSessions,
+  sweepIntervalMs,
+  allowedHosts: extraAllowedHosts,
+  allowedOrigins,
+  enableDnsRebindingProtection = true,
+  log,
+} = {}) {
+  const earlyServer = http.createServer();
   await new Promise((resolve, reject) => {
-    server.once('error', reject);
-    server.listen(port, host, () => {
-      server.removeListener('error', reject);
+    earlyServer.once('error', reject);
+    earlyServer.listen(port, host, () => {
+      earlyServer.removeListener('error', reject);
       resolve();
     });
   });
 
-  const addr = server.address();
+  const addr = earlyServer.address();
   const resolvedPort = typeof addr === 'object' && addr ? addr.port : port;
   const resolvedHost = typeof addr === 'object' && addr ? addr.address : host;
 
+  // Build the Host allowlist with the *resolved* port so port:0 works in tests.
+  const allowedHosts = buildAllowedHosts({
+    host: resolvedHost,
+    port: resolvedPort,
+    extraAllowedHosts,
+  });
+  const handler = createHttpHandler({
+    idleTtlMs,
+    maxSessions,
+    sweepIntervalMs,
+    allowedHosts,
+    allowedOrigins,
+    enableDnsRebindingProtection,
+    log,
+  });
+  const server = earlyServer;
+  server.on('request', (req, res) => handler.dispatch(req, res));
+
   return {
     server,
-    sessions,
+    sessions: handler.sessions,
+    sweep: handler.sweep,
     port: resolvedPort,
     host: resolvedHost,
     url: `http://${resolvedHost}:${resolvedPort}${MCP_PATH}`,
+    allowedHosts,
     async close() {
+      await handler.closeAll();
       await new Promise((resolve, reject) => {
         server.close((err) => (err ? reject(err) : resolve()));
       });

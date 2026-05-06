@@ -270,6 +270,7 @@ export function createServer() {
         lfi,
         seed,
         journey,
+        recipe: merged,
         recipeHash: hash,
         personaName: expanded.name ?? `Custom (${hash})`,
       });
@@ -361,8 +362,20 @@ export function createServer() {
         'Return /accounts/{AccountId}/transactions. Optional server-side filters: since/until (ISO8601 dates), minAmount/maxAmount (numeric), category (substring match against MerchantCategoryCode + TransactionInformation). Filters run after the deterministic generator — they never alter the underlying synthetic data.',
       inputSchema: {
         ...accountIdOptional,
-        since: z.string().optional().describe('Inclusive lower bound on BookingDateTime, ISO8601.'),
-        until: z.string().optional().describe('Inclusive upper bound on BookingDateTime, ISO8601.'),
+        since: z
+          .string()
+          .refine((s) => !Number.isNaN(Date.parse(s)), {
+            message: 'must be ISO8601 (e.g. "2026-03-01" or "2026-03-01T12:00:00Z")',
+          })
+          .optional()
+          .describe('Inclusive lower bound on BookingDateTime, ISO8601.'),
+        until: z
+          .string()
+          .refine((s) => !Number.isNaN(Date.parse(s)), {
+            message: 'must be ISO8601 (e.g. "2026-03-01" or "2026-03-01T12:00:00Z")',
+          })
+          .optional()
+          .describe('Inclusive upper bound on BookingDateTime, ISO8601.'),
         minAmount: z.number().optional().describe('Minimum transaction amount.'),
         maxAmount: z.number().optional().describe('Maximum transaction amount.'),
         category: z

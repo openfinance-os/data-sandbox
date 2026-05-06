@@ -7,7 +7,7 @@ describe('sandbox-mcp HTTP transport (D-13)', () => {
   let server;
 
   beforeAll(async () => {
-    server = await startHttp({ port: 0, host: '127.0.0.1' });
+    server = await startHttp({ port: 0, host: '127.0.0.1', log: () => {} });
   });
 
   afterAll(async () => {

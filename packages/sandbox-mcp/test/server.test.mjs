@@ -142,4 +142,14 @@ describe('sandbox-mcp server', () => {
     expect(names).toContain('pick-a-persona');
     expect(names).toContain('monthly-summary');
   });
+
+  it('get_transactions rejects malformed since/until before touching data', async () => {
+    await client.callTool({ name: 'set_session', arguments: { persona: 'salaried_expat_mid' } });
+    const r = await client.callTool({
+      name: 'get_transactions',
+      arguments: { since: 'not-a-date' },
+    });
+    expect(r.isError).toBe(true);
+    expect(textOf(r)).toMatch(/must be ISO8601/);
+  });
 });

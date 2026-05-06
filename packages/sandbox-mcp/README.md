@@ -27,8 +27,11 @@ The hosted endpoint is published at `mcp.openfinance-os.org/sandbox`. Install vi
 To run your own HTTP instance:
 
 ```sh
-npx -y @openfinance-os/sandbox-mcp --transport http --port 8787 --host 127.0.0.1
-# → sandbox-mcp listening on http://127.0.0.1:8787/mcp
+npx -y @openfinance-os/sandbox-mcp --transport http --port 8787 --host 0.0.0.0 \
+  --allowed-host mcp.example.org
+# → sandbox-mcp 0.0.1 listening on http://0.0.0.0:8787/mcp
+#   allowed Host headers: 127.0.0.1:8787, localhost:8787, [::1]:8787, mcp.example.org
+#   DNS rebinding protection: on
 ```
 
 Health check:
@@ -38,7 +41,14 @@ curl http://127.0.0.1:8787/health
 # → {"ok":true,"sessions":0}
 ```
 
-The endpoint is the [Streamable HTTP](https://spec.modelcontextprotocol.io/specification/basic/transports/#streamable-http) transport at `/mcp`. CORS is permissive (`*`), `Mcp-Session-Id` round-trips, and one process serves many concurrent MCP sessions with per-session state isolation.
+The endpoint is the [Streamable HTTP](https://spec.modelcontextprotocol.io/specification/basic/transports/#streamable-http) transport at `/mcp`. CORS is permissive (`*`); `Mcp-Session-Id` round-trips. One process serves many concurrent MCP sessions with per-session state isolation.
+
+### Production hardening
+
+- **DNS-rebinding protection** is on by default — Host header is validated against `localhost`, `127.0.0.1`, the bound address (all `:port`), plus anything passed via `--allowed-host` (repeatable). Pass `--no-dns-rebinding-protection` to disable.
+- **Idle session TTL** (default 30 min) and **max session count** (default 1024) cap memory growth on a public anonymous endpoint. Tunable via `MCP_SESSION_IDLE_TTL_MS` and `MCP_MAX_SESSIONS` env vars.
+- **Graceful shutdown** — SIGTERM / SIGINT closes every active MCP session before the process exits, so `docker stop` and Kubernetes pod evictions don't drop in-flight requests.
+- **Structured request logging** — every request emits `<ISO timestamp> METHOD /path STATUS Nms session=<id8>` to stderr (stdout is reserved for stdio MCP framing).
 
 ### Claude Desktop (stdio)
 
