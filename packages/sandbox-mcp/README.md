@@ -9,7 +9,7 @@ The intended use: run Claude as a **dynamic PFM** against a synthetic customer. 
 ## Scope
 
 - **Banking only** — Bank Data Sharing v2.1, all 12 Account-Information endpoints. Insurance defers to a later release.
-- **12 curated personas** — no custom-persona builder yet.
+- **12 curated personas + a custom-persona builder** — pick from the curated list with `set_session`, or compose a recipe and call `build_persona` to generate a fresh deterministic persona at runtime.
 - **Read-only** — no writes, no Service Initiation.
 - **Anonymous** — no auth, no API keys, no OAuth. The data is synthetic so there is nothing real to protect.
 - **Two transports** — stdio (default, for `npx` / Claude Desktop / Claude Code) and Streamable HTTP (for the Claude marketplace listing and any browser-side client). PRD decision D-13.
