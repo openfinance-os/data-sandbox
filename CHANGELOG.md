@@ -32,6 +32,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follo
 ### Distribution
 
 - **`@openfinance-os/sandbox-fixtures`** — fixture corpus widened to **12 banking personas × 3 LFI profiles** = **36 keys** in `manifest.json`, **912 envelope files** (per-account endpoints multiply by account count). Spec pin unchanged at `bc1cd97`.
+- **Fly.io deploy target for `@openfinance-os/sandbox-mcp`** — `fly.toml` at the repo root + `.github/workflows/deploy-fly.yml` continuously deploy the hosted MCP endpoint on every `mcp-v*` tag. Defaults: `iad` region, `shared-cpu-1x` / `256mb`, `auto_stop_machines = false` + `min_machines_running = 1` so long-lived MCP sessions survive (Streamable HTTP holds `GET /mcp` open per session — cold starts would silently drop in-flight Claude conversations). `MCP_ALLOWED_HOSTS` env var (added to the CLI in this slice) pre-loads the DNS-rebinding allow-list with `of-sandbox-mcp.fly.dev` and `mcp.openfinance-os.org`. First-time setup is `flyctl launch --copy-config --no-deploy && flyctl deploy && flyctl certs add mcp.openfinance-os.org`; subsequent deploys are CI-driven once `FLY_API_TOKEN` is in repo secrets. Also documents Railway / DigitalOcean / VPS / Fargate / Cloud Run as alternate targets, and explicitly rules out Cloudflare Workers / Vercel functions / Lambda / cold-start-prone serverless because the Streamable HTTP transport holds long-lived per-session connections those don't tolerate.
 
 ## [1.1.0] — 2026-04-29
 
