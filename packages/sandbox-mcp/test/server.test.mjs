@@ -8,6 +8,8 @@ const EXPECTED_TOOLS = [
   'list_personas',
   'set_session',
   'get_session',
+  'get_recipe_defaults',
+  'build_persona',
   'get_party',
   'get_accounts',
   'get_balances',
@@ -48,7 +50,7 @@ describe('sandbox-mcp server', () => {
     await server.close();
   });
 
-  it('exposes the documented 14 tools', async () => {
+  it('exposes the documented tools', async () => {
     const { tools } = await client.listTools();
     const names = tools.map((t) => t.name).sort();
     expect(names).toEqual([...EXPECTED_TOOLS].sort());

@@ -80,5 +80,10 @@ export {
   recipeHash,
   validateRecipe,
 } from './lib/persona-builder/recipe.js';
+// envelopesFromBundle wraps an in-memory generator bundle into v2.1-shaped
+// JSON envelopes (Data / Links / Meta + watermark fields) keyed by endpoint.
+// Counterpart to buildBundle for any consumer that doesn't read the static
+// fixture files — e.g. the MCP build_persona path.
+export { envelopesFromBundle } from './lib/ui/export.js';
 
 export { manifest };

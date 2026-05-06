@@ -65,11 +65,25 @@ claude mcp add open-finance-sandbox -- npx -y @openfinance-os/sandbox-mcp
 
 ## Tools
 
+### Session
+
 | Tool | Purpose |
 |---|---|
 | `list_personas` | List the 12 synthetic banking personas (id, name, archetype, default seed). |
-| `set_session` | Pin `{ persona, lfi?, seed? }` for subsequent calls. `lfi` defaults to `median`; `seed` defaults to `persona.default_seed`. |
-| `get_session` | Echo the active persona / lfi / seed. |
+| `set_session` | Pin a curated persona via `{ persona, lfi?, seed? }`. `lfi` defaults to `median`; `seed` defaults to `persona.default_seed`. |
+| `get_session` | Echo the active persona / lfi / seed (and recipe hash for custom personas). |
+
+### Custom personas (in-memory)
+
+| Tool | Purpose |
+|---|---|
+| `get_recipe_defaults` | Return the full `RECIPE_DEFAULTS` object — every knob the builder accepts, with default values. |
+| `build_persona` | Build a custom persona from a recipe, generate a v2.1 bundle in-memory, and pin it as the active session. The same `(recipe, lfi, seed)` always produces a byte-identical bundle; persona id is `custom_<recipeHash>`. |
+
+### Banking endpoints (v2.1, work for both curated and custom sessions)
+
+| Tool | Purpose |
+|---|---|
 | `get_party` | v2.1 `/parties` envelope (synthetic customer profile). |
 | `get_accounts` | v2.1 `/accounts` envelope. |
 | `get_balances` | `/accounts/{AccountId}/balances` — fans out across every account when `accountId` is omitted. |
@@ -85,6 +99,7 @@ claude mcp add open-finance-sandbox -- npx -y @openfinance-os/sandbox-mcp
 ## Resources
 
 - `spec://uae-account-information-v2.1` — parsed v2.1 OpenAPI (pinned by SHA upstream).
+- `recipe://schema` — full `RECIPE_DEFAULTS` object documenting every knob `build_persona` accepts.
 - `persona://<id>` — manifest for each curated persona (demographics, income, accounts, commitments, narrative).
 
 ## Prompts

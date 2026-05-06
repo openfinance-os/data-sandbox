@@ -21,11 +21,14 @@ describe('sandbox-mcp HTTP transport (D-13)', () => {
     return { client, transport };
   }
 
-  it('listens, registers a session, and lists 14 tools', async () => {
+  it('listens, registers a session, and lists 16 tools (including custom-persona builder)', async () => {
     const { client } = await newClient();
     const { tools } = await client.listTools();
-    expect(tools.map((t) => t.name)).toContain('list_personas');
-    expect(tools.length).toBe(14);
+    const names = tools.map((t) => t.name);
+    expect(names).toContain('list_personas');
+    expect(names).toContain('build_persona');
+    expect(names).toContain('get_recipe_defaults');
+    expect(tools.length).toBe(16);
     await client.close();
   });
 

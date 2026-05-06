@@ -1,15 +1,21 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import {
-  loadFixture,
   loadJourney,
   loadPersonaManifest,
   loadSpec,
   listPersonas,
   getPersonaInfo,
+  buildBundle,
+  expandRecipe,
+  getPools,
+  envelopesFromBundle,
+  RECIPE_DEFAULTS,
+  recipeHash,
+  validateRecipe,
   manifest,
 } from '@openfinance-os/sandbox-fixtures';
 import { z } from 'zod';
-import { createSessionStore } from './session.mjs';
+import { createSessionStore, getEndpointEnvelope, fanOutAccountIds } from './session.mjs';
 import { registerPrompts } from './prompts.mjs';
 
 const PKG_NAME = '@openfinance-os/sandbox-mcp';
@@ -20,12 +26,19 @@ const PFM_INSTRUCTIONS = [
   'All data is fictional — no real customer, no real institution. Every response carries a `_watermark`',
   'field; preserve it in any user-visible summary, table, or export.',
   '',
-  'Workflow:',
+  'Workflow — curated persona (recommended for first use):',
   '  1. Call `list_personas` and ask the user to pick one (or accept a persona id directly).',
   '  2. Call `set_session` with { persona, lfi?, seed? }. lfi defaults to median; seed defaults to the',
   '     persona\'s default_seed. The same (persona, lfi, seed) always returns byte-identical data.',
   '  3. Use `get_party`, `get_accounts`, `get_balances`, `get_transactions`, etc. for granular data.',
   '     Use `load_journey` only when the user wants a single dump of everything.',
+  '',
+  'Workflow — custom persona (when the user describes someone not in the curated list):',
+  '  1. Call `get_recipe_defaults` (or read the `recipe://schema` resource) to see the available knobs.',
+  '  2. Translate the user\'s description into a recipe object (any subset of those knobs — missing keys',
+  '     fall back to defaults). Call `build_persona` with { recipe, lfi?, seed? }.',
+  '  3. The same get_* tools then return the in-memory custom journey.',
+  '  Same recipe + lfi + seed → byte-identical bundle. Persona id is `custom_<recipeHash>`.',
   '',
   'LFI profiles model how richly a Licensed Financial Institution populates optional fields:',
   '  rich    — all optional fields populated.',
@@ -57,9 +70,7 @@ function errorResult(text) {
 
 function resolveAccountId(session, requested) {
   if (!requested) return null;
-  const fxKey = `${session.persona}|${session.lfi}|${session.seed}`;
-  const fx = manifest.fixtures[fxKey];
-  const ids = fx?.accountIds ?? [];
+  const ids = fanOutAccountIds(session);
   if (!ids.includes(requested)) {
     throw new Error(
       `unknown accountId: ${requested}. Available for this session: ${ids.join(', ') || '(none)'}`,
@@ -68,22 +79,11 @@ function resolveAccountId(session, requested) {
   return requested;
 }
 
-function fanOutAccountIds(session) {
-  const fxKey = `${session.persona}|${session.lfi}|${session.seed}`;
-  const fx = manifest.fixtures[fxKey];
-  return fx?.accountIds ?? [];
-}
-
 function fetchPerAccount(session, suffix, accountId) {
   const ids = accountId ? [accountId] : fanOutAccountIds(session);
   return ids.map((id) => ({
     accountId: id,
-    envelope: loadFixture({
-      persona: session.persona,
-      lfi: session.lfi,
-      seed: session.seed,
-      endpoint: `/accounts/${id}${suffix}`,
-    }),
+    envelope: getEndpointEnvelope(session, `/accounts/${id}${suffix}`),
   }));
 }
 
@@ -168,7 +168,7 @@ export function createServer() {
       },
     },
     async ({ persona, lfi, seed }) => {
-      const s = session.set({ persona, lfi, seed });
+      const s = session.setCurated({ persona, lfi, seed });
       return textResult(
         `session set → persona:${s.persona} (${s.personaName}) lfi:${s.lfi} seed:${s.seed}`,
       );
@@ -186,7 +186,103 @@ export function createServer() {
     async () => {
       const s = session.peek();
       if (!s) return textResult('no active session — call set_session first.');
-      return textResult(JSON.stringify(s, null, 2));
+      // The `journey` field can be very large for custom personas; omit it
+      // from the echoed session — Claude can call load_journey if needed.
+      const { journey: _omit, ...rest } = s;
+      return textResult(JSON.stringify(rest, null, 2));
+    },
+  );
+
+  // ── Custom persona builder ─────────────────────────────────────────────────
+
+  server.registerTool(
+    'get_recipe_defaults',
+    {
+      title: 'Show custom-persona recipe defaults',
+      description:
+        'Return the full RECIPE_DEFAULTS object for the custom-persona builder. Each field is a knob the user can override when calling build_persona — segment (Retail/SME/Corporate), name_pool, age_band, emirate, income_band (thin/mid/affluent/hnw/gig), products, card_limit, spend_intensity, fx_activity, cash_deposit, distress (none/occasional/frequent), and (for non-Retail) organisation + cash-flow knobs. Use this before build_persona when the user asks "what can I customise?".',
+      inputSchema: {},
+    },
+    async () => textResult(JSON.stringify(RECIPE_DEFAULTS, null, 2)),
+  );
+
+  server.registerTool(
+    'build_persona',
+    {
+      title: 'Build a custom synthetic persona from a recipe',
+      description:
+        'Compose a custom UAE banking persona from a recipe (any subset of the knobs in get_recipe_defaults — missing fields fall back to defaults), generate a deterministic v2.1 bundle, and pin it as the active session. Subsequent get_party / get_accounts / get_transactions / etc. calls return the in-memory custom journey instead of a curated fixture. The persona id is "custom_<recipeHash>" — same recipe + lfi + seed always produces byte-identical output.',
+      inputSchema: {
+        recipe: z
+          .record(z.unknown())
+          .describe(
+            'Recipe object. Any subset of RECIPE_DEFAULTS keys (call get_recipe_defaults to see them all). Missing keys fall back to defaults.',
+          ),
+        lfi: z
+          .enum(['rich', 'median', 'sparse'])
+          .optional()
+          .describe('LFI populate-rate profile. Default: median.'),
+        seed: z.number().int().optional().describe('RNG seed. Default: 1.'),
+      },
+    },
+    async ({ recipe, lfi = 'median', seed = 1 }) => {
+      const merged = { ...RECIPE_DEFAULTS, ...recipe };
+      const pools = getPools();
+      const validation = validateRecipe(merged, pools);
+      if (!validation.ok) {
+        return errorResult(
+          `recipe validation failed:\n  - ${validation.errors.join('\n  - ')}`,
+        );
+      }
+      const expanded = expandRecipe(merged, pools);
+      // Anchor `now` and `retrievedAt` to the bundled fixture corpus's
+      // nowAnchor so two calls with the same (recipe, lfi, seed) produce
+      // byte-identical envelopes — same determinism guarantee EXP-05 gives
+      // curated personas. specSha + specVersion follow the corpus.
+      const nowAnchor = manifest.nowAnchor ?? '2026-04-01T00:00:00.000Z';
+      const now = new Date(nowAnchor);
+      const bundle = buildBundle({ persona: expanded, lfi, seed, pools, now });
+      const ctx = {
+        personaId: expanded.persona_id,
+        lfi,
+        seed,
+        specVersion: manifest.specVersion ?? 'v2.1',
+        specSha: manifest.specSha ?? 'unknown',
+        retrievedAt: nowAnchor,
+      };
+      const endpoints = envelopesFromBundle(bundle, ctx);
+      const accountIds = bundle.accounts.map((a) => a.AccountId);
+      const customerId = endpoints['/parties']?.Data?.Party?.PartyId ?? null;
+      const journey = {
+        persona: expanded.persona_id,
+        lfi,
+        seed,
+        accountIds,
+        customerId,
+        specVersion: ctx.specVersion,
+        specSha: ctx.specSha,
+        version: manifest.version ?? PKG_VERSION,
+        endpoints,
+      };
+      const hash = recipeHash(merged);
+      session.setCustom({
+        persona: expanded.persona_id,
+        lfi,
+        seed,
+        journey,
+        recipeHash: hash,
+        personaName: expanded.name ?? `Custom (${hash})`,
+      });
+      return textResult(
+        [
+          `custom session set → persona:${expanded.persona_id} lfi:${lfi} seed:${seed}`,
+          `recipeHash: ${hash}`,
+          `accounts: ${accountIds.join(', ') || '(none)'}`,
+          `customerId: ${customerId ?? '(none)'}`,
+          '',
+          'Now call get_accounts / get_balances / get_transactions / etc. as usual.',
+        ].join('\n'),
+      );
     },
   );
 
@@ -202,7 +298,7 @@ export function createServer() {
     },
     async () => {
       const s = session.get();
-      const env = loadFixture({ persona: s.persona, lfi: s.lfi, seed: s.seed, endpoint: '/parties' });
+      const env = getEndpointEnvelope(s, '/parties');
       return envelope(s.persona, s.lfi, s.seed, '/parties', env);
     },
   );
@@ -216,7 +312,7 @@ export function createServer() {
     },
     async () => {
       const s = session.get();
-      const env = loadFixture({ persona: s.persona, lfi: s.lfi, seed: s.seed, endpoint: '/accounts' });
+      const env = getEndpointEnvelope(s, '/accounts');
       return envelope(s.persona, s.lfi, s.seed, '/accounts', env);
     },
   );
@@ -363,12 +459,7 @@ export function createServer() {
     async ({ accountId }) => {
       const s = session.get();
       const id = resolveAccountId(s, accountId);
-      const env = loadFixture({
-        persona: s.persona,
-        lfi: s.lfi,
-        seed: s.seed,
-        endpoint: `/accounts/${id}/product`,
-      });
+      const env = getEndpointEnvelope(s, `/accounts/${id}/product`);
       return envelope(s.persona, s.lfi, s.seed, `/accounts/${id}/product`, env);
     },
   );
@@ -384,12 +475,7 @@ export function createServer() {
     async ({ accountId }) => {
       const s = session.get();
       const id = resolveAccountId(s, accountId);
-      const env = loadFixture({
-        persona: s.persona,
-        lfi: s.lfi,
-        seed: s.seed,
-        endpoint: `/accounts/${id}/statements`,
-      });
+      const env = getEndpointEnvelope(s, `/accounts/${id}/statements`);
       return envelope(s.persona, s.lfi, s.seed, `/accounts/${id}/statements`, env);
     },
   );
@@ -404,7 +490,10 @@ export function createServer() {
     },
     async () => {
       const s = session.get();
-      const j = loadJourney({ persona: s.persona, lfi: s.lfi, seed: s.seed });
+      const j =
+        s.kind === 'custom'
+          ? s.journey
+          : loadJourney({ persona: s.persona, lfi: s.lfi, seed: s.seed });
       return textResult(JSON.stringify(j, null, 2));
     },
   );
@@ -432,6 +521,26 @@ export function createServer() {
         ],
       };
     },
+  );
+
+  server.registerResource(
+    'recipe-schema',
+    'recipe://schema',
+    {
+      title: 'Custom-persona recipe defaults + knob schema',
+      description:
+        'The full RECIPE_DEFAULTS object — every knob the build_persona tool accepts, with default values. Use this as a reference when composing a recipe from natural-language input.',
+      mimeType: 'application/json',
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: 'application/json',
+          text: JSON.stringify(RECIPE_DEFAULTS, null, 2),
+        },
+      ],
+    }),
   );
 
   for (const id of listPersonas()) {
