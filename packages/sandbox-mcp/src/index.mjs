@@ -28,6 +28,16 @@ function parseArgs(argv) {
     allowedHosts: [],
     enableDnsRebindingProtection: true,
   };
+  // Env-var equivalents (handy for container deploys where rewriting CMD is
+  // awkward — e.g. fly.toml [env]). CLI flags override env vars.
+  if (process.env.MCP_ALLOWED_HOSTS) {
+    for (const h of process.env.MCP_ALLOWED_HOSTS.split(',')) {
+      const trimmed = h.trim();
+      if (trimmed) out.allowedHosts.push(trimmed);
+    }
+  }
+  if (process.env.MCP_HOST) out.host = process.env.MCP_HOST;
+  if (process.env.MCP_PORT) out.port = Number(process.env.MCP_PORT);
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--help' || a === '-h') out.help = true;

@@ -1,0 +1,34 @@
+name: Deploy sandbox-mcp to Fly.io
+
+# Continuous-deploy the hosted MCP endpoint that backs the Claude
+# marketplace listing under PRD D-13. Fires on every `mcp-v*` tag, after
+# `publish-mcp.yml` has built and published the npm package + ghcr image.
+#
+# Tokens required (Settings → Secrets):
+#   FLY_API_TOKEN — `flyctl auth token` from a deploy-only token
+#                   (`flyctl tokens create deploy --app of-sandbox-mcp`).
+#
+# First-time setup is manual (`flyctl launch --copy-config`); see the
+# header comment in fly.toml. This workflow only handles incremental
+# redeploys.
+
+on:
+  push:
+    tags: ['mcp-v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # Job will fail clearly with "FLY_API_TOKEN is not set" if the secret
+    # is missing — set it before cutting the first `mcp-v*` tag.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Deploy
+        run: flyctl deploy --remote-only --strategy rolling
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

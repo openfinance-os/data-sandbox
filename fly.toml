@@ -1,0 +1,59 @@
+# Fly.io deployment for @openfinance-os/sandbox-mcp.
+#
+# This is the hosted endpoint that backs the Claude marketplace listing
+# under PRD D-13: anonymous, CORS-open Streamable HTTP MCP server, fully
+# synthetic UAE Open Finance v2.1 data.
+#
+# First-time setup (maintainer, runs once):
+#   1. Pick a final app name and rename `of-sandbox-mcp` below.
+#   2. flyctl auth login
+#   3. flyctl launch --copy-config --no-deploy   # imports this fly.toml
+#   4. flyctl deploy
+#   5. flyctl certs add mcp.openfinance-os.org   # custom domain
+#      (and add the printed CNAME to DNS)
+#
+# Subsequent deploys: see .github/workflows/deploy-fly.yml — fires on
+# every `mcp-v*` tag once FLY_API_TOKEN is set in repo secrets.
+
+app = "of-sandbox-mcp"
+primary_region = "iad"
+
+[build]
+  dockerfile = "packages/sandbox-mcp/Dockerfile"
+
+[env]
+  # Container starts via Dockerfile CMD (`--transport http --host 0.0.0.0
+  # --port 8787`). MCP_ALLOWED_HOSTS adds the public hostnames to the
+  # DNS-rebinding allowlist; the bound 0.0.0.0:8787 is added automatically.
+  MCP_ALLOWED_HOSTS = "of-sandbox-mcp.fly.dev,mcp.openfinance-os.org"
+  # Tunable in production:
+  #   MCP_SESSION_IDLE_TTL_MS — default 1800000 (30 min)
+  #   MCP_MAX_SESSIONS        — default 1024
+
+[http_service]
+  internal_port = 8787
+  force_https = true
+  # Keep one machine alive at all times so long-lived MCP sessions
+  # (Streamable HTTP holds GET /mcp open per session) survive. Cold-
+  # starting would silently drop in-flight Claude conversations.
+  auto_stop_machines = false
+  auto_start_machines = false
+  min_machines_running = 1
+  processes = ["app"]
+
+  [http_service.concurrency]
+    type = "connections"
+    hard_limit = 250
+    soft_limit = 200
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    path = "/health"
+    protocol = "http"
+    timeout = "5s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
