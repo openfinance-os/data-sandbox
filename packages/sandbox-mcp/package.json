@@ -1,0 +1,53 @@
+{
+  "name": "@openfinance-os/sandbox-mcp",
+  "version": "0.0.1",
+  "description": "MCP server that exposes the Open Finance Data Sandbox (synthetic UAE Open Finance v2.1 Bank Data Sharing fixtures) as tools, resources, and prompts so Claude can act as a dynamic PFM. Stdio transport in v1; banking domain only; curated personas; anonymous.",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "claude",
+    "open-finance",
+    "uae",
+    "synthetic-data",
+    "pfm",
+    "commons"
+  ],
+  "homepage": "https://github.com/openfinance-os/data-sandbox",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/openfinance-os/data-sandbox.git",
+    "directory": "packages/sandbox-mcp"
+  },
+  "license": "MIT",
+  "type": "module",
+  "main": "./src/index.mjs",
+  "exports": {
+    ".": "./src/index.mjs",
+    "./server": "./src/server.mjs"
+  },
+  "bin": {
+    "sandbox-mcp": "./src/index.mjs"
+  },
+  "files": [
+    "src/",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "start": "node src/index.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@openfinance-os/sandbox-fixtures": "^0.0.1",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.8"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

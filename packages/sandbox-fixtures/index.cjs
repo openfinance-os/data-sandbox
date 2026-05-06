@@ -73,9 +73,11 @@ async function getEngine() {
   const gen = await import('./lib/generator/index.js');
   const exp = await import('./lib/persona-builder/expand.js');
   const rec = await import('./lib/persona-builder/recipe.js');
+  const ui = await import('./lib/ui/export.js');
   return { buildBundle: gen.buildBundle, expandRecipe: exp.expandRecipe,
     RECIPE_DEFAULTS: rec.RECIPE_DEFAULTS, encodeRecipe: rec.encodeRecipe,
-    decodeRecipe: rec.decodeRecipe, recipeHash: rec.recipeHash, validateRecipe: rec.validateRecipe };
+    decodeRecipe: rec.decodeRecipe, recipeHash: rec.recipeHash, validateRecipe: rec.validateRecipe,
+    envelopesFromBundle: ui.envelopesFromBundle };
 }
 module.exports = {
   manifest, listPersonas, getPersonaInfo, listEndpoints, loadFixture,

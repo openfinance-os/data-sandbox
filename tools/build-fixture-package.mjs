@@ -153,6 +153,11 @@ function copyDirRecursive(src, dst) {
 copyDirRecursive(path.join(repoRoot, 'src/generator'), path.join(LIB_DIR, 'generator'));
 copyDirRecursive(path.join(repoRoot, 'src/persona-builder'), path.join(LIB_DIR, 'persona-builder'));
 copyDirRecursive(path.join(repoRoot, 'src/shared'), path.join(LIB_DIR, 'shared'));
+// `src/ui/export.js` defines envelopesFromBundle, which lib/persona-builder/
+// fixture-handler.js + export-zip.js + the new MCP build_persona path all
+// import as `../ui/export.js`. Without this copy the published package's
+// custom-persona handlers fail to resolve their import.
+copyDirRecursive(path.join(repoRoot, 'src/ui'), path.join(LIB_DIR, 'ui'));
 fs.copyFileSync(path.join(repoRoot, 'src/prng.js'), path.join(LIB_DIR, 'prng.js'));
 
 // Serialise the indexed pools so consumers can call getPools() without
@@ -268,6 +273,11 @@ export {
   recipeHash,
   validateRecipe,
 } from './lib/persona-builder/recipe.js';
+// envelopesFromBundle wraps an in-memory generator bundle into v2.1-shaped
+// JSON envelopes (Data / Links / Meta + watermark fields) keyed by endpoint.
+// Counterpart to buildBundle for any consumer that doesn't read the static
+// fixture files — e.g. the MCP build_persona path.
+export { envelopesFromBundle } from './lib/ui/export.js';
 
 export { manifest };
 `;
@@ -349,9 +359,11 @@ async function getEngine() {
   const gen = await import('./lib/generator/index.js');
   const exp = await import('./lib/persona-builder/expand.js');
   const rec = await import('./lib/persona-builder/recipe.js');
+  const ui = await import('./lib/ui/export.js');
   return { buildBundle: gen.buildBundle, expandRecipe: exp.expandRecipe,
     RECIPE_DEFAULTS: rec.RECIPE_DEFAULTS, encodeRecipe: rec.encodeRecipe,
-    decodeRecipe: rec.decodeRecipe, recipeHash: rec.recipeHash, validateRecipe: rec.validateRecipe };
+    decodeRecipe: rec.decodeRecipe, recipeHash: rec.recipeHash, validateRecipe: rec.validateRecipe,
+    envelopesFromBundle: ui.envelopesFromBundle };
 }
 module.exports = {
   manifest, listPersonas, getPersonaInfo, listEndpoints, loadFixture,
@@ -448,6 +460,7 @@ export function validateRecipe(recipe: CustomRecipe, pools: IndexedPools): { ok:
 export function getPools(): IndexedPools;
 export function expandRecipe(recipe: CustomRecipe, pools: IndexedPools): unknown;
 export function buildBundle(opts: { persona: unknown; lfi: 'rich' | 'median' | 'sparse'; seed: number; pools: IndexedPools; now?: Date }): unknown;
+export function envelopesFromBundle(bundle: unknown, ctx: { personaId: string; lfi: 'rich' | 'median' | 'sparse'; seed: number; specVersion?: string; specSha?: string; retrievedAt: string }): Record<string, unknown>;
 `;
 fs.writeFileSync(path.join(OUT, 'index.d.ts'), indexDts);
 

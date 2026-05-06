@@ -28,6 +28,10 @@ jobs:
       - run: node tools/stage-site.mjs
       - run: npm run lint
       - run: npm test
+      # @openfinance-os/sandbox-mcp has its own vitest config under
+      # packages/sandbox-mcp/. Exercises the determinism + watermark + HTTP
+      # transport guarantees against the just-built fixture corpus.
+      - run: npm run test:mcp
 
   e2e:
     runs-on: ubuntu-latest
