@@ -20,9 +20,15 @@ The intended use: run Claude as a **dynamic PFM** against a synthetic customer. 
 npx -y @openfinance-os/sandbox-mcp --help
 ```
 
-### Claude marketplace (HTTP)
+### Claude connector (hosted HTTP)
 
-The hosted endpoint is published at `mcp.openfinance-os.org/sandbox`. Install via the connector directory; no API key required.
+Published endpoint: **`https://data-sandbox.fly.dev/mcp`** (live; canonical CNAME `https://mcp.openfinance-os.org/mcp` lands during the OF-OS Commons cutover per PRD D-13). Anonymous, no auth, no API key.
+
+Add it as a custom connector in **Claude.ai → Settings → Connectors → Add custom connector** (paste the URL). In Claude Code:
+
+```sh
+claude mcp add --transport http open-finance-sandbox https://data-sandbox.fly.dev/mcp
+```
 
 To run your own HTTP instance:
 
@@ -33,6 +39,8 @@ npx -y @openfinance-os/sandbox-mcp --transport http --port 8787 --host 0.0.0.0 \
 #   allowed Host headers: 127.0.0.1:8787, localhost:8787, [::1]:8787, mcp.example.org
 #   DNS rebinding protection: on
 ```
+
+`MCP_ALLOWED_HOSTS=a.example,b.example` is equivalent to repeated `--allowed-host` flags and is the preferred config channel for container deployments (the bundled `fly.toml` uses it).
 
 Health check:
 
@@ -45,7 +53,7 @@ The endpoint is the [Streamable HTTP](https://spec.modelcontextprotocol.io/speci
 
 ### Production hardening
 
-- **DNS-rebinding protection** is on by default — Host header is validated against `localhost`, `127.0.0.1`, the bound address (all `:port`), plus anything passed via `--allowed-host` (repeatable). Pass `--no-dns-rebinding-protection` to disable.
+- **DNS-rebinding protection** is on by default — Host header is validated against `localhost`, `127.0.0.1`, the bound address (all `:port`), plus anything passed via `--allowed-host` (repeatable) or the `MCP_ALLOWED_HOSTS` env var (comma-separated). Pass `--no-dns-rebinding-protection` to disable.
 - **Idle session TTL** (default 30 min) and **max session count** (default 1024) cap memory growth on a public anonymous endpoint. Tunable via `MCP_SESSION_IDLE_TTL_MS` and `MCP_MAX_SESSIONS` env vars.
 - **Graceful shutdown** — SIGTERM / SIGINT closes every active MCP session before the process exits, so `docker stop` and Kubernetes pod evictions don't drop in-flight requests.
 - **Structured request logging** — every request emits `<ISO timestamp> METHOD /path STATUS Nms session=<id8>` to stderr (stdout is reserved for stdio MCP framing).

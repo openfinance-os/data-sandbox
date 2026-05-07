@@ -191,6 +191,10 @@
         <td>In Swift / Kotlin / Postman / curl / Flutter / .NET</td>
         <td>Path 4 — <a href="#path-raw">raw HTTPS fixtures</a></td>
       </tr>
+      <tr>
+        <td>Driving Claude (Desktop, Code, claude.ai) as a dynamic PFM against a synthetic customer</td>
+        <td>Path 5 — <a href="#path-mcp">MCP connector</a></td>
+      </tr>
     </tbody>
   </table>
 
@@ -325,6 +329,48 @@ https://openfinance-os.org/commons/data-sandbox/fixtures/v1/bundles/&lt;persona&
     auth, no cookies, no consent flow — these are static JSON files. If your
     org requires self-hosting, install the npm or PyPI package and ship the
     fixtures inside your bundle.
+  </p>
+
+  <h2 id="path-mcp">Path 5 — MCP connector (Claude)</h2>
+  <p>
+    PRD D-13 ships <code>@openfinance-os/sandbox-mcp</code> — a Model Context
+    Protocol server that wraps the same fixtures as MCP tools, resources, and
+    prompts. The intended use is running Claude as a <em>dynamic PFM</em>
+    against a synthetic customer: pick a persona with <code>set_session</code>
+    and let Claude answer balance, spend, and obligation questions over
+    deterministic v2.1 JSON. Banking domain only; read-only; anonymous.
+  </p>
+  <h3>Hosted HTTP (Claude.ai connector / Claude Code)</h3>
+  <p>
+    Live endpoint: <code>https://data-sandbox.fly.dev/mcp</code> (canonical
+    CNAME <code>https://mcp.openfinance-os.org/mcp</code> lands during the
+    OF-OS Commons cutover). No auth, no API key.
+  </p>
+  <ul>
+    <li><strong>Claude.ai</strong> — Settings → Connectors → Add custom connector → paste the URL.</li>
+    <li><strong>Claude Code</strong>:
+      <pre><code>claude mcp add --transport http open-finance-sandbox https://data-sandbox.fly.dev/mcp</code></pre>
+    </li>
+  </ul>
+  <h3>Local stdio (Claude Desktop / npx)</h3>
+  <pre><code>{
+  "mcpServers": {
+    "open-finance-sandbox": {
+      "command": "npx",
+      "args": ["-y", "@openfinance-os/sandbox-mcp"]
+    }
+  }
+}</code></pre>
+  <p>
+    Every tool response carries the same <code>_watermark</code>,
+    <code>_specSha</code>, and <code>_retrievedAt</code> as the other plug-points
+    (EXP-19 / EXP-10). Determinism (EXP-05) holds: the same
+    <code>(persona, lfi, seed)</code> returns byte-identical bundles whether
+    the client reaches it via npm, raw HTTPS, or MCP. See
+    <a href="https://github.com/openfinance-os/data-sandbox/tree/main/packages/sandbox-mcp">the package README</a>
+    for the full tool list (<code>get_party</code>, <code>get_accounts</code>,
+    <code>get_balances</code>, <code>get_transactions</code>, …) and the
+    <code>build_persona</code> custom-recipe path.
   </p>
 
   <h2>Cross-endpoint coherence</h2>
