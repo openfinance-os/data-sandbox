@@ -1,0 +1,35 @@
+name: Deploy sandbox-mcp to Fly
+
+# Builds packages/sandbox-mcp/Dockerfile and ships it to Fly.io as the
+# data-sandbox app (https://data-sandbox.fly.dev/mcp). Triggered on every push
+# to main that touches the MCP server, its Dockerfile, fly.toml, or this
+# workflow itself, so config changes such as MCP_ALLOWED_HOSTS in fly.toml
+# [env] reach the live machine without a manual `fly deploy`.
+#
+# Required secret (Settings → Secrets and variables → Actions):
+#   FLY_API_TOKEN — generated with `fly tokens create deploy -a data-sandbox`
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'fly.toml'
+      - 'packages/sandbox-mcp/**'
+      - 'packages/sandbox-fixtures/**'
+      - '.dockerignore'
+      - '.github/workflows/deploy-mcp.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-mcp
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
