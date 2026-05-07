@@ -32,6 +32,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follo
 ### Distribution
 
 - **`@openfinance-os/sandbox-fixtures`** — fixture corpus widened to **12 banking personas × 3 LFI profiles** = **36 keys** in `manifest.json`, **912 envelope files** (per-account endpoints multiply by account count). Spec pin unchanged at `bc1cd97`.
+- **`@openfinance-os/sandbox-mcp` D-13 hosted HTTP deployment is live** at `https://data-sandbox.fly.dev/mcp` (Fly.io, Frankfurt; canonical `https://mcp.openfinance-os.org/mcp` lands during the OF-OS Commons cutover). The `MCP_ALLOWED_HOSTS` env var (comma-separated) was added to `parseArgs` so the DNS-rebinding allowlist can be set declaratively from `fly.toml` `[env]` instead of rewriting the container CMD; flag and env contribute to the same allowlist. `src/integrate.html` gains a fifth plug-point row + `#path-mcp` section pointing TPP integrators at the connector and the Claude Code / Claude Desktop install lines. PRD D-13 wording updated to match the published URL shape (`/mcp` at root rather than `/sandbox`).
 
 ## [1.1.0] — 2026-04-29
 

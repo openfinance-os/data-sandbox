@@ -9,6 +9,14 @@ primary_region = 'fra'
 [build]
   dockerfile = 'packages/sandbox-mcp/Dockerfile'
 
+[env]
+  # DNS-rebinding protection allowlist for the Streamable HTTP transport.
+  # Comma-separated; consumed by parseEnvAllowedHosts() in
+  # packages/sandbox-mcp/src/args.mjs. Both the Fly-assigned hostname (the
+  # current live URL) and the canonical OF-OS Commons CNAME (PRD D-13) need to
+  # be allowlisted so the connector keeps working through DNS cutover.
+  MCP_ALLOWED_HOSTS = "data-sandbox.fly.dev,mcp.openfinance-os.org"
+
 [http_service]
   internal_port = 8787
   force_https = true
