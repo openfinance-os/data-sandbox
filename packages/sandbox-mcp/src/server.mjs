@@ -4,6 +4,7 @@ import {
   loadPersonaManifest,
   loadSpec,
   listPersonas,
+  listEndpoints,
   getPersonaInfo,
   buildBundle,
   expandRecipe,
@@ -12,6 +13,8 @@ import {
   RECIPE_DEFAULTS,
   recipeHash,
   validateRecipe,
+  encodeRecipe,
+  decodeRecipe,
   manifest,
 } from '@openfinance-os/sandbox-fixtures';
 import { z } from 'zod';
@@ -266,6 +269,190 @@ function filterTransactions(envelopeJson, { since, until, minAmount, maxAmount, 
   };
 }
 
+// LFI populate-rate profiles. The wording mirrors PFM_INSTRUCTIONS so consumers
+// see the same description whether they read the server-level instructions or
+// call `lfi_profiles` directly.
+const LFI_PROFILES = [
+  { id: 'rich', label: 'Rich', description: 'All optional fields populated.', populate_band: 'all-optional' },
+  { id: 'median', label: 'Median', description: 'Typical UAE-market populate rate (default).', populate_band: 'typical' },
+  { id: 'sparse', label: 'Sparse', description: 'Minimum-conformant: only mandatory fields plus a few optionals.', populate_band: 'minimum-plus' },
+];
+const LFI_INVARIANT = 'Mandatory fields are never redacted regardless of profile (EXP-04 / §8.3).';
+
+// Parsed-spec memo. spec.json (banking) is ~326 KB; spec.insurance.json is
+// ~108 KB. Parsing is sub-millisecond on warm cache, but every `field_status`
+// call would otherwise re-parse — so memo per-process. Same lifecycle as
+// `_poolsCache` in the fixtures package.
+const _specCache = new Map();
+function getSpec(domain) {
+  if (!_specCache.has(domain)) _specCache.set(domain, loadSpec({ domain }));
+  return _specCache.get(domain);
+}
+
+function inferDomain(endpoint) {
+  if (typeof endpoint === 'string' && endpoint.startsWith('/motor-insurance-')) return 'insurance';
+  return 'banking';
+}
+
+const FIELD_DEFAULT_LIMIT = 200;
+const FIELD_MAX_LIMIT = 500;
+
+function findFields(spec, endpoint, query, limit) {
+  const ep = spec?.endpoints?.[endpoint];
+  if (!ep) return null;
+  const fields = Array.isArray(ep.fields) ? ep.fields : [];
+  if (!query) {
+    const cap = Math.max(0, Math.min(FIELD_MAX_LIMIT, limit ?? FIELD_DEFAULT_LIMIT));
+    return {
+      schemaRef: ep.schemaRef ?? null,
+      total: fields.length,
+      matched: fields.length,
+      returned: Math.min(fields.length, cap),
+      truncated: fields.length > cap,
+      fields: fields.slice(0, cap),
+    };
+  }
+  const q = String(query).toLowerCase();
+  const exactPath = fields.filter((f) => String(f.path ?? '').toLowerCase() === q);
+  const exactName = fields.filter((f) => String(f.name ?? '').toLowerCase() === q && !exactPath.includes(f));
+  const substr = fields.filter(
+    (f) =>
+      !exactPath.includes(f) &&
+      !exactName.includes(f) &&
+      (String(f.path ?? '').toLowerCase().includes(q) || String(f.name ?? '').toLowerCase().includes(q)),
+  );
+  const ranked = [...exactPath, ...exactName, ...substr];
+  const cap = Math.max(0, Math.min(FIELD_MAX_LIMIT, limit ?? FIELD_DEFAULT_LIMIT));
+  return {
+    schemaRef: ep.schemaRef ?? null,
+    total: fields.length,
+    matched: ranked.length,
+    returned: Math.min(ranked.length, cap),
+    truncated: ranked.length > cap,
+    fields: ranked.slice(0, cap),
+  };
+}
+
+// Pool kinds keyed by the top-level keys of getPools(). The values are the
+// "kind" labels we surface to the consumer so they can disambiguate when a
+// pool id collides across kinds (none today, but the schema is open).
+const POOL_KINDS = {
+  names: 'namesByPoolId',
+  employers: 'employersByPoolId',
+  merchants: 'merchantsByCategory',
+  counterparty_banks: 'counterpartyBanksByCategory',
+  ibans: 'ibansByCategory',
+  organisations: 'organisationsByPoolId',
+  counterparties: 'counterpartiesByPoolId',
+};
+
+function summarisePools(pools) {
+  const kinds = {};
+  const totals = {};
+  for (const [kind, key] of Object.entries(POOL_KINDS)) {
+    const bucket = pools?.[key] ?? {};
+    const ids = Object.keys(bucket);
+    kinds[kind] = ids;
+    totals[kind] = ids.length;
+  }
+  return { kinds, totals };
+}
+
+function findPool(pools, poolId, kindHint) {
+  const kindsToTry = kindHint ? [kindHint] : Object.keys(POOL_KINDS);
+  for (const kind of kindsToTry) {
+    const key = POOL_KINDS[kind];
+    if (!key) continue;
+    const bucket = pools?.[key];
+    if (bucket && Object.prototype.hasOwnProperty.call(bucket, poolId)) {
+      return { kind, value: bucket[poolId] };
+    }
+  }
+  return null;
+}
+
+function levenshtein(a, b) {
+  if (a === b) return 0;
+  if (!a) return b.length;
+  if (!b) return a.length;
+  const m = a.length;
+  const n = b.length;
+  let prev = new Array(n + 1);
+  let curr = new Array(n + 1);
+  for (let j = 0; j <= n; j++) prev[j] = j;
+  for (let i = 1; i <= m; i++) {
+    curr[0] = i;
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      curr[j] = Math.min(prev[j] + 1, curr[j - 1] + 1, prev[j - 1] + cost);
+    }
+    [prev, curr] = [curr, prev];
+  }
+  return prev[n];
+}
+
+function suggestPoolIds(target, pools) {
+  const all = [];
+  for (const key of Object.values(POOL_KINDS)) {
+    for (const id of Object.keys(pools?.[key] ?? {})) all.push(id);
+  }
+  return all
+    .map((id) => ({ id, d: levenshtein(target.toLowerCase(), id.toLowerCase()) }))
+    .filter((x) => x.d > 0 && x.d <= 2)
+    .sort((a, b) => a.d - b.d)
+    .slice(0, 3)
+    .map((x) => x.id);
+}
+
+function poolValuesPayload({ pool, kind, value, limit, search }) {
+  const cap = Math.max(0, Math.min(500, limit ?? 50));
+  // Pool entries are heterogeneous: names buckets are { given_names: [], surnames: [] };
+  // employer/organisation buckets are { employers: [...] } / { organisations: [...] };
+  // merchants/counterparty-banks/ibans/counterparties buckets are arrays directly.
+  // Surface a generic shape: pick the first array-valued field, return that.
+  let arr = [];
+  let arrayField = null;
+  if (Array.isArray(value)) {
+    arr = value;
+    arrayField = '(root)';
+  } else if (value && typeof value === 'object') {
+    for (const [k, v] of Object.entries(value)) {
+      if (Array.isArray(v)) {
+        arr = v;
+        arrayField = k;
+        break;
+      }
+    }
+  }
+  let filtered = arr;
+  if (search) {
+    const q = String(search).toLowerCase();
+    filtered = arr.filter((entry) => JSON.stringify(entry).toLowerCase().includes(q));
+  }
+  const sample = filtered.slice(0, cap);
+  return {
+    pool,
+    kind,
+    arrayField,
+    count: arr.length,
+    matched: filtered.length,
+    returned: sample.length,
+    limit: cap,
+    search: search ?? null,
+    truncated: filtered.length > sample.length,
+    sample,
+    // For pools that carry sibling metadata (e.g. names buckets carry a
+    // `given_names` array AND a `surnames` array), expose the full set of
+    // sibling array keys so the consumer knows what else is there.
+    siblings:
+      value && typeof value === 'object' && !Array.isArray(value)
+        ? Object.entries(value)
+            .filter(([, v]) => Array.isArray(v))
+            .map(([k, v]) => ({ key: k, count: v.length }))
+        : null,
+  };
+}
+
 export function createServer() {
   const server = new McpServer(
     { name: PKG_NAME, version: PKG_VERSION },
@@ -303,6 +490,24 @@ export function createServer() {
       });
       return textResult(JSON.stringify({ personas: rows, count: rows.length, domain: domain ?? 'all' }, null, 2));
     },
+  );
+
+  server.registerTool(
+    'lfi_profiles',
+    {
+      title: 'Describe the LFI populate-rate profiles',
+      description:
+        'Return the three LFI populate-rate profiles (rich, median, sparse) with their semantics and the load-bearing invariant that mandatory fields are never redacted. Use this when the user asks "what does sparse mean?" or to explain what changes when the same persona is re-pinned at a different profile.',
+      inputSchema: {},
+    },
+    async () =>
+      textResult(
+        JSON.stringify(
+          { profiles: LFI_PROFILES, invariant: LFI_INVARIANT, default: 'median' },
+          null,
+          2,
+        ),
+      ),
   );
 
   server.registerTool(
@@ -438,6 +643,129 @@ export function createServer() {
           '',
           'Now call get_accounts / get_balances / get_transactions / etc. as usual.',
         ].join('\n'),
+      );
+    },
+  );
+
+  server.registerTool(
+    'list_pool_values',
+    {
+      title: 'List values from a recipe pool',
+      description:
+        'Enumerate values from the pools referenced by RECIPE_DEFAULTS (name_pool, employer_pool, legal_name_pool, signatory_pool, customer_inflow_pool, supplier_outflow_pool, …). Call with no `pool` arg to list every pool id grouped by kind (names, employers, organisations, counterparties, merchants, counterparty_banks, ibans). Pass a `pool` id to get its members; pools are heterogeneous so the response also lists sibling array keys (e.g. names pools carry both `given_names` and `surnames`).',
+      inputSchema: {
+        pool: z
+          .string()
+          .optional()
+          .describe('Pool id (e.g. "expat_indian", "tech_freezone"). Omit to list all pool ids by kind.'),
+        kind: z
+          .enum([
+            'names',
+            'employers',
+            'merchants',
+            'counterparty_banks',
+            'ibans',
+            'organisations',
+            'counterparties',
+          ])
+          .optional()
+          .describe('Disambiguate when a pool id collides across kinds. Optional.'),
+        limit: z
+          .number()
+          .int()
+          .min(0)
+          .max(500)
+          .optional()
+          .describe('Max sample entries returned. Default 50, max 500.'),
+        search: z
+          .string()
+          .optional()
+          .describe('Case-insensitive substring filter against the JSON-stringified pool entry.'),
+      },
+    },
+    async ({ pool, kind, limit, search }) => {
+      const pools = getPools();
+      if (!pool) {
+        return textResult(JSON.stringify(summarisePools(pools), null, 2));
+      }
+      const found = findPool(pools, pool, kind);
+      if (!found) {
+        const suggestions = suggestPoolIds(pool, pools);
+        const hint = suggestions.length
+          ? ` Did you mean: ${suggestions.join(', ')}?`
+          : ' Call list_pool_values with no arguments to see all pool ids.';
+        return errorResult(`unknown pool: ${pool}.${hint}`);
+      }
+      return textResult(
+        JSON.stringify(
+          poolValuesPayload({ pool, kind: found.kind, value: found.value, limit, search }),
+          null,
+          2,
+        ),
+      );
+    },
+  );
+
+  server.registerTool(
+    'encode_recipe',
+    {
+      title: 'Encode a recipe to a URL-safe blob',
+      description:
+        'Serialise a recipe to the URL-safe encoding used by the persona-builder web UI. Returns the encoded string, the canonical merged recipe (defaults + overrides), and the recipeHash. Pure — same input always returns the same encoded value.',
+      inputSchema: {
+        recipe: z
+          .record(z.unknown())
+          .describe('Recipe object. Any subset of RECIPE_DEFAULTS keys; missing keys fall back to defaults.'),
+      },
+    },
+    async ({ recipe }) => {
+      const merged = { ...RECIPE_DEFAULTS, ...recipe };
+      return textResult(
+        JSON.stringify(
+          {
+            encoded: encodeRecipe(recipe),
+            recipeHash: recipeHash(merged),
+            canonical: merged,
+          },
+          null,
+          2,
+        ),
+      );
+    },
+  );
+
+  server.registerTool(
+    'decode_recipe',
+    {
+      title: 'Decode a recipe blob',
+      description:
+        'Decode a URL-safe recipe blob (produced by encode_recipe or shared from the persona-builder web UI) back into a canonical recipe object. Validates against the available pools and returns `valid: false` with a list of errors if the recipe references unknown pools. Empty string decodes to RECIPE_DEFAULTS. Does not auto-build the persona — call build_persona explicitly to materialise.',
+      inputSchema: {
+        encoded: z
+          .string()
+          .describe('URL-safe recipe blob (output of encode_recipe). Empty string returns RECIPE_DEFAULTS.'),
+      },
+    },
+    async ({ encoded }) => {
+      let recipe;
+      try {
+        recipe = decodeRecipe(encoded);
+      } catch (err) {
+        return errorResult(`could not decode recipe: ${err?.message ?? String(err)}`);
+      }
+      const pools = getPools();
+      const validation = validateRecipe(recipe, pools);
+      return textResult(
+        JSON.stringify(
+          {
+            recipe,
+            recipeHash: recipeHash(recipe),
+            valid: validation.ok,
+            errors: validation.ok ? undefined : validation.errors,
+          },
+          null,
+          2,
+        ),
       );
     },
   );
@@ -774,6 +1102,100 @@ export function createServer() {
           ? s.journey
           : loadJourney({ persona: s.persona, lfi: s.lfi, seed: s.seed });
       return textResult(JSON.stringify(j, null, 2));
+    },
+  );
+
+  server.registerTool(
+    'list_endpoints',
+    {
+      title: 'List endpoints available to the active session',
+      description:
+        'Return the v2.1 endpoint paths exposed by the active persona+LFI fixture. Banking sessions: /parties, /accounts, and per-account paths. Insurance sessions: the motor-line GETs. Cheap — prefer this over `load_journey` when you only need to know which endpoints exist for the current persona.',
+      inputSchema: {},
+    },
+    async () => {
+      const s = session.get();
+      const endpoints =
+        s.kind === 'custom'
+          ? Object.keys(s.journey?.endpoints ?? {})
+          : listEndpoints(s.persona, s.lfi);
+      return textResult(
+        JSON.stringify(
+          {
+            persona: s.persona,
+            lfi: s.lfi,
+            seed: s.seed,
+            domain: s.domain ?? 'banking',
+            count: endpoints.length,
+            endpoints,
+            specVersion: manifest.specVersion,
+            specSha: manifest.specSha,
+          },
+          null,
+          2,
+        ),
+      );
+    },
+  );
+
+  server.registerTool(
+    'field_status',
+    {
+      title: 'Look up field status from the parsed OpenAPI spec',
+      description:
+        'Answer "is <field> mandatory/optional/conditional on <endpoint>?" without downloading the full spec://… resource. Reads from the parsed OpenAPI table that ships with the fixture corpus (pinned by SHA), with `oneOf` / `allOf` already flattened. Pass `endpoint` (e.g. "/accounts" or "/motor-insurance-policies/{InsurancePolicyId}") and an optional `field` (case-insensitive — exact path / name match first, then substring). Domain auto-detected from endpoint prefix; pass `domain` to override.',
+      inputSchema: {
+        endpoint: z
+          .string()
+          .describe(
+            'Endpoint path as it appears in the v2.1 spec (e.g. "/accounts/{AccountId}/balances", "/motor-insurance-policies").',
+          ),
+        field: z
+          .string()
+          .optional()
+          .describe(
+            'Field name or dotted path to filter on (e.g. "Currency" or "Data.Account[].Currency"). Omit to return every field on the endpoint.',
+          ),
+        domain: z
+          .enum(['banking', 'insurance'])
+          .optional()
+          .describe('Optional domain override. Auto-detected from endpoint prefix when omitted.'),
+        limit: z
+          .number()
+          .int()
+          .min(0)
+          .max(FIELD_MAX_LIMIT)
+          .optional()
+          .describe(`Max fields returned. Default ${FIELD_DEFAULT_LIMIT}, hard cap ${FIELD_MAX_LIMIT}.`),
+      },
+    },
+    async ({ endpoint, field, domain, limit }) => {
+      const dom = domain ?? inferDomain(endpoint);
+      const spec = getSpec(dom);
+      const found = findFields(spec, endpoint, field, limit);
+      if (!found) {
+        const known = Object.keys(spec?.endpoints ?? {});
+        return errorResult(
+          `unknown ${dom} endpoint: ${endpoint}. Known endpoints: ${known.join(', ') || '(none)'}`,
+        );
+      }
+      const payload = {
+        endpoint,
+        domain: dom,
+        specVersion: manifest.specVersion,
+        specSha: manifest.specSha,
+        schemaRef: found.schemaRef,
+        ...(field ? { query: field } : {}),
+        total: found.total,
+        matched: found.matched,
+        returned: found.returned,
+        truncated: found.truncated,
+        fields: found.fields,
+      };
+      if (found.truncated) {
+        payload._paginationHint = `Returned ${found.returned} of ${found.matched} fields. Re-call with field="<substring>" to narrow, or limit=${FIELD_MAX_LIMIT} to retrieve more.`;
+      }
+      return textResult(JSON.stringify(payload, null, 2));
     },
   );
 

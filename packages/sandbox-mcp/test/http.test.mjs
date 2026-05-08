@@ -21,7 +21,7 @@ describe('sandbox-mcp HTTP transport (D-13)', () => {
     return { client, transport };
   }
 
-  it('listens, registers a session, and lists 16 tools (including custom-persona builder)', async () => {
+  it('listens, registers a session, and lists the documented tools (including discovery + spec helpers)', async () => {
     const { client } = await newClient();
     const { tools } = await client.listTools();
     const names = tools.map((t) => t.name);
@@ -30,8 +30,14 @@ describe('sandbox-mcp HTTP transport (D-13)', () => {
     expect(names).toContain('get_recipe_defaults');
     expect(names).toContain('get_motor_policies');
     expect(names).toContain('get_motor_quote');
-    // 16 banking + 4 motor-insurance = 20 (Phase 2.0 motor full-coverage).
-    expect(tools.length).toBe(20);
+    expect(names).toContain('list_endpoints');
+    expect(names).toContain('field_status');
+    expect(names).toContain('list_pool_values');
+    expect(names).toContain('encode_recipe');
+    expect(names).toContain('decode_recipe');
+    expect(names).toContain('lfi_profiles');
+    // 16 banking + 4 motor-insurance + 6 discovery/spec helpers = 26.
+    expect(tools.length).toBe(26);
     await client.close();
   });
 
