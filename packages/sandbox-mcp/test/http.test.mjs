@@ -28,7 +28,10 @@ describe('sandbox-mcp HTTP transport (D-13)', () => {
     expect(names).toContain('list_personas');
     expect(names).toContain('build_persona');
     expect(names).toContain('get_recipe_defaults');
-    expect(tools.length).toBe(16);
+    expect(names).toContain('get_motor_policies');
+    expect(names).toContain('get_motor_quote');
+    // 16 banking + 4 motor-insurance = 20 (Phase 2.0 motor full-coverage).
+    expect(tools.length).toBe(20);
     await client.close();
   });
 

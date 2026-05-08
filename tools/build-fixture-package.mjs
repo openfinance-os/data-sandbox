@@ -48,9 +48,12 @@ if (fs.existsSync(OUT)) fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(path.join(OUT, 'bundles'), { recursive: true });
 fs.mkdirSync(path.join(OUT, 'personas'), { recursive: true });
 
-// Banking only — insurance fixtures land with the insurance generator
-// (slice 6b-ii); they get their own bundles/<domain>/<persona>/... layout.
-const personas = loadPersonasByDomain('banking');
+// Banking + insurance: both domains are now bundled. Fixture file layout
+// stays `bundles/<persona>/<lfi>/seed-<n>/<endpoint>.json` because persona
+// ids are globally unique across domains; the manifest records the persona's
+// `domain` so MCP / TPP consumers can filter (or fan out) per domain.
+const bankingPersonas = loadPersonasByDomain('banking');
+const insurancePersonas = loadPersonasByDomain('insurance');
 const pools = loadAllPools();
 const now = new Date(NOW_ANCHOR);
 
@@ -61,6 +64,7 @@ const manifest = {
   specSha: SHA,
   generatedAt: new Date().toISOString(),
   nowAnchor: NOW_ANCHOR,
+  domains: ['banking', 'insurance'],
   fixtures: {},
   personas: {},
 };
@@ -68,12 +72,13 @@ const manifest = {
 let fileCount = 0;
 let totalBytes = 0;
 
-for (const [personaId, persona] of Object.entries(personas)) {
+function emitPersona(personaId, persona, domain) {
   const seed = persona.default_seed ?? 1;
   manifest.personas[personaId] = {
     name: persona.name,
     archetype: persona.archetype,
     default_seed: seed,
+    domain,
     stress_coverage: persona.stress_coverage ?? [],
   };
   fs.writeFileSync(
@@ -109,9 +114,11 @@ for (const [personaId, persona] of Object.entries(personas)) {
     // having to know the synthetic AccountId. Bundle-level endpoints
     // (/accounts, /parties) keep their plain key. Templated entries also
     // record the resolved account ids so callers who DO know the id can
-    // pass it explicitly.
+    // pass it explicitly. Insurance bundles already emit both templated
+    // and resolved keys directly from envelopesFromBundle.
     const aliasEndpoints = { ...endpointFiles };
-    const firstAccountId = bundle.accounts[0]?.AccountId;
+    const accountIds = bundle.accounts?.map((a) => a.AccountId) ?? [];
+    const firstAccountId = accountIds[0];
     if (firstAccountId) {
       for (const [endpoint, rel] of Object.entries(endpointFiles)) {
         const alias = endpoint.replace(`/accounts/${firstAccountId}`, '/accounts/{AccountId}');
@@ -120,17 +127,34 @@ for (const [personaId, persona] of Object.entries(personas)) {
         }
       }
     }
+    const policyIds = bundle.motorPolicies?.map((p) => p.InsurancePolicyId) ?? [];
+    const quoteId = bundle.motorQuote?.QuoteId ?? null;
     manifest.fixtures[`${personaId}|${lfi}|${seed}`] = {
-      personaId, lfi, seed,
-      accountIds: bundle.accounts.map((a) => a.AccountId),
+      personaId, lfi, seed, domain,
+      accountIds,
+      policyIds,
+      quoteId,
       endpoints: aliasEndpoints,
     };
   }
 }
 
-// Write SPEC.json into the package so consumers can introspect status badges
-// without a second download.
+for (const [personaId, persona] of Object.entries(bankingPersonas)) {
+  emitPersona(personaId, persona, 'banking');
+}
+for (const [personaId, persona] of Object.entries(insurancePersonas)) {
+  emitPersona(personaId, persona, 'insurance');
+}
+
+// Write banking + insurance SPEC.json into the package so consumers can
+// introspect status badges without a second download. Banking remains at the
+// historical filename (spec.json) for backward compatibility; insurance gets
+// its own.
 fs.copyFileSync(path.join(repoRoot, 'dist/SPEC.json'), path.join(OUT, 'spec.json'));
+fs.copyFileSync(
+  path.join(repoRoot, 'dist/SPEC.insurance.json'),
+  path.join(OUT, 'spec.insurance.json')
+);
 
 fs.writeFileSync(path.join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 2));
 
@@ -168,8 +192,8 @@ fs.writeFileSync(path.join(OUT, 'pools.json'), JSON.stringify(pools));
 const pkgJson = {
   name: '@openfinance-os/sandbox-fixtures',
   version: PKG_VERSION,
-  description: 'Deterministic, v2.1-shaped UAE Open Finance synthetic fixtures from the Open Finance Data Sandbox. 12 banking personas × 3 LFI profiles × every Account-Information endpoint = 900+ envelopes. CC0 data, MIT loader code.',
-  keywords: ['open-finance', 'uae', 'synthetic-data', 'fixtures', 'v2.1', 'tpp', 'commons'],
+  description: 'Deterministic, v2.1-shaped UAE Open Finance synthetic fixtures from the Open Finance Data Sandbox. 12 banking personas + 3 insurance preview personas × 3 LFI profiles × every in-scope endpoint. CC0 data, MIT loader code.',
+  keywords: ['open-finance', 'uae', 'synthetic-data', 'fixtures', 'v2.1', 'tpp', 'commons', 'insurance'],
   homepage: 'https://github.com/openfinance-os/data-sandbox',
   repository: { type: 'git', url: 'https://github.com/openfinance-os/data-sandbox.git', directory: 'packages/sandbox-fixtures' },
   license: 'MIT',
@@ -180,12 +204,13 @@ const pkgJson = {
     '.': { import: './index.mjs', require: './index.cjs', default: './index.mjs' },
     './manifest.json': './manifest.json',
     './spec.json': './spec.json',
+    './spec.insurance.json': './spec.insurance.json',
     './pools.json': './pools.json',
     './bundles/*': './bundles/*',
     './personas/*': './personas/*',
     './lib/*': './lib/*',
   },
-  files: ['index.mjs', 'index.cjs', 'index.d.ts', 'manifest.json', 'spec.json', 'pools.json', 'bundles/', 'personas/', 'lib/', 'README.md'],
+  files: ['index.mjs', 'index.cjs', 'index.d.ts', 'manifest.json', 'spec.json', 'spec.insurance.json', 'pools.json', 'bundles/', 'personas/', 'lib/', 'README.md'],
   publishConfig: { access: 'public' },
 };
 fs.writeFileSync(path.join(OUT, 'package.json'), JSON.stringify(pkgJson, null, 2));
@@ -199,8 +224,15 @@ import path from 'node:path';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const manifest = JSON.parse(readFileSync(path.join(here, 'manifest.json'), 'utf8'));
 
-export function listPersonas() {
-  return Object.keys(manifest.personas);
+const SPEC_FILE_BY_DOMAIN = {
+  banking: 'spec.json',
+  insurance: 'spec.insurance.json',
+};
+
+export function listPersonas(opts = {}) {
+  const ids = Object.keys(manifest.personas);
+  if (!opts.domain) return ids;
+  return ids.filter((id) => manifest.personas[id]?.domain === opts.domain);
 }
 export function getPersonaInfo(personaId) {
   return manifest.personas[personaId] ?? null;
@@ -239,7 +271,10 @@ export function loadJourney({ persona, lfi = 'median', seed } = {}) {
     persona,
     lfi,
     seed: useSeed,
+    domain: info.domain ?? 'banking',
     accountIds: fx.accountIds ?? [],
+    policyIds: fx.policyIds ?? [],
+    quoteId: fx.quoteId ?? null,
     customerId: endpoints['/parties']?.Data?.Party?.PartyId ?? null,
     specVersion: manifest.specVersion,
     specSha: manifest.specSha,
@@ -247,8 +282,11 @@ export function loadJourney({ persona, lfi = 'median', seed } = {}) {
     endpoints,
   };
 }
-export function loadSpec() {
-  return JSON.parse(readFileSync(path.join(here, 'spec.json'), 'utf8'));
+export function loadSpec(opts = {}) {
+  const domain = opts.domain ?? 'banking';
+  const file = SPEC_FILE_BY_DOMAIN[domain];
+  if (!file) throw new Error(\`unknown domain: \${domain}\`);
+  return JSON.parse(readFileSync(path.join(here, file), 'utf8'));
 }
 export function loadPersonaManifest(personaId) {
   return JSON.parse(readFileSync(path.join(here, 'personas', \`\${personaId}.json\`), 'utf8'));
@@ -289,7 +327,12 @@ const fs = require('node:fs');
 const path = require('node:path');
 const here = __dirname;
 const manifest = JSON.parse(fs.readFileSync(path.join(here, 'manifest.json'), 'utf8'));
-function listPersonas() { return Object.keys(manifest.personas); }
+const SPEC_FILE_BY_DOMAIN = { banking: 'spec.json', insurance: 'spec.insurance.json' };
+function listPersonas(opts) {
+  const ids = Object.keys(manifest.personas);
+  if (!opts || !opts.domain) return ids;
+  return ids.filter(function (id) { return manifest.personas[id] && manifest.personas[id].domain === opts.domain; });
+}
 function getPersonaInfo(personaId) { return manifest.personas[personaId] || null; }
 function listEndpoints(personaId, lfi) {
   lfi = lfi || 'median';
@@ -334,7 +377,10 @@ function loadJourney(opts) {
     persona: persona,
     lfi: lfi,
     seed: useSeed,
+    domain: info.domain || 'banking',
     accountIds: fx.accountIds || [],
+    policyIds: fx.policyIds || [],
+    quoteId: fx.quoteId || null,
     customerId: (parties && parties.Data && parties.Data.Party && parties.Data.Party.PartyId) || null,
     specVersion: manifest.specVersion,
     specSha: manifest.specSha,
@@ -342,7 +388,12 @@ function loadJourney(opts) {
     endpoints: endpoints,
   };
 }
-function loadSpec() { return JSON.parse(fs.readFileSync(path.join(here, 'spec.json'), 'utf8')); }
+function loadSpec(opts) {
+  const domain = (opts && opts.domain) || 'banking';
+  const file = SPEC_FILE_BY_DOMAIN[domain];
+  if (!file) throw new Error('unknown domain: ' + domain);
+  return JSON.parse(fs.readFileSync(path.join(here, file), 'utf8'));
+}
 function loadPersonaManifest(personaId) {
   return JSON.parse(fs.readFileSync(path.join(here, 'personas', personaId + '.json'), 'utf8'));
 }
@@ -373,11 +424,23 @@ module.exports = {
 fs.writeFileSync(path.join(OUT, 'index.cjs'), indexCjs);
 
 // Tiny TS types for editor support.
-const indexDts = `export interface PersonaInfo {
+const indexDts = `export type Domain = 'banking' | 'insurance';
+export interface PersonaInfo {
   name: string;
   archetype: string;
   default_seed: number;
+  domain: Domain;
   stress_coverage: string[];
+}
+export interface FixtureEntry {
+  personaId: string;
+  lfi: string;
+  seed: number;
+  domain: Domain;
+  accountIds: string[];
+  policyIds: string[];
+  quoteId: string | null;
+  endpoints: Record<string, string>;
 }
 export interface Manifest {
   package: string;
@@ -386,14 +449,18 @@ export interface Manifest {
   specSha: string;
   generatedAt: string;
   nowAnchor: string;
-  fixtures: Record<string, { personaId: string; lfi: string; seed: number; accountIds: string[]; endpoints: Record<string, string> }>;
+  domains: Domain[];
+  fixtures: Record<string, FixtureEntry>;
   personas: Record<string, PersonaInfo>;
 }
 export interface Journey {
   persona: string;
   lfi: 'rich' | 'median' | 'sparse';
   seed: number;
+  domain: Domain;
   accountIds: string[];
+  policyIds: string[];
+  quoteId: string | null;
   customerId: string | null;
   specVersion: string;
   specSha: string;
@@ -401,7 +468,7 @@ export interface Journey {
   endpoints: Record<string, unknown>;
 }
 export const manifest: Manifest;
-export function listPersonas(): string[];
+export function listPersonas(opts?: { domain?: Domain }): string[];
 export function getPersonaInfo(personaId: string): PersonaInfo | null;
 export function listEndpoints(personaId: string, lfi?: 'rich' | 'median' | 'sparse'): string[];
 export function loadFixture(opts: {
@@ -415,7 +482,7 @@ export function loadJourney(opts: {
   lfi?: 'rich' | 'median' | 'sparse';
   seed?: number;
 }): Journey;
-export function loadSpec(): unknown;
+export function loadSpec(opts?: { domain?: Domain }): unknown;
 export function loadPersonaManifest(personaId: string): unknown;
 
 // Workstream C plug-point 2 — runtime engine for custom personas.
@@ -542,9 +609,18 @@ UAE Open Finance Standards \`v2.1\`, vendored from \`Nebras-Open-Finance/api-spe
 `;
 fs.writeFileSync(path.join(OUT, 'README.md'), readme);
 
+const personasByDomain = {};
+for (const info of Object.values(manifest.personas)) {
+  const d = info.domain ?? 'banking';
+  personasByDomain[d] = (personasByDomain[d] ?? 0) + 1;
+}
+const personaSummary = Object.entries(personasByDomain)
+  .map(([d, n]) => `${n} ${d}`)
+  .join(' + ');
+
 console.log(
   `built fixture package → ${path.relative(repoRoot, OUT)}/`
   + `\n  ${fileCount} fixture files (${(totalBytes / 1024).toFixed(1)} KB raw)`
-  + `\n  ${Object.keys(manifest.personas).length} personas · ${Object.keys(manifest.fixtures).length} (persona × lfi) keys`
+  + `\n  ${Object.keys(manifest.personas).length} personas (${personaSummary}) · ${Object.keys(manifest.fixtures).length} (persona × lfi) keys`
   + `\n  spec ${manifest.specVersion} @ ${manifest.specSha.slice(0, 7)}`
 );

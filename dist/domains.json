@@ -38,7 +38,8 @@
       "endpoints": [
         "/motor-insurance-policies",
         "/motor-insurance-policies/{InsurancePolicyId}",
-        "/motor-insurance-policies/{InsurancePolicyId}/payment-details"
+        "/motor-insurance-policies/{InsurancePolicyId}/payment-details",
+        "/motor-insurance-quotes/{QuoteId}"
       ]
     }
   ]
