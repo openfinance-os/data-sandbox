@@ -87,7 +87,61 @@ function fetchPerAccount(session, suffix, accountId) {
   }));
 }
 
-function filterTransactions(envelopeJson, { since, until, minAmount, maxAmount, category }) {
+// Per-tool-result size cap on the consuming MCP client (Claude.ai/Claude Code)
+// is the load-bearing constraint here. A whole-account transaction list for a
+// high-volume persona (hnw_multicurrency: 969 txs ≈ 700 KB; corporate_treasury_listed:
+// 720+ txs ≈ 460 KB) trips the cap, the client spills the response to a temp
+// file, and downstream tool calls in the same turn fail. So `get_transactions`
+// caps output at MAX_LIMIT, defaults to DEFAULT_LIMIT, and offers a `summary`
+// mode for the canonical PFM aggregate-by-category use case.
+const DEFAULT_LIMIT = 50;
+const MAX_LIMIT = 500;
+
+function summariseTransactions(txs) {
+  const byDirection = { Credit: { count: 0, total: 0 }, Debit: { count: 0, total: 0 } };
+  const byCategory = new Map();
+  const byMonth = new Map();
+  let earliest = null;
+  let latest = null;
+  for (const t of txs) {
+    const amt = Number(t?.Amount?.Amount) || 0;
+    const dir = t?.CreditDebitIndicator === 'Credit' ? 'Credit' : 'Debit';
+    byDirection[dir].count += 1;
+    byDirection[dir].total = +(byDirection[dir].total + amt).toFixed(2);
+    const code = (t?.MerchantDetails?.MerchantCategoryCode ?? 'uncategorised').toString();
+    const cat = byCategory.get(code) ?? { MerchantCategoryCode: code, count: 0, total: 0 };
+    cat.count += 1;
+    cat.total = +(cat.total + (dir === 'Debit' ? -amt : amt)).toFixed(2);
+    byCategory.set(code, cat);
+    if (t?.BookingDateTime) {
+      const month = String(t.BookingDateTime).slice(0, 7);
+      const m = byMonth.get(month) ?? { month, count: 0, credit: 0, debit: 0 };
+      m.count += 1;
+      if (dir === 'Credit') m.credit = +(m.credit + amt).toFixed(2);
+      else m.debit = +(m.debit + amt).toFixed(2);
+      byMonth.set(month, m);
+      const ts = Date.parse(t.BookingDateTime);
+      if (Number.isFinite(ts)) {
+        if (earliest == null || ts < earliest) earliest = ts;
+        if (latest == null || ts > latest) latest = ts;
+      }
+    }
+  }
+  const topCategories = [...byCategory.values()]
+    .sort((a, b) => Math.abs(b.total) - Math.abs(a.total))
+    .slice(0, 10);
+  const months = [...byMonth.values()].sort((a, b) => a.month.localeCompare(b.month));
+  return {
+    count: txs.length,
+    byDirection,
+    byMonth: months,
+    topCategories,
+    earliest: earliest != null ? new Date(earliest).toISOString() : null,
+    latest: latest != null ? new Date(latest).toISOString() : null,
+  };
+}
+
+function filterTransactions(envelopeJson, { since, until, minAmount, maxAmount, category, limit, summary }) {
   const txs = envelopeJson?.Data?.Transaction;
   if (!Array.isArray(txs)) return envelopeJson;
   const sinceTs = since ? Date.parse(since) : null;
@@ -110,10 +164,50 @@ function filterTransactions(envelopeJson, { since, until, minAmount, maxAmount, 
     return true;
   };
   const filtered = txs.filter(matches);
+
+  if (summary) {
+    const summaryBlock = summariseTransactions(filtered);
+    const { Transaction: _omit, ...restData } = envelopeJson.Data ?? {};
+    return {
+      ...envelopeJson,
+      Data: { ...restData, Summary: summaryBlock },
+      _filter: {
+        since, until, minAmount, maxAmount, category,
+        mode: 'summary',
+        total: txs.length,
+        matched: filtered.length,
+      },
+    };
+  }
+
+  const effLimit = Math.max(0, Math.min(MAX_LIMIT, limit ?? DEFAULT_LIMIT));
+  // Generator emits transactions in ascending BookingDateTime order. PFM use
+  // cases want recent activity, so when we cap, we keep the *tail* (most
+  // recent) and preserve ascending order in the output.
+  const truncated = filtered.length > effLimit;
+  const kept = truncated ? filtered.slice(filtered.length - effLimit) : filtered;
+  const filterBlock = {
+    since, until, minAmount, maxAmount, category,
+    limit: effLimit,
+    total: txs.length,
+    matched: filtered.length,
+    kept: kept.length,
+    truncated,
+  };
+  if (truncated) {
+    const oldestKept = kept[0]?.BookingDateTime ?? null;
+    filterBlock._paginationHint = [
+      `Returned the ${kept.length} most recent transactions (of ${filtered.length} matching, ${txs.length} total).`,
+      oldestKept
+        ? `For older items: re-call with until="${oldestKept}" (and optionally a smaller limit) to walk backwards in time.`
+        : 'For older items: re-call with a tighter since/until window or a higher limit (max ' + MAX_LIMIT + ').',
+      'For aggregate analysis (category/month buckets) call with summary=true instead — single small response.',
+    ].join(' ');
+  }
   return {
     ...envelopeJson,
-    Data: { ...envelopeJson.Data, Transaction: filtered },
-    _filter: { since, until, minAmount, maxAmount, category, kept: filtered.length, total: txs.length },
+    Data: { ...envelopeJson.Data, Transaction: kept },
+    _filter: filterBlock,
   };
 }
 
@@ -359,7 +453,8 @@ export function createServer() {
     {
       title: 'Get transactions',
       description:
-        'Return /accounts/{AccountId}/transactions. Optional server-side filters: since/until (ISO8601 dates), minAmount/maxAmount (numeric), category (substring match against MerchantCategoryCode + TransactionInformation). Filters run after the deterministic generator — they never alter the underlying synthetic data.',
+        'Return /accounts/{AccountId}/transactions. Server-side filters: since/until (ISO8601), minAmount/maxAmount (numeric), category (substring match against MerchantCategoryCode + TransactionInformation). Filters run after the deterministic generator — they never alter the underlying synthetic data.\n\n' +
+        'High-volume personas (HNW, Corporate, SME) can hold hundreds of transactions per account; full-list responses can exceed the host MCP client\'s tool-result size cap. To stay safely under it, output is capped at `limit` (default 50, max 500) — the most recent N matching transactions are returned, in ascending BookingDateTime order, with `_filter.truncated=true` and a `_paginationHint` when truncation occurs. For aggregate analysis (top categories, monthly buckets, credit/debit totals) pass `summary=true` to skip the per-row payload entirely.',
       inputSchema: {
         ...accountIdOptional,
         since: z
@@ -382,15 +477,32 @@ export function createServer() {
           .string()
           .optional()
           .describe('Substring filter against MerchantCategoryCode or TransactionInformation.'),
+        limit: z
+          .number()
+          .int()
+          .min(0)
+          .max(MAX_LIMIT)
+          .optional()
+          .describe(
+            `Max transactions per account in the response. Default ${DEFAULT_LIMIT}, hard cap ${MAX_LIMIT}. When the matching set exceeds this, the most recent N are returned (ascending order preserved) and \`_filter.truncated\` is set with a \`_paginationHint\`.`,
+          ),
+        summary: z
+          .boolean()
+          .optional()
+          .describe(
+            'Return aggregates (count, byDirection totals, byMonth buckets, top MerchantCategoryCode buckets) instead of individual transactions. Use this for monthly-summary / category-breakdown style questions — a single small response per account regardless of volume.',
+          ),
       },
     },
-    async ({ accountId, since, until, minAmount, maxAmount, category }) => {
+    async ({ accountId, since, until, minAmount, maxAmount, category, limit, summary }) => {
       const s = session.get();
       const id = resolveAccountId(s, accountId);
       const results = fetchPerAccount(s, '/transactions', id);
       const text = results
         .map((r) => {
-          const filtered = filterTransactions(r.envelope, { since, until, minAmount, maxAmount, category });
+          const filtered = filterTransactions(r.envelope, {
+            since, until, minAmount, maxAmount, category, limit, summary,
+          });
           const wm = filtered?._watermark ?? '';
           return [
             `[/accounts/${r.accountId}/transactions] persona:${s.persona} lfi:${s.lfi} seed:${s.seed}`,

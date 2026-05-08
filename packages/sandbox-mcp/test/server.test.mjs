@@ -152,4 +152,110 @@ describe('sandbox-mcp server', () => {
     expect(r.isError).toBe(true);
     expect(textOf(r)).toMatch(/must be ISO8601/);
   });
+
+  // The tool-result size cap on the consuming MCP client (Claude.ai / Claude Code)
+  // is the load-bearing constraint behind the limit + summary affordances. A
+  // full transaction list for hnw_multicurrency or corporate_treasury_listed
+  // can run 700+ KB pretty-printed and trip the cap; once tripped, downstream
+  // tool calls in the same turn fail. These tests pin the wire-level shape we
+  // need so an agent can: (a) fall back to summary mode for aggregate questions,
+  // (b) page backwards through truncated results.
+  function parseEnvelope(text) {
+    const jsonStart = text.indexOf('{');
+    return JSON.parse(text.slice(jsonStart));
+  }
+
+  it('get_transactions caps output to 50 by default and flags truncation for high-volume personas', async () => {
+    await client.callTool({ name: 'set_session', arguments: { persona: 'hnw_multicurrency' } });
+    const r = await client.callTool({
+      name: 'get_transactions',
+      arguments: { accountId: 'hnw-multicurrency-acct-01' },
+    });
+    const env = parseEnvelope(textOf(r));
+    expect(env._filter.truncated).toBe(true);
+    expect(env._filter.limit).toBe(50);
+    expect(env._filter.kept).toBe(50);
+    expect(env._filter.total).toBeGreaterThan(50);
+    expect(env.Data.Transaction).toHaveLength(50);
+    expect(env._filter._paginationHint).toMatch(/until=/);
+  });
+
+  it('get_transactions with explicit limit truncates to that count and slices the most recent items', async () => {
+    await client.callTool({ name: 'set_session', arguments: { persona: 'salaried_expat_mid' } });
+    const all = await client.callTool({
+      name: 'get_transactions',
+      arguments: { accountId: 'salaried-expat-mid-acct-01', limit: 500 },
+    });
+    const allEnv = parseEnvelope(textOf(all));
+    const total = allEnv.Data.Transaction.length;
+
+    const ten = await client.callTool({
+      name: 'get_transactions',
+      arguments: { accountId: 'salaried-expat-mid-acct-01', limit: 10 },
+    });
+    const tenEnv = parseEnvelope(textOf(ten));
+    expect(tenEnv.Data.Transaction).toHaveLength(10);
+    // ascending order preserved, and the kept slice is the tail (most recent).
+    const tailIds = allEnv.Data.Transaction.slice(-10).map((t) => t.TransactionId);
+    expect(tenEnv.Data.Transaction.map((t) => t.TransactionId)).toEqual(tailIds);
+    expect(tenEnv._filter.truncated).toBe(true);
+    expect(tenEnv._filter.total).toBe(total);
+  });
+
+  it('get_transactions with summary=true returns aggregates, not individual transactions', async () => {
+    await client.callTool({ name: 'set_session', arguments: { persona: 'hnw_multicurrency' } });
+    const r = await client.callTool({
+      name: 'get_transactions',
+      arguments: { accountId: 'hnw-multicurrency-acct-01', summary: true },
+    });
+    const env = parseEnvelope(textOf(r));
+    expect(env.Data.Transaction).toBeUndefined();
+    expect(env.Data.Summary).toBeDefined();
+    expect(env.Data.Summary.count).toBeGreaterThan(0);
+    expect(env.Data.Summary.byDirection.Credit).toMatchObject({
+      count: expect.any(Number),
+      total: expect.any(Number),
+    });
+    expect(env.Data.Summary.byDirection.Debit).toMatchObject({
+      count: expect.any(Number),
+      total: expect.any(Number),
+    });
+    expect(Array.isArray(env.Data.Summary.byMonth)).toBe(true);
+    expect(env.Data.Summary.byMonth.length).toBeGreaterThan(0);
+    expect(Array.isArray(env.Data.Summary.topCategories)).toBe(true);
+    expect(env._filter.mode).toBe('summary');
+    // Summary payload should be small enough to never trip a tool-result cap,
+    // even for the highest-volume curated persona.
+    expect(textOf(r).length).toBeLessThan(20_000);
+  });
+
+  it('get_transactions response stays well under typical tool-result caps with default settings', async () => {
+    // Worst-case real persona (HNW, multi-account fan-out). With the default
+    // limit this needs to comfortably fit in a single tool result.
+    await client.callTool({ name: 'set_session', arguments: { persona: 'hnw_multicurrency' } });
+    const r = await client.callTool({ name: 'get_transactions', arguments: {} });
+    expect(textOf(r).length).toBeLessThan(200_000);
+  });
+
+  it('get_transactions with limit=0 returns no rows but still reports total', async () => {
+    await client.callTool({ name: 'set_session', arguments: { persona: 'salaried_expat_mid' } });
+    const r = await client.callTool({
+      name: 'get_transactions',
+      arguments: { accountId: 'salaried-expat-mid-acct-01', limit: 0 },
+    });
+    const env = parseEnvelope(textOf(r));
+    expect(env.Data.Transaction).toEqual([]);
+    expect(env._filter.kept).toBe(0);
+    expect(env._filter.truncated).toBe(true);
+    expect(env._filter.total).toBeGreaterThan(0);
+  });
+
+  it('get_transactions rejects limit above the hard cap', async () => {
+    await client.callTool({ name: 'set_session', arguments: { persona: 'salaried_expat_mid' } });
+    const r = await client.callTool({
+      name: 'get_transactions',
+      arguments: { limit: 10_000 },
+    });
+    expect(r.isError).toBe(true);
+  });
 });

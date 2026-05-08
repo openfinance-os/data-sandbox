@@ -105,7 +105,7 @@ claude mcp add open-finance-sandbox -- npx -y @openfinance-os/sandbox-mcp
 | `get_party` | v2.1 `/parties` envelope (synthetic customer profile). |
 | `get_accounts` | v2.1 `/accounts` envelope. |
 | `get_balances` | `/accounts/{AccountId}/balances` — fans out across every account when `accountId` is omitted. |
-| `get_transactions` | `/accounts/{AccountId}/transactions` with optional `since`, `until`, `minAmount`, `maxAmount`, `category` filters. Filters run *after* the deterministic generator. |
+| `get_transactions` | `/accounts/{AccountId}/transactions` with optional `since`, `until`, `minAmount`, `maxAmount`, `category` filters and `limit` (default 50, max 500) / `summary` (aggregate-only) controls. Filters run *after* the deterministic generator. The default `limit` keeps the response under the host MCP client's tool-result size cap on high-volume personas (HNW, Corporate, SME); `summary: true` returns `count` + `byDirection` + `byMonth` + `topCategories` instead of individual rows. When truncation kicks in the response carries `_filter.truncated=true` and a `_paginationHint` describing how to walk backwards in time. |
 | `get_standing_orders` | `/accounts/{AccountId}/standing-orders` (recurring outbound payments). |
 | `get_direct_debits` | `/accounts/{AccountId}/direct-debits` (mandates and frequencies). |
 | `get_scheduled_payments` | `/accounts/{AccountId}/scheduled-payments` (future-dated). |
