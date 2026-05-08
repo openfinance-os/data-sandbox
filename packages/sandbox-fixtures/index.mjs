@@ -6,8 +6,15 @@ import path from 'node:path';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const manifest = JSON.parse(readFileSync(path.join(here, 'manifest.json'), 'utf8'));
 
-export function listPersonas() {
-  return Object.keys(manifest.personas);
+const SPEC_FILE_BY_DOMAIN = {
+  banking: 'spec.json',
+  insurance: 'spec.insurance.json',
+};
+
+export function listPersonas(opts = {}) {
+  const ids = Object.keys(manifest.personas);
+  if (!opts.domain) return ids;
+  return ids.filter((id) => manifest.personas[id]?.domain === opts.domain);
 }
 export function getPersonaInfo(personaId) {
   return manifest.personas[personaId] ?? null;
@@ -46,7 +53,10 @@ export function loadJourney({ persona, lfi = 'median', seed } = {}) {
     persona,
     lfi,
     seed: useSeed,
+    domain: info.domain ?? 'banking',
     accountIds: fx.accountIds ?? [],
+    policyIds: fx.policyIds ?? [],
+    quoteId: fx.quoteId ?? null,
     customerId: endpoints['/parties']?.Data?.Party?.PartyId ?? null,
     specVersion: manifest.specVersion,
     specSha: manifest.specSha,
@@ -54,8 +64,11 @@ export function loadJourney({ persona, lfi = 'median', seed } = {}) {
     endpoints,
   };
 }
-export function loadSpec() {
-  return JSON.parse(readFileSync(path.join(here, 'spec.json'), 'utf8'));
+export function loadSpec(opts = {}) {
+  const domain = opts.domain ?? 'banking';
+  const file = SPEC_FILE_BY_DOMAIN[domain];
+  if (!file) throw new Error(`unknown domain: ${domain}`);
+  return JSON.parse(readFileSync(path.join(here, file), 'utf8'));
 }
 export function loadPersonaManifest(personaId) {
   return JSON.parse(readFileSync(path.join(here, 'personas', `${personaId}.json`), 'utf8'));

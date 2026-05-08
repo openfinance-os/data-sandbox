@@ -21,6 +21,11 @@ const EXPECTED_TOOLS = [
   'get_product',
   'get_statements',
   'load_journey',
+  // Phase 2.0 motor full-coverage — insurance domain.
+  'get_motor_policies',
+  'get_motor_policy',
+  'get_motor_payment_details',
+  'get_motor_quote',
 ];
 
 const WATERMARK_RE = /SYNTHETIC — Open Finance Data Sandbox/;
@@ -56,11 +61,39 @@ describe('sandbox-mcp server', () => {
     expect(names).toEqual([...EXPECTED_TOOLS].sort());
   });
 
-  it('list_personas returns 12 banking personas (insurance excluded)', async () => {
+  it('list_personas returns all 15 personas across both domains by default', async () => {
     const r = await client.callTool({ name: 'list_personas', arguments: {} });
     const payload = JSON.parse(textOf(r));
-    expect(payload.count).toBe(12);
-    expect(payload.personas.map((p) => p.id)).not.toContain('motor_comprehensive_mid');
+    expect(payload.count).toBe(15);
+    const ids = payload.personas.map((p) => p.id);
+    expect(ids).toContain('salaried_expat_mid');
+    expect(ids).toContain('motor_comprehensive_mid');
+    expect(payload.domain).toBe('all');
+    // Every entry surfaces its domain so the LLM can route to the right tools.
+    for (const p of payload.personas) {
+      expect(['banking', 'insurance']).toContain(p.domain);
+    }
+  });
+
+  it('list_personas filters by domain', async () => {
+    const banking = JSON.parse(
+      textOf(await client.callTool({ name: 'list_personas', arguments: { domain: 'banking' } })),
+    );
+    expect(banking.count).toBe(12);
+    expect(banking.personas.every((p) => p.domain === 'banking')).toBe(true);
+
+    const insurance = JSON.parse(
+      textOf(await client.callTool({ name: 'list_personas', arguments: { domain: 'insurance' } })),
+    );
+    expect(insurance.count).toBe(3);
+    expect(insurance.personas.every((p) => p.domain === 'insurance')).toBe(true);
+    expect(insurance.personas.map((p) => p.id)).toEqual(
+      expect.arrayContaining([
+        'motor_comprehensive_mid',
+        'motor_takaful_third_party_expat',
+        'motor_high_claim_multi_driver',
+      ]),
+    );
   });
 
   it('set_session pins a persona and get_session echoes it', async () => {
@@ -129,11 +162,68 @@ describe('sandbox-mcp server', () => {
     expect(textOf(r)).toMatch(/unknown accountId/);
   });
 
-  it('exposes spec:// and persona:// resources', async () => {
+  it('exposes spec:// and persona:// resources for both domains', async () => {
     const { resources } = await client.listResources();
     const uris = resources.map((r) => r.uri);
     expect(uris).toContain('spec://uae-account-information-v2.1');
+    expect(uris).toContain('spec://uae-insurance-v2.1');
     expect(uris).toContain('persona://salaried_expat_mid');
+    expect(uris).toContain('persona://motor_comprehensive_mid');
+  });
+
+  it('insurance flow — set_session + get_motor_* round-trip with watermark + spec pin', async () => {
+    await client.callTool({
+      name: 'set_session',
+      arguments: { persona: 'motor_comprehensive_mid' },
+    });
+    const session = JSON.parse(
+      textOf(await client.callTool({ name: 'get_session', arguments: {} })),
+    );
+    expect(session).toMatchObject({ persona: 'motor_comprehensive_mid', lfi: 'median' });
+
+    const policies = await client.callTool({ name: 'get_motor_policies', arguments: {} });
+    const policiesText = textOf(policies);
+    expect(policiesText).toMatch(WATERMARK_RE);
+    const policiesEnv = JSON.parse(policiesText.slice(policiesText.indexOf('{')));
+    expect(policiesEnv.Data?.Policies).toBeInstanceOf(Array);
+    expect(policiesEnv._domain).toBe('insurance');
+    expect(policiesEnv._specSha).toBe(manifest.specSha);
+
+    const detail = await client.callTool({ name: 'get_motor_policy', arguments: {} });
+    const detailEnv = JSON.parse(textOf(detail).slice(textOf(detail).indexOf('{')));
+    expect(detailEnv.Data?.InsurancePolicyId).toBeDefined();
+    expect(detailEnv.Data?.PolicyHolder).toBeDefined();
+    expect(detailEnv.Data?.Product?.Policy).toBeDefined();
+
+    const payment = await client.callTool({ name: 'get_motor_payment_details', arguments: {} });
+    const paymentEnv = JSON.parse(textOf(payment).slice(textOf(payment).indexOf('{')));
+    expect(paymentEnv.Data?.Account?.SchemeName).toBe('IBAN');
+
+    const quote = await client.callTool({ name: 'get_motor_quote', arguments: {} });
+    const quoteEnv = JSON.parse(textOf(quote).slice(textOf(quote).indexOf('{')));
+    expect(quoteEnv.Data?.QuoteStatus).toBe('PolicyIssued');
+    expect(quoteEnv.Data?.ServiceRating).toBeDefined();
+    expect(quoteEnv.Data?.PolicyIssuanceAllowed).toBeDefined();
+  });
+
+  it('cross-domain tools error with a helpful "switch personas" message', async () => {
+    // Banking session → insurance tool.
+    await client.callTool({
+      name: 'set_session',
+      arguments: { persona: 'salaried_expat_mid' },
+    });
+    const wrongInsurance = await client.callTool({ name: 'get_motor_policies', arguments: {} });
+    expect(wrongInsurance.isError).toBe(true);
+    expect(textOf(wrongInsurance)).toMatch(/requires a insurance session/);
+
+    // Insurance session → banking tool.
+    await client.callTool({
+      name: 'set_session',
+      arguments: { persona: 'motor_comprehensive_mid' },
+    });
+    const wrongBanking = await client.callTool({ name: 'get_accounts', arguments: {} });
+    expect(wrongBanking.isError).toBe(true);
+    expect(textOf(wrongBanking)).toMatch(/requires a banking session/);
   });
 
   it('exposes the documented prompts', async () => {

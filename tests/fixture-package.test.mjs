@@ -33,17 +33,25 @@ if (!FIXTURES_BUILT) {
     expect(pkg.publishConfig.access).toBe('public');
   });
 
-  it('manifest.json indexes 12 personas × 3 LFIs', () => {
+  it('manifest.json indexes 12 banking + 3 insurance personas × 3 LFIs', () => {
     const m = JSON.parse(fs.readFileSync(path.join(PKG_DIR, 'manifest.json'), 'utf8'));
     expect(m.package).toBe('@openfinance-os/sandbox-fixtures');
     expect(m.specVersion).toBe('v2.1');
     expect(m.specSha.length).toBeGreaterThan(20);
-    expect(Object.keys(m.personas).length).toBe(12);
-    expect(Object.keys(m.fixtures).length).toBe(36); // 12 × 3
+    expect(m.domains).toEqual(expect.arrayContaining(['banking', 'insurance']));
+    expect(Object.keys(m.personas).length).toBe(15);
+    expect(Object.keys(m.fixtures).length).toBe(45); // 15 × 3
+    const byDomain = { banking: 0, insurance: 0 };
+    for (const info of Object.values(m.personas)) {
+      expect(info.domain).toBeDefined();
+      byDomain[info.domain] = (byDomain[info.domain] ?? 0) + 1;
+    }
+    expect(byDomain).toEqual({ banking: 12, insurance: 3 });
     for (const [key, fx] of Object.entries(m.fixtures)) {
       expect(key).toMatch(/^[a-z_]+\|(rich|median|sparse)\|\d+$/);
       // Every fixture entry has a non-empty endpoints map.
       expect(Object.keys(fx.endpoints).length).toBeGreaterThan(0);
+      expect(['banking', 'insurance']).toContain(fx.domain);
     }
   });
 
@@ -51,7 +59,10 @@ if (!FIXTURES_BUILT) {
     const m = await import(path.join(PKG_DIR, 'index.mjs'));
     const personas = m.listPersonas();
     expect(personas).toContain('salaried_expat_mid');
-    expect(personas.length).toBe(12);
+    expect(personas).toContain('motor_comprehensive_mid');
+    expect(personas.length).toBe(15);
+    expect(m.listPersonas({ domain: 'banking' }).length).toBe(12);
+    expect(m.listPersonas({ domain: 'insurance' }).length).toBe(3);
     const sara = m.loadFixture({
       persona: 'salaried_expat_mid',
       lfi: 'median',
@@ -63,6 +74,9 @@ if (!FIXTURES_BUILT) {
     const spec = m.loadSpec();
     expect(spec.specVersion).toBe('v2.1');
     expect(spec.endpoints['/accounts']).toBeDefined();
+    const insuranceSpec = m.loadSpec({ domain: 'insurance' });
+    expect(insuranceSpec.endpoints['/motor-insurance-policies']).toBeDefined();
+    expect(insuranceSpec.endpoints['/motor-insurance-quotes/{QuoteId}']).toBeDefined();
   });
 
   it('CJS loader exports the same surface', () => {

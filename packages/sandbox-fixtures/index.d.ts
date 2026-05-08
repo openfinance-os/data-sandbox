@@ -1,8 +1,20 @@
+export type Domain = 'banking' | 'insurance';
 export interface PersonaInfo {
   name: string;
   archetype: string;
   default_seed: number;
+  domain: Domain;
   stress_coverage: string[];
+}
+export interface FixtureEntry {
+  personaId: string;
+  lfi: string;
+  seed: number;
+  domain: Domain;
+  accountIds: string[];
+  policyIds: string[];
+  quoteId: string | null;
+  endpoints: Record<string, string>;
 }
 export interface Manifest {
   package: string;
@@ -11,14 +23,18 @@ export interface Manifest {
   specSha: string;
   generatedAt: string;
   nowAnchor: string;
-  fixtures: Record<string, { personaId: string; lfi: string; seed: number; accountIds: string[]; endpoints: Record<string, string> }>;
+  domains: Domain[];
+  fixtures: Record<string, FixtureEntry>;
   personas: Record<string, PersonaInfo>;
 }
 export interface Journey {
   persona: string;
   lfi: 'rich' | 'median' | 'sparse';
   seed: number;
+  domain: Domain;
   accountIds: string[];
+  policyIds: string[];
+  quoteId: string | null;
   customerId: string | null;
   specVersion: string;
   specSha: string;
@@ -26,7 +42,7 @@ export interface Journey {
   endpoints: Record<string, unknown>;
 }
 export const manifest: Manifest;
-export function listPersonas(): string[];
+export function listPersonas(opts?: { domain?: Domain }): string[];
 export function getPersonaInfo(personaId: string): PersonaInfo | null;
 export function listEndpoints(personaId: string, lfi?: 'rich' | 'median' | 'sparse'): string[];
 export function loadFixture(opts: {
@@ -40,7 +56,7 @@ export function loadJourney(opts: {
   lfi?: 'rich' | 'median' | 'sparse';
   seed?: number;
 }): Journey;
-export function loadSpec(): unknown;
+export function loadSpec(opts?: { domain?: Domain }): unknown;
 export function loadPersonaManifest(personaId: string): unknown;
 
 // Workstream C plug-point 2 — runtime engine for custom personas.

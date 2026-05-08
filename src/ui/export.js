@@ -19,11 +19,28 @@ const baseLinks = (resource) => ({
   Self: `https://example.test/open-finance/account-information/v2.1/${resource}`,
 });
 
+const insuranceBaseLinks = (resource) => ({
+  Self: `https://example.test/open-finance/insurance/v2.1/${resource}`,
+});
+
 /**
  * Build an envelope object per endpoint shape (mirrors the spec-validation
  * test envelopes) so the JSON exports look like real wire payloads.
+ *
+ * Banking and insurance bundles flow through the same function: domain is
+ * inferred from `bundle.domain` (set by the generator dispatcher), and the
+ * matching envelope set is emitted. The MCP fixture package consumes these
+ * envelopes for both domains, so the output shape MUST match what the
+ * spec-validation tests assert against the AJV-compiled schema.
  */
 export function envelopesFromBundle(bundle, ctx) {
+  if (bundle.domain === 'insurance') {
+    return insuranceEnvelopesFromBundle(bundle, ctx);
+  }
+  return bankingEnvelopesFromBundle(bundle, ctx);
+}
+
+function bankingEnvelopesFromBundle(bundle, ctx) {
   const envelopes = {};
   envelopes['/accounts'] = wrap({ Data: { Account: bundle.accounts.map(strip) } }, 'accounts', ctx);
   envelopes['/parties'] = wrap({ Data: { Party: strip(bundle.callingUserParty) } }, 'parties', ctx);
@@ -86,6 +103,61 @@ export function envelopesFromBundle(bundle, ctx) {
   return envelopes;
 }
 
+/**
+ * Insurance domain envelopes — Phase 2.0 motor full-coverage scope.
+ * Mirrors the envelope shapes asserted by `tests/spec-validation.insurance.test.mjs`
+ * so the same wire payloads validate against the v2.1-errata1 motor schemas.
+ *
+ * Both templated paths (`/motor-insurance-policies/{InsurancePolicyId}` etc.)
+ * and resolved paths (with the actual policy / quote id substituted) are
+ * emitted, mirroring the banking convention. Callers that don't know the
+ * synthetic id can use the templated key; those that do can use the resolved
+ * one.
+ */
+function insuranceEnvelopesFromBundle(bundle, ctx) {
+  const envelopes = {};
+  const policy = bundle.motorPolicies?.[0];
+  const quote = bundle.motorQuote;
+
+  envelopes['/motor-insurance-policies'] = wrapInsurance(
+    { Data: { Policies: bundle.motorPolicySummaries } },
+    'motor-insurance-policies',
+    ctx
+  );
+
+  if (policy) {
+    const policyId = policy.InsurancePolicyId;
+    envelopes[`/motor-insurance-policies/${policyId}`] = wrapInsurance(
+      { Data: policy },
+      `motor-insurance-policies/${policyId}`,
+      ctx
+    );
+    envelopes['/motor-insurance-policies/{InsurancePolicyId}'] =
+      envelopes[`/motor-insurance-policies/${policyId}`];
+
+    envelopes[`/motor-insurance-policies/${policyId}/payment-details`] = wrapInsurance(
+      { Data: bundle.paymentDetails },
+      `motor-insurance-policies/${policyId}/payment-details`,
+      ctx
+    );
+    envelopes['/motor-insurance-policies/{InsurancePolicyId}/payment-details'] =
+      envelopes[`/motor-insurance-policies/${policyId}/payment-details`];
+  }
+
+  if (quote) {
+    const quoteId = quote.QuoteId;
+    envelopes[`/motor-insurance-quotes/${quoteId}`] = wrapInsurance(
+      { Data: quote },
+      `motor-insurance-quotes/${quoteId}`,
+      ctx
+    );
+    envelopes['/motor-insurance-quotes/{QuoteId}'] =
+      envelopes[`/motor-insurance-quotes/${quoteId}`];
+  }
+
+  return envelopes;
+}
+
 function wrap(envelope, resourceUri, ctx) {
   return {
     ...envelope,
@@ -95,6 +167,22 @@ function wrap(envelope, resourceUri, ctx) {
     _persona: ctx.personaId,
     _lfi: ctx.lfi,
     _seed: ctx.seed,
+    _specVersion: ctx.specVersion ?? null,
+    _specSha: ctx.specSha ?? null,
+    _retrievedAt: ctx.retrievedAt,
+  };
+}
+
+function wrapInsurance(envelope, resourceUri, ctx) {
+  return {
+    ...envelope,
+    Links: insuranceBaseLinks(resourceUri),
+    Meta: { TotalPages: 1 },
+    _watermark: watermark(ctx),
+    _persona: ctx.personaId,
+    _lfi: ctx.lfi,
+    _seed: ctx.seed,
+    _domain: 'insurance',
     _specVersion: ctx.specVersion ?? null,
     _specSha: ctx.specSha ?? null,
     _retrievedAt: ctx.retrievedAt,

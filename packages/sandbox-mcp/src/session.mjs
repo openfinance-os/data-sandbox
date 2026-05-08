@@ -23,6 +23,7 @@ export function createSessionStore() {
     }
     active = {
       kind: 'curated',
+      domain: info.domain ?? 'banking',
       persona,
       lfi,
       seed: seed ?? info.default_seed,
@@ -37,6 +38,9 @@ export function createSessionStore() {
     }
     active = {
       kind: 'custom',
+      // Custom personas are banking-only — the recipe schema in this package
+      // covers retail/SME/corporate banking knobs, with no insurance shape.
+      domain: 'banking',
       persona,
       lfi,
       seed,
@@ -91,6 +95,11 @@ export function fanOutAccountIds(session) {
   const fxKey = `${session.persona}|${session.lfi}|${session.seed}`;
   const fx = manifest.fixtures[fxKey];
   return fx?.accountIds ?? [];
+}
+
+export function fixtureEntry(session) {
+  const fxKey = `${session.persona}|${session.lfi}|${session.seed}`;
+  return manifest.fixtures[fxKey] ?? null;
 }
 
 export { LFI_PROFILES };

@@ -42,9 +42,14 @@ if (!FIXTURES_BUILT) {
   });
 } else describe('EXP-32 cross-endpoint coherence', () => {
   const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
-  const fixtureEntries = Object.entries(manifest.fixtures);
+  // Banking-only — /accounts + per-account fan-out is the banking shape.
+  // Insurance fixtures (motor policies / quotes) get their own coherence
+  // assertions in tests/spec-validation.insurance.test.mjs.
+  const fixtureEntries = Object.entries(manifest.fixtures).filter(
+    ([, fx]) => (fx.domain ?? 'banking') === 'banking',
+  );
 
-  it('the test matrix covers 12 personas × 3 LFIs', () => {
+  it('the banking test matrix covers 12 personas × 3 LFIs', () => {
     expect(fixtureEntries.length).toBe(36);
   });
 

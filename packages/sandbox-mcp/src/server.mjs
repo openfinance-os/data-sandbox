@@ -15,29 +15,38 @@ import {
   manifest,
 } from '@openfinance-os/sandbox-fixtures';
 import { z } from 'zod';
-import { createSessionStore, getEndpointEnvelope, fanOutAccountIds } from './session.mjs';
+import { createSessionStore, getEndpointEnvelope, fanOutAccountIds, fixtureEntry } from './session.mjs';
 import { registerPrompts } from './prompts.mjs';
 
 const PKG_NAME = '@openfinance-os/sandbox-mcp';
 const PKG_VERSION = '0.0.1';
 
 const PFM_INSTRUCTIONS = [
-  'You are wired to a sandbox of synthetic UAE Open Finance v2.1 Bank Data Sharing payloads.',
+  'You are wired to a sandbox of synthetic UAE Open Finance v2.1 payloads across two domains:',
+  '  • Bank Data Sharing (12 banking personas) — accounts, balances, transactions, parties, etc.',
+  '  • Insurance Data Sharing preview (3 motor-insurance personas) — motor policies, payment',
+  '    details, and a read-quote endpoint, all v2.1-errata1 shaped.',
   'All data is fictional — no real customer, no real institution. Every response carries a `_watermark`',
   'field; preserve it in any user-visible summary, table, or export.',
   '',
   'Workflow — curated persona (recommended for first use):',
-  '  1. Call `list_personas` and ask the user to pick one (or accept a persona id directly).',
-  '  2. Call `set_session` with { persona, lfi?, seed? }. lfi defaults to median; seed defaults to the',
-  '     persona\'s default_seed. The same (persona, lfi, seed) always returns byte-identical data.',
-  '  3. Use `get_party`, `get_accounts`, `get_balances`, `get_transactions`, etc. for granular data.',
-  '     Use `load_journey` only when the user wants a single dump of everything.',
+  '  1. Call `list_personas` (optionally with { domain: "banking" | "insurance" }) and ask the user',
+  '     to pick one (or accept a persona id directly). The persona\'s `domain` determines which',
+  '     get_* tools apply.',
+  '  2. Call `set_session` with { persona, lfi?, seed? }. lfi defaults to median; seed defaults to',
+  '     the persona\'s default_seed. The same (persona, lfi, seed) always returns byte-identical data.',
+  '  3. For a banking session: use `get_party`, `get_accounts`, `get_balances`, `get_transactions`,',
+  '     `get_standing_orders`, `get_direct_debits`, `get_scheduled_payments`, `get_beneficiaries`,',
+  '     `get_product`, `get_statements`. Use `load_journey` for a single dump of everything.',
+  '  4. For an insurance session: use `get_motor_policies`, `get_motor_policy`,',
+  '     `get_motor_payment_details`, `get_motor_quote`. Banking get_* tools error against an',
+  '     insurance session and vice versa — switch personas to switch domain.',
   '',
-  'Workflow — custom persona (when the user describes someone not in the curated list):',
+  'Workflow — custom persona (banking only — recipe schema covers retail/SME/corporate banking):',
   '  1. Call `get_recipe_defaults` (or read the `recipe://schema` resource) to see the available knobs.',
   '  2. Translate the user\'s description into a recipe object (any subset of those knobs — missing keys',
   '     fall back to defaults). Call `build_persona` with { recipe, lfi?, seed? }.',
-  '  3. The same get_* tools then return the in-memory custom journey.',
+  '  3. The banking get_* tools then return the in-memory custom journey.',
   '  Same recipe + lfi + seed → byte-identical bundle. Persona id is `custom_<recipeHash>`.',
   '',
   'LFI profiles model how richly a Licensed Financial Institution populates optional fields:',
@@ -74,6 +83,45 @@ function resolveAccountId(session, requested) {
   if (!ids.includes(requested)) {
     throw new Error(
       `unknown accountId: ${requested}. Available for this session: ${ids.join(', ') || '(none)'}`,
+    );
+  }
+  return requested;
+}
+
+/**
+ * Throw a helpful error if the active session domain doesn't match the tool.
+ * Banking get_* tools should reject an insurance session and vice versa, so
+ * the LLM gets a clear "switch personas" signal instead of a quiet failure.
+ */
+function requireDomain(session, expected, toolName) {
+  const got = session.domain ?? 'banking';
+  if (got !== expected) {
+    throw new Error(
+      `${toolName} requires a ${expected} session; this session is ${got} (persona ${session.persona}). ` +
+      `Call list_personas({ domain: '${expected}' }) → set_session to switch.`,
+    );
+  }
+}
+
+function resolvePolicyId(session, requested) {
+  const fx = fixtureEntry(session);
+  const ids = fx?.policyIds ?? [];
+  if (!requested) return ids[0] ?? null;
+  if (!ids.includes(requested)) {
+    throw new Error(
+      `unknown policyId: ${requested}. Available for this session: ${ids.join(', ') || '(none)'}`,
+    );
+  }
+  return requested;
+}
+
+function resolveQuoteId(session, requested) {
+  const fx = fixtureEntry(session);
+  const onlyId = fx?.quoteId ?? null;
+  if (!requested) return onlyId;
+  if (requested !== onlyId) {
+    throw new Error(
+      `unknown quoteId: ${requested}. Available for this session: ${onlyId ?? '(none)'}`,
     );
   }
   return requested;
@@ -225,22 +273,28 @@ export function createServer() {
     {
       title: 'List synthetic personas',
       description:
-        'List the 12 curated synthetic UAE banking personas available in this sandbox. Returns id, display name, archetype, default seed, and stress-coverage tags. Insurance personas are excluded from v1.',
-      inputSchema: {},
+        'List the curated synthetic UAE personas in this sandbox: 12 banking + 3 insurance preview. Returns id, display name, archetype, default seed, domain, and stress-coverage tags. Pass { domain: "banking" } or { domain: "insurance" } to filter; omit to get all 15.',
+      inputSchema: {
+        domain: z
+          .enum(['banking', 'insurance'])
+          .optional()
+          .describe('Optional domain filter. Omit to list every curated persona across domains.'),
+      },
     },
-    async () => {
-      const ids = listPersonas();
+    async ({ domain }) => {
+      const ids = domain ? listPersonas({ domain }) : listPersonas();
       const rows = ids.map((id) => {
         const info = getPersonaInfo(id);
         return {
           id,
           name: info?.name ?? id,
           archetype: info?.archetype ?? null,
+          domain: info?.domain ?? 'banking',
           default_seed: info?.default_seed ?? null,
           stress_coverage: info?.stress_coverage ?? [],
         };
       });
-      return textResult(JSON.stringify({ personas: rows, count: rows.length }, null, 2));
+      return textResult(JSON.stringify({ personas: rows, count: rows.length, domain: domain ?? 'all' }, null, 2));
     },
   );
 
@@ -388,11 +442,12 @@ export function createServer() {
     {
       title: 'Get customer party (profile)',
       description:
-        'Return the v2.1 /parties envelope for the active persona — synthetic customer profile (name, DOB band, contact). Always synthetic.',
+        'Return the v2.1 /parties envelope for the active banking persona — synthetic customer profile (name, DOB band, contact). Always synthetic. Errors if the active session is an insurance persona.',
       inputSchema: {},
     },
     async () => {
       const s = session.get();
+      requireDomain(s, 'banking', 'get_party');
       const env = getEndpointEnvelope(s, '/parties');
       return envelope(s.persona, s.lfi, s.seed, '/parties', env);
     },
@@ -402,11 +457,12 @@ export function createServer() {
     'get_accounts',
     {
       title: 'List accounts',
-      description: 'Return the v2.1 /accounts envelope for the active persona.',
+      description: 'Return the v2.1 /accounts envelope for the active banking persona. Errors if the active session is an insurance persona.',
       inputSchema: {},
     },
     async () => {
       const s = session.get();
+      requireDomain(s, 'banking', 'get_accounts');
       const env = getEndpointEnvelope(s, '/accounts');
       return envelope(s.persona, s.lfi, s.seed, '/accounts', env);
     },
@@ -429,6 +485,7 @@ export function createServer() {
     },
     async ({ accountId }) => {
       const s = session.get();
+      requireDomain(s, 'banking', 'get_balances');
       const id = resolveAccountId(s, accountId);
       const results = fetchPerAccount(s, '/balances', id);
       const text = results
@@ -496,6 +553,7 @@ export function createServer() {
     },
     async ({ accountId, since, until, minAmount, maxAmount, category, limit, summary }) => {
       const s = session.get();
+      requireDomain(s, 'banking', 'get_transactions');
       const id = resolveAccountId(s, accountId);
       const results = fetchPerAccount(s, '/transactions', id);
       const text = results
@@ -524,6 +582,7 @@ export function createServer() {
       { title, description, inputSchema: accountIdOptional },
       async ({ accountId }) => {
         const s = session.get();
+        requireDomain(s, 'banking', name);
         const id = resolveAccountId(s, accountId);
         const results = fetchPerAccount(s, suffix, id);
         const text = results
@@ -583,6 +642,7 @@ export function createServer() {
     },
     async ({ accountId }) => {
       const s = session.get();
+      requireDomain(s, 'banking', 'get_product');
       const id = resolveAccountId(s, accountId);
       const env = getEndpointEnvelope(s, `/accounts/${id}/product`);
       return envelope(s.persona, s.lfi, s.seed, `/accounts/${id}/product`, env);
@@ -599,9 +659,96 @@ export function createServer() {
     },
     async ({ accountId }) => {
       const s = session.get();
+      requireDomain(s, 'banking', 'get_statements');
       const id = resolveAccountId(s, accountId);
       const env = getEndpointEnvelope(s, `/accounts/${id}/statements`);
       return envelope(s.persona, s.lfi, s.seed, `/accounts/${id}/statements`, env);
+    },
+  );
+
+  // ── Insurance endpoint wrappers (Phase 2.0 motor full-coverage) ───────────
+
+  server.registerTool(
+    'get_motor_policies',
+    {
+      title: 'List motor insurance policies',
+      description:
+        'Return the v2.1-errata1 /motor-insurance-policies envelope (list of policy summaries) for the active insurance persona. Errors if the active session is a banking persona.',
+      inputSchema: {},
+    },
+    async () => {
+      const s = session.get();
+      requireDomain(s, 'insurance', 'get_motor_policies');
+      const env = getEndpointEnvelope(s, '/motor-insurance-policies');
+      return envelope(s.persona, s.lfi, s.seed, '/motor-insurance-policies', env);
+    },
+  );
+
+  const policyIdOptional = {
+    policyId: z
+      .string()
+      .optional()
+      .describe(
+        'Insurance policy id from get_motor_policies. Omit to use the persona\'s only policy (Phase 2.0 personas have exactly one).',
+      ),
+  };
+
+  server.registerTool(
+    'get_motor_policy',
+    {
+      title: 'Get motor insurance policy detail',
+      description:
+        'Return the v2.1-errata1 /motor-insurance-policies/{InsurancePolicyId} envelope — the full policy detail (PolicyHolder, Identity, Product, Claims, Premium). Errors if the active session is a banking persona.',
+      inputSchema: policyIdOptional,
+    },
+    async ({ policyId }) => {
+      const s = session.get();
+      requireDomain(s, 'insurance', 'get_motor_policy');
+      const id = resolvePolicyId(s, policyId);
+      if (!id) throw new Error('no motor policy in this session');
+      const env = getEndpointEnvelope(s, `/motor-insurance-policies/${id}`);
+      return envelope(s.persona, s.lfi, s.seed, `/motor-insurance-policies/${id}`, env);
+    },
+  );
+
+  server.registerTool(
+    'get_motor_payment_details',
+    {
+      title: 'Get motor insurance payment details',
+      description:
+        'Return the v2.1-errata1 /motor-insurance-policies/{InsurancePolicyId}/payment-details envelope — IBAN-keyed payment account + bank for the policy\'s premium-payment instruction. Errors if the active session is a banking persona.',
+      inputSchema: policyIdOptional,
+    },
+    async ({ policyId }) => {
+      const s = session.get();
+      requireDomain(s, 'insurance', 'get_motor_payment_details');
+      const id = resolvePolicyId(s, policyId);
+      if (!id) throw new Error('no motor policy in this session');
+      const env = getEndpointEnvelope(s, `/motor-insurance-policies/${id}/payment-details`);
+      return envelope(s.persona, s.lfi, s.seed, `/motor-insurance-policies/${id}/payment-details`, env);
+    },
+  );
+
+  server.registerTool(
+    'get_motor_quote',
+    {
+      title: 'Get motor insurance quote',
+      description:
+        'Return the v2.1-errata1 /motor-insurance-quotes/{QuoteId} envelope — the quote-read response (QuoteStatus=PolicyIssued for personas who already have an issued policy), with ServiceRating, Premium, and PolicyIssuanceAllowed sub-objects. Errors if the active session is a banking persona.',
+      inputSchema: {
+        quoteId: z
+          .string()
+          .optional()
+          .describe('Quote id; omit to use the persona\'s only quote.'),
+      },
+    },
+    async ({ quoteId }) => {
+      const s = session.get();
+      requireDomain(s, 'insurance', 'get_motor_quote');
+      const id = resolveQuoteId(s, quoteId);
+      if (!id) throw new Error('no motor quote in this session');
+      const env = getEndpointEnvelope(s, `/motor-insurance-quotes/${id}`);
+      return envelope(s.persona, s.lfi, s.seed, `/motor-insurance-quotes/${id}`, env);
     },
   );
 
@@ -610,7 +757,7 @@ export function createServer() {
     {
       title: 'Load full journey',
       description:
-        'Return every endpoint for the active persona in one call (parties + accounts + per-account balances/transactions/standing-orders/direct-debits/beneficiaries/scheduled-payments/product/parties/statements). Verbose — prefer the granular tools when answering targeted questions.',
+        'Return every in-scope endpoint for the active persona in one call. For a banking session: /parties + /accounts + per-account balances/transactions/standing-orders/direct-debits/beneficiaries/scheduled-payments/product/statements/parties. For an insurance session: /motor-insurance-policies + /motor-insurance-policies/{id} + /motor-insurance-policies/{id}/payment-details + /motor-insurance-quotes/{id}. Verbose — prefer the granular tools when answering targeted questions.',
       inputSchema: {},
     },
     async () => {
@@ -626,7 +773,7 @@ export function createServer() {
   // ── Resources ──────────────────────────────────────────────────────────────
 
   server.registerResource(
-    'spec',
+    'spec-banking',
     'spec://uae-account-information-v2.1',
     {
       title: 'UAE Open Finance Bank Data Sharing v2.1 (parsed)',
@@ -636,6 +783,29 @@ export function createServer() {
     },
     async (uri) => {
       const spec = loadSpec();
+      return {
+        contents: [
+          {
+            uri: uri.href,
+            mimeType: 'application/json',
+            text: JSON.stringify(spec),
+          },
+        ],
+      };
+    },
+  );
+
+  server.registerResource(
+    'spec-insurance',
+    'spec://uae-insurance-v2.1',
+    {
+      title: 'UAE Open Finance Insurance Data Sharing v2.1-errata1 (parsed, motor)',
+      description:
+        'Parsed insurance OpenAPI spec from the pinned upstream commit, scoped to the four motor-line GET endpoints (policies list, policy detail, payment-details, read-quote). Use to ground field-level answers about the insurance domain ("is Takaful mandatory on a motor policy?").',
+      mimeType: 'application/json',
+    },
+    async (uri) => {
+      const spec = loadSpec({ domain: 'insurance' });
       return {
         contents: [
           {

@@ -3,7 +3,12 @@ const fs = require('node:fs');
 const path = require('node:path');
 const here = __dirname;
 const manifest = JSON.parse(fs.readFileSync(path.join(here, 'manifest.json'), 'utf8'));
-function listPersonas() { return Object.keys(manifest.personas); }
+const SPEC_FILE_BY_DOMAIN = { banking: 'spec.json', insurance: 'spec.insurance.json' };
+function listPersonas(opts) {
+  const ids = Object.keys(manifest.personas);
+  if (!opts || !opts.domain) return ids;
+  return ids.filter(function (id) { return manifest.personas[id] && manifest.personas[id].domain === opts.domain; });
+}
 function getPersonaInfo(personaId) { return manifest.personas[personaId] || null; }
 function listEndpoints(personaId, lfi) {
   lfi = lfi || 'median';
@@ -48,7 +53,10 @@ function loadJourney(opts) {
     persona: persona,
     lfi: lfi,
     seed: useSeed,
+    domain: info.domain || 'banking',
     accountIds: fx.accountIds || [],
+    policyIds: fx.policyIds || [],
+    quoteId: fx.quoteId || null,
     customerId: (parties && parties.Data && parties.Data.Party && parties.Data.Party.PartyId) || null,
     specVersion: manifest.specVersion,
     specSha: manifest.specSha,
@@ -56,7 +64,12 @@ function loadJourney(opts) {
     endpoints: endpoints,
   };
 }
-function loadSpec() { return JSON.parse(fs.readFileSync(path.join(here, 'spec.json'), 'utf8')); }
+function loadSpec(opts) {
+  const domain = (opts && opts.domain) || 'banking';
+  const file = SPEC_FILE_BY_DOMAIN[domain];
+  if (!file) throw new Error('unknown domain: ' + domain);
+  return JSON.parse(fs.readFileSync(path.join(here, file), 'utf8'));
+}
 function loadPersonaManifest(personaId) {
   return JSON.parse(fs.readFileSync(path.join(here, 'personas', personaId + '.json'), 'utf8'));
 }
