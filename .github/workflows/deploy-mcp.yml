@@ -6,8 +6,10 @@ name: Deploy sandbox-mcp to Fly
 # workflow itself, so config changes such as MCP_ALLOWED_HOSTS in fly.toml
 # [env] reach the live machine without a manual `fly deploy`.
 #
-# Required secret (Settings → Secrets and variables → Actions):
-#   FLY_API_TOKEN — generated with `fly tokens create deploy -a data-sandbox`
+# Required secret (Settings → Environments → fly.io → Environment secrets):
+#   FLY_API_TOKEN — generated with `fly tokens create deploy -a data-sandbox`.
+#   Stored on the `fly.io` environment (see `environment:` below) so deploys
+#   gated on environment protection rules stay possible later.
 
 on:
   push:
@@ -27,6 +29,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: fly.io
     steps:
       - uses: actions/checkout@v4
       - uses: superfly/flyctl-actions/setup-flyctl@master
