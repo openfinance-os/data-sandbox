@@ -53,9 +53,36 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
 .banner {
   background: var(--warn-bg);
   border-bottom: 1px solid var(--warn-border);
-  padding: 6px 16px;
+  padding: 6px 36px 6px 16px;
   font-size: 12px;
   flex: 0 0 auto;
+  position: relative;
+}
+
+.banner[hidden] { display: none; }
+
+.banner-close {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.banner-close:hover {
+  background: var(--warn-border);
 }
 
 .topbar {
