@@ -57,7 +57,7 @@ export function registerPrompts(server) {
               '  1. Confirm the active session with `get_session`. If none, stop and call `pick-a-persona` first.',
               '  2. Call `get_accounts`. List each account with type and currency.',
               '  3. Call `get_balances` (no accountId — fan out). Sum AED-equivalent balances; flag any non-AED account separately.',
-              '  4. Call `get_transactions` (no accountId — fan out). Bucket by MerchantCategoryCode. Top 5 categories by absolute outflow. Note any unusual-looking large items.',
+              '  4. Call `get_transactions` (no accountId — fan out) with `summary: true`. The response gives you `byDirection`, `byMonth`, and `topCategories` per account in a small payload that fits within the tool-result cap even for HNW / Corporate / SME volumes. Pull the top 5 categories by absolute outflow from `topCategories`. If you want to call out specific large items, then re-call without summary, with a tight `since`/`until` window or `minAmount` filter to surface only the items of interest.',
               '  5. Call `get_standing_orders` and `get_direct_debits`. List the next 30 days of recurring outflows.',
               '  6. Highlight distress signals if any (NSF events, missed DD, large unscheduled inflows).',
               '',
