@@ -1,0 +1,39 @@
+persona_id: motor_takaful_third_party_expat
+domain: insurance
+name: "Layla — Motor Takaful Third-Party (Expat)"
+archetype: motor_takaful_third_party_expat
+default_seed: 8113
+stress_coverage:
+  - sharia_takaful_product
+  - third_party_liability_only
+
+demographics:
+  nationality_pool: expat_arab
+  age_band: 28-38
+  emirate: Sharjah
+  has_visa: true
+
+vehicle:
+  make: Nissan
+  model: Sunny
+  year: 2018
+  body_type: Sedan
+  passenger_capacity: 5
+  valuation_aed: 28000
+  registration_emirate: Sharjah
+
+policy:
+  type: ThirdPartyLiability
+  takaful: true
+  excess_aed: 0
+  start_date_offset_days: 30
+  channel: Direct
+
+additional_drivers:
+  count: 0
+
+claims:
+  history_months: 12
+  claims_in_period: 0
+  approved_claims: 0
+  total_gross_aed: 0

@@ -1,0 +1,45 @@
+persona_id: motor_high_claim_multi_driver
+domain: insurance
+name: "Rohan — Motor High-Claim Multi-Driver"
+archetype: motor_comprehensive_multi_driver
+default_seed: 5614
+stress_coverage:
+  - high_claim_frequency
+  - multi_driver_household
+
+demographics:
+  nationality_pool: expat_indian
+  age_band: 38-48
+  emirate: AbuDhabi
+  has_visa: true
+
+vehicle:
+  make: Nissan
+  model: Patrol
+  year: 2022
+  body_type: SUV
+  passenger_capacity: 7
+  valuation_aed: 185000
+  registration_emirate: AbuDhabi
+
+policy:
+  type: Comprehensive
+  takaful: false
+  excess_aed: 2500
+  start_date_offset_days: 210
+  channel: Aggregator
+
+finance:
+  has_finance: true
+  bank_pool: counterparty_banks_domestic
+  amount_aed: 150000
+  outstanding_aed: 92000
+
+additional_drivers:
+  count: 3
+
+claims:
+  history_months: 12
+  claims_in_period: 2
+  approved_claims: 1
+  total_gross_aed: 12000
