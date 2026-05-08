@@ -95,6 +95,14 @@ describe('insurance spec validation — Motor MVP (3 endpoints × persona × LFI
           Meta: baseMeta(),
         };
       }
+      case '/motor-insurance-quotes/{QuoteId}': {
+        const quote = bundle.motorQuote;
+        return {
+          Data: quote,
+          Links: baseLinks(`motor-insurance-quotes/${quote.QuoteId}`),
+          Meta: baseMeta(),
+        };
+      }
       default:
         return null;
     }

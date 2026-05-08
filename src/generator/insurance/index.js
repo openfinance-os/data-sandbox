@@ -11,6 +11,7 @@ import {
   generateClaims,
   generatePremium,
 } from './motor-policy.js';
+import { generateMotorQuote } from './motor-quote.js';
 import { applyInsuranceLfiProfile } from './lfi-profile.js';
 
 const DEFAULT_NOW = new Date(Date.UTC(2026, 3, 1, 0, 0, 0));
@@ -100,6 +101,8 @@ export function buildInsuranceBundle({ persona, lfi, seed, pools, now = DEFAULT_
     },
   };
 
+  const motorQuote = generateMotorQuote({ persona, rng, now });
+
   const bundle = {
     persona: persona.persona_id,
     name: persona.name,
@@ -113,6 +116,7 @@ export function buildInsuranceBundle({ persona, lfi, seed, pools, now = DEFAULT_
     motorPolicies: [motorPolicyDetail],
     motorPolicySummaries: [motorPolicySummary],
     paymentDetails,
+    motorQuote,
   };
 
   return applyInsuranceLfiProfile({ bundle, personaId: persona.persona_id, lfi, seed });
