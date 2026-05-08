@@ -35,7 +35,7 @@ Alternates if the field caps differently:
 https://mcp.openfinance-os.org/mcp
 ```
 
-(Plus the `of-sandbox-mcp.fly.dev/mcp` Fly URL as a fallback if the custom domain hasn't propagated yet.)
+(Plus the `data-sandbox.fly.dev/mcp` Fly URL as a fallback if the custom domain hasn't propagated yet.)
 
 ## Auth
 

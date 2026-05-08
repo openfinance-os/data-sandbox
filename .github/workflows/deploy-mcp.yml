@@ -1,0 +1,59 @@
+name: Deploy sandbox-mcp to Fly
+
+# Builds packages/sandbox-mcp/Dockerfile and ships it to Fly.io as the
+# data-sandbox app (https://data-sandbox.fly.dev/mcp). Triggered on every push
+# to main that touches the MCP server, its Dockerfile, fly.toml, or this
+# workflow itself, so config changes such as MCP_ALLOWED_HOSTS in fly.toml
+# [env] reach the live machine without a manual `fly deploy`.
+#
+# Required secret (Settings → Environments → fly.io → Environment secrets):
+#   FLY_API_TOKEN — generated with `fly tokens create deploy -a data-sandbox`.
+#   Stored on the `fly.io` environment (see `environment:` below) so deploys
+#   gated on environment protection rules stay possible later.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'fly.toml'
+      - 'packages/sandbox-mcp/**'
+      - 'packages/sandbox-fixtures/**'
+      - '.dockerignore'
+      - '.github/workflows/deploy-mcp.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-mcp
+  cancel-in-progress: false
+
+env:
+  # Override per environment if the Fly app is renamed; the smoke job
+  # uses this hostname to validate that the deploy actually came up.
+  MCP_PUBLIC_URL: https://data-sandbox.fly.dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: fly.io
+    steps:
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+  smoke:
+    runs-on: ubuntu-latest
+    needs: deploy
+    # Catches the "Fly says deployed but container is crash-looping" case:
+    # asserts /health returns ok:true and that an MCP initialize +
+    # tools/list roundtrip returns the documented 16 tools.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Smoke-test the deployed endpoint
+        run: node packages/sandbox-mcp/scripts/smoke.mjs "$MCP_PUBLIC_URL"

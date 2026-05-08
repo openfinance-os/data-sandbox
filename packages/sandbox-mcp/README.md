@@ -9,7 +9,7 @@ The intended use: run Claude as a **dynamic PFM** against a synthetic customer. 
 ## Scope
 
 - **Banking only** — Bank Data Sharing v2.1, all 12 Account-Information endpoints. Insurance defers to a later release.
-- **12 curated personas** — no custom-persona builder yet.
+- **12 curated personas + a custom-persona builder** — pick from the curated list with `set_session`, or compose a recipe and call `build_persona` to generate a fresh deterministic persona at runtime.
 - **Read-only** — no writes, no Service Initiation.
 - **Anonymous** — no auth, no API keys, no OAuth. The data is synthetic so there is nothing real to protect.
 - **Two transports** — stdio (default, for `npx` / Claude Desktop / Claude Code) and Streamable HTTP (for the Claude marketplace listing and any browser-side client). PRD decision D-13.
@@ -20,9 +20,15 @@ The intended use: run Claude as a **dynamic PFM** against a synthetic customer. 
 npx -y @openfinance-os/sandbox-mcp --help
 ```
 
-### Claude marketplace (HTTP)
+### Claude connector (hosted HTTP)
 
-The hosted endpoint is published at `mcp.openfinance-os.org/sandbox`. Install via the connector directory; no API key required.
+Published endpoint: **`https://data-sandbox.fly.dev/mcp`** (live; canonical CNAME `https://mcp.openfinance-os.org/mcp` lands during the OF-OS Commons cutover per PRD D-13). Anonymous, no auth, no API key.
+
+Add it as a custom connector in **Claude.ai → Settings → Connectors → Add custom connector** (paste the URL). In Claude Code:
+
+```sh
+claude mcp add --transport http open-finance-sandbox https://data-sandbox.fly.dev/mcp
+```
 
 To run your own HTTP instance:
 
@@ -33,6 +39,8 @@ npx -y @openfinance-os/sandbox-mcp --transport http --port 8787 --host 0.0.0.0 \
 #   allowed Host headers: 127.0.0.1:8787, localhost:8787, [::1]:8787, mcp.example.org
 #   DNS rebinding protection: on
 ```
+
+`MCP_ALLOWED_HOSTS=a.example,b.example` is equivalent to repeated `--allowed-host` flags and is the preferred config channel for container deployments (the bundled `fly.toml` uses it).
 
 Health check:
 
@@ -55,13 +63,13 @@ flyctl deploy
 flyctl certs add mcp.openfinance-os.org   # custom domain
 ```
 
-Subsequent deploys go via the `.github/workflows/deploy-fly.yml` workflow, which fires on `mcp-v*` tags after `publish-mcp.yml` has built and pushed the container image. Set `FLY_API_TOKEN` in repo Settings → Secrets (a deploy-only token from `flyctl tokens create deploy --app of-sandbox-mcp`) before cutting the first tag.
+Subsequent deploys go via the `.github/workflows/deploy-mcp.yml` workflow, which fires on every push to `main` that touches the MCP server, its Dockerfile, `fly.toml`, or the workflow itself. Set `FLY_API_TOKEN` in repo Settings → Environments → `fly.io` (a deploy-only token from `flyctl tokens create deploy -a data-sandbox`).
 
 The default config:
-- `primary_region = "iad"` (US East — closest to Anthropic infrastructure; change in `fly.toml` if you want EU or APAC)
-- `shared-cpu-1x` / `256mb` (covers expected traffic on the free tier; the bundled fixture corpus is ~14 MB JSON)
-- `auto_stop_machines = false`, `min_machines_running = 1` — Streamable HTTP keeps `GET /mcp` open per session, so cold-starting would silently drop in-flight Claude conversations
-- `MCP_ALLOWED_HOSTS` env var pre-sets DNS-rebinding allowlist to `of-sandbox-mcp.fly.dev` and `mcp.openfinance-os.org`
+- `primary_region = "fra"` (Frankfurt — change in `fly.toml` if you want US or APAC)
+- `shared-cpu-1x` / `512mb` (covers expected traffic on the free tier; the bundled fixture corpus is ~14 MB JSON)
+- `auto_stop_machines = "stop"`, `min_machines_running = 0` — single machine, autostarts on first request. If long-lived MCP sessions start dropping at idle, raise `min_machines_running` so Streamable HTTP `GET /mcp` connections survive
+- `MCP_ALLOWED_HOSTS` env var pre-sets DNS-rebinding allowlist to `data-sandbox.fly.dev` and `mcp.openfinance-os.org`
 - Health check: `GET /health` every 30 s
 
 ### Other deployment targets
@@ -76,7 +84,7 @@ Anything that runs Docker continuously and supports long-lived HTTP connections 
 
 ### Production hardening
 
-- **DNS-rebinding protection** is on by default — Host header is validated against `localhost`, `127.0.0.1`, the bound address (all `:port`), plus anything passed via `--allowed-host` (repeatable). Pass `--no-dns-rebinding-protection` to disable.
+- **DNS-rebinding protection** is on by default — Host header is validated against `localhost`, `127.0.0.1`, the bound address (all `:port`), plus anything passed via `--allowed-host` (repeatable) or the `MCP_ALLOWED_HOSTS` env var (comma-separated). Pass `--no-dns-rebinding-protection` to disable.
 - **Idle session TTL** (default 30 min) and **max session count** (default 1024) cap memory growth on a public anonymous endpoint. Tunable via `MCP_SESSION_IDLE_TTL_MS` and `MCP_MAX_SESSIONS` env vars.
 - **Graceful shutdown** — SIGTERM / SIGINT closes every active MCP session before the process exits, so `docker stop` and Kubernetes pod evictions don't drop in-flight requests.
 - **Structured request logging** — every request emits `<ISO timestamp> METHOD /path STATUS Nms session=<id8>` to stderr (stdout is reserved for stdio MCP framing).

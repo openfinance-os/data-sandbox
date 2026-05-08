@@ -2,13 +2,13 @@
 // Post-deploy smoke test for the hosted MCP endpoint.
 //
 // Usage: node packages/sandbox-mcp/scripts/smoke.mjs <base-url>
-// e.g.   node packages/sandbox-mcp/scripts/smoke.mjs https://of-sandbox-mcp.fly.dev
+// e.g.   node packages/sandbox-mcp/scripts/smoke.mjs https://data-sandbox.fly.dev
 //
 // Asserts:
 //   1. GET /health → { ok: true }
 //   2. POST /mcp initialize + tools/list returns the documented 16 tools
 //
-// Exits non-zero on any failure so deploy-fly.yml can gate on it. Catches
+// Exits non-zero on any failure so deploy-mcp.yml can gate on it. Catches
 // the case where Fly says "deployed" but the container is crash-looping.
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';

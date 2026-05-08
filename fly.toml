@@ -1,59 +1,36 @@
-# Fly.io deployment for @openfinance-os/sandbox-mcp.
+# fly.toml app configuration file generated for data-sandbox on 2026-05-06T17:29:26Z
 #
-# This is the hosted endpoint that backs the Claude marketplace listing
-# under PRD D-13: anonymous, CORS-open Streamable HTTP MCP server, fully
-# synthetic UAE Open Finance v2.1 data.
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
-# First-time setup (maintainer, runs once):
-#   1. Pick a final app name and rename `of-sandbox-mcp` below.
-#   2. flyctl auth login
-#   3. flyctl launch --copy-config --no-deploy   # imports this fly.toml
-#   4. flyctl deploy
-#   5. flyctl certs add mcp.openfinance-os.org   # custom domain
-#      (and add the printed CNAME to DNS)
-#
-# Subsequent deploys: see .github/workflows/deploy-fly.yml — fires on
-# every `mcp-v*` tag once FLY_API_TOKEN is set in repo secrets.
 
-app = "of-sandbox-mcp"
-primary_region = "iad"
+app = 'data-sandbox'
+primary_region = 'fra'
 
 [build]
-  dockerfile = "packages/sandbox-mcp/Dockerfile"
+  dockerfile = 'packages/sandbox-mcp/Dockerfile'
 
 [env]
-  # Container starts via Dockerfile CMD (`--transport http --host 0.0.0.0
-  # --port 8787`). MCP_ALLOWED_HOSTS adds the public hostnames to the
-  # DNS-rebinding allowlist; the bound 0.0.0.0:8787 is added automatically.
-  MCP_ALLOWED_HOSTS = "of-sandbox-mcp.fly.dev,mcp.openfinance-os.org"
-  # Tunable in production:
-  #   MCP_SESSION_IDLE_TTL_MS — default 1800000 (30 min)
-  #   MCP_MAX_SESSIONS        — default 1024
+  # DNS-rebinding protection allowlist for the Streamable HTTP transport.
+  # Comma-separated; consumed by parseEnvAllowedHosts() in
+  # packages/sandbox-mcp/src/args.mjs. Both the Fly-assigned hostname (the
+  # current live URL) and the canonical OF-OS Commons CNAME (PRD D-13) need to
+  # be allowlisted so the connector keeps working through DNS cutover.
+  MCP_ALLOWED_HOSTS = "data-sandbox.fly.dev,mcp.openfinance-os.org"
 
 [http_service]
   internal_port = 8787
   force_https = true
-  # Keep one machine alive at all times so long-lived MCP sessions
-  # (Streamable HTTP holds GET /mcp open per session) survive. Cold-
-  # starting would silently drop in-flight Claude conversations.
-  auto_stop_machines = false
-  auto_start_machines = false
-  min_machines_running = 1
-  processes = ["app"]
-
-  [http_service.concurrency]
-    type = "connections"
-    hard_limit = 250
-    soft_limit = 200
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
 
   [[http_service.checks]]
-    grace_period = "10s"
-    interval = "30s"
-    method = "GET"
-    path = "/health"
-    protocol = "http"
-    timeout = "5s"
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '10s'
+    method = 'GET'
+    path = '/health'
 
 [[vm]]
-  size = "shared-cpu-1x"
-  memory = "256mb"
+  size = 'shared-cpu-1x'
+  memory = '512mb'
