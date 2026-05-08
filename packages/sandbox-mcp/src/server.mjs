@@ -167,16 +167,23 @@ function filterTransactions(envelopeJson, { since, until, minAmount, maxAmount, 
 
   if (summary) {
     const summaryBlock = summariseTransactions(filtered);
-    const { Transaction: _omit, ...restData } = envelopeJson.Data ?? {};
+    // The v2.1 spec defines `Data` with `additionalProperties: false` and
+    // requires `Transaction` to be present (AEReadTransaction). Aggregates
+    // therefore live at the envelope root with an underscore prefix — the
+    // same convention the codebase already uses for `_filter`, `_watermark`,
+    // `_specSha`, etc. — so a strict TPP consumer can strip them and still
+    // get a spec-conformant envelope. `Data.Transaction` stays as an empty
+    // array so the required field is present.
     return {
       ...envelopeJson,
-      Data: { ...restData, Summary: summaryBlock },
+      Data: { ...envelopeJson.Data, Transaction: [] },
       _filter: {
         since, until, minAmount, maxAmount, category,
         mode: 'summary',
         total: txs.length,
         matched: filtered.length,
       },
+      _summary: summaryBlock,
     };
   }
 
