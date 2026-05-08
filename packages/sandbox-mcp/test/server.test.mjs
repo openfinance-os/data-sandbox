@@ -6,10 +6,14 @@ import { createServer } from '../src/server.mjs';
 
 const EXPECTED_TOOLS = [
   'list_personas',
+  'lfi_profiles',
   'set_session',
   'get_session',
   'get_recipe_defaults',
   'build_persona',
+  'list_pool_values',
+  'encode_recipe',
+  'decode_recipe',
   'get_party',
   'get_accounts',
   'get_balances',
@@ -21,6 +25,8 @@ const EXPECTED_TOOLS = [
   'get_product',
   'get_statements',
   'load_journey',
+  'list_endpoints',
+  'field_status',
   // Phase 2.0 motor full-coverage — insurance domain.
   'get_motor_policies',
   'get_motor_policy',
@@ -406,5 +412,109 @@ describe('sandbox-mcp server', () => {
       arguments: { accountId: acct, limit: 5 },
     });
     assertShape(parseEnvelope(textOf(explicit)), 'explicit-small-limit');
+  });
+
+  // ── Discovery & spec-metadata tools ─────────────────────────────────────────
+
+  it('lfi_profiles returns the three profiles plus the EXP-04 invariant', async () => {
+    const r = await client.callTool({ name: 'lfi_profiles', arguments: {} });
+    const payload = JSON.parse(textOf(r));
+    expect(payload.default).toBe('median');
+    expect(payload.profiles.map((p) => p.id).sort()).toEqual(['median', 'rich', 'sparse']);
+    expect(payload.invariant).toMatch(/Mandatory fields are never redacted/);
+  });
+
+  it('list_endpoints returns banking paths and pins specVersion + specSha for a banking session', async () => {
+    await client.callTool({ name: 'set_session', arguments: { persona: 'salaried_expat_mid' } });
+    const r = await client.callTool({ name: 'list_endpoints', arguments: {} });
+    const payload = JSON.parse(textOf(r));
+    expect(payload.persona).toBe('salaried_expat_mid');
+    expect(payload.domain).toBe('banking');
+    expect(payload.specVersion).toBe(manifest.specVersion);
+    expect(payload.specSha).toBe(manifest.specSha);
+    expect(payload.endpoints).toContain('/parties');
+    expect(payload.endpoints).toContain('/accounts');
+    expect(payload.count).toBe(payload.endpoints.length);
+  });
+
+  it('list_endpoints works against an insurance session (no requireDomain rejection)', async () => {
+    await client.callTool({
+      name: 'set_session',
+      arguments: { persona: 'motor_comprehensive_mid' },
+    });
+    const r = await client.callTool({ name: 'list_endpoints', arguments: {} });
+    const payload = JSON.parse(textOf(r));
+    expect(payload.domain).toBe('insurance');
+    expect(payload.endpoints).toContain('/motor-insurance-policies');
+    expect(payload.endpoints.some((e) => e.startsWith('/motor-insurance-policies/'))).toBe(true);
+  });
+
+  it('field_status without `field` returns the full pre-flattened fields[] for /accounts', async () => {
+    const r = await client.callTool({
+      name: 'field_status',
+      arguments: { endpoint: '/accounts' },
+    });
+    const payload = JSON.parse(textOf(r));
+    expect(payload.endpoint).toBe('/accounts');
+    expect(payload.domain).toBe('banking');
+    expect(payload.specVersion).toBe(manifest.specVersion);
+    expect(payload.specSha).toBe(manifest.specSha);
+    expect(payload.total).toBeGreaterThan(0);
+    // Every entry carries a status from the parsed spec (don't pin a specific
+    // value — status is upstream-controlled, see EXP-01).
+    const validStatuses = new Set(['mandatory', 'optional', 'conditional']);
+    for (const f of payload.fields) {
+      expect(validStatuses.has(f.status)).toBe(true);
+    }
+    // The Currency-on-Account field exists in the slice with some valid status.
+    const currencyField = payload.fields.find((f) => f.path === 'Data.Account[].Currency');
+    expect(currencyField).toBeDefined();
+    expect(validStatuses.has(currencyField.status)).toBe(true);
+  });
+
+  it('field_status with `field` narrows by exact path, then substring', async () => {
+    const r = await client.callTool({
+      name: 'field_status',
+      arguments: { endpoint: '/accounts/{AccountId}/balances', field: 'Currency' },
+    });
+    const payload = JSON.parse(textOf(r));
+    expect(payload.query).toBe('Currency');
+    expect(payload.matched).toBeGreaterThanOrEqual(1);
+    // Currency on Balance.Amount is mandatory — pin this one because it's a
+    // load-bearing v2.1 field (every Balance carries a currency).
+    const balanceCurrency = payload.fields.find(
+      (f) => f.path === 'Data.Balance[].Amount.Currency',
+    );
+    expect(balanceCurrency).toBeDefined();
+    expect(balanceCurrency.status).toBe('mandatory');
+  });
+
+  it('field_status auto-detects insurance domain from a /motor-insurance-* endpoint', async () => {
+    const r = await client.callTool({
+      name: 'field_status',
+      arguments: { endpoint: '/motor-insurance-policies' },
+    });
+    const payload = JSON.parse(textOf(r));
+    expect(payload.domain).toBe('insurance');
+    expect(payload.fields.length).toBeGreaterThan(0);
+  });
+
+  it('field_status on a non-existent endpoint returns isError with available endpoints', async () => {
+    const r = await client.callTool({
+      name: 'field_status',
+      arguments: { endpoint: '/not-a-real-endpoint' },
+    });
+    expect(r.isError).toBe(true);
+    expect(textOf(r)).toMatch(/unknown banking endpoint/);
+    expect(textOf(r)).toMatch(/\/accounts/);
+  });
+
+  it('field_status response stays well under tool-result caps even on the largest endpoint', async () => {
+    const r = await client.callTool({
+      name: 'field_status',
+      arguments: { endpoint: '/motor-insurance-policies/{InsurancePolicyId}' },
+    });
+    expect(r.isError).toBeFalsy();
+    expect(textOf(r).length).toBeLessThan(200_000);
   });
 });
