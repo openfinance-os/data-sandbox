@@ -292,27 +292,33 @@ describe('sandbox-mcp server', () => {
     expect(tenEnv._filter.total).toBe(total);
   });
 
-  it('get_transactions with summary=true returns aggregates, not individual transactions', async () => {
+  it('get_transactions with summary=true returns aggregates as envelope-root metadata, not inside Data', async () => {
+    // Spec conformance: AEReadTransaction.Data has `additionalProperties: false`
+    // and `required: [AccountId, Transaction]`. Aggregates therefore live at
+    // the envelope root with an underscore prefix (the existing convention
+    // for `_filter`, `_watermark`, `_specSha`, …), and `Data.Transaction` is
+    // present as an empty array so the required field is satisfied.
     await client.callTool({ name: 'set_session', arguments: { persona: 'hnw_multicurrency' } });
     const r = await client.callTool({
       name: 'get_transactions',
       arguments: { accountId: 'hnw-multicurrency-acct-01', summary: true },
     });
     const env = parseEnvelope(textOf(r));
-    expect(env.Data.Transaction).toBeUndefined();
-    expect(env.Data.Summary).toBeDefined();
-    expect(env.Data.Summary.count).toBeGreaterThan(0);
-    expect(env.Data.Summary.byDirection.Credit).toMatchObject({
+    expect(env.Data.Transaction).toEqual([]);
+    expect(env.Data.Summary).toBeUndefined();
+    expect(env._summary).toBeDefined();
+    expect(env._summary.count).toBeGreaterThan(0);
+    expect(env._summary.byDirection.Credit).toMatchObject({
       count: expect.any(Number),
       total: expect.any(Number),
     });
-    expect(env.Data.Summary.byDirection.Debit).toMatchObject({
+    expect(env._summary.byDirection.Debit).toMatchObject({
       count: expect.any(Number),
       total: expect.any(Number),
     });
-    expect(Array.isArray(env.Data.Summary.byMonth)).toBe(true);
-    expect(env.Data.Summary.byMonth.length).toBeGreaterThan(0);
-    expect(Array.isArray(env.Data.Summary.topCategories)).toBe(true);
+    expect(Array.isArray(env._summary.byMonth)).toBe(true);
+    expect(env._summary.byMonth.length).toBeGreaterThan(0);
+    expect(Array.isArray(env._summary.topCategories)).toBe(true);
     expect(env._filter.mode).toBe('summary');
     // Summary payload should be small enough to never trip a tool-result cap,
     // even for the highest-volume curated persona.
@@ -347,5 +353,58 @@ describe('sandbox-mcp server', () => {
       arguments: { limit: 10_000 },
     });
     expect(r.isError).toBe(true);
+  });
+
+  it('get_transactions response stays spec-shaped (Data.AccountId + Data.Transaction array, Links, Meta) in every mode', async () => {
+    // EXP-10: every payload must validate against the v2.1 OpenAPI schema.
+    // Stripping underscore-prefixed metadata (the codebase convention for
+    // _watermark, _filter, _summary, …) must leave a conformant
+    // AEReadTransaction envelope — `Data.AccountId` + `Data.Transaction`
+    // (array) plus `Links` and `Meta`, with no extra properties under `Data`.
+    function strip(node) {
+      if (Array.isArray(node)) return node.map(strip);
+      if (node && typeof node === 'object') {
+        const out = {};
+        for (const [k, v] of Object.entries(node)) {
+          if (k.startsWith('_')) continue;
+          out[k] = strip(v);
+        }
+        return out;
+      }
+      return node;
+    }
+    function assertShape(env, label) {
+      const stripped = strip(env);
+      expect(stripped, label).toHaveProperty('Data');
+      expect(stripped, label).toHaveProperty('Links');
+      expect(stripped, label).toHaveProperty('Meta');
+      expect(stripped.Data, label).toHaveProperty('AccountId');
+      expect(stripped.Data, label).toHaveProperty('Transaction');
+      expect(Array.isArray(stripped.Data.Transaction), label).toBe(true);
+      // No extension fields slipped into Data — they should all sit at the
+      // envelope root with an underscore prefix.
+      expect(Object.keys(stripped.Data).sort(), label).toEqual(['AccountId', 'Transaction']);
+    }
+
+    await client.callTool({ name: 'set_session', arguments: { persona: 'hnw_multicurrency' } });
+    const acct = 'hnw-multicurrency-acct-01';
+
+    const truncated = await client.callTool({
+      name: 'get_transactions',
+      arguments: { accountId: acct },
+    });
+    assertShape(parseEnvelope(textOf(truncated)), 'default-limit-truncated');
+
+    const summary = await client.callTool({
+      name: 'get_transactions',
+      arguments: { accountId: acct, summary: true },
+    });
+    assertShape(parseEnvelope(textOf(summary)), 'summary-mode');
+
+    const explicit = await client.callTool({
+      name: 'get_transactions',
+      arguments: { accountId: acct, limit: 5 },
+    });
+    assertShape(parseEnvelope(textOf(explicit)), 'explicit-small-limit');
   });
 });
