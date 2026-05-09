@@ -28,7 +28,7 @@
     {
       "id": "insurance",
       "label": "Insurance Data Sharing",
-      "status": "preview",
+      "status": "ga",
       "pinSha": "bc1cd976956d97195c5000235125cb65aca6aec8",
       "retrievedAt": "2026-04-30T04:03:31Z",
       "specVersion": "v2.1-errata1",
@@ -39,7 +39,33 @@
         "/motor-insurance-policies",
         "/motor-insurance-policies/{InsurancePolicyId}",
         "/motor-insurance-policies/{InsurancePolicyId}/payment-details",
-        "/motor-insurance-quotes/{QuoteId}"
+        "/motor-insurance-quotes/{QuoteId}",
+        "/home-insurance-policies",
+        "/home-insurance-policies/{InsurancePolicyId}",
+        "/home-insurance-policies/{InsurancePolicyId}/payment-details",
+        "/home-insurance-quotes/{QuoteId}",
+        "/health-insurance-policies",
+        "/health-insurance-policies/{InsurancePolicyId}",
+        "/health-insurance-policies/{InsurancePolicyId}/payment-details",
+        "/health-insurance-quotes/{QuoteId}",
+        "/life-insurance-policies",
+        "/life-insurance-policies/{InsurancePolicyId}",
+        "/life-insurance-policies/{InsurancePolicyId}/payment-details",
+        "/life-insurance-quotes/{QuoteId}",
+        "/travel-insurance-policies",
+        "/travel-insurance-policies/{InsurancePolicyId}",
+        "/travel-insurance-policies/{InsurancePolicyId}/payment-details",
+        "/travel-insurance-quotes/{QuoteId}",
+        "/renters-insurance-policies",
+        "/renters-insurance-policies/{InsurancePolicyId}",
+        "/renters-insurance-policies/{InsurancePolicyId}/payment-details",
+        "/renters-insurance-quotes/{QuoteId}",
+        "/employment-insurance-policies",
+        "/employment-insurance-policies/{InsurancePolicyId}",
+        "/employment-insurance-policies/{InsurancePolicyId}/payment-details",
+        "/employment-insurance-quotes/{QuoteId}",
+        "/insurance-consents",
+        "/insurance-consents/{ConsentId}"
       ]
     }
   ]

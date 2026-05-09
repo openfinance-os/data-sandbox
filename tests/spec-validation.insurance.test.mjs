@@ -1,8 +1,9 @@
-// EXP-10 acceptance for the Insurance domain — Phase 2.0 Motor MVP.
-// Runs the motor persona × 3 LFI profiles × 3 motor endpoints through AJV
-// against the parsed v2.1-errata1 insurance schemas. Mirrors the banking
-// spec-validation test, scoped to the 3 motor endpoints in
-// tools/domains.config.mjs.
+// EXP-10 acceptance for the Insurance domain — Phase 2.0 (Motor) + 2.1 (+Home).
+// Runs each insurance persona × 3 LFI profiles × the 4 endpoints in the
+// persona's line through AJV against the parsed v2.1-errata1 insurance
+// schemas. The persona's `line` discriminator (motor|home) selects which
+// endpoint subset applies; bundles for the other line are absent in that
+// persona's bundle so we skip the inapplicable endpoints.
 
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
@@ -67,7 +68,7 @@ const baseMeta = () => ({ TotalPages: 1 });
 
 const PROFILES = ['rich', 'median', 'sparse'];
 
-describe('insurance spec validation — Motor MVP (3 endpoints × persona × LFI)', () => {
+describe('insurance spec validation — endpoints × persona × LFI', () => {
   const spec = yaml.load(fs.readFileSync(SPEC_PATH, 'utf8'));
   const parsed = JSON.parse(fs.readFileSync(PARSED_PATH, 'utf8'));
   const personas = loadPersonasByDomain('insurance');
@@ -75,6 +76,58 @@ describe('insurance spec validation — Motor MVP (3 endpoints × persona × LFI
   const validators = Object.fromEntries(
     Object.entries(parsed.endpoints).map(([p, e]) => [p, compileSchema(spec, e.schemaRef)])
   );
+
+  // Per-line endpoint sets — each persona only emits envelopes for its line.
+  const ENDPOINTS_BY_LINE = {
+    motor: [
+      '/motor-insurance-policies',
+      '/motor-insurance-policies/{InsurancePolicyId}',
+      '/motor-insurance-policies/{InsurancePolicyId}/payment-details',
+      '/motor-insurance-quotes/{QuoteId}',
+    ],
+    home: [
+      '/home-insurance-policies',
+      '/home-insurance-policies/{InsurancePolicyId}',
+      '/home-insurance-policies/{InsurancePolicyId}/payment-details',
+      '/home-insurance-quotes/{QuoteId}',
+    ],
+    health: [
+      '/health-insurance-policies',
+      '/health-insurance-policies/{InsurancePolicyId}',
+      '/health-insurance-policies/{InsurancePolicyId}/payment-details',
+      '/health-insurance-quotes/{QuoteId}',
+    ],
+    life: [
+      '/life-insurance-policies',
+      '/life-insurance-policies/{InsurancePolicyId}',
+      '/life-insurance-policies/{InsurancePolicyId}/payment-details',
+      '/life-insurance-quotes/{QuoteId}',
+    ],
+    travel: [
+      '/travel-insurance-policies',
+      '/travel-insurance-policies/{InsurancePolicyId}',
+      '/travel-insurance-policies/{InsurancePolicyId}/payment-details',
+      '/travel-insurance-quotes/{QuoteId}',
+    ],
+    renters: [
+      '/renters-insurance-policies',
+      '/renters-insurance-policies/{InsurancePolicyId}',
+      '/renters-insurance-policies/{InsurancePolicyId}/payment-details',
+      '/renters-insurance-quotes/{QuoteId}',
+    ],
+    employment: [
+      '/employment-insurance-policies',
+      '/employment-insurance-policies/{InsurancePolicyId}',
+      '/employment-insurance-policies/{InsurancePolicyId}/payment-details',
+      '/employment-insurance-quotes/{QuoteId}',
+    ],
+  };
+
+  // Insurance Consents endpoints (2) — every insurance persona emits these.
+  const CONSENT_ENDPOINTS = [
+    '/insurance-consents',
+    '/insurance-consents/{ConsentId}',
+  ];
 
   function envelopeFor(endpoint, bundle) {
     switch (endpoint) {
@@ -108,18 +161,216 @@ describe('insurance spec validation — Motor MVP (3 endpoints × persona × LFI
           Meta: baseMeta(),
         };
       }
+      case '/home-insurance-policies':
+        return {
+          Data: { Policies: bundle.homePolicySummaries },
+          Links: baseLinks('home-insurance-policies'),
+          Meta: baseMeta(),
+        };
+      case '/home-insurance-policies/{InsurancePolicyId}': {
+        const policy = bundle.homePolicies[0];
+        return {
+          Data: policy,
+          Links: baseLinks(`home-insurance-policies/${policy.InsurancePolicyId}`),
+          Meta: baseMeta(),
+        };
+      }
+      case '/home-insurance-policies/{InsurancePolicyId}/payment-details': {
+        const policy = bundle.homePolicies[0];
+        return {
+          Data: bundle.paymentDetails,
+          Links: baseLinks(`home-insurance-policies/${policy.InsurancePolicyId}/payment-details`),
+          Meta: baseMeta(),
+        };
+      }
+      case '/home-insurance-quotes/{QuoteId}': {
+        const quote = bundle.homeQuote;
+        return {
+          Data: quote,
+          Links: baseLinks(`home-insurance-quotes/${quote.QuoteId}`),
+          Meta: baseMeta(),
+        };
+      }
+      case '/health-insurance-policies':
+        return {
+          Data: { Policies: bundle.healthPolicySummaries },
+          Links: baseLinks('health-insurance-policies'),
+          Meta: baseMeta(),
+        };
+      case '/health-insurance-policies/{InsurancePolicyId}': {
+        const policy = bundle.healthPolicies[0];
+        return {
+          Data: policy,
+          Links: baseLinks(`health-insurance-policies/${policy.InsurancePolicyId}`),
+          Meta: baseMeta(),
+        };
+      }
+      case '/health-insurance-policies/{InsurancePolicyId}/payment-details': {
+        const policy = bundle.healthPolicies[0];
+        return {
+          Data: bundle.paymentDetails,
+          Links: baseLinks(`health-insurance-policies/${policy.InsurancePolicyId}/payment-details`),
+          Meta: baseMeta(),
+        };
+      }
+      case '/health-insurance-quotes/{QuoteId}': {
+        const quote = bundle.healthQuote;
+        return {
+          Data: quote,
+          Links: baseLinks(`health-insurance-quotes/${quote.QuoteId}`),
+          Meta: baseMeta(),
+        };
+      }
+      case '/life-insurance-policies':
+        return {
+          Data: { Policies: bundle.lifePolicySummaries },
+          Links: baseLinks('life-insurance-policies'),
+          Meta: baseMeta(),
+        };
+      case '/life-insurance-policies/{InsurancePolicyId}': {
+        const policy = bundle.lifePolicies[0];
+        return {
+          Data: policy,
+          Links: baseLinks(`life-insurance-policies/${policy.InsurancePolicyId}`),
+          Meta: baseMeta(),
+        };
+      }
+      case '/life-insurance-policies/{InsurancePolicyId}/payment-details': {
+        const policy = bundle.lifePolicies[0];
+        return {
+          Data: bundle.paymentDetails,
+          Links: baseLinks(`life-insurance-policies/${policy.InsurancePolicyId}/payment-details`),
+          Meta: baseMeta(),
+        };
+      }
+      case '/life-insurance-quotes/{QuoteId}': {
+        const quote = bundle.lifeQuote;
+        return {
+          Data: quote,
+          Links: baseLinks(`life-insurance-quotes/${quote.QuoteId}`),
+          Meta: baseMeta(),
+        };
+      }
+      case '/travel-insurance-policies':
+        return {
+          Data: { Policies: bundle.travelPolicySummaries },
+          Links: baseLinks('travel-insurance-policies'),
+          Meta: baseMeta(),
+        };
+      case '/travel-insurance-policies/{InsurancePolicyId}': {
+        const policy = bundle.travelPolicies[0];
+        return {
+          Data: policy,
+          Links: baseLinks(`travel-insurance-policies/${policy.InsurancePolicyId}`),
+          Meta: baseMeta(),
+        };
+      }
+      case '/travel-insurance-policies/{InsurancePolicyId}/payment-details': {
+        const policy = bundle.travelPolicies[0];
+        return {
+          Data: bundle.paymentDetails,
+          Links: baseLinks(`travel-insurance-policies/${policy.InsurancePolicyId}/payment-details`),
+          Meta: baseMeta(),
+        };
+      }
+      case '/travel-insurance-quotes/{QuoteId}': {
+        const quote = bundle.travelQuote;
+        return {
+          Data: quote,
+          Links: baseLinks(`travel-insurance-quotes/${quote.QuoteId}`),
+          Meta: baseMeta(),
+        };
+      }
+      case '/renters-insurance-policies':
+        return {
+          Data: { Policies: bundle.rentersPolicySummaries },
+          Links: baseLinks('renters-insurance-policies'),
+          Meta: baseMeta(),
+        };
+      case '/renters-insurance-policies/{InsurancePolicyId}': {
+        const policy = bundle.rentersPolicies[0];
+        return {
+          Data: policy,
+          Links: baseLinks(`renters-insurance-policies/${policy.InsurancePolicyId}`),
+          Meta: baseMeta(),
+        };
+      }
+      case '/renters-insurance-policies/{InsurancePolicyId}/payment-details': {
+        const policy = bundle.rentersPolicies[0];
+        return {
+          Data: bundle.paymentDetails,
+          Links: baseLinks(`renters-insurance-policies/${policy.InsurancePolicyId}/payment-details`),
+          Meta: baseMeta(),
+        };
+      }
+      case '/renters-insurance-quotes/{QuoteId}': {
+        const quote = bundle.rentersQuote;
+        return {
+          Data: quote,
+          Links: baseLinks(`renters-insurance-quotes/${quote.QuoteId}`),
+          Meta: baseMeta(),
+        };
+      }
+      case '/employment-insurance-policies':
+        return {
+          Data: { Policies: bundle.employmentPolicySummaries },
+          Links: baseLinks('employment-insurance-policies'),
+          Meta: baseMeta(),
+        };
+      case '/employment-insurance-policies/{InsurancePolicyId}': {
+        const policy = bundle.employmentPolicies[0];
+        return {
+          Data: policy,
+          Links: baseLinks(`employment-insurance-policies/${policy.InsurancePolicyId}`),
+          Meta: baseMeta(),
+        };
+      }
+      case '/employment-insurance-policies/{InsurancePolicyId}/payment-details': {
+        const policy = bundle.employmentPolicies[0];
+        return {
+          Data: bundle.paymentDetails,
+          Links: baseLinks(`employment-insurance-policies/${policy.InsurancePolicyId}/payment-details`),
+          Meta: baseMeta(),
+        };
+      }
+      case '/employment-insurance-quotes/{QuoteId}': {
+        const quote = bundle.employmentQuote;
+        return {
+          Data: quote,
+          Links: baseLinks(`employment-insurance-quotes/${quote.QuoteId}`),
+          Meta: baseMeta(),
+        };
+      }
+      case '/insurance-consents':
+        return {
+          Data: bundle.consents,
+          Links: baseLinks('insurance-consents'),
+          Meta: baseMeta(),
+        };
+      case '/insurance-consents/{ConsentId}': {
+        const consent = bundle.consents[0];
+        return {
+          Data: consent,
+          Links: baseLinks(`insurance-consents/${consent.ConsentId}`),
+          Meta: baseMeta(),
+        };
+      }
       default:
         return null;
     }
   }
 
-  const endpoints = Object.keys(parsed.endpoints);
   const personaIds = Object.keys(personas);
 
   describe.each(personaIds)('persona=%s', (pid) => {
     const persona = personas[pid];
+    const line = persona.line ?? 'motor';
+    // Each persona's bundle covers its own line's 4 endpoints PLUS the
+    // 2 cross-line consent endpoints (every insurance bundle carries a
+    // single consent record covering its line's permissions).
+    const endpoints = [...ENDPOINTS_BY_LINE[line], ...CONSENT_ENDPOINTS];
     describe.each(PROFILES)('LFI=%s', (lfi) => {
-      const bundle = buildBundle({ persona, lfi, seed: 4729, pools });
+      const bundle = buildBundle({ persona, lfi, seed: persona.default_seed, pools });
       it.each(endpoints)('endpoint %s validates against v2.1-errata1 schema', (endpoint) => {
         const validate = validators[endpoint];
         const env = envelopeFor(endpoint, bundle);

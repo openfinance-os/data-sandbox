@@ -23,7 +23,43 @@
 # Data.* path so the redaction body in src/generator/insurance/lfi-profile.js
 # stays domain-shaped and short. SME review pending.
 overrides:
+  # Motor (Phase 2.0).
   PolicyHolder.Salutation: Common
   Premium.PaymentMode: Common
   Product.AdditionalDrivers: Variable
   Product.CarFinance: Variable
+  # Home (Phase 2.1). Property structural facts surface in most home policies
+  # at any LFI; mortgage block mirrors motor's CarFinance Variable band.
+  Product.PropertyDetails.NumberOfFloors: Common
+  Product.PropertyDetails.NumberOfRooms: Common
+  Product.PropertyDetails.YearOfConstruction: Common
+  Product.Mortgage: Variable
+  # Health (Phase 2.1). Care-network and regions-of-coverage are common
+  # populated strings; Sponsor and SalaryBand are per-persona variable.
+  Product.Policy.CareNetwork: Common
+  Product.Policy.RegionsCoverage: Common
+  Product.Sponsor: Variable
+  PolicyHolder.Employment.SalaryBand: Variable
+  # Life (Phase 2.1). Beneficiary list mirrors home/motor's optional
+  # finance block; surrender / maturity values are per-product variable.
+  Product.Beneficiaries: Common
+  Product.FinanceAgainstPolicy: Variable
+  Product.Policy.SurrenderValueAmount: Variable
+  Product.Policy.MaturityValueAmount: Variable
+  # Travel (Phase 2.1). Trip-level enums are commonly populated;
+  # optional cover add-ons / high-risk activities are per-product
+  # variable.
+  Product.Policy.PurposeOfTravel: Common
+  Product.Policy.TravellingWith: Common
+  Product.Policy.TravelDestinationRegion: Common
+  Product.OptionalTravelCoverOptions: Variable
+  Product.HighRiskActivities: Variable
+  # Renters (Phase 2.1). LeaseDetails block + property usage.
+  Product.LeaseDetails: Common
+  Product.PropertyDetails.UsageByApplicant: Common
+  # Employment / ILOE (Phase 2.1). PolicyHolder.Employment is the
+  # employer-provided income block — Common because UAE ILOE is
+  # mandatory and tied to the employer; AdditionalCompensation is
+  # per-employer Variable.
+  PolicyHolder.Employment: Common
+  PolicyHolder.Employment.AdditionalCompensation: Variable

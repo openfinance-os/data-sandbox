@@ -1,0 +1,37 @@
+persona_id: employment_iloe_private
+domain: insurance
+line: employment
+name: "Faisal — Employment (ILOE, Private Sector, Category B)"
+archetype: employment_iloe_private_categoryb
+default_seed: 9072
+stress_coverage:
+  - iloe_private_category_b
+
+demographics:
+  nationality_pool: expat_indian
+  age_band: 30-40
+  emirate: Dubai
+  has_visa: true
+
+employment:
+  policy:
+    scheme_category: CategoryB     # > AED 16K monthly salary
+    sector: Private
+    term_years: 1
+    premium_frequency: Annually
+    start_date_offset_days: 45
+    channel: OnlineInsideUAE
+  employer:
+    name: Synthetic Trading LLC
+    nature_of_business: Wholesale Trading
+    monthly_income_aed: 22000
+    employment_status: Employed
+    start_date: 2023-08-15
+  additional_compensation:
+    - description: Annual performance bonus
+      amount_aed: 18000
+  claims:
+    history_months: 12
+    claims_in_period: 0
+    approved_claims: 0
+    total_gross_aed: 0

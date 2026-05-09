@@ -111,58 +111,133 @@ function bankingEnvelopesFromBundle(bundle, ctx) {
 }
 
 /**
- * Insurance domain envelopes — Phase 2.0 motor full-coverage scope.
+ * Insurance domain envelopes — Phase 2.0 (Motor) + Phase 2.1 (+Home).
  * Mirrors the envelope shapes asserted by `tests/spec-validation.insurance.test.mjs`
- * so the same wire payloads validate against the v2.1-errata1 motor schemas.
+ * so the same wire payloads validate against the v2.1-errata1 schemas.
  *
  * Both templated paths (`/motor-insurance-policies/{InsurancePolicyId}` etc.)
  * and resolved paths (with the actual policy / quote id substituted) are
  * emitted, mirroring the banking convention. Callers that don't know the
  * synthetic id can use the templated key; those that do can use the resolved
- * one.
+ * one. A bundle carries exactly one line — the dispatcher in
+ * src/generator/insurance/index.js builds either a motor or a home bundle.
  */
 function insuranceEnvelopesFromBundle(bundle, ctx) {
   const envelopes = {};
-  const policy = bundle.motorPolicies?.[0];
-  const quote = bundle.motorQuote;
+  emitLineEnvelopes(envelopes, bundle, ctx, {
+    line: 'motor',
+    policiesKey: 'motorPolicies',
+    summariesKey: 'motorPolicySummaries',
+    quoteKey: 'motorQuote',
+    pathPrefix: 'motor-insurance',
+  });
+  emitLineEnvelopes(envelopes, bundle, ctx, {
+    line: 'home',
+    policiesKey: 'homePolicies',
+    summariesKey: 'homePolicySummaries',
+    quoteKey: 'homeQuote',
+    pathPrefix: 'home-insurance',
+  });
+  emitLineEnvelopes(envelopes, bundle, ctx, {
+    line: 'health',
+    policiesKey: 'healthPolicies',
+    summariesKey: 'healthPolicySummaries',
+    quoteKey: 'healthQuote',
+    pathPrefix: 'health-insurance',
+  });
+  emitLineEnvelopes(envelopes, bundle, ctx, {
+    line: 'life',
+    policiesKey: 'lifePolicies',
+    summariesKey: 'lifePolicySummaries',
+    quoteKey: 'lifeQuote',
+    pathPrefix: 'life-insurance',
+  });
+  emitLineEnvelopes(envelopes, bundle, ctx, {
+    line: 'travel',
+    policiesKey: 'travelPolicies',
+    summariesKey: 'travelPolicySummaries',
+    quoteKey: 'travelQuote',
+    pathPrefix: 'travel-insurance',
+  });
+  emitLineEnvelopes(envelopes, bundle, ctx, {
+    line: 'renters',
+    policiesKey: 'rentersPolicies',
+    summariesKey: 'rentersPolicySummaries',
+    quoteKey: 'rentersQuote',
+    pathPrefix: 'renters-insurance',
+  });
+  emitLineEnvelopes(envelopes, bundle, ctx, {
+    line: 'employment',
+    policiesKey: 'employmentPolicies',
+    summariesKey: 'employmentPolicySummaries',
+    quoteKey: 'employmentQuote',
+    pathPrefix: 'employment-insurance',
+  });
+  // Insurance Consents — every insurance bundle carries one consent
+  // record covering its own line. The list endpoint returns the array;
+  // the detail endpoint returns the same single record (resolved + as
+  // a templated key for callers that don't know the synthetic id).
+  if (bundle.consents?.length > 0) {
+    const consent = bundle.consents[0];
+    envelopes['/insurance-consents'] = wrapInsurance(
+      { Data: bundle.consents },
+      'insurance-consents',
+      ctx
+    );
+    envelopes[`/insurance-consents/${consent.ConsentId}`] = wrapInsurance(
+      { Data: consent },
+      `insurance-consents/${consent.ConsentId}`,
+      ctx
+    );
+    envelopes['/insurance-consents/{ConsentId}'] =
+      envelopes[`/insurance-consents/${consent.ConsentId}`];
+  }
+  return envelopes;
+}
 
-  envelopes['/motor-insurance-policies'] = wrapInsurance(
-    { Data: { Policies: bundle.motorPolicySummaries } },
-    'motor-insurance-policies',
-    ctx
-  );
+function emitLineEnvelopes(envelopes, bundle, ctx, cfg) {
+  const policy = bundle[cfg.policiesKey]?.[0];
+  const quote = bundle[cfg.quoteKey];
+  const summaries = bundle[cfg.summariesKey];
+  if (!policy && !quote && !summaries) return;
+
+  if (summaries) {
+    envelopes[`/${cfg.pathPrefix}-policies`] = wrapInsurance(
+      { Data: { Policies: summaries } },
+      `${cfg.pathPrefix}-policies`,
+      ctx
+    );
+  }
 
   if (policy) {
     const policyId = policy.InsurancePolicyId;
-    envelopes[`/motor-insurance-policies/${policyId}`] = wrapInsurance(
+    envelopes[`/${cfg.pathPrefix}-policies/${policyId}`] = wrapInsurance(
       { Data: policy },
-      `motor-insurance-policies/${policyId}`,
+      `${cfg.pathPrefix}-policies/${policyId}`,
       ctx
     );
-    envelopes['/motor-insurance-policies/{InsurancePolicyId}'] =
-      envelopes[`/motor-insurance-policies/${policyId}`];
+    envelopes[`/${cfg.pathPrefix}-policies/{InsurancePolicyId}`] =
+      envelopes[`/${cfg.pathPrefix}-policies/${policyId}`];
 
-    envelopes[`/motor-insurance-policies/${policyId}/payment-details`] = wrapInsurance(
+    envelopes[`/${cfg.pathPrefix}-policies/${policyId}/payment-details`] = wrapInsurance(
       { Data: bundle.paymentDetails },
-      `motor-insurance-policies/${policyId}/payment-details`,
+      `${cfg.pathPrefix}-policies/${policyId}/payment-details`,
       ctx
     );
-    envelopes['/motor-insurance-policies/{InsurancePolicyId}/payment-details'] =
-      envelopes[`/motor-insurance-policies/${policyId}/payment-details`];
+    envelopes[`/${cfg.pathPrefix}-policies/{InsurancePolicyId}/payment-details`] =
+      envelopes[`/${cfg.pathPrefix}-policies/${policyId}/payment-details`];
   }
 
   if (quote) {
     const quoteId = quote.QuoteId;
-    envelopes[`/motor-insurance-quotes/${quoteId}`] = wrapInsurance(
+    envelopes[`/${cfg.pathPrefix}-quotes/${quoteId}`] = wrapInsurance(
       { Data: quote },
-      `motor-insurance-quotes/${quoteId}`,
+      `${cfg.pathPrefix}-quotes/${quoteId}`,
       ctx
     );
-    envelopes['/motor-insurance-quotes/{QuoteId}'] =
-      envelopes[`/motor-insurance-quotes/${quoteId}`];
+    envelopes[`/${cfg.pathPrefix}-quotes/{QuoteId}`] =
+      envelopes[`/${cfg.pathPrefix}-quotes/${quoteId}`];
   }
-
-  return envelopes;
 }
 
 function wrap(envelope, resourceUri, ctx) {

@@ -1,0 +1,39 @@
+persona_id: renters_apartment_tenant
+domain: insurance
+line: renters
+name: "Sara — Renters (Apartment, Furnished Lease)"
+archetype: renters_apartment_furnished
+default_seed: 8190
+stress_coverage:
+  - renters_furnished_apartment_lease
+
+demographics:
+  nationality_pool: expat_arab
+  age_band: 28-38
+  emirate: Dubai
+  has_visa: true
+
+renters:
+  property:
+    type_of_property: Apartment
+    address_emirate: Dubai
+    number_of_floors: 1
+    number_of_rooms: 3
+  contents:
+    declared_value_aed: 120000
+  lease:
+    monthly_rent_aed: 9500
+    start_offset_months: 4
+    term_months: 12
+    furnishing_status: SemiFurnished
+  policy:
+    excess_aed: 500
+    start_date_offset_days: 90
+    channel: OnlineInsideUAE
+    takaful: false
+    product_name: Renters Contents Plus
+  claims:
+    history_months: 12
+    claims_in_period: 0
+    approved_claims: 0
+    total_gross_aed: 0

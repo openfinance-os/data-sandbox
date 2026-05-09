@@ -1,0 +1,37 @@
+persona_id: travel_annual_multitrip_expat
+domain: insurance
+line: travel
+name: "Priya — Travel (Annual Multi-Trip, Worldwide)"
+archetype: travel_annual_multitrip_business
+default_seed: 6240
+stress_coverage:
+  - travel_annual_multitrip_business
+
+demographics:
+  nationality_pool: expat_indian
+  age_band: 30-40
+  emirate: Dubai
+  has_visa: true
+
+travel:
+  policy:
+    trip_duration_days: 14
+    multi_trip: true
+    purpose: Business
+    travelling_with: Individual
+    destination_region: Worldwide
+    cover_limit_aed: 25000
+    medical_limit_aed: 1000000
+    excess_aed: 200
+    takaful: false
+    product_name: Travel Annual Worldwide
+    start_date_offset_days: 100
+    channel: OnlineInsideUAE
+  adults: 1
+  children: 0
+  seniors: 0
+  claims:
+    history_months: 24
+    claims_in_period: 1
+    approved_claims: 1
+    total_gross_aed: 4200

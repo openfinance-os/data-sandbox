@@ -1,21 +1,25 @@
-# Insurance persona manifest schema — Phase 2.0.
+# Insurance persona manifest schema — Phase 2.0 (Motor) + Phase 2.1 (+Home).
 # Mirrors personas/_schema.yaml (banking) for domain: insurance.
 #
 # Each personas/*.yaml with `domain: insurance` must conform to this shape.
 # Validated in CI by tests/persona-manifest.test.mjs.
 #
-# The persona describes INPUTS to the motor-policy generator, not the
-# generated output. Identity bits (PolicyHolder name, Emirates ID, Visa,
-# mobile, email, address) are synthesized by the generator from
-# demographics.nationality_pool + emirate. Persona only declares the
-# narrative parameters that drive a coherent motor-insurance bundle.
+# The persona describes INPUTS to the per-line generator, not the generated
+# output. Identity bits (PolicyHolder name, Emirates ID, Visa, mobile, email,
+# address) are synthesized by the generator from demographics.nationality_pool
+# + emirate. Persona only declares the narrative parameters that drive a
+# coherent insurance bundle.
 #
-# Phase 2.0 MVP covers the Motor line only (3 endpoints). Other insurance
-# lines (Health, Home, Life, Renters, Travel, Employment) will extend this
-# schema as their generators land in Phase 2.1.
+# `line` discriminates which generator runs. Motor personas may omit the
+# field for back-compat (defaults to 'motor'). Each line declares a
+# matching block: motor → vehicle/policy/finance/etc., home → home:,
+# health → health:, life → life:, travel → travel:, renters → renters:,
+# employment → employment:. Insurance Consents are emitted automatically
+# for every insurance bundle (no per-persona block).
 
 persona_id: <slug>
 domain: insurance
+line: <enum: motor|home|health|life|travel|renters|employment>  # optional — defaults to 'motor' if absent
 name: <string>
 archetype: <string>                # e.g. motor_comprehensive_financed
 default_seed: <int>
@@ -28,7 +32,11 @@ demographics:
   emirate: <enum: AbuDhabi|Ajman|Dubai|Fujairah|RasAlKhaimah|Sharjah|UmmAlQuwain>
   has_visa: <bool>                 # emirati: false; expat: true
 
-vehicle:
+# ---------------------------------------------------------------------------
+# Motor blocks (line: motor) — drive AEMotorInsurancePolicyProperties1.
+# ---------------------------------------------------------------------------
+
+vehicle:                           # required when line=motor
   make: <string>                   # e.g. "Toyota"
   model: <string>                  # e.g. "Corolla"
   year: <int>                      # 4-digit model year
@@ -37,14 +45,14 @@ vehicle:
   valuation_aed: <int>             # current market value
   registration_emirate: <enum: AbuDhabi|Ajman|Dubai|Fujairah|RasAlKhaimah|Sharjah|UmmAlQuwain>
 
-policy:
+policy:                            # required when line=motor
   type: <enum: Comprehensive|ThirdPartyLiability>
   takaful: <bool>                  # Sharia-compliant?
   excess_aed: <int>
   start_date_offset_days: <int>    # days before `now` anchor (deterministic)
   channel: <enum: Direct|Broker|Aggregator>
 
-finance:                           # optional section — omit if no car finance
+finance:                           # optional — omit if no car finance
   has_finance: <bool>
   bank_pool: <pool_id?>            # references /synthetic-identity-pool/banks/<pool>.yaml
   amount_aed: <int?>
@@ -53,8 +61,212 @@ finance:                           # optional section — omit if no car finance
 additional_drivers:
   count: <int>                     # 0..3
 
-claims:
+claims:                            # used by line=motor; line=home uses home.claims
   history_months: <int>            # length of claims-summary window
   claims_in_period: <int>          # total claims in the window
   approved_claims: <int>           # subset of claims_in_period
   total_gross_aed: <int>           # sum of approved-claim payouts
+
+# ---------------------------------------------------------------------------
+# Home block (line: home) — drives AEHomeInsurancePolicyProperties1.
+# Required when line=home; omitted otherwise.
+# ---------------------------------------------------------------------------
+
+home:
+  property:
+    type_of_property: <enum: Villa|House|Apartment|Flat>
+    ownership_status: <enum: Owner|OwnerWithMortgage|Landlord|Tenant>
+    address_emirate: <enum: AbuDhabi|Ajman|Dubai|Fujairah|RasAlKhaimah|Sharjah|UmmAlQuwain>
+    number_of_floors: <int>
+    number_of_rooms: <int>
+    year_of_construction: <int>    # 4-digit year
+  property_value:
+    market_value_aed: <int>        # current market value
+    appraisal_value_aed: <int>     # most recent appraisal
+    purchase_price_aed: <int>      # original purchase price
+  mortgage:                        # optional — omit if owned outright
+    has_mortgage: <bool>
+    bank_pool: <pool_id?>          # references /synthetic-identity-pool/banks/<pool>.yaml
+    balance_aed: <int?>
+    monthly_payment_aed: <int?>
+  policy:
+    excess_aed: <int>
+    start_date_offset_days: <int>
+    channel: <enum: Direct|Agent|Broker|Bank|Aggregator>
+    takaful: <bool>
+  claims:
+    history_months: <int>
+    claims_in_period: <int>
+    approved_claims: <int>
+    total_gross_aed: <int>
+
+# ---------------------------------------------------------------------------
+# Health block (line: health) — drives AEHealthInsurancePolicyProperties1.
+# Required when line=health; omitted otherwise.
+# ---------------------------------------------------------------------------
+
+health:
+  policy:
+    cover_subjects: <enum: Self|SelfAndSpouse|Spouse|SelfAndFamily|Dependents|Other>
+    policyholder_insured: <bool>     # true when policyholder is also an insured person
+    type_of_policy: <enum: HealthInsuranceIndividual|PersonalAccidentInsurance>
+    annual_limit_aed: <int>          # cover-limit ceiling for inpatient cover
+    excess_aed: <int>
+    care_network: <string>           # e.g. "Network Plus", "Standard"
+    regions_coverage: <string>       # e.g. "UAE", "GCC", "Worldwide ex-USA"
+    takaful: <bool>
+    product_name: <string>           # business name shown to the customer
+    start_date_offset_days: <int>
+    channel: <enum: Direct|Agent|Broker|Bank|TPA|Aggregator>
+  employment:                        # required to surface PolicyHolder.Employment block
+    employer_name: <string>
+    monthly_income_aed: <int>        # required when employment present
+    salary_band: <enum: NoSalary|BelowAED4000PerMonth|AED4000ToAED12000PerMonth|AED12001AndAbove>
+    profession: <string?>
+    job_title: <string?>
+  insured_parties:                   # optional dependents — emits AEHealthInsuranceDataSharingInsuredParty[]
+    - relationship: <enum: Self|Spouse|Child|Parent|Other>
+      age: <int>
+      gender: <enum: Male|Female|Other>
+      given_name: <string?>
+      surname: <string?>
+  sponsor:                           # optional — drives AEHealthInsuranceSponsorProperties[]
+    type: <enum: Resident|Citizen|Establishment|PropertyOwner>
+    entity_id: <string>
+    entity_id_type: <enum: FileNumber|UID|EstablishmentCode>
+  claims:
+    history_months: <int>
+    claims_in_period: <int>
+    approved_claims: <int>
+    total_gross_aed: <int>
+
+# ---------------------------------------------------------------------------
+# Life block (line: life) — drives AELifeInsurancePolicyProperties1.
+# Required when line=life; omitted otherwise.
+# ---------------------------------------------------------------------------
+
+life:
+  policy:
+    cover_type: <enum: Sole|Joint>
+    policyholder_life_assured: <bool>
+    type_of_life_insurance: <enum: WholeLifeInsurance|LevelTermInsurance|DecreasingTermInsurance>
+    insurance_purpose: <enum: PersonalCover|FamilyProtection|MortgageCover>
+    sum_assured_aed: <int>
+    term_years: <int>                # used to compute PolicyTerm + PolicyEndDate
+    takaful: <bool>
+    product_name: <string?>          # business name shown to customer
+    start_date_offset_days: <int>
+    channel: <enum: Direct|Agent|Broker|Bank|InvFinInst|Aggregator>
+  insured_parties:                   # additional life-assured beyond the policyholder
+    - relationship: <enum: Self|Spouse|Child|Parent|Other>
+      age: <int>
+      gender: <enum: Male|Female|Other>
+      given_name: <string?>
+      surname: <string?>
+  beneficiaries:                     # nominees on the death benefit
+    - relationship: <enum: Self|Spouse|Child|Parent|Other>
+      given_name: <string?>
+      surname: <string?>
+  finance:                           # optional — set when policy assigned to mortgage / loan
+    has_finance: <bool>
+    bank_pool: <pool_id?>            # references /synthetic-identity-pool/banks/<pool>.yaml
+    amount_aed: <int>
+    value_against_policy_aed: <int?> # defaults to amount_aed
+  claims:
+    history_months: <int>
+    claims_in_period: <int>
+    approved_claims: <int>
+    total_gross_aed: <int>
+
+# ---------------------------------------------------------------------------
+# Travel block (line: travel) — drives AETravelInsurancePolicyProperties1.
+# Required when line=travel; omitted otherwise.
+# ---------------------------------------------------------------------------
+
+travel:
+  policy:
+    trip_duration_days: <int>        # used for TripDuration; also bounds PolicyEndDate when single-trip
+    multi_trip: <bool>               # MultiTrip — annual multi-trip policies set this true
+    purpose: <enum: Personal|Business>
+    travelling_with: <enum: Individual|Couple|Family|Group>
+    destination_region: <enum: WithinUAE|Worldwide|WorldwideExcludingUSAandCanada>
+    cover_limit_aed: <int>           # CoverLimit on the TripCancellation cover
+    medical_limit_aed: <int>         # CoverLimit on the EmergencyMedical cover
+    excess_aed: <int>
+    takaful: <bool>
+    product_name: <string?>
+    start_date_offset_days: <int>
+    channel: <enum: Direct|Agent|Broker|Bank|Aggregator|OnlineInsideUAE|OnlineOutsideUAE>
+  adults: <int?>                     # NumberOfAdults (defaults to 1 + companions when absent)
+  children: <int?>                   # NumberOfChildren
+  seniors: <int?>                    # NumberOfSeniors
+  companions:                        # InsuredParties[] (omitted when policyholder travels alone)
+    - relationship: <enum: Spouse|Child|FamilyMember|GroupMember>
+      age: <int>
+      gender: <enum: Male|Female|Other>
+      given_name: <string?>
+      surname: <string?>
+  claims:
+    history_months: <int>
+    claims_in_period: <int>
+    approved_claims: <int>
+    total_gross_aed: <int>
+
+# ---------------------------------------------------------------------------
+# Renters block (line: renters) — drives AERentersInsurancePolicyProperties1.
+# Required when line=renters; omitted otherwise.
+# ---------------------------------------------------------------------------
+
+renters:
+  property:
+    type_of_property: <enum: Villa|House|Apartment|Flat>
+    address_emirate: <enum: AbuDhabi|Ajman|Dubai|Fujairah|RasAlKhaimah|Sharjah|UmmAlQuwain>
+    number_of_floors: <int?>
+    number_of_rooms: <int>
+  contents:
+    declared_value_aed: <int>          # CoverLimit on ContentsCover; baseline for premium
+  lease:                               # optional — drives Product.LeaseDetails
+    monthly_rent_aed: <int>
+    start_offset_months: <int>         # months before `now` anchor
+    term_months: <int>                 # 12 = OneYear; <12 = ShortTerm
+    furnishing_status: <enum: Furnished|SemiFurnished|Unfurnished>
+  policy:
+    excess_aed: <int>
+    start_date_offset_days: <int>
+    channel: <enum: Direct|Agent|Broker|Bank|Aggregator|OnlineInsideUAE>
+    takaful: <bool>
+    product_name: <string?>
+  claims:
+    history_months: <int>
+    claims_in_period: <int>
+    approved_claims: <int>
+    total_gross_aed: <int>
+
+# ---------------------------------------------------------------------------
+# Employment block (line: employment) — drives AEEmploymentInsurance-
+# PolicyProperties1 (UAE Involuntary Loss of Employment / ILOE).
+# Required when line=employment; omitted otherwise.
+# ---------------------------------------------------------------------------
+
+employment:
+  policy:
+    scheme_category: <enum: CategoryA|CategoryB>  # A: ≤16K AED salary; B: >16K
+    sector: <enum: Private|FederalGovernment>
+    term_years: <int>                  # ILOE term — typically 1
+    premium_frequency: <enum: Annually|OneTime|Monthly|Quarterly|BiAnnual|Limited|Other>
+    start_date_offset_days: <int>
+    channel: <enum: Direct|Agent|Broker|Bank|Aggregator|OnlineInsideUAE>
+  employer:
+    name: <string>
+    nature_of_business: <string?>
+    monthly_income_aed: <int>          # required when employer block present
+    employment_status: <enum: Employed|SelfEmployed|BusinessOwner|...>
+    start_date: <YYYY-MM-DD>           # employment start date (ISO)
+  additional_compensation:             # optional — drives Employment.AdditionalCompensation[]
+    - description: <string>
+      amount_aed: <int>
+  claims:
+    history_months: <int>
+    claims_in_period: <int>
+    approved_claims: <int>
+    total_gross_aed: <int>

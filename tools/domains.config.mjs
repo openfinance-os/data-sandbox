@@ -37,11 +37,11 @@ export const DOMAINS = [
   {
     id: 'insurance',
     label: 'Insurance Data Sharing',
-    // 'preview' = vendored from upstream but not yet endpoint-scoped. The UI
-    // domain selector should hide preview domains unless ?preview=1 is set.
-    // Flips to 'ga' once endpoint scoping + LFI bands + at least one
-    // insurance persona land (slices 5-6).
-    status: 'preview',
+    // 'ga' as of Phase 2.1 completion: all 7 lines (motor + home + health
+    // + life + travel + renters + employment) covered + Insurance
+    // Consents. The UI domain selector surfaces 'ga' domains
+    // unconditionally (no ?preview=1 gate).
+    status: 'ga',
     specPath: 'spec/uae-insurance-openapi.yaml',
     pinPath: 'spec/SPEC_PIN.insurance.sha',
     retrievedPath: 'spec/SPEC_PIN.insurance.retrieved',
@@ -50,17 +50,41 @@ export const DOMAINS = [
     upstreamRepo: 'Nebras-Open-Finance/api-specs',
     upstreamPath: 'dist/standards/v2.1-errata1/uae-insurance-openapi.yaml',
     defaultEndpoint: '/motor-insurance-policies',
-    // Phase 2.0 motor full-coverage scope: list, detail, payment-details, and
-    // the read-quote GET. The four endpoints below are every motor-line GET
-    // operation in the v2.1-errata1 spec (POST /motor-insurance-quotes and
-    // PATCH /motor-insurance-quotes/{QuoteId} are TPP→LFI write ops, outside
-    // the read-only sandbox surface). The full 30-endpoint inventory across
-    // the other 6 insurance lines + consents lands in Phase 2.1.
+    // Phase 2.1 full GET coverage — every read-only insurance endpoint
+    // the v2.1-errata1 spec exposes. POST/PATCH on bare quote paths and
+    // PATCH /insurance-consents/{ConsentId} are TPP→LFI write ops,
+    // outside the read-only sandbox surface.
     inScopePaths: [
       '/motor-insurance-policies',
       '/motor-insurance-policies/{InsurancePolicyId}',
       '/motor-insurance-policies/{InsurancePolicyId}/payment-details',
       '/motor-insurance-quotes/{QuoteId}',
+      '/home-insurance-policies',
+      '/home-insurance-policies/{InsurancePolicyId}',
+      '/home-insurance-policies/{InsurancePolicyId}/payment-details',
+      '/home-insurance-quotes/{QuoteId}',
+      '/health-insurance-policies',
+      '/health-insurance-policies/{InsurancePolicyId}',
+      '/health-insurance-policies/{InsurancePolicyId}/payment-details',
+      '/health-insurance-quotes/{QuoteId}',
+      '/life-insurance-policies',
+      '/life-insurance-policies/{InsurancePolicyId}',
+      '/life-insurance-policies/{InsurancePolicyId}/payment-details',
+      '/life-insurance-quotes/{QuoteId}',
+      '/travel-insurance-policies',
+      '/travel-insurance-policies/{InsurancePolicyId}',
+      '/travel-insurance-policies/{InsurancePolicyId}/payment-details',
+      '/travel-insurance-quotes/{QuoteId}',
+      '/renters-insurance-policies',
+      '/renters-insurance-policies/{InsurancePolicyId}',
+      '/renters-insurance-policies/{InsurancePolicyId}/payment-details',
+      '/renters-insurance-quotes/{QuoteId}',
+      '/employment-insurance-policies',
+      '/employment-insurance-policies/{InsurancePolicyId}',
+      '/employment-insurance-policies/{InsurancePolicyId}/payment-details',
+      '/employment-insurance-quotes/{QuoteId}',
+      '/insurance-consents',
+      '/insurance-consents/{ConsentId}',
     ],
   },
 ];
