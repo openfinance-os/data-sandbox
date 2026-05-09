@@ -147,15 +147,22 @@ async function emitPersona(personaId, persona, domain) {
     const healthPolicyIds = bundle.healthPolicies?.map((p) => p.InsurancePolicyId) ?? [];
     const lifePolicyIds = bundle.lifePolicies?.map((p) => p.InsurancePolicyId) ?? [];
     const travelPolicyIds = bundle.travelPolicies?.map((p) => p.InsurancePolicyId) ?? [];
+    const rentersPolicyIds = bundle.rentersPolicies?.map((p) => p.InsurancePolicyId) ?? [];
+    const employmentPolicyIds = bundle.employmentPolicies?.map((p) => p.InsurancePolicyId) ?? [];
     const policyIds = [
-      ...motorPolicyIds, ...homePolicyIds, ...healthPolicyIds, ...lifePolicyIds, ...travelPolicyIds,
+      ...motorPolicyIds, ...homePolicyIds, ...healthPolicyIds, ...lifePolicyIds,
+      ...travelPolicyIds, ...rentersPolicyIds, ...employmentPolicyIds,
     ];
     const motorQuoteId = bundle.motorQuote?.QuoteId ?? null;
     const homeQuoteId = bundle.homeQuote?.QuoteId ?? null;
     const healthQuoteId = bundle.healthQuote?.QuoteId ?? null;
     const lifeQuoteId = bundle.lifeQuote?.QuoteId ?? null;
     const travelQuoteId = bundle.travelQuote?.QuoteId ?? null;
-    const quoteId = motorQuoteId ?? homeQuoteId ?? healthQuoteId ?? lifeQuoteId ?? travelQuoteId;
+    const rentersQuoteId = bundle.rentersQuote?.QuoteId ?? null;
+    const employmentQuoteId = bundle.employmentQuote?.QuoteId ?? null;
+    const quoteId = motorQuoteId ?? homeQuoteId ?? healthQuoteId ?? lifeQuoteId
+      ?? travelQuoteId ?? rentersQuoteId ?? employmentQuoteId;
+    const consentIds = bundle.consents?.map((c) => c.ConsentId) ?? [];
     manifest.fixtures[`${personaId}|${lfi}|${seed}`] = {
       personaId, lfi, seed, domain,
       line: bundle.line ?? null,
@@ -167,6 +174,9 @@ async function emitPersona(personaId, persona, domain) {
       healthQuoteId,
       lifeQuoteId,
       travelQuoteId,
+      rentersQuoteId,
+      employmentQuoteId,
+      consentIds,
       endpoints: aliasEndpoints,
     };
 

@@ -159,6 +159,39 @@ function insuranceEnvelopesFromBundle(bundle, ctx) {
     quoteKey: 'travelQuote',
     pathPrefix: 'travel-insurance',
   });
+  emitLineEnvelopes(envelopes, bundle, ctx, {
+    line: 'renters',
+    policiesKey: 'rentersPolicies',
+    summariesKey: 'rentersPolicySummaries',
+    quoteKey: 'rentersQuote',
+    pathPrefix: 'renters-insurance',
+  });
+  emitLineEnvelopes(envelopes, bundle, ctx, {
+    line: 'employment',
+    policiesKey: 'employmentPolicies',
+    summariesKey: 'employmentPolicySummaries',
+    quoteKey: 'employmentQuote',
+    pathPrefix: 'employment-insurance',
+  });
+  // Insurance Consents — every insurance bundle carries one consent
+  // record covering its own line. The list endpoint returns the array;
+  // the detail endpoint returns the same single record (resolved + as
+  // a templated key for callers that don't know the synthetic id).
+  if (bundle.consents?.length > 0) {
+    const consent = bundle.consents[0];
+    envelopes['/insurance-consents'] = wrapInsurance(
+      { Data: bundle.consents },
+      'insurance-consents',
+      ctx
+    );
+    envelopes[`/insurance-consents/${consent.ConsentId}`] = wrapInsurance(
+      { Data: consent },
+      `insurance-consents/${consent.ConsentId}`,
+      ctx
+    );
+    envelopes['/insurance-consents/{ConsentId}'] =
+      envelopes[`/insurance-consents/${consent.ConsentId}`];
+  }
   return envelopes;
 }
 

@@ -109,7 +109,25 @@ describe('insurance spec validation — endpoints × persona × LFI', () => {
       '/travel-insurance-policies/{InsurancePolicyId}/payment-details',
       '/travel-insurance-quotes/{QuoteId}',
     ],
+    renters: [
+      '/renters-insurance-policies',
+      '/renters-insurance-policies/{InsurancePolicyId}',
+      '/renters-insurance-policies/{InsurancePolicyId}/payment-details',
+      '/renters-insurance-quotes/{QuoteId}',
+    ],
+    employment: [
+      '/employment-insurance-policies',
+      '/employment-insurance-policies/{InsurancePolicyId}',
+      '/employment-insurance-policies/{InsurancePolicyId}/payment-details',
+      '/employment-insurance-quotes/{QuoteId}',
+    ],
   };
+
+  // Insurance Consents endpoints (2) — every insurance persona emits these.
+  const CONSENT_ENDPOINTS = [
+    '/insurance-consents',
+    '/insurance-consents/{ConsentId}',
+  ];
 
   function envelopeFor(endpoint, bundle) {
     switch (endpoint) {
@@ -263,6 +281,80 @@ describe('insurance spec validation — endpoints × persona × LFI', () => {
           Meta: baseMeta(),
         };
       }
+      case '/renters-insurance-policies':
+        return {
+          Data: { Policies: bundle.rentersPolicySummaries },
+          Links: baseLinks('renters-insurance-policies'),
+          Meta: baseMeta(),
+        };
+      case '/renters-insurance-policies/{InsurancePolicyId}': {
+        const policy = bundle.rentersPolicies[0];
+        return {
+          Data: policy,
+          Links: baseLinks(`renters-insurance-policies/${policy.InsurancePolicyId}`),
+          Meta: baseMeta(),
+        };
+      }
+      case '/renters-insurance-policies/{InsurancePolicyId}/payment-details': {
+        const policy = bundle.rentersPolicies[0];
+        return {
+          Data: bundle.paymentDetails,
+          Links: baseLinks(`renters-insurance-policies/${policy.InsurancePolicyId}/payment-details`),
+          Meta: baseMeta(),
+        };
+      }
+      case '/renters-insurance-quotes/{QuoteId}': {
+        const quote = bundle.rentersQuote;
+        return {
+          Data: quote,
+          Links: baseLinks(`renters-insurance-quotes/${quote.QuoteId}`),
+          Meta: baseMeta(),
+        };
+      }
+      case '/employment-insurance-policies':
+        return {
+          Data: { Policies: bundle.employmentPolicySummaries },
+          Links: baseLinks('employment-insurance-policies'),
+          Meta: baseMeta(),
+        };
+      case '/employment-insurance-policies/{InsurancePolicyId}': {
+        const policy = bundle.employmentPolicies[0];
+        return {
+          Data: policy,
+          Links: baseLinks(`employment-insurance-policies/${policy.InsurancePolicyId}`),
+          Meta: baseMeta(),
+        };
+      }
+      case '/employment-insurance-policies/{InsurancePolicyId}/payment-details': {
+        const policy = bundle.employmentPolicies[0];
+        return {
+          Data: bundle.paymentDetails,
+          Links: baseLinks(`employment-insurance-policies/${policy.InsurancePolicyId}/payment-details`),
+          Meta: baseMeta(),
+        };
+      }
+      case '/employment-insurance-quotes/{QuoteId}': {
+        const quote = bundle.employmentQuote;
+        return {
+          Data: quote,
+          Links: baseLinks(`employment-insurance-quotes/${quote.QuoteId}`),
+          Meta: baseMeta(),
+        };
+      }
+      case '/insurance-consents':
+        return {
+          Data: bundle.consents,
+          Links: baseLinks('insurance-consents'),
+          Meta: baseMeta(),
+        };
+      case '/insurance-consents/{ConsentId}': {
+        const consent = bundle.consents[0];
+        return {
+          Data: consent,
+          Links: baseLinks(`insurance-consents/${consent.ConsentId}`),
+          Meta: baseMeta(),
+        };
+      }
       default:
         return null;
     }
@@ -273,7 +365,10 @@ describe('insurance spec validation — endpoints × persona × LFI', () => {
   describe.each(personaIds)('persona=%s', (pid) => {
     const persona = personas[pid];
     const line = persona.line ?? 'motor';
-    const endpoints = ENDPOINTS_BY_LINE[line];
+    // Each persona's bundle covers its own line's 4 endpoints PLUS the
+    // 2 cross-line consent endpoints (every insurance bundle carries a
+    // single consent record covering its line's permissions).
+    const endpoints = [...ENDPOINTS_BY_LINE[line], ...CONSENT_ENDPOINTS];
     describe.each(PROFILES)('LFI=%s', (lfi) => {
       const bundle = buildBundle({ persona, lfi, seed: persona.default_seed, pools });
       it.each(endpoints)('endpoint %s validates against v2.1-errata1 schema', (endpoint) => {

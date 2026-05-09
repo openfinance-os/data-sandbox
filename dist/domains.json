@@ -28,7 +28,7 @@
     {
       "id": "insurance",
       "label": "Insurance Data Sharing",
-      "status": "preview",
+      "status": "ga",
       "pinSha": "bc1cd976956d97195c5000235125cb65aca6aec8",
       "retrievedAt": "2026-04-30T04:03:31Z",
       "specVersion": "v2.1-errata1",
@@ -55,7 +55,17 @@
         "/travel-insurance-policies",
         "/travel-insurance-policies/{InsurancePolicyId}",
         "/travel-insurance-policies/{InsurancePolicyId}/payment-details",
-        "/travel-insurance-quotes/{QuoteId}"
+        "/travel-insurance-quotes/{QuoteId}",
+        "/renters-insurance-policies",
+        "/renters-insurance-policies/{InsurancePolicyId}",
+        "/renters-insurance-policies/{InsurancePolicyId}/payment-details",
+        "/renters-insurance-quotes/{QuoteId}",
+        "/employment-insurance-policies",
+        "/employment-insurance-policies/{InsurancePolicyId}",
+        "/employment-insurance-policies/{InsurancePolicyId}/payment-details",
+        "/employment-insurance-quotes/{QuoteId}",
+        "/insurance-consents",
+        "/insurance-consents/{ConsentId}"
       ]
     }
   ]

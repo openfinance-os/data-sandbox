@@ -52,6 +52,14 @@ const OPTIONAL_FIELD_BANDS = [
   { path: 'Product.Policy.TravelDestinationRegion', band: 'Common' },
   { path: 'Product.OptionalTravelCoverOptions', band: 'Variable' },
   { path: 'Product.HighRiskActivities', band: 'Variable' },
+  // Renters (Phase 2.1). LeaseDetails block + property structural facts.
+  { path: 'Product.LeaseDetails', band: 'Common' },
+  { path: 'Product.PropertyDetails.UsageByApplicant', band: 'Common' },
+  // Employment / ILOE (Phase 2.1). PolicyHolder.Employment block lands as
+  // Common (UAE ILOE policy is mandatory and tied to the employer); the
+  // optional AdditionalCompensation array under it is Variable.
+  { path: 'PolicyHolder.Employment', band: 'Common' },
+  { path: 'PolicyHolder.Employment.AdditionalCompensation', band: 'Variable' },
 ];
 
 function shouldKeep(profile, band, rng) {
@@ -93,6 +101,36 @@ export function applyInsuranceLfiProfile({ bundle, personaId, lfi, seed }) {
       if (!decide('Product.CarFinance', 'Variable')) {
         delete policy.Product.CarFinance;
       }
+    }
+  }
+
+  for (const policy of bundle.rentersPolicies ?? []) {
+    if (policy.PolicyHolder && !decide('PolicyHolder.Salutation', 'Common')) {
+      delete policy.PolicyHolder.Salutation;
+    }
+    if (policy.Premium && !decide('Premium.PaymentMode', 'Common')) {
+      delete policy.Premium.PaymentMode;
+    }
+    if (policy.Product?.LeaseDetails && !decide('Product.LeaseDetails', 'Common')) {
+      delete policy.Product.LeaseDetails;
+    }
+    if (policy.Product?.PropertyDetails?.UsageByApplicant && !decide('Product.PropertyDetails.UsageByApplicant', 'Common')) {
+      delete policy.Product.PropertyDetails.UsageByApplicant;
+    }
+  }
+
+  for (const policy of bundle.employmentPolicies ?? []) {
+    if (policy.PolicyHolder && !decide('PolicyHolder.Salutation', 'Common')) {
+      delete policy.PolicyHolder.Salutation;
+    }
+    if (policy.Premium && !decide('Premium.PaymentMode', 'Common')) {
+      delete policy.Premium.PaymentMode;
+    }
+    // PolicyHolder.Employment is Common but mandatory under the spec when
+    // present; only redact the optional AdditionalCompensation child.
+    if (policy.PolicyHolder?.Employment?.AdditionalCompensation
+        && !decide('PolicyHolder.Employment.AdditionalCompensation', 'Variable')) {
+      delete policy.PolicyHolder.Employment.AdditionalCompensation;
     }
   }
 

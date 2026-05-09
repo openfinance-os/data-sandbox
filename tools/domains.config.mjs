@@ -37,11 +37,11 @@ export const DOMAINS = [
   {
     id: 'insurance',
     label: 'Insurance Data Sharing',
-    // 'preview' = vendored from upstream but not yet endpoint-scoped. The UI
-    // domain selector should hide preview domains unless ?preview=1 is set.
-    // Flips to 'ga' once endpoint scoping + LFI bands + at least one
-    // insurance persona land (slices 5-6).
-    status: 'preview',
+    // 'ga' as of Phase 2.1 completion: all 7 lines (motor + home + health
+    // + life + travel + renters + employment) covered + Insurance
+    // Consents. The UI domain selector surfaces 'ga' domains
+    // unconditionally (no ?preview=1 gate).
+    status: 'ga',
     specPath: 'spec/uae-insurance-openapi.yaml',
     pinPath: 'spec/SPEC_PIN.insurance.sha',
     retrievedPath: 'spec/SPEC_PIN.insurance.retrieved',
@@ -50,12 +50,10 @@ export const DOMAINS = [
     upstreamRepo: 'Nebras-Open-Finance/api-specs',
     upstreamPath: 'dist/standards/v2.1-errata1/uae-insurance-openapi.yaml',
     defaultEndpoint: '/motor-insurance-policies',
-    // Phase 2.1 in-scope: motor (full from Phase 2.0) + home + health +
-    // life + travel. Each line follows the same 4-endpoint shape: list,
-    // detail, payment-details, read-quote. POST/PATCH on the bare
-    // /<line>-insurance-quotes path are TPP→LFI write ops, outside the
-    // read-only sandbox surface. The remaining 2 lines (Employment,
-    // Renters) + Insurance Consents land in subsequent slices.
+    // Phase 2.1 full GET coverage — every read-only insurance endpoint
+    // the v2.1-errata1 spec exposes. POST/PATCH on bare quote paths and
+    // PATCH /insurance-consents/{ConsentId} are TPP→LFI write ops,
+    // outside the read-only sandbox surface.
     inScopePaths: [
       '/motor-insurance-policies',
       '/motor-insurance-policies/{InsurancePolicyId}',
@@ -77,6 +75,16 @@ export const DOMAINS = [
       '/travel-insurance-policies/{InsurancePolicyId}',
       '/travel-insurance-policies/{InsurancePolicyId}/payment-details',
       '/travel-insurance-quotes/{QuoteId}',
+      '/renters-insurance-policies',
+      '/renters-insurance-policies/{InsurancePolicyId}',
+      '/renters-insurance-policies/{InsurancePolicyId}/payment-details',
+      '/renters-insurance-quotes/{QuoteId}',
+      '/employment-insurance-policies',
+      '/employment-insurance-policies/{InsurancePolicyId}',
+      '/employment-insurance-policies/{InsurancePolicyId}/payment-details',
+      '/employment-insurance-quotes/{QuoteId}',
+      '/insurance-consents',
+      '/insurance-consents/{ConsentId}',
     ],
   },
 ];

@@ -45,6 +45,8 @@ const REQUIRED_BY_INSURANCE_LINE = {
   health: [...COMMON_INSURANCE_KEYS, 'health'],
   life: [...COMMON_INSURANCE_KEYS, 'life'],
   travel: [...COMMON_INSURANCE_KEYS, 'travel'],
+  renters: [...COMMON_INSURANCE_KEYS, 'renters'],
+  employment: [...COMMON_INSURANCE_KEYS, 'employment'],
 };
 
 const ALLOWED_DOMAINS = new Set(Object.keys(REQUIRED_BY_DOMAIN));
@@ -116,6 +118,15 @@ describe('persona manifests — EXP-02', () => {
           .toContain(m.travel.policy.travelling_with);
         expect(['WithinUAE', 'Worldwide', 'WorldwideExcludingUSAandCanada'])
           .toContain(m.travel.policy.destination_region);
+      } else if (line === 'renters') {
+        expect(['Villa', 'House', 'Apartment', 'Flat']).toContain(m.renters.property.type_of_property);
+        expect(typeof m.renters.contents.declared_value_aed).toBe('number');
+        expect(typeof m.renters.policy.excess_aed).toBe('number');
+      } else if (line === 'employment') {
+        expect(['CategoryA', 'CategoryB']).toContain(m.employment.policy.scheme_category);
+        expect(['Private', 'FederalGovernment']).toContain(m.employment.policy.sector);
+        expect(typeof m.employment.policy.term_years).toBe('number');
+        expect(typeof m.employment.employer.monthly_income_aed).toBe('number');
       }
     }
   });

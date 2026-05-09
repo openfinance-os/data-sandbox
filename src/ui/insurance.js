@@ -162,6 +162,49 @@ export function createInsurance(deps) {
         return state.bundle.travelQuote
           ? { kind: 'detail', Data: state.bundle.travelQuote }
           : null;
+      case '/renters-insurance-policies':
+        return {
+          kind: 'list',
+          Data: { Policies: state.bundle.rentersPolicySummaries ?? [] },
+        };
+      case '/renters-insurance-policies/{InsurancePolicyId}': {
+        const policy = state.bundle.rentersPolicies?.[0];
+        return policy ? { kind: 'detail', Data: policy } : null;
+      }
+      case '/renters-insurance-policies/{InsurancePolicyId}/payment-details':
+        return state.bundle.paymentDetails && state.bundle.line === 'renters'
+          ? { kind: 'detail', Data: state.bundle.paymentDetails }
+          : null;
+      case '/renters-insurance-quotes/{QuoteId}':
+        return state.bundle.rentersQuote
+          ? { kind: 'detail', Data: state.bundle.rentersQuote }
+          : null;
+      case '/employment-insurance-policies':
+        return {
+          kind: 'list',
+          Data: { Policies: state.bundle.employmentPolicySummaries ?? [] },
+        };
+      case '/employment-insurance-policies/{InsurancePolicyId}': {
+        const policy = state.bundle.employmentPolicies?.[0];
+        return policy ? { kind: 'detail', Data: policy } : null;
+      }
+      case '/employment-insurance-policies/{InsurancePolicyId}/payment-details':
+        return state.bundle.paymentDetails && state.bundle.line === 'employment'
+          ? { kind: 'detail', Data: state.bundle.paymentDetails }
+          : null;
+      case '/employment-insurance-quotes/{QuoteId}':
+        return state.bundle.employmentQuote
+          ? { kind: 'detail', Data: state.bundle.employmentQuote }
+          : null;
+      case '/insurance-consents':
+        return {
+          kind: 'list',
+          Data: { Policies: state.bundle.consents ?? [] },
+        };
+      case '/insurance-consents/{ConsentId}': {
+        const consent = state.bundle.consents?.[0];
+        return consent ? { kind: 'detail', Data: consent } : null;
+      }
       default:
         return null;
     }

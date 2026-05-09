@@ -40,6 +40,21 @@ import {
   generateTravelPremium,
 } from './travel-policy.js';
 import { generateTravelQuote } from './travel-quote.js';
+import {
+  generateRentersProduct,
+  generateRentersClaims,
+  generateRentersPremium,
+} from './renters-policy.js';
+import { generateRentersQuote } from './renters-quote.js';
+import {
+  generateEmploymentProduct,
+  generateEmploymentEmployment,
+  generateEmploymentAddress,
+  generateEmploymentClaims,
+  generateEmploymentPremium,
+} from './employment-policy.js';
+import { generateEmploymentQuote } from './employment-quote.js';
+import { generateConsentRecord } from './consents.js';
 import { applyInsuranceLfiProfile } from './lfi-profile.js';
 
 const DEFAULT_NOW = new Date(Date.UTC(2026, 3, 1, 0, 0, 0));
@@ -80,12 +95,25 @@ function genUaeIban(rng) {
 
 export function buildInsuranceBundle({ persona, lfi, seed, pools, now = DEFAULT_NOW }) {
   const line = persona.line ?? 'motor';
-  if (line === 'motor') return buildMotorBundle({ persona, lfi, seed, pools, now });
-  if (line === 'home') return buildHomeBundle({ persona, lfi, seed, pools, now });
-  if (line === 'health') return buildHealthBundle({ persona, lfi, seed, pools, now });
-  if (line === 'life') return buildLifeBundle({ persona, lfi, seed, pools, now });
-  if (line === 'travel') return buildTravelBundle({ persona, lfi, seed, pools, now });
-  throw new Error(`unknown insurance line '${line}' for persona ${persona.persona_id}`);
+  let bundle;
+  if (line === 'motor') bundle = buildMotorBundle({ persona, lfi, seed, pools, now });
+  else if (line === 'home') bundle = buildHomeBundle({ persona, lfi, seed, pools, now });
+  else if (line === 'health') bundle = buildHealthBundle({ persona, lfi, seed, pools, now });
+  else if (line === 'life') bundle = buildLifeBundle({ persona, lfi, seed, pools, now });
+  else if (line === 'travel') bundle = buildTravelBundle({ persona, lfi, seed, pools, now });
+  else if (line === 'renters') bundle = buildRentersBundle({ persona, lfi, seed, pools, now });
+  else if (line === 'employment') bundle = buildEmploymentBundle({ persona, lfi, seed, pools, now });
+  else throw new Error(`unknown insurance line '${line}' for persona ${persona.persona_id}`);
+
+  // Every insurance bundle carries one consent record covering its own
+  // line. Consent generation uses an independent RNG stream so the consent
+  // ids stay deterministic per (persona, lfi, seed) without being affected
+  // by the upstream line generator's draw count. Consents come AFTER LFI
+  // redaction (each per-line builder applies the redaction itself) — the
+  // consent record itself isn't subject to LFI bands.
+  const consentRng = makePrng(persona.persona_id, 'consents', seed);
+  bundle.consents = [generateConsentRecord({ persona, rng: consentRng, now })];
+  return bundle;
 }
 
 function buildMotorBundle({ persona, lfi, seed, pools, now }) {
@@ -227,6 +255,149 @@ function buildHealthBundle({ persona, lfi, seed, pools, now }) {
     healthPolicySummaries: [healthPolicySummary],
     paymentDetails,
     healthQuote,
+  };
+
+  return applyInsuranceLfiProfile({ bundle, personaId: persona.persona_id, lfi, seed });
+}
+
+function buildRentersBundle({ persona, lfi, seed, pools, now }) {
+  const rng = makePrng(persona.persona_id, 'generator', seed);
+  const p = resolvePools(persona, pools);
+
+  const { name, policyHolder, identity } = generateInsuranceIdentity({
+    persona,
+    names: p.names,
+    rng,
+    now,
+  });
+
+  const { product, policyNumber, startDate, endDate } = generateRentersProduct({
+    persona,
+    rng,
+    now,
+  });
+  const claims = generateRentersClaims({ persona });
+  const premium = generateRentersPremium({ persona });
+
+  const insurancePolicyId = genUuid(rng);
+
+  const rentersPolicyDetail = {
+    InsurancePolicyId: insurancePolicyId,
+    PolicyHolder: policyHolder,
+    Identity: identity,
+    Product: product,
+    Claims: claims,
+    Premium: premium,
+  };
+
+  const rentersPolicySummary = {
+    InsurancePolicyId: insurancePolicyId,
+    PolicyNumber: policyNumber,
+    PolicyStatus: 'New',
+    PolicyStartDate: startDate,
+    PolicyEndDate: endDate,
+  };
+
+  const bankName = p.banks.banks[Math.floor(rng() * p.banks.banks.length)].name;
+  const accountIban = genUaeIban(rng);
+  const paymentDetails = {
+    Account: { Identification: accountIban, SchemeName: 'IBAN', Name: `${name.given} ${name.surname}` },
+    Bank: { Name: bankName },
+  };
+
+  const rentersQuote = generateRentersQuote({ persona, rng, now });
+
+  const bundle = {
+    persona: persona.persona_id,
+    name: persona.name,
+    domain: 'insurance',
+    line: 'renters',
+    identity: {
+      fullName: `${name.given} ${name.surname}`,
+      given: name.given,
+      surname: name.surname,
+      namePoolId: persona.demographics.nationality_pool,
+    },
+    rentersPolicies: [rentersPolicyDetail],
+    rentersPolicySummaries: [rentersPolicySummary],
+    paymentDetails,
+    rentersQuote,
+  };
+
+  return applyInsuranceLfiProfile({ bundle, personaId: persona.persona_id, lfi, seed });
+}
+
+function buildEmploymentBundle({ persona, lfi, seed, pools, now }) {
+  const rng = makePrng(persona.persona_id, 'generator', seed);
+  const p = resolvePools(persona, pools);
+
+  // Employment uses generateInsuranceIdentity for name/identity generation
+  // but the employment-line PolicyHolder Address shape and Employment
+  // block diverge from the shared AEInsuranceCustomerQuoteProperties used
+  // by motor/home/life/renters. Splice in the line-specific overrides.
+  const { name, policyHolder: basePolicyHolder, identity } = generateInsuranceIdentity({
+    persona,
+    names: p.names,
+    rng,
+    now,
+  });
+  const policyHolder = {
+    ...basePolicyHolder,
+    Address: generateEmploymentAddress({ persona, rng }),
+    Employment: generateEmploymentEmployment({ persona }),
+  };
+
+  const { product, policyNumber, startDate, endDate } = generateEmploymentProduct({
+    persona,
+    rng,
+    now,
+  });
+  const claims = generateEmploymentClaims({ persona });
+  const premium = generateEmploymentPremium({ persona });
+
+  const insurancePolicyId = genUuid(rng);
+
+  const employmentPolicyDetail = {
+    InsurancePolicyId: insurancePolicyId,
+    PolicyHolder: policyHolder,
+    Identity: identity,
+    Product: product,
+    Claims: claims,
+    Premium: premium,
+  };
+
+  const employmentPolicySummary = {
+    InsurancePolicyId: insurancePolicyId,
+    PolicyNumber: policyNumber,
+    PolicyStatus: 'New',
+    PolicyStartDate: startDate,
+    PolicyEndDate: endDate,
+  };
+
+  const bankName = p.banks.banks[Math.floor(rng() * p.banks.banks.length)].name;
+  const accountIban = genUaeIban(rng);
+  const paymentDetails = {
+    Account: { Identification: accountIban, SchemeName: 'IBAN', Name: `${name.given} ${name.surname}` },
+    Bank: { Name: bankName },
+  };
+
+  const employmentQuote = generateEmploymentQuote({ persona, rng, now });
+
+  const bundle = {
+    persona: persona.persona_id,
+    name: persona.name,
+    domain: 'insurance',
+    line: 'employment',
+    identity: {
+      fullName: `${name.given} ${name.surname}`,
+      given: name.given,
+      surname: name.surname,
+      namePoolId: persona.demographics.nationality_pool,
+    },
+    employmentPolicies: [employmentPolicyDetail],
+    employmentPolicySummaries: [employmentPolicySummary],
+    paymentDetails,
+    employmentQuote,
   };
 
   return applyInsuranceLfiProfile({ bundle, personaId: persona.persona_id, lfi, seed });

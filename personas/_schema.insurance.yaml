@@ -11,16 +11,15 @@
 # coherent insurance bundle.
 #
 # `line` discriminates which generator runs. Motor personas may omit the
-# field for back-compat (defaults to 'motor'). Home personas declare
-# `line: home` and a `home:` block; health personas declare `line: health`
-# and a `health:` block; life personas declare `line: life` and a `life:`
-# block; travel personas declare `line: travel` and a `travel:` block.
-# The remaining 2 lines (Employment, Renters) + Insurance Consents will
-# extend this schema as their generators land.
+# field for back-compat (defaults to 'motor'). Each line declares a
+# matching block: motor → vehicle/policy/finance/etc., home → home:,
+# health → health:, life → life:, travel → travel:, renters → renters:,
+# employment → employment:. Insurance Consents are emitted automatically
+# for every insurance bundle (no per-persona block).
 
 persona_id: <slug>
 domain: insurance
-line: <enum: motor|home|health|life|travel>  # optional — defaults to 'motor' if absent
+line: <enum: motor|home|health|life|travel|renters|employment>  # optional — defaults to 'motor' if absent
 name: <string>
 archetype: <string>                # e.g. motor_comprehensive_financed
 default_seed: <int>
@@ -207,6 +206,65 @@ travel:
       gender: <enum: Male|Female|Other>
       given_name: <string?>
       surname: <string?>
+  claims:
+    history_months: <int>
+    claims_in_period: <int>
+    approved_claims: <int>
+    total_gross_aed: <int>
+
+# ---------------------------------------------------------------------------
+# Renters block (line: renters) — drives AERentersInsurancePolicyProperties1.
+# Required when line=renters; omitted otherwise.
+# ---------------------------------------------------------------------------
+
+renters:
+  property:
+    type_of_property: <enum: Villa|House|Apartment|Flat>
+    address_emirate: <enum: AbuDhabi|Ajman|Dubai|Fujairah|RasAlKhaimah|Sharjah|UmmAlQuwain>
+    number_of_floors: <int?>
+    number_of_rooms: <int>
+  contents:
+    declared_value_aed: <int>          # CoverLimit on ContentsCover; baseline for premium
+  lease:                               # optional — drives Product.LeaseDetails
+    monthly_rent_aed: <int>
+    start_offset_months: <int>         # months before `now` anchor
+    term_months: <int>                 # 12 = OneYear; <12 = ShortTerm
+    furnishing_status: <enum: Furnished|SemiFurnished|Unfurnished>
+  policy:
+    excess_aed: <int>
+    start_date_offset_days: <int>
+    channel: <enum: Direct|Agent|Broker|Bank|Aggregator|OnlineInsideUAE>
+    takaful: <bool>
+    product_name: <string?>
+  claims:
+    history_months: <int>
+    claims_in_period: <int>
+    approved_claims: <int>
+    total_gross_aed: <int>
+
+# ---------------------------------------------------------------------------
+# Employment block (line: employment) — drives AEEmploymentInsurance-
+# PolicyProperties1 (UAE Involuntary Loss of Employment / ILOE).
+# Required when line=employment; omitted otherwise.
+# ---------------------------------------------------------------------------
+
+employment:
+  policy:
+    scheme_category: <enum: CategoryA|CategoryB>  # A: ≤16K AED salary; B: >16K
+    sector: <enum: Private|FederalGovernment>
+    term_years: <int>                  # ILOE term — typically 1
+    premium_frequency: <enum: Annually|OneTime|Monthly|Quarterly|BiAnnual|Limited|Other>
+    start_date_offset_days: <int>
+    channel: <enum: Direct|Agent|Broker|Bank|Aggregator|OnlineInsideUAE>
+  employer:
+    name: <string>
+    nature_of_business: <string?>
+    monthly_income_aed: <int>          # required when employer block present
+    employment_status: <enum: Employed|SelfEmployed|BusinessOwner|...>
+    start_date: <YYYY-MM-DD>           # employment start date (ISO)
+  additional_compensation:             # optional — drives Employment.AdditionalCompensation[]
+    - description: <string>
+      amount_aed: <int>
   claims:
     history_months: <int>
     claims_in_period: <int>

@@ -54,3 +54,12 @@ overrides:
   Product.Policy.TravelDestinationRegion: Common
   Product.OptionalTravelCoverOptions: Variable
   Product.HighRiskActivities: Variable
+  # Renters (Phase 2.1). LeaseDetails block + property usage.
+  Product.LeaseDetails: Common
+  Product.PropertyDetails.UsageByApplicant: Common
+  # Employment / ILOE (Phase 2.1). PolicyHolder.Employment is the
+  # employer-provided income block — Common because UAE ILOE is
+  # mandatory and tied to the employer; AdditionalCompensation is
+  # per-employer Variable.
+  PolicyHolder.Employment: Common
+  PolicyHolder.Employment.AdditionalCompensation: Variable
