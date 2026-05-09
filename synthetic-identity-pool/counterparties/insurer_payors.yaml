@@ -1,0 +1,17 @@
+# Synthetic health-insurance payor counterparties. Used as customer-inflow
+# counterparties for healthcare-clinic SMEs whose receivables are 30–60-day
+# insurer reimbursements net of co-pay. All names are fictional. Naming-
+# pattern intent: evoke Daman / NextCare / MetLife / Nas / AXA Gulf / Now
+# Health insurer-payor flows without naming any real insurer. EXP-07:
+# only place these counterparty names may originate.
+pool_id: insurer_payors
+description: Synthetic health-insurance payor counterparties (clinic insurance receivables).
+counterparties:
+  - "Crestline Health Cover PJSC"
+  - "Falcon Care Insurance PJSC"
+  - "Northstar Wellness Cover PJSC"
+  - "Marina Health Assurance PJSC"
+  - "Sandstone Medical Cover PJSC"
+  - "Beacon Vita Health PJSC"
+  - "Saffron Health Network PJSC"
+  - "Cedar Wellness Cover PJSC"

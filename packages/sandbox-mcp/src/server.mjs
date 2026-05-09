@@ -26,7 +26,7 @@ const PKG_VERSION = '0.0.1';
 
 const PFM_INSTRUCTIONS = [
   'You are wired to a sandbox of synthetic UAE Open Finance v2.1 payloads across two domains:',
-  '  • Bank Data Sharing (12 banking personas) — accounts, balances, transactions, parties, etc.',
+  '  • Bank Data Sharing (17 banking personas) — accounts, balances, transactions, parties, etc.',
   '  • Insurance Data Sharing preview (3 motor-insurance personas) — motor policies, payment',
   '    details, and a read-quote endpoint, all v2.1-errata1 shaped.',
   'All data is fictional — no real customer, no real institution. Every response carries a `_watermark`',
@@ -467,7 +467,7 @@ export function createServer() {
     {
       title: 'List synthetic personas',
       description:
-        'List the curated synthetic UAE personas in this sandbox: 12 banking + 3 insurance preview. Returns id, display name, archetype, default seed, domain, and stress-coverage tags. Pass { domain: "banking" } or { domain: "insurance" } to filter; omit to get all 15.',
+        'List the curated synthetic UAE personas in this sandbox: 17 banking + 3 insurance preview. Returns id, display name, archetype, default seed, domain, and stress-coverage tags. Pass { domain: "banking" } or { domain: "insurance" } to filter; omit to get all 20.',
       inputSchema: {
         domain: z
           .enum(['banking', 'insurance'])

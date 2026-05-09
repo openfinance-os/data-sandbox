@@ -192,7 +192,7 @@ fs.writeFileSync(path.join(OUT, 'pools.json'), JSON.stringify(pools));
 const pkgJson = {
   name: '@openfinance-os/sandbox-fixtures',
   version: PKG_VERSION,
-  description: 'Deterministic, v2.1-shaped UAE Open Finance synthetic fixtures from the Open Finance Data Sandbox. 12 banking personas + 3 insurance preview personas × 3 LFI profiles × every in-scope endpoint. CC0 data, MIT loader code.',
+  description: 'Deterministic, v2.1-shaped UAE Open Finance synthetic fixtures from the Open Finance Data Sandbox. 17 banking personas + 3 insurance preview personas × 3 LFI profiles × every in-scope endpoint. CC0 data, MIT loader code.',
   keywords: ['open-finance', 'uae', 'synthetic-data', 'fixtures', 'v2.1', 'tpp', 'commons', 'insurance'],
   homepage: 'https://github.com/openfinance-os/data-sandbox',
   repository: { type: 'git', url: 'https://github.com/openfinance-os/data-sandbox.git', directory: 'packages/sandbox-fixtures' },
@@ -537,9 +537,9 @@ const readme = `# @openfinance-os/sandbox-fixtures
 Deterministic, v2.1-shaped UAE Open Finance synthetic fixtures from the
 [Open Finance Data Sandbox](https://github.com/openfinance-os/data-sandbox).
 
-12 banking personas × 3 LFI profiles × every v2.1 Account-Information
-endpoint per persona's accounts = **900+ fixtures** (912 in the current
-build), plus the parsed v2.1 OpenAPI spec and the persona manifests.
+17 banking personas × 3 LFI profiles × every v2.1 Account-Information
+endpoint per persona's accounts = **900+ fixtures**, plus the parsed v2.1
+OpenAPI spec and the persona manifests.
 
 ## Install
 
@@ -585,7 +585,7 @@ const { loadFixture } = require('@openfinance-os/sandbox-fixtures');
 
 ## What's in the box
 
-- \`bundles/<persona>/<lfi>/seed-<n>/<endpoint>.json\` — 900+ fixtures (12 banking personas × 3 LFIs × every Account-Information endpoint per persona's accounts; the per-account endpoints multiply by account count). Each is a v2.1-correct \`{ Data, Links, Meta }\` envelope plus watermark fields (\`_persona\`, \`_lfi\`, \`_seed\`, \`_specSha\`).
+- \`bundles/<persona>/<lfi>/seed-<n>/<endpoint>.json\` — 900+ fixtures (17 banking personas × 3 LFIs × every Account-Information endpoint per persona's accounts; the per-account endpoints multiply by account count). Each is a v2.1-correct \`{ Data, Links, Meta }\` envelope plus watermark fields (\`_persona\`, \`_lfi\`, \`_seed\`, \`_specSha\`).
 - \`personas/<persona>.json\` — persona manifest (demographics, fixed commitments, stress coverage, narrative).
 - \`spec.json\` — the parsed UAE Open Finance v2.1 OpenAPI spec, keyed by endpoint with field metadata.
 - \`manifest.json\` — top-level index keyed by \`<persona>|<lfi>|<seed>\`.

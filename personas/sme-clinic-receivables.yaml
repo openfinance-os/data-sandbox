@@ -1,0 +1,122 @@
+persona_id: sme_clinic_receivables
+domain: banking
+name: "Crestline Wellness Clinic LLC — Healthcare Clinic"
+archetype: sme_clinic
+default_seed: 2864
+segment: SME
+stress_coverage:
+  - insurer_payor_receivables_aging
+
+demographics:
+  # Principal signatory — the clinic's owning physician pulled for Party.
+  nationality_pool: expat_indian
+  age_band: 38-52
+  emirate: dubai
+
+organisation:
+  legal_name_pool: sme_mainland
+  signatories:
+    - signatory_pool: expat_indian
+      account_role: Principal
+      party_type: Sole
+    - signatory_pool: expat_arab
+      account_role: Administrator
+      party_type: Delegate
+
+income:
+  # Self-pay; bulk of inflows is the insurer-payor stream below.
+  primary_employer_pool: tech_freezone
+  monthly_amount_aed: 32000
+  pay_day: 28
+  variability: medium
+  flag_payroll: false
+
+cash_flow:
+  customer_inflows:
+    counterparty_pool: insurer_payors
+    monthly_amount_aed_band: [180000, 320000]
+    invoice_cadence: irregular
+  supplier_outflows:
+    counterparty_pool: b2b_local
+    monthly_amount_aed_band: [42000, 78000]
+  payroll_outflow_aed: 96000
+
+accounts:
+  - type: CurrentAccount
+    currency: AED
+    age_months: 60
+  - type: Savings
+    currency: AED
+    age_months: 36
+
+fixed_commitments:
+  - kind: direct_debit
+    purpose: utilities_dewa
+    amount_aed_band: [1800, 3200]
+    schedule: monthly_5
+  - kind: direct_debit
+    purpose: medical_equipment_lease
+    amount_aed: 9500
+    schedule: monthly_8
+  - kind: direct_debit
+    purpose: e_claim_platform_fee
+    amount_aed: 2400
+    schedule: monthly_15
+  - kind: standing_order
+    purpose: clinic_rent
+    amount_aed: 38000
+    schedule: monthly_27
+
+spend_profile:
+  groceries_aed_per_month_band: [0, 0]
+  fuel_aed_per_month_band: [400, 800]
+  dining_per_month_count_band: [4, 10]
+
+fx_activity: false
+cash_deposit_activity: true
+cash_deposits_per_month_band: [3, 9]
+cash_deposit_amount_aed_band: [400, 2200]
+
+distress_signals:
+  nsf_events_per_year_band: [0, 2]
+
+multi_lfi_footprint:
+  primary:
+    role: operating
+    lfi_default: Rich
+    plausible_lfi_candidates:
+      - "Abu Dhabi Commercial Bank"
+      - "Emirates NBD"
+      - "Mashreq Bank"
+      - "Commercial Bank of Dubai"
+  secondary:
+    role: islamic_deposit
+    lfi_default: Median
+    plausible_lfi_candidates:
+      - "Dubai Islamic Bank"
+      - "Abu Dhabi Islamic Bank"
+      - "Sharjah Islamic Bank"
+  tertiary:
+    role: digital_challenger
+    lfi_default: Sparse
+    plausible_lfi_candidates:
+      - "Wio Bank"
+
+narrative: |
+  Crestline Wellness Clinic is a single-location DHA-licensed mainland
+  clinic owned by the practising physician (Sole signatory) with a
+  practice manager added under Administrator / Delegate for AP and
+  insurer-portal reconciliation. The cash-flow stress is insurance-
+  receivable aging: 30–60-day lag from claim submission through e-claim
+  platform fee deduction to net-of-co-pay reimbursement from a small
+  set of dominant insurer-payor counterparties. Walk-in card receipts
+  and small-amount cash deposits land daily; insurer payouts arrive
+  irregularly in larger chunks. Operating account on a Tier-1
+  conventional bank; Islamic deposit secondary for the partner-draw
+  savings; digital-challenger tertiary to test the working-capital
+  facility some SME-fintechs price aggressively against insurance
+  receivables. Stress: payor-tagged inflow stream, 30–60-day inflow
+  lag distinct from other personas, mixed retail-card and B2B-credit
+  flow on one operating account — bridges banking-domain personas with
+  the insurance-domain motor personas without crossing into Open
+  Insurance scope.

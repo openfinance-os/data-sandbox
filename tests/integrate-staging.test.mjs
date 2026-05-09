@@ -52,15 +52,15 @@ if (!SITE_STAGED) {
 
     const manifest = JSON.parse(fs.readFileSync(need('fixtures/v1/manifest.json').p, 'utf8'));
     expect(manifest.specVersion).toBe('v2.1');
-    // 12 banking + 3 insurance preview = 15 personas × 3 LFIs = 45 fixtures.
-    expect(Object.keys(manifest.personas).length).toBe(15);
-    expect(Object.keys(manifest.fixtures).length).toBe(45);
+    // 17 banking + 3 insurance preview = 20 personas × 3 LFIs = 60 fixtures.
+    expect(Object.keys(manifest.personas).length).toBe(20);
+    expect(Object.keys(manifest.fixtures).length).toBe(60);
     expect(manifest.domains).toEqual(expect.arrayContaining(['banking', 'insurance']));
     const byDomain = { banking: 0, insurance: 0 };
     for (const info of Object.values(manifest.personas)) {
       byDomain[info.domain] = (byDomain[info.domain] ?? 0) + 1;
     }
-    expect(byDomain).toEqual({ banking: 12, insurance: 3 });
+    expect(byDomain).toEqual({ banking: 17, insurance: 3 });
 
     const index = JSON.parse(fs.readFileSync(need('fixtures/v1/index.json').p, 'utf8'));
     expect(index.lfiProfiles).toEqual(['rich', 'median', 'sparse']);

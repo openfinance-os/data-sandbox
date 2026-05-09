@@ -36,7 +36,7 @@ An interactive, **client-side static** sandbox that lets a TPP-perspective user 
 - `src/` — frontend sources (vanilla JS) + Service Worker.
 - `spec/` — vendored OpenAPI YAMLs (banking v2.1, insurance) + `lfi-bands.banking.yaml`.
 - `tools/` — spec parser, data builder, fixture-package builders, site stager, lints.
-- `personas/` — YAML persona manifests (12 banking + 1 insurance = 13 total).
+- `personas/` — YAML persona manifests (17 banking + 3 insurance = 20 total).
 - `synthetic-identity-pool/` — name/IBAN/phone/DOB pools.
 - `tests/` — Vitest suites (spec validation, replay, LFI bands, fixture-package, integrate-staging, journey-coherence, etc.) + Playwright e2e under `tests/e2e/`.
 - `packages/sandbox-fixtures/` — `@openfinance-os/sandbox-fixtures` (npm). Exports: `loadFixture`, `loadJourney`, `buildBundle`, `expandRecipe`, `encodeRecipe`, `recipeHash`, `validateRecipe`, `listPersonas`, `listEndpoints`, `loadSpec`, `getPools`, `manifest`.
@@ -99,7 +99,7 @@ The PRD assigns every requirement an `EXP-NN` ID (PRD §4). When discussing or i
 - **Phase 0 (spike)** — done.
 - **Phase 1 (v1)** — done. 12 banking personas × all 12 v2.1 Account Information endpoints × 3 LFI profiles. Endpoints listed in PRD Appendix C.
 - **Phase 1.5** — largely landed: Compare-LFIs mode, Underwriting Scenario panel, custom-persona builder, Service-Worker fixture mock, fixture package `@openfinance-os/sandbox-fixtures` (npm) and `openfinance-os-sandbox-fixtures` (PyPI mirror) — MIT code, CC0 data. Persona library at 13 (12 banking + 1 insurance MVP).
-- **Phase 2** — in progress. Insurance domain motor-comprehensive MVP shipped (`spec/uae-insurance-openapi.yaml`, `personas/motor-comprehensive-mid.yaml`, `tests/spec-validation.insurance.test.mjs`); see `PHASE2_INSURANCE_PLAN.md`. Open Wealth + community persona PRs still ahead.
+- **Phase 2** — in progress. Insurance domain motor-comprehensive MVP shipped (`spec/uae-insurance-openapi.yaml`, `personas/motor-comprehensive-mid.yaml`, `tests/spec-validation.insurance.test.mjs`); see `PHASE2_INSURANCE_PLAN.md`. Phase 2.x SME expansion (D-14): real-UAE counterparty-bank pool + 5 new SME personas (F&B multi-outlet, e-commerce marketplace, free-zone SaaS, construction sub-contractor, healthcare clinic), each carrying a `multi_lfi_footprint` with named UAE banks across primary / secondary / tertiary roles. Open Wealth + community persona PRs still ahead.
 
 ## Working with the user
 

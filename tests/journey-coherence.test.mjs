@@ -49,8 +49,8 @@ if (!FIXTURES_BUILT) {
     ([, fx]) => (fx.domain ?? 'banking') === 'banking',
   );
 
-  it('the banking test matrix covers 12 personas × 3 LFIs', () => {
-    expect(fixtureEntries.length).toBe(36);
+  it('the banking test matrix covers 17 personas × 3 LFIs', () => {
+    expect(fixtureEntries.length).toBe(51);
   });
 
   for (const [key, fx] of fixtureEntries) {
