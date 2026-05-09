@@ -38,6 +38,12 @@ const OPTIONAL_FIELD_BANDS = [
   { path: 'Transaction.MerchantDetails', band: 'Variable' },
   { path: 'Transaction.MerchantDetails.MerchantCategoryCode', band: 'Variable' },
   { path: 'Transaction.MerchantDetails.MerchantName', band: 'Common' },
+  // Slice 7: counterparty fields on Transaction (D-14 cross-LFI mirror).
+  // Common = kept under Rich, ~70% under Median, stripped under Sparse.
+  { path: 'Transaction.CreditorAccount', band: 'Common' },
+  { path: 'Transaction.DebtorAccount', band: 'Common' },
+  { path: 'Transaction.CreditorAgent', band: 'Common' },
+  { path: 'Transaction.DebtorAgent', band: 'Common' },
   // Balance
   { path: 'Balance.CreditLine', band: 'Variable' },
 ];
@@ -89,6 +95,11 @@ export function applyLfiProfile({ bundle, personaId, lfi, seed }) {
         delete tx.MerchantDetails;
       }
     }
+    // Slice 7: counterparty fields on Transaction.
+    if (tx.CreditorAccount && !decide('Transaction.CreditorAccount', 'Common')) delete tx.CreditorAccount;
+    if (tx.DebtorAccount && !decide('Transaction.DebtorAccount', 'Common')) delete tx.DebtorAccount;
+    if (tx.CreditorAgent && !decide('Transaction.CreditorAgent', 'Common')) delete tx.CreditorAgent;
+    if (tx.DebtorAgent && !decide('Transaction.DebtorAgent', 'Common')) delete tx.DebtorAgent;
   }
 
   for (const bal of bundle.balances ?? []) {

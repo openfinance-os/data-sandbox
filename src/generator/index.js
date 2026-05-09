@@ -16,7 +16,11 @@ import { generateTransactions } from './transactions.js';
 import { generateStandingOrders } from './standing-orders.js';
 import { generateDirectDebits } from './direct-debits.js';
 import { generateBeneficiaries } from './beneficiaries.js';
-import { buildCrossLfiSelfBeneficiaries } from './multi-lfi.js';
+import {
+  buildCrossLfiSelfBeneficiaries,
+  computeCrossLfiLedger,
+  derivePrimaryAccountIban,
+} from './multi-lfi.js';
 import { generateScheduledPayments } from './scheduled-payments.js';
 import { generateParties } from './parties.js';
 import { generateStatements } from './statements.js';
@@ -138,6 +142,41 @@ function buildBankingBundle({ persona, lfi, seed, pools, now = DEFAULT_NOW }) {
       txState,
     });
     transactions.push(...accTx);
+  }
+
+  // Slice 7 (D-14): cross-LFI mirror ledger. For personas with
+  // `multi_lfi_footprint`, append 12 monthly self-sweep transactions
+  // per declared non-primary slot. The same pure-function ledger is
+  // computed for primary AND role bundles — primary gets the outflow
+  // half (CreditDebitIndicator='Debit'), role bundles get the inflow
+  // half ('Credit'). Each pair shares TransactionDateTime + Amount +
+  // Reference + counterparty IBAN, so a TPP-side accounting integration
+  // (Naqood-grade) can reconcile by IBAN identity.
+  const sourcePersona = persona._sourcePersona ?? persona;
+  if (sourcePersona.multi_lfi_footprint) {
+    const isProjection = persona._projectedRoleSlot != null;
+    const slotKey = isProjection ? persona._projectedRoleSlot : 'primary';
+    // Primary's anchor account = first CurrentAccount in the source
+    // persona's account list. Its IBAN was overridden in accounts.js
+    // to a deterministic synthetic AE99/999 value (see
+    // derivePrimaryAccountIban).
+    const firstCurrentIdx = (sourcePersona.accounts ?? []).findIndex((s) => s.type === 'CurrentAccount');
+    const primaryAccountId = firstCurrentIdx >= 0
+      ? `${sourcePersona.persona_id.replace(/_/g, '-')}-acct-${String(firstCurrentIdx + 1).padStart(2, '0')}`
+      : null;
+    const primaryIban = firstCurrentIdx >= 0
+      ? derivePrimaryAccountIban(sourcePersona.persona_id, firstCurrentIdx)
+      : null;
+    if (primaryAccountId && primaryIban) {
+      const ledger = computeCrossLfiLedger({
+        persona: sourcePersona,
+        primaryAccountId,
+        primaryIban,
+        counterpartyBanksPool: p.counterpartyBanks,
+        now,
+      });
+      transactions.push(...(ledger[slotKey] ?? []));
+    }
   }
 
   const balances = generateBalances({ accounts, transactions, now });

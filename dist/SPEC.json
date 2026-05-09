@@ -288,6 +288,10 @@
     "Transaction.MerchantDetails": "Variable",
     "Transaction.MerchantDetails.MerchantCategoryCode": "Variable",
     "Transaction.MerchantDetails.MerchantName": "Common",
+    "Transaction.CreditorAccount": "Common",
+    "Transaction.DebtorAccount": "Common",
+    "Transaction.CreditorAgent": "Common",
+    "Transaction.DebtorAgent": "Common",
     "Balance.CreditLine": "Variable"
   },
   "endpoints": {

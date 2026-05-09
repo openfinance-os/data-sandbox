@@ -247,8 +247,13 @@ export function projectPersonaForRole(persona, slotKey, bank) {
     // Tag for downstream code that wants to know this is a role projection.
     _projectedRoleSlot: slotKey,
     _projectedRole: slot.role,
+    // Hold a reference back to the source persona so the cross-LFI
+    // ledger compute (Slice 7) can read the original footprint without
+    // re-injecting cross-LFI self-beneficiaries into the role bundle.
+    _sourcePersona: persona,
     // Drop multi_lfi_footprint so cross-LFI self-beneficiary injection
-    // doesn't recurse into the role bundle.
+    // (which checks persona.multi_lfi_footprint) doesn't recurse into
+    // the role bundle.
     multi_lfi_footprint: null,
   };
 }
@@ -276,6 +281,152 @@ export async function buildRoleBundle({ persona, slot: slotKey, lfi, seed, pools
   if (!projected) return null;
   const { buildBundle } = await import('./index.js');
   return buildBundle({ persona: projected, lfi, seed, pools, now });
+}
+
+/**
+ * Slice 7 — primary-side anchor IBAN for cross-LFI mirror transactions.
+ *
+ * For personas with `multi_lfi_footprint`, the primary bundle's first
+ * CurrentAccount IBAN is overridden to a deterministic synthetic value
+ * keyed on (persona_id, accountIndex). The IBAN uses bank_code "999"
+ * (synthetic / anonymous, doesn't bind to any named pool bank — NG5-safe)
+ * with mod-97 check digits computed over AE + 999 + 16-digit account.
+ *
+ * Why deterministic: cross-LFI mirror transactions in role bundles
+ * carry DebtorAccount.Identification = primary's IBAN. To make that
+ * pointer valid without re-running the primary buildBundle, both
+ * sides compute this IBAN from the same persona + index inputs.
+ *
+ * Anonymity: AE99 + bank_code 999 means the IBAN is visibly a sandbox
+ * synthetic — no leak of "primary banks at any specific pool bank."
+ * The Servicer field on the primary's account stays at the
+ * existing synthetic SYNAEAA BIC.
+ */
+export function derivePrimaryAccountIban(personaId, accountIndex) {
+  const rng = makePrng(personaId, 'primary-account-iban', String(accountIndex));
+  let account = '';
+  for (let i = 0; i < 16; i++) account += rngInt(rng, 0, 10);
+  const bban = '999' + account;
+  const check = mod97IbanCheck('AE', bban);
+  return `AE${check}${bban}`;
+}
+
+/**
+ * Slice 7 — cross-LFI mirror ledger.
+ *
+ * Returns deterministic paired transactions for personas with
+ * `multi_lfi_footprint`. For each declared non-primary slot, emits
+ * 12 monthly self-sweep events (one per month in the trailing 12-month
+ * window). Each event has a primary-side outflow and a role-side
+ * inflow with byte-matching:
+ *   - Amount.Amount + Amount.Currency
+ *   - TransactionDateTime + BookingDateTime + ValueDateTime
+ *   - Reference / TransactionInformation
+ *   - cross-pointers via CreditorAccount.Identification (on primary)
+ *     and DebtorAccount.Identification (on role) — both are mod-97
+ *     valid IBANs whose identity proves "same persona, two banks."
+ *
+ * The TransactionId per side is keyed on slotKey + monthIndex so an
+ * accounting integration can match by id alone if it wants, without
+ * fuzzy date-window joins.
+ *
+ * Returns: { primary: [...], secondary: [...], tertiary: [...] }
+ *   - primary[i]:   _accountId = persona's first CurrentAccount AccountId,
+ *                   CreditDebitIndicator='Debit', shape = outflow.
+ *   - secondary[i]: _accountId = role-bundle's account[0] AccountId
+ *                   (same slug pattern: <persona-slug>-acct-01),
+ *                   CreditDebitIndicator='Credit', shape = inflow.
+ *
+ * Pure function — no rng dependency on bundle seed; same persona +
+ * footprint → byte-identical ledger. EXP-05 across bundles is preserved.
+ */
+const ROLE_AMOUNT_BANDS_AED = {
+  operating: [3000, 8000],          // unused for primary→primary; here for completeness
+  islamic_deposit: [4000, 12000],   // monthly term-deposit top-up
+  digital_challenger: [800, 3500],  // founder card top-up / sweep
+  trade_finance: [15000, 60000],    // FX-corridor working capital sweep
+  acquiring: [5000, 18000],         // acquirer-float sweep into operating
+  escrow: [10000, 40000],           // escrow funding / release
+};
+
+export function computeCrossLfiLedger({ persona, primaryAccountId, primaryIban, counterpartyBanksPool, now }) {
+  const out = { primary: [], secondary: [], tertiary: [] };
+  if (!persona.multi_lfi_footprint) return out;
+
+  for (const slotKey of ['secondary', 'tertiary']) {
+    const slot = persona.multi_lfi_footprint[slotKey];
+    if (!slot) continue;
+    const slotBank = pickRoleBank(persona.persona_id, slotKey, slot, counterpartyBanksPool);
+    if (!slotBank) continue;
+    const roleIban = deriveCrossLfiSelfIban(persona.persona_id, slotKey, slotBank);
+    const roleAccountId = `${persona.persona_id.replace(/_/g, '-')}-acct-01`;
+    const band = ROLE_AMOUNT_BANDS_AED[slot.role] ?? [3000, 9000];
+    const ccy = slot.role === 'trade_finance' ? 'USD' : 'AED';
+
+    for (let m = 0; m < 12; m++) {
+      // Deterministic per (persona, slot, month). NOT seeded on the
+      // bundle's `seed` — the cross-LFI ledger is a property of the
+      // persona, not of one (lfi, seed) tuple. EXP-05 holds.
+      const rng = makePrng(persona.persona_id, `cross-lfi-ledger-${slotKey}`, String(m));
+      const amount = rngInt(rng, band[0], band[1] + 1);
+      const monthAnchor = new Date(now.getTime());
+      monthAnchor.setUTCDate(1);
+      monthAnchor.setUTCMonth(monthAnchor.getUTCMonth() - (11 - m));
+      // 28th at 11:00 UTC — mirrors the standing-order convention.
+      monthAnchor.setUTCDate(28);
+      monthAnchor.setUTCHours(11, 0, 0, 0);
+      const isoNoMs = monthAnchor.toISOString().replace(/\.\d{3}Z$/, 'Z');
+      const reference = `XLFI-${slotKey.slice(0, 3).toUpperCase()}-${String(m + 1).padStart(2, '0')}`;
+      const txIdBase = `${persona.persona_id.replace(/_/g, '-')}-xlfi-${slotKey === 'secondary' ? 's2' : 's3'}-${String(m + 1).padStart(2, '0')}`;
+
+      out.primary.push({
+        _accountId: primaryAccountId,
+        _crossLfiPairId: `${slotKey}-${m}`,
+        TransactionId: `${txIdBase}-out`,
+        TransactionReference: reference,
+        CreditDebitIndicator: 'Debit',
+        Status: 'Booked',
+        BookingDateTime: isoNoMs,
+        TransactionDateTime: isoNoMs,
+        ValueDateTime: isoNoMs,
+        TransactionInformation: `XLFI SWEEP TO ${slotKey.toUpperCase()} ${reference}`,
+        Amount: { Amount: amount.toFixed(2), Currency: ccy },
+        TransactionType: 'LocalBankTransfer',
+        SubTransactionType: 'MoneyTransfer',
+        CreditorAgent: {
+          SchemeName: 'BICFI',
+          Identification: slotBank.bic,
+          Name: slotBank.name,
+        },
+        CreditorAccount: [
+          { SchemeName: 'IBAN', Identification: roleIban, Name: persona.name },
+        ],
+      });
+
+      out[slotKey].push({
+        _accountId: roleAccountId,
+        _crossLfiPairId: `${slotKey}-${m}`,
+        TransactionId: `${txIdBase}-in`,
+        TransactionReference: reference,
+        CreditDebitIndicator: 'Credit',
+        Status: 'Booked',
+        BookingDateTime: isoNoMs,
+        TransactionDateTime: isoNoMs,
+        ValueDateTime: isoNoMs,
+        TransactionInformation: `XLFI SWEEP FROM PRIMARY ${reference}`,
+        Amount: { Amount: amount.toFixed(2), Currency: ccy },
+        TransactionType: 'LocalBankTransfer',
+        SubTransactionType: 'MoneyTransfer',
+        DebtorAgent: {
+          SchemeName: 'BICFI',
+          Identification: 'SYNAEAA', // anonymous primary servicer
+          Name: 'Sandbox Synthetic LFI',
+        },
+        DebtorAccount: { SchemeName: 'IBAN', Identification: primaryIban, Name: persona.name },
+      });
+    }
+  }
+  return out;
 }
 
 export function buildCrossLfiSelfBeneficiaries({ persona, accounts, identity, pools }) {

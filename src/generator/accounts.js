@@ -6,6 +6,7 @@
 
 import { rngInt } from '../prng.js';
 import { drawIban, drawCounterpartyBank } from './identity.js';
+import { derivePrimaryAccountIban } from './multi-lfi.js';
 
 const SUBTYPE_BY_KIND = {
   CurrentAccount: 'CurrentAccount',
@@ -22,6 +23,17 @@ function makeAccountId(personaId, idx) {
 export function generateAccounts({ persona, identity, rng, pools, now }) {
   const personaSegment = persona.segment ?? 'Retail';
   const orgHolderName = persona.organisation?._resolved?.legalName ?? null;
+  // Slice 7: for personas with multi_lfi_footprint, override the first
+  // CurrentAccount's IBAN with a deterministic synthetic AE99/999 value
+  // so cross-LFI mirror transactions in role bundles can carry the
+  // primary's IBAN as DebtorAccount without re-running the primary
+  // generator. Identifies the FIRST CurrentAccount index up front so
+  // the per-account loop can short-circuit cleanly.
+  const sourcePersona = persona._sourcePersona ?? persona;
+  const wantsPrimaryAnchor = !!sourcePersona.multi_lfi_footprint && !persona._projectedRoleSlot;
+  const firstCurrentIdx = wantsPrimaryAnchor
+    ? persona.accounts.findIndex((s) => s.type === 'CurrentAccount')
+    : -1;
   const accounts = persona.accounts.map((spec, idx) => {
     // Phase D Slice 5: a role-bundle's projected persona pre-pins the
     // bank + IBAN per account (so the secondary/tertiary bundle's
@@ -29,7 +41,14 @@ export function generateAccounts({ persona, identity, rng, pools, now }) {
     // beneficiary in the primary bundle). When neither is set, fall
     // back to the random-pool draw — the v1 / Phase 1 default.
     const bank = spec._bankOverride ?? drawCounterpartyBank(rng, pools.counterpartyBanks);
-    const iban = spec._ibanOverride ?? drawIban(rng, pools.ibans, bank);
+    let iban;
+    if (spec._ibanOverride) {
+      iban = spec._ibanOverride;
+    } else if (idx === firstCurrentIdx) {
+      iban = derivePrimaryAccountIban(persona.persona_id, idx);
+    } else {
+      iban = drawIban(rng, pools.ibans, bank);
+    }
     const opening = rngInt(rng, 1500, 9500);
     const accountType = spec.account_type ?? personaSegment;
     // Business accounts (SME/Corporate AccountType) use the organisation's
