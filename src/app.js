@@ -35,6 +35,8 @@ import { conditionalRule, isPii, whyEmpty } from './shared/field-knowledge.js';
 import { createUnderwriting } from './ui/underwriting.js';
 import { createFieldCard } from './ui/field-card.js';
 import { createHoverPreview } from './ui/hover-preview.js';
+import { createEmbedSnippet } from './ui/embed-snippet.js';
+import { copyToClipboard } from './ui/clipboard.js';
 
 // All 12 v1 endpoints (Appendix C). Three are bundle-level (no AccountId
 // scope): /accounts and /parties. The others are per-account.
@@ -132,6 +134,9 @@ const { openFieldCard } = createFieldCard({
 });
 const { attachHoverPreview } = createHoverPreview({
   state, el, endpointFieldsByName,
+});
+const { copyEmbedSnippet } = createEmbedSnippet({
+  state, OVERVIEW_PSEUDO, UNDERWRITING_PSEUDO,
 });
 const { openFind, closeFind } = createFindBox({
   state, el, humanArchetype, rebuildAndRender, clearTxState,
@@ -685,7 +690,7 @@ function attachEventHandlers() {
   // EXP-17 Share — pushPermalink keeps window.location.href canonical on every
   // state change, so the live href is the right thing to put on the clipboard.
   document.getElementById('share-btn').addEventListener('click', () => {
-    copyDemoSnippet(window.location.href, 'Permalink copied.');
+    copyToClipboard(window.location.href, 'Permalink copied.');
   });
   // ⌘K / Ctrl+K opens the find box from anywhere in the app.
   window.addEventListener('keydown', (e) => {
@@ -1676,24 +1681,13 @@ curl -fsS '${curlUrl}'`;
       class: 'demo-row-copy',
       attrs: { type: 'button' },
       text: r.copyLabel,
-      onClick: () => copyDemoSnippet(r.snippet, r.doneLabel),
+      onClick: () => copyToClipboard(r.snippet, r.doneLabel),
     });
     row.appendChild(btn);
     details.appendChild(row);
   }
 
   return details;
-}
-
-function copyDemoSnippet(text, doneLabel) {
-  if (navigator.clipboard?.writeText) {
-    navigator.clipboard.writeText(text).then(
-      () => showCopyToast(doneLabel),
-      () => fallbackCopy(text),
-    );
-  } else {
-    fallbackCopy(text);
-  }
 }
 
 // ---- EXP-12 bidirectional links ----------------------------------------------------------
@@ -1788,54 +1782,6 @@ function stripInternal(rec) {
     out[k] = v;
   }
   return out;
-}
-
-// ---- Embed-snippet copy — EXP-27 ergonomic affordance ----------------------------------
-
-function copyEmbedSnippet() {
-  const slugBase = window.location.origin + window.location.pathname.replace(/\/index\.html$/, '');
-  const url = slugBase.replace(/\/$/, '') + encodeEmbed({
-    personaId: state.personaId,
-    lfi: state.lfi,
-    endpoint: state.endpoint === OVERVIEW_PSEUDO || state.endpoint === UNDERWRITING_PSEUDO
-      ? '/accounts/{AccountId}/transactions'
-      : state.endpoint,
-    seed: state.seed,
-    height: 600,
-  }).replace(/^\/embed/, '/embed.html');
-  const snippet = `<iframe src="${url}" width="100%" height="600" loading="lazy" title="Open Finance Data Sandbox · ${state.personaId} · ${state.lfi}" referrerpolicy="no-referrer" style="border:1px solid #d9d5cb;border-radius:4px"></iframe>`;
-  // Best-effort clipboard. Falls back to a textarea + selection so the user
-  // can ⌘C themselves if the browser blocks programmatic clipboard access.
-  const ok = (text) => {
-    if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(text).then(
-        () => showCopyToast('Embed snippet copied. Paste into your slide deck or article.'),
-        () => fallbackCopy(text),
-      );
-    } else {
-      fallbackCopy(text);
-    }
-  };
-  ok(snippet);
-}
-
-function fallbackCopy(text) {
-  const ta = document.createElement('textarea');
-  ta.value = text;
-  ta.style.position = 'fixed';
-  ta.style.opacity = '0';
-  document.body.appendChild(ta);
-  ta.select();
-  try { document.execCommand('copy'); showCopyToast('Embed snippet copied.'); }
-  catch { showCopyToast('Copy blocked — selecting snippet for ⌘C / Ctrl+C.'); ta.style.opacity = '1'; return; }
-  ta.remove();
-}
-
-function showCopyToast(text) {
-  document.querySelectorAll('.copy-toast').forEach((n) => n.remove());
-  const t = el('div', { class: 'copy-toast', attrs: { role: 'status' }, text });
-  document.body.appendChild(t);
-  setTimeout(() => t.remove(), 2400);
 }
 
 init().catch((err) => {
