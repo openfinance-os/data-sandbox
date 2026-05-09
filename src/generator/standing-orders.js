@@ -33,7 +33,15 @@ export function generateStandingOrders({ persona, accounts, rng, pools, now }) {
         NextPaymentAmount: amountObj(amount, acc.Currency),
         LastPaymentAmount: amountObj(amount, acc.Currency),
         FinalPaymentAmount: amountObj(amount, acc.Currency),
-        CreditorAgent: { SchemeName: 'BICFI', Identification: creditorIban.slice(0, 8) },
+        // AEStandingOrder.CreditorAgent uses
+        // AEBranchAndFinancialInstitutionIdentification5_1, which is locked
+        // to { SchemeName, Identification } with additionalProperties: false
+        // — so the bank Name cannot be surfaced here. The synthetic per-bank
+        // BIC stem from the pool gives bank-distinctive Identification.
+        CreditorAgent: {
+          SchemeName: 'BICFI',
+          Identification: counterpartyBank.bic ?? creditorIban.slice(0, 8),
+        },
         CreditorAccount: [
           { SchemeName: 'IBAN', Identification: creditorIban, Name: prettyPurpose(c.purpose) },
         ],

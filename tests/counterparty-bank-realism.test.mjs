@@ -2,19 +2,19 @@
 // pool ships 37 named UAE banks across Tier-1 / Tier-2 / Islamic / digital /
 // foreign branches. This test asserts:
 //
-//   1. The pool itself spans at least 30 banks (catches accidental shrinkage).
+//   1. The pool itself spans at least 30 banks (catches accidental shrinkage),
+//      every bank has a unique 4-char `iban_prefix`, and every bank has a
+//      unique 8-char synthetic `bic` BIC stem.
 //   2. For every banking persona × LFI fixture, the counterparty IBANs
 //      surfaced in beneficiaries / standing orders / scheduled payments
 //      span at least 3 distinct AE-prefixes (5 for SME/Corporate personas
-//      that structurally have more counterparty volume) — i.e., the
-//      generator visibly draws from a multi-bank pool, not the same one
-//      over and over. Low-volume retail personas (senior, gig-worker)
-//      legitimately can't hit 5; 3 is enough to prove multi-banking.
-//
-// The bank NAME isn't rendered in the v2.1 envelope today (CreditorAgent
-// surfaces a BICFI Identification only); a follow-up may wire CreditorAgent.
-// Name through. For now this test pins generator-side breadth via the
-// IBAN prefix, which is bank-distinctive.
+//      that structurally have more counterparty volume).
+//   3. For every banking persona × LFI fixture, beneficiaries surface a
+//      counterparty bank NAME (CreditorAgent.Name) drawn from the pool —
+//      so multi-banking is visible in rendered fixtures, not just inferable
+//      from IBAN prefix. Beneficiaries use schema 6_0 which permits Name;
+//      standing-orders / scheduled-payments use 5_1 which does not — they
+//      get bank-distinctive BICs but no Name surface.
 
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
@@ -43,6 +43,12 @@ describe('D-14 counterparty-bank pool breadth', () => {
     const prefixes = POOL.banks.map((b) => b.iban_prefix);
     expect(new Set(prefixes).size).toBe(prefixes.length);
     for (const p of prefixes) expect(p).toMatch(/^AE\d{2}$/);
+  });
+
+  it('every bank has a unique synthetic 8-char BIC stem', () => {
+    const bics = POOL.banks.map((b) => b.bic);
+    expect(new Set(bics).size).toBe(bics.length);
+    for (const b of bics) expect(b).toMatch(/^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}$/);
   });
 
   it('the pool covers all four UAE bank tiers/types (Tier-1 conventional, Tier-1 Islamic, digital-only, foreign)', () => {
@@ -109,6 +115,18 @@ if (!FIXTURES_BUILT) {
     return p.segment ?? 'Retail';
   }
 
+  const POOL_BANK_NAMES = new Set(POOL.banks.map((b) => b.name));
+
+  function* beneficiaryBankNames(fx) {
+    for (const id of fx.accountIds ?? []) {
+      const ben = readEnv(fx.endpoints[`/accounts/${id}/beneficiaries`]);
+      for (const b of ben.Data?.Beneficiary ?? []) {
+        const name = b.CreditorAgent?.Name;
+        if (name) yield name;
+      }
+    }
+  }
+
   for (const [key, fx] of bankingFixtures) {
     const segment = personaSegment(fx.personaId);
     const minPrefixes = segment === 'Retail' ? 3 : 5;
@@ -122,6 +140,23 @@ if (!FIXTURES_BUILT) {
         prefixes.size,
         `${key} counterparty IBANs cover ${prefixes.size} distinct AE prefixes — expected ≥${minPrefixes}`,
       ).toBeGreaterThanOrEqual(minPrefixes);
+    });
+
+    it(`${key} (${segment}) — beneficiary CreditorAgent.Name surfaces real UAE bank names from the pool`, () => {
+      const names = [...beneficiaryBankNames(fx)];
+      expect(names.length, `${key} has zero beneficiary records with CreditorAgent.Name`).toBeGreaterThan(0);
+      for (const n of names) {
+        expect(POOL_BANK_NAMES.has(n), `${key} CreditorAgent.Name="${n}" not in counterparty pool`).toBe(true);
+      }
+      // Multi-bank visibility: distinct bank names across all beneficiaries.
+      // SME / Corporate hit 3+, Retail 2+ (low-volume personas have only 3
+      // beneficiaries on a single current account, so 2 distinct is the
+      // realistic floor).
+      const minNames = segment === 'Retail' ? 2 : 3;
+      expect(
+        new Set(names).size,
+        `${key} beneficiaries cover ${new Set(names).size} distinct bank names — expected ≥${minNames}`,
+      ).toBeGreaterThanOrEqual(minNames);
     });
   }
 });

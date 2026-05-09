@@ -24,7 +24,15 @@ export function generateScheduledPayments({ persona, accounts, rng, pools, now }
         ScheduledPaymentDateTime: isoOf(date),
         Reference: `SCHED-${rngInt(rng, 1000, 9999)}`,
         InstructedAmount: { Amount: rngInt(rng, 100, 5000).toFixed(2), Currency: acc.Currency },
-        CreditorAgent: { SchemeName: 'BICFI', Identification: iban.slice(0, 8) },
+        // AEScheduledPayment.CreditorAgent uses
+        // AEBranchAndFinancialInstitutionIdentification5_1, locked to
+        // { SchemeName, Identification } with additionalProperties: false —
+        // bank Name cannot be surfaced. The synthetic per-bank BIC stem
+        // from the pool gives bank-distinctive Identification.
+        CreditorAgent: {
+          SchemeName: 'BICFI',
+          Identification: counterpartyBank.bic ?? iban.slice(0, 8),
+        },
         CreditorAccount: [
           { SchemeName: 'IBAN', Identification: iban, Name: beneficiary.full },
         ],

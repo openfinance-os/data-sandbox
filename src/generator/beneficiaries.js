@@ -23,7 +23,14 @@ export function generateBeneficiaries({ persona, accounts, rng, pools }) {
         Reference: `BEN-${rngInt(rng, 1000, 9999)}`,
         CreditorAgent: {
           SchemeName: 'BICFI',
-          Identification: iban.slice(0, 8),
+          Identification: counterpartyBank.bic ?? iban.slice(0, 8),
+          // AEBranchAndFinancialInstitutionIdentification6_0 (the shape
+          // used by AEBeneficiary.CreditorAgent) allows an optional Name —
+          // surface the real-UAE counterparty bank name from the pool so
+          // multi-banking is visible in rendered fixtures, not just
+          // inferable from IBAN prefix. NG5/D-14: counterparty-pool
+          // names are an allowed site for real bank names.
+          ...(counterpartyBank.name ? { Name: counterpartyBank.name } : {}),
           PostalAddress: { AddressLine: ['Synthetic Branch'], Country: 'AE' },
         },
         CreditorAccount: [
