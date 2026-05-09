@@ -67,10 +67,10 @@ describe('sandbox-mcp server', () => {
     expect(names).toEqual([...EXPECTED_TOOLS].sort());
   });
 
-  it('list_personas returns all 20 personas across both domains by default', async () => {
+  it('list_personas returns all 21 personas across both domains by default', async () => {
     const r = await client.callTool({ name: 'list_personas', arguments: {} });
     const payload = JSON.parse(textOf(r));
-    expect(payload.count).toBe(20);
+    expect(payload.count).toBe(21);
     const ids = payload.personas.map((p) => p.id);
     expect(ids).toContain('salaried_expat_mid');
     expect(ids).toContain('motor_comprehensive_mid');
@@ -85,7 +85,7 @@ describe('sandbox-mcp server', () => {
     const banking = JSON.parse(
       textOf(await client.callTool({ name: 'list_personas', arguments: { domain: 'banking' } })),
     );
-    expect(banking.count).toBe(17);
+    expect(banking.count).toBe(18);
     expect(banking.personas.every((p) => p.domain === 'banking')).toBe(true);
 
     const insurance = JSON.parse(

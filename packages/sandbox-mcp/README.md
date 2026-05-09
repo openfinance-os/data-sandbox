@@ -9,7 +9,7 @@ The intended use: run Claude as a **dynamic PFM** against a synthetic customer. 
 ## Scope
 
 - **Two domains** — Bank Data Sharing v2.1 (all 12 Account-Information endpoints) and an Insurance Data Sharing preview (motor v2.1-errata1: policies list, policy detail, payment-details, read-quote).
-- **20 curated personas (17 banking + 3 motor-insurance) + a custom-persona builder** — pick from the curated list with `set_session`, or compose a recipe and call `build_persona` to generate a fresh deterministic persona at runtime.
+- **21 curated personas (18 banking + 3 motor-insurance) + a custom-persona builder** — pick from the curated list with `set_session`, or compose a recipe and call `build_persona` to generate a fresh deterministic persona at runtime.
 - **Read-only** — no writes, no Service Initiation.
 - **Anonymous** — no auth, no API keys, no OAuth. The data is synthetic so there is nothing real to protect.
 - **Two transports** — stdio (default, for `npx` / Claude Desktop / Claude Code) and Streamable HTTP (for the Claude marketplace listing and any browser-side client). PRD decision D-13.
@@ -118,7 +118,7 @@ claude mcp add open-finance-sandbox -- npx -y @openfinance-os/sandbox-mcp
 
 | Tool | Purpose |
 |---|---|
-| `list_personas` | List the 20 synthetic personas (17 banking + 3 motor-insurance) with id, name, archetype, default seed, domain, and stress-coverage tags. Pass `{ domain: 'banking' \| 'insurance' }` to filter. |
+| `list_personas` | List the 21 synthetic personas (18 banking + 3 motor-insurance) with id, name, archetype, default seed, domain, and stress-coverage tags. Pass `{ domain: 'banking' \| 'insurance' }` to filter. |
 | `lfi_profiles` | Describe the three LFI populate-rate profiles (rich/median/sparse) and the EXP-04 invariant that mandatory fields are never redacted. |
 | `set_session` | Pin a curated persona via `{ persona, lfi?, seed? }`. `lfi` defaults to `median`; `seed` defaults to `persona.default_seed`. |
 | `get_session` | Echo the active persona / lfi / seed (and recipe hash for custom personas). |
