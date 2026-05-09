@@ -19,6 +19,11 @@ const PARSED_PATH = path.join(repoRoot, 'dist/SPEC.insurance.json');
 function compileSchema(spec, refPath) {
   const ajv = new Ajv({ strict: false, allErrors: true, allowUnionTypes: true });
   addFormats(ajv);
+  // The UAE Insurance v2.1 spec uses an OpenAPI-style `format: decimal` on
+  // percentage / VAT-percentage schemas. ajv-formats doesn't ship it; register
+  // a permissive checker so AJV doesn't log "unknown format" warnings on every
+  // compile. Range / precision is already enforced by the schema's `pattern`.
+  ajv.addFormat('decimal', { type: 'string', validate: () => true });
 
   const definitions = JSON.parse(JSON.stringify(spec.components.schemas));
   const rewrite = (node) => {

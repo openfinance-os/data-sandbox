@@ -36,7 +36,7 @@ An interactive, **client-side static** sandbox that lets a TPP-perspective user 
 - `src/` — frontend sources (vanilla JS) + Service Worker.
 - `spec/` — vendored OpenAPI YAMLs (banking v2.1, insurance) + `lfi-bands.banking.yaml`.
 - `tools/` — spec parser, data builder, fixture-package builders, site stager, lints.
-- `personas/` — YAML persona manifests (17 banking + 3 insurance = 20 total).
+- `personas/` — YAML persona manifests (18 banking + 3 insurance = 21 total).
 - `synthetic-identity-pool/` — name/IBAN/phone/DOB pools.
 - `tests/` — Vitest suites (spec validation, replay, LFI bands, fixture-package, integrate-staging, journey-coherence, etc.) + Playwright e2e under `tests/e2e/`.
 - `packages/sandbox-fixtures/` — `@openfinance-os/sandbox-fixtures` (npm). Exports: `loadFixture`, `loadJourney`, `buildBundle`, `expandRecipe`, `encodeRecipe`, `recipeHash`, `validateRecipe`, `listPersonas`, `listEndpoints`, `loadSpec`, `getPools`, `manifest`.
@@ -51,7 +51,7 @@ An interactive, **client-side static** sandbox that lets a TPP-perspective user 
 - `npm run build:spec` — parse vendored YAMLs to `dist/SPEC*.json`.
 - `npm run build:fixtures` — build the npm + PyPI fixture packages (unblocks the EXP-20 / EXP-32 test suites).
 - `npm run build:site` — full pipeline: build:spec → build:data → fixture packages → stage `_site/` (unblocks the EXP-28..31 staging-contract tests).
-- `npm test` — vitest. After `build:site`, all suites unblock (729 tests, 0 skipped); without it, three suites skip with messages pointing at the right command.
+- `npm test` — vitest. After `build:site`, all suites unblock (1530 tests, 0 skipped); without it, ~11 cases skip with messages pointing at the right command.
 - `npm run test:e2e` — Playwright smoke + a11y.
 - `npm run test:perf` — Lighthouse CI (EXP-24 budget).
 - `npm run serve` — quick `python3 -m http.server` on `src/` for local dev.
@@ -98,8 +98,8 @@ The PRD assigns every requirement an `EXP-NN` ID (PRD §4). When discussing or i
 
 - **Phase 0 (spike)** — done.
 - **Phase 1 (v1)** — done. 12 banking personas × all 12 v2.1 Account Information endpoints × 3 LFI profiles. Endpoints listed in PRD Appendix C.
-- **Phase 1.5** — largely landed: Compare-LFIs mode, Underwriting Scenario panel, custom-persona builder, Service-Worker fixture mock, fixture package `@openfinance-os/sandbox-fixtures` (npm) and `openfinance-os-sandbox-fixtures` (PyPI mirror) — MIT code, CC0 data. Persona library at 13 (12 banking + 1 insurance MVP).
-- **Phase 2** — in progress. Insurance domain motor-comprehensive MVP shipped (`spec/uae-insurance-openapi.yaml`, `personas/motor-comprehensive-mid.yaml`, `tests/spec-validation.insurance.test.mjs`); see `PHASE2_INSURANCE_PLAN.md`. Phase 2.x SME expansion (D-14): real-UAE counterparty-bank pool + 5 new SME personas (F&B multi-outlet, e-commerce marketplace, free-zone SaaS, construction sub-contractor, healthcare clinic), each carrying a `multi_lfi_footprint` with named UAE banks across primary / secondary / tertiary roles. Open Wealth + community persona PRs still ahead.
+- **Phase 1.5** — landed: Compare-LFIs mode, Underwriting Scenario panel, custom-persona builder, Service-Worker fixture mock, fixture package `@openfinance-os/sandbox-fixtures` (npm) and `openfinance-os-sandbox-fixtures` (PyPI mirror) — MIT code, CC0 data.
+- **Phase 2** — in progress. Persona library at 21 (18 banking + 3 insurance). Insurance domain motor-MVP shipped (4 endpoints, 3 motor personas; see `PHASE2_INSURANCE_PLAN.md`). Phase 2.x SME expansion (D-14): real-UAE counterparty-bank pool, 6 new SME personas (F&B multi-outlet, e-commerce marketplace, free-zone SaaS, construction sub-contractor, healthcare clinic, RAK Emirati trading) each carrying a `multi_lfi_footprint`; mod-97-valid IBANs; full Phase D role-bundle generation (primary + secondary + tertiary URLs under `bundles/<persona>/{secondary,tertiary}/<lfi>/seed-<n>/`); cross-LFI mirror-ledger transactions; footprint-aware SO routing; MCP server (`packages/sandbox-mcp/`) deployed to Fly. Phase 2.1 (full Insurance endpoint coverage), Open Wealth (Phase 2.2), and PostHog key wiring still ahead.
 
 ## Working with the user
 

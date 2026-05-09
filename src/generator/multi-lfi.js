@@ -1,36 +1,30 @@
-// Phase D-lite — surface a persona's multi-LFI footprint inside the primary
-// bundle's beneficiary list (D-14, deferred-Phase-D outline).
+// Multi-LFI footprint surfaces (D-14 + Phase D + Slice 7). Three concerns
+// share this module because they share the same deterministic IBAN
+// derivation and footprint walk:
 //
-// Full Phase D (separate primary + secondary + tertiary bundle generation
-// with cross-bundle deterministic IBAN matching, role-keyed stage layout,
-// Service-Worker extension, npm/PyPI package shape, MCP tool surface) is
-// intentionally deferred — touching the bundle URL contract risks D-11
-// forward-compat. Instead, this module makes the multi-bank reality
-// visible WITHIN the existing single-bundle shape by injecting one
-// self-at-other-LFI beneficiary per declared non-primary footprint slot.
+// 1. `buildCrossLfiSelfBeneficiaries` — injects one self-at-other-LFI
+//    beneficiary per declared non-primary footprint slot into the primary
+//    bundle (the visible "I sweep operating → savings at another bank"
+//    shape). Each carries a real-UAE bank Name + synthetic BIC + a
+//    deterministic synthetic IBAN keyed on (persona_id, role, bank).
 //
-// Each injected beneficiary:
-//   - CreditorAccount.Name      = the persona's own signatory name
-//                                 (i.e., a transfer to themselves at
-//                                 another bank — the realistic shape of
-//                                 SME owners who sweep operating →
-//                                 savings or operating → digital-
-//                                 challenger card)
-//   - CreditorAgent.Name        = a deterministic pick from the slot's
-//                                 plausible_lfi_candidates (NG5/D-14
-//                                 allow-site)
-//   - CreditorAgent.Identification = that bank's synthetic BIC
-//   - CreditorAccount.Identification = a deterministic synthetic IBAN
-//                                 keyed on (persona_id, role, seed) +
-//                                 the candidate bank's iban_prefix
-//   - Reference                 = "self-to-<role>" so the relationship
-//                                 is clear in rendered fixtures
+// 2. `buildRoleBundle` — full Phase D: generates separate secondary /
+//    tertiary bundles staged at `bundles/<persona>/<role>/<lfi>/seed-<n>/`.
+//    Projects the persona to a minimal "role persona" with one account at
+//    the role's deterministically-picked bank, then runs `buildBundle()`.
+//    The projected account's IBAN matches the `self-to-<role>` beneficiary's
+//    IBAN byte-exactly, so the cross-bundle reference loop closes.
 //
-// IBAN derivation is pure: same (persona_id, role, seed) → same IBAN
-// every build. When a future full-Phase-D slice generates a separate
-// secondary bundle, that bundle's account[0].IBAN must match the IBAN
-// emitted here — so the cross-bundle reference holds without needing
-// any additional plumbing.
+// 3. `computeCrossLfiLedger` + `derivePrimaryAccountIban` — Slice 7 cross-
+//    LFI mirror ledger: 12 monthly self-sweep outflows on the primary
+//    bundle's transactions, byte-mirrored as inflows in the corresponding
+//    role bundle. Ledger is a pure function of (persona, pool, now) — no
+//    dependency on the bundle's `seed` — so the same economic event
+//    appears identically in two LFI feeds without any out-of-band id.
+//
+// All IBANs emitted here are mod-97 valid (`mod97IbanCheck`) and the role
+// derivation is independent of `seed` so the cross-bundle identity holds
+// regardless of which (lfi, seed) tuple is fetched.
 
 import { makePrng, rngInt } from '../prng.js';
 import { mod97IbanCheck } from './identity.js';
