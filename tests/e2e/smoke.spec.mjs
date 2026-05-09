@@ -136,6 +136,31 @@ test('about page renders with live spec metadata', async ({ page }) => {
   expect(mandatory).toBeLessThan(total);
 });
 
+test('insurance domain renders motor persona, switches endpoints, no console errors', async ({ page }) => {
+  const consoleErrors = [];
+  page.on('console', (msg) => { if (msg.type() === 'error') consoleErrors.push(msg.text()); });
+  page.on('pageerror', (err) => consoleErrors.push(`pageerror: ${err.message}`));
+
+  await page.goto('/src/index.html?domain=insurance&persona=motor_comprehensive_mid&lfi=median&seed=4729');
+
+  // Active persona card is the motor one.
+  await expect(page.locator('.persona-card.active').first()).toBeVisible();
+
+  // Insurance navigator is in place with the expected endpoint set.
+  await expect(page.locator('.nav-endpoint', { hasText: '/motor-insurance-policies' }).first()).toBeVisible();
+  await expect(page.locator('.nav-endpoint', { hasText: '/motor-insurance-policies/{InsurancePolicyId}/payment-details' })).toBeVisible();
+
+  // Payload renders an insurance record card with at least one field name.
+  await expect(page.locator('.insurance-payload .insurance-record').first()).toBeVisible();
+  await expect(page.locator('.insurance-payload .field-name').first()).toBeVisible();
+
+  // Click into the payment-details endpoint and verify the body re-renders.
+  await page.locator('.nav-endpoint', { hasText: '/payment-details' }).first().click();
+  await expect(page.locator('.insurance-payload')).toBeVisible();
+
+  expect(consoleErrors, `console errors: ${consoleErrors.join('\n')}`).toEqual([]);
+});
+
 test('tour walks through 5 steps and finishes cleanly', async ({ page }) => {
   await page.goto('/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729');
   await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
