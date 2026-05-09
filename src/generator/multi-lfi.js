@@ -76,6 +76,69 @@ export function deriveCrossLfiSelfIban(personaId, role, bank) {
 }
 
 /**
+ * Slice 4 — purpose → footprint-role mapping. Standing-order purposes
+ * on personas with `multi_lfi_footprint` whose semantics align with a
+ * specific role are routed through a candidate bank from that role's
+ * slot, so the rendered CreditorAgent reflects the persona's declared
+ * banking reality (e.g. a zakat-distribution standing order points at
+ * an Islamic bank, not at a random pool draw).
+ *
+ * Tables are intentionally narrow and keyword-based — adding a new
+ * purpose to a role is a single regex tweak. Purposes that don't match
+ * any role keep the random-pool draw (preserves byte-identity for
+ * existing fixtures except those with footprint-relevant SOs).
+ */
+const PURPOSE_TO_ROLE_RULES = [
+  { pattern: /zakat|sadaqah|islamic|murabaha|mudaraba|sharia/i, role: 'islamic_deposit' },
+  { pattern: /lc_payment|trade_finance|fx_settlement|wire_corridor/i, role: 'trade_finance' },
+  { pattern: /pos_terminal|aggregator|acquir|merchant_settlement/i, role: 'acquiring' },
+  { pattern: /escrow|trust_account|rera_holding|khda_holding/i, role: 'escrow' },
+  { pattern: /founder_(secondary_)?(loan|card)|digital_card_repayment|saas_subscriptions/i, role: 'digital_challenger' },
+];
+
+/**
+ * Given a standing-order / direct-debit purpose string, return the
+ * matching footprint role id, or null. Pure function.
+ */
+export function purposeToRole(purpose) {
+  if (!purpose) return null;
+  for (const rule of PURPOSE_TO_ROLE_RULES) {
+    if (rule.pattern.test(purpose)) return rule.role;
+  }
+  return null;
+}
+
+/**
+ * Given a persona, a purpose, and the counterparty-bank pool: if the
+ * purpose maps to a role AND the persona declares that role in its
+ * footprint AND the role's plausible_lfi_candidates yields at least
+ * one bank present in the pool, return that bank. Otherwise return
+ * null — caller falls back to random pool draw.
+ *
+ * Determinism: keyed on (persona_id, purpose) so the same SO on the
+ * same persona always picks the same bank, independent of `seed`.
+ */
+export function pickFootprintBankForPurpose(persona, purpose, counterpartyBanksPool) {
+  const role = purposeToRole(purpose);
+  if (!role) return null;
+  const fp = persona.multi_lfi_footprint;
+  if (!fp) return null;
+  const slot = ['primary', 'secondary', 'tertiary']
+    .map((s) => fp[s])
+    .find((v) => v?.role === role);
+  if (!slot) return null;
+  const candidates = (slot.plausible_lfi_candidates ?? [])
+    .map((name) => counterpartyBanksPool.banks.find((b) => b.name === name))
+    .filter(Boolean);
+  if (candidates.length === 0) return null;
+  // Pick the first matching candidate deterministically — keyed on
+  // (persona_id, purpose) so the choice is stable across (lfi, seed).
+  const rng = makePrng(persona.persona_id, 'footprint-bank-for-purpose', purpose);
+  const idx = rngInt(rng, 0, candidates.length);
+  return candidates[idx];
+}
+
+/**
  * Pick the bank for a given role's self-link deterministically. Draws
  * from the slot's plausible_lfi_candidates and matches against the
  * counterparty-bank pool (so the BIC + iban_prefix are real). If no

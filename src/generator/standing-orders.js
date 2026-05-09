@@ -7,6 +7,7 @@
 
 import { rngInt } from '../prng.js';
 import { drawIban, drawCounterpartyBank } from './identity.js';
+import { pickFootprintBankForPurpose } from './multi-lfi.js';
 
 export function generateStandingOrders({ persona, accounts, rng, pools, now }) {
   const out = [];
@@ -17,7 +18,15 @@ export function generateStandingOrders({ persona, accounts, rng, pools, now }) {
       const day = parseScheduleDay(c.schedule);
       if (day == null) return;
       const amount = c.amount_aed ?? rngInt(rng, c.amount_aed_band[0], c.amount_aed_band[1] + 1);
-      const counterpartyBank = drawCounterpartyBank(rng, pools.counterpartyBanks);
+      // Slice 4 (D-14): if the SO's purpose maps to a footprint role
+      // declared by the persona, route the CreditorAgent through a
+      // candidate bank from that role's slot — so e.g. a zakat-distribution
+      // SO points at an Islamic bank, a trade_finance SO at a foreign-
+      // branch wholesale bank. Otherwise fall back to the random pool
+      // draw (preserves the existing default behaviour).
+      const counterpartyBank =
+        pickFootprintBankForPurpose(persona, c.purpose, pools.counterpartyBanks)
+        ?? drawCounterpartyBank(rng, pools.counterpartyBanks);
       const creditorIban = drawIban(rng, pools.ibans, counterpartyBank);
       const firstPayment = monthsAgoAtDay(now, 24, day);
       const nextPayment = nextOccurrence(now, day);

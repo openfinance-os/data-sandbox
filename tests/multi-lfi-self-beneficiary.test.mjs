@@ -41,6 +41,47 @@ function readEnv(rel) {
   return JSON.parse(fs.readFileSync(path.join(PKG_DIR, rel), 'utf8'));
 }
 
+describe('Slice 4 — purpose-to-role routing in standing orders', () => {
+  if (!FIXTURES_BUILT) {
+    it.skip('fixture package not built', () => {});
+    return;
+  }
+  // The RAK Emirati persona has both a `rakez_freezone_lease` SO (no role
+  // mapping → random pool draw) and a `zakat_distribution` SO (maps to
+  // islamic_deposit, which the persona declares with Sharjah Islamic
+  // among its plausible candidates). Assert the zakat SO's CreditorAgent
+  // resolves to one of the Islamic-deposit candidates' BICs.
+  const fxKey = 'sme_rak_trading_emirati|rich|4106';
+  const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
+  const fx = manifest.fixtures[fxKey];
+  if (!fx) {
+    it.skip(`fixture ${fxKey} missing — rebuild with npm run build:fixtures`, () => {});
+    return;
+  }
+  const operatingId = fx.accountIds[0];
+  const env = JSON.parse(
+    fs.readFileSync(path.join(PKG_DIR, fx.endpoints[`/accounts/${operatingId}/standing-orders`]), 'utf8'),
+  );
+  const sos = env.Data?.StandingOrder ?? [];
+  const personaJson = JSON.parse(
+    fs.readFileSync(path.join(PKG_DIR, 'personas/sme_rak_trading_emirati.json'), 'utf8'),
+  );
+  const islamicSlot = ['primary', 'secondary', 'tertiary']
+    .map((s) => personaJson.multi_lfi_footprint[s])
+    .find((v) => v?.role === 'islamic_deposit');
+  const islamicBics = new Set(
+    (islamicSlot?.plausible_lfi_candidates ?? [])
+      .map((name) => POOL.banks.find((b) => b.name === name)?.bic)
+      .filter(Boolean),
+  );
+
+  it('zakat_distribution SO CreditorAgent.Identification is one of the islamic_deposit slot BICs', () => {
+    const zakat = sos.find((s) => s.Reference === 'zakat_distribution');
+    expect(zakat).toBeDefined();
+    expect(islamicBics.has(zakat.CreditorAgent.Identification)).toBe(true);
+  });
+});
+
 describe('Phase D-lite — cross-LFI self-IBAN derivation is pure', () => {
   it('same (persona, role, bank) yields the same IBAN every call', () => {
     const bank = POOL.banks[0];
