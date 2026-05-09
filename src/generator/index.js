@@ -136,6 +136,10 @@ function buildBankingBundle({ persona, lfi, seed, pools, now = DEFAULT_NOW }) {
         dining: p.dining,
         utilities: p.utilities,
         employers: p.employers,
+        // Slice 10: B2B inflows / outflows resolve cash_flow.*.counterparty_pool
+        // against the indexed pools structure. Empty `{}` for personas
+        // whose load fixtures don't include a counterparties index.
+        counterparties: pools.counterpartiesByPoolId ?? {},
       },
       runningBalance,
       now,

@@ -6,10 +6,17 @@
 import { watermark, watermarkJsonEnvelope, watermarkCsvHeader } from '../shared/watermark.js';
 
 // Strip generator-internal underscore-prefixed fields before serialisation.
+// `RECORD_LEVEL_METADATA_KEEP` is a curated allowlist of underscore-prefixed
+// keys that ARE consumer-facing sandbox metadata and MUST survive serialisation
+// (Slice 10: `_vatBreakdown` on B2B transactions). Spec-validation tests
+// pre-strip these before running ajv so v2.1 `additionalProperties: false`
+// stays satisfied for any strict consumer that wants to ignore the metadata.
+const RECORD_LEVEL_METADATA_KEEP = new Set(['_vatBreakdown']);
+
 function strip(rec) {
   const out = {};
   for (const [k, v] of Object.entries(rec)) {
-    if (k.startsWith('_')) continue;
+    if (k.startsWith('_') && !RECORD_LEVEL_METADATA_KEEP.has(k)) continue;
     out[k] = v;
   }
   return out;

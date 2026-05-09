@@ -60,10 +60,32 @@ export function listRoleBundles(personaId) {
   }
   return out;
 }
-export function loadJourney({ persona, lfi = 'median', seed } = {}) {
+export function loadJourney({ persona, lfi = 'median', seed, lfi_role } = {}) {
   const info = manifest.personas[persona];
   if (!info) throw new Error(`unknown persona: ${persona}`);
   const useSeed = seed ?? info.default_seed;
+  if (lfi_role && lfi_role !== 'primary') {
+    const rkey = `${persona}|${lfi_role}|${lfi}|${useSeed}`;
+    const rfx = (manifest.roleFixtures ?? {})[rkey];
+    if (!rfx) throw new Error(`no role-bundle journey for ${rkey}`);
+    const endpoints = {};
+    for (const [endpoint, rel] of Object.entries(rfx.endpoints)) {
+      endpoints[endpoint] = JSON.parse(readFileSync(path.join(here, rel), 'utf8'));
+    }
+    return {
+      persona, lfi, lfi_role,
+      seed: useSeed,
+      domain: info.domain ?? 'banking',
+      accountIds: rfx.accountIds ?? [],
+      policyIds: [],
+      quoteId: null,
+      customerId: endpoints['/parties']?.Data?.Party?.PartyId ?? null,
+      specVersion: manifest.specVersion,
+      specSha: manifest.specSha,
+      version: manifest.version,
+      endpoints,
+    };
+  }
   const key = `${persona}|${lfi}|${useSeed}`;
   const fx = manifest.fixtures[key];
   if (!fx) throw new Error(`no fixture for ${key}`);
@@ -74,6 +96,7 @@ export function loadJourney({ persona, lfi = 'median', seed } = {}) {
   return {
     persona,
     lfi,
+    lfi_role: 'primary',
     seed: useSeed,
     domain: info.domain ?? 'banking',
     accountIds: fx.accountIds ?? [],

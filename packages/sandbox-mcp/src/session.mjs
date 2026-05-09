@@ -8,24 +8,52 @@
 //             (recipe → expandRecipe → buildBundle → envelopesFromBundle).
 // All get_* tools call `getEndpointEnvelope(session, endpoint)` which routes
 // to the in-memory custom journey if present, else to the static fixture file.
-import { getPersonaInfo, loadFixture, manifest } from '@openfinance-os/sandbox-fixtures';
+//
+// D-14 / Slice 8: curated sessions also accept an `lfi_role` of
+// 'primary' (default), 'secondary', or 'tertiary'. When non-primary,
+// getEndpointEnvelope resolves against the persona's role-keyed bundle
+// (Phase D Slice 5) — the LLM consumer can ask "what does this persona
+// look like at their secondary LFI?" without changing personas.
+import { getPersonaInfo, loadFixture, listRoleBundles, manifest } from '@openfinance-os/sandbox-fixtures';
 
 const LFI_PROFILES = new Set(['rich', 'median', 'sparse']);
+const LFI_ROLES = new Set(['primary', 'secondary', 'tertiary']);
 
 export function createSessionStore() {
   let active = null;
 
-  function setCurated({ persona, lfi = 'median', seed }) {
+  function setCurated({ persona, lfi = 'median', seed, lfi_role = 'primary' }) {
     const info = getPersonaInfo(persona);
     if (!info) throw new Error(`unknown persona: ${persona}`);
     if (!LFI_PROFILES.has(lfi)) {
       throw new Error(`unknown lfi profile: ${lfi} (use rich | median | sparse)`);
+    }
+    if (!LFI_ROLES.has(lfi_role)) {
+      throw new Error(`unknown lfi_role: ${lfi_role} (use primary | secondary | tertiary)`);
+    }
+    if (lfi_role !== 'primary') {
+      // Validate the persona declares this role and that a role bundle
+      // was emitted for it (some slots resolve to candidates that aren't
+      // in the counterparty pool — pickRoleBank silently drops those).
+      const slots = listRoleBundles(persona);
+      if (!slots.includes(lfi_role)) {
+        const declared = info.multi_lfi_footprint?.[lfi_role];
+        if (!declared) {
+          throw new Error(
+            `persona "${persona}" does not declare an lfi_role="${lfi_role}" footprint slot; declared slots: ${Object.keys(info.multi_lfi_footprint ?? {}).join(', ') || 'none'}`,
+          );
+        }
+        throw new Error(
+          `persona "${persona}" declares an lfi_role="${lfi_role}" slot but no role bundle was emitted (its plausible_lfi_candidates may not match the counterparty pool)`,
+        );
+      }
     }
     active = {
       kind: 'curated',
       domain: info.domain ?? 'banking',
       persona,
       lfi,
+      lfi_role,
       seed: seed ?? info.default_seed,
       personaName: info.name,
     };
@@ -43,6 +71,7 @@ export function createSessionStore() {
       domain: 'banking',
       persona,
       lfi,
+      lfi_role: 'primary',  // Custom personas don't carry multi_lfi_footprint.
       seed,
       personaName,
       recipe,
@@ -85,6 +114,7 @@ export function getEndpointEnvelope(session, endpoint) {
     lfi: session.lfi,
     seed: session.seed,
     endpoint,
+    lfi_role: session.lfi_role,
   });
 }
 
@@ -92,14 +122,23 @@ export function fanOutAccountIds(session) {
   if (session.kind === 'custom') {
     return session.journey.accountIds ?? [];
   }
+  if (session.lfi_role && session.lfi_role !== 'primary') {
+    const rkey = `${session.persona}|${session.lfi_role}|${session.lfi}|${session.seed}`;
+    const rfx = (manifest.roleFixtures ?? {})[rkey];
+    return rfx?.accountIds ?? [];
+  }
   const fxKey = `${session.persona}|${session.lfi}|${session.seed}`;
   const fx = manifest.fixtures[fxKey];
   return fx?.accountIds ?? [];
 }
 
 export function fixtureEntry(session) {
+  if (session.lfi_role && session.lfi_role !== 'primary') {
+    const rkey = `${session.persona}|${session.lfi_role}|${session.lfi}|${session.seed}`;
+    return (manifest.roleFixtures ?? {})[rkey] ?? null;
+  }
   const fxKey = `${session.persona}|${session.lfi}|${session.seed}`;
   return manifest.fixtures[fxKey] ?? null;
 }
 
-export { LFI_PROFILES };
+export { LFI_PROFILES, LFI_ROLES };

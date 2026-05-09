@@ -119,6 +119,38 @@ describe('sandbox-mcp server', () => {
     // Personas without a footprint surface multi_lfi_footprint=null.
     const senior = all.personas.find((p) => p.id === 'senior_retiree');
     expect(senior.multi_lfi_footprint).toBeNull();
+    // Slice 8: available_lfi_roles surfaces which slots actually have
+    // role bundles emitted. Primary always present; secondary/tertiary
+    // present iff the slot's plausible candidates resolve to a pool bank.
+    expect(fnb.available_lfi_roles).toContain('primary');
+    expect(senior.available_lfi_roles).toEqual(['primary']);
+  });
+
+  it('Slice 8: set_session({lfi_role: "tertiary"}) routes get_* to the role bundle', async () => {
+    await client.callTool({
+      name: 'set_session',
+      arguments: { persona: 'sme_fnb_multi_outlet', lfi: 'rich', lfi_role: 'tertiary' },
+    });
+    const sess = JSON.parse(textOf(await client.callTool({ name: 'get_session', arguments: {} })));
+    expect(sess.lfi_role).toBe('tertiary');
+    // /accounts under the role session returns the SINGLE role-bundle
+    // account, not the persona's full primary account list.
+    const raw = textOf(await client.callTool({ name: 'get_accounts', arguments: {} }));
+    const accounts = JSON.parse(raw.slice(raw.indexOf('{')));
+    expect(accounts.Data.Account.length).toBe(1);
+    // The IBAN must be the cross-LFI self-IBAN (mod-97 valid AE...).
+    expect(accounts.Data.Account[0].AccountIdentifiers[0].Identification).toMatch(/^AE\d{21}$/);
+  });
+
+  it('Slice 8: set_session rejects an undeclared lfi_role with a clear error', async () => {
+    // The MCP SDK surfaces tool errors as { isError: true, content: [...] }
+    // rather than throwing; assert on that shape.
+    const r = await client.callTool({
+      name: 'set_session',
+      arguments: { persona: 'senior_retiree', lfi_role: 'secondary' },
+    });
+    expect(r.isError).toBe(true);
+    expect(textOf(r)).toMatch(/does not declare an lfi_role|secondary/);
   });
 
   it('set_session pins a persona and get_session echoes it', async () => {

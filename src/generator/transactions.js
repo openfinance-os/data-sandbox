@@ -9,7 +9,7 @@
 // caller's `txState` object so two buildBundle invocations don't collide.
 
 import { rngInt, rngPick } from '../prng.js';
-import { drawMerchant, drawEmployer } from './identity.js';
+import { drawMerchant, drawEmployer, drawCounterparty } from './identity.js';
 import {
   bankishNarrative,
   weekdayBias,
@@ -20,6 +20,7 @@ import {
   referenceNumber,
   pendingForRecent,
 } from './realism.js';
+import { vatTreatmentForPool, computeVatBreakdown } from './vat.js';
 
 const TWELVE_MONTHS = 12;
 
@@ -160,6 +161,60 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
           aedAmount, fxAmount, fxCurrency, exchangeRate, txState, now,
         }));
         runningBalance.balance -= aedAmount;
+      }
+    }
+
+    // Slice 10 — B2B inflows / outflows from cash_flow manifest block,
+    // with UAE VAT breakdowns. Only on the FIRST CurrentAccount in the
+    // bundle (typical SME operating account); other accounts get the
+    // existing flows unchanged.
+    if (
+      account._meta.kind === 'CurrentAccount' &&
+      idxOfCurrentAccount(persona, account) === 0 &&
+      persona.cash_flow
+    ) {
+      const cf = persona.cash_flow;
+      if (cf.customer_inflows?.counterparty_pool && pools.counterparties) {
+        const pool = pools.counterparties[cf.customer_inflows.counterparty_pool];
+        if (pool) {
+          const lo = cf.customer_inflows.monthly_amount_aed_band?.[0] ?? 10000;
+          const hi = cf.customer_inflows.monthly_amount_aed_band?.[1] ?? 50000;
+          const cadence = cf.customer_inflows.invoice_cadence ?? 'monthly';
+          const perMonth = cadenceToCount(cadence);
+          for (let i = 0; i < perMonth; i++) {
+            const day = rngInt(rng, 1, 28);
+            const gross = rngInt(rng, lo, hi + 1) / perMonth;
+            const txDate = weekdayBias(dateForDay(monthStart, day), rng);
+            out.push(makeB2bInflow({
+              rng, account, date: txDate, grossAmount: Math.round(gross),
+              counterparty: drawCounterparty(rng, pool),
+              poolId: cf.customer_inflows.counterparty_pool,
+              txState, now,
+            }));
+            runningBalance.balance += Math.round(gross);
+          }
+        }
+      }
+      if (cf.supplier_outflows?.counterparty_pool && pools.counterparties) {
+        const pool = pools.counterparties[cf.supplier_outflows.counterparty_pool];
+        if (pool) {
+          const lo = cf.supplier_outflows.monthly_amount_aed_band?.[0] ?? 5000;
+          const hi = cf.supplier_outflows.monthly_amount_aed_band?.[1] ?? 30000;
+          // Suppliers are paid less frequently than customers invoice —
+          // assume monthly cadence (one paid invoice per supplier per month).
+          for (let i = 0; i < 1; i++) {
+            const day = rngInt(rng, 1, 28);
+            const gross = rngInt(rng, lo, hi + 1);
+            const txDate = weekdayBias(dateForDay(monthStart, day), rng);
+            out.push(makeB2bOutflow({
+              rng, account, date: txDate, grossAmount: gross,
+              counterparty: drawCounterparty(rng, pool),
+              poolId: cf.supplier_outflows.counterparty_pool,
+              txState, now,
+            }));
+            runningBalance.balance -= gross;
+          }
+        }
       }
     }
 
@@ -438,3 +493,100 @@ function poolAverageTypicalAed(pool) {
 }
 
 void rngPick;
+
+// ─── Slice 10: B2B + VAT helpers ────────────────────────────────────────
+
+function idxOfCurrentAccount(persona, account) {
+  // Position of `account` among the persona's CurrentAccounts. Used to
+  // gate the B2B-flow generation to the first operating account only.
+  let n = 0;
+  for (const spec of persona.accounts ?? []) {
+    if (spec.type !== 'CurrentAccount') continue;
+    const expectedId = `${persona.persona_id.replace(/_/g, '-')}-acct-${String(persona.accounts.indexOf(spec) + 1).padStart(2, '0')}`;
+    if (expectedId === account.AccountId) return n;
+    n += 1;
+  }
+  return -1;
+}
+
+function cadenceToCount(cadence) {
+  // Translates persona.cash_flow.customer_inflows.invoice_cadence into
+  // a per-month invoice count. Monthly = 1, biweekly = 2, weekly = 4,
+  // irregular ~= 1.5.
+  switch (cadence) {
+    case 'weekly':   return 4;
+    case 'biweekly': return 2;
+    case 'monthly':  return 1;
+    case 'irregular': return 2;
+    default: return 1;
+  }
+}
+
+function makeB2bInflow({ rng, account, date, grossAmount, counterparty, poolId, txState, now }) {
+  const posted = applyPostingTime(date, rng);
+  const treatment = vatTreatmentForPool(poolId);
+  return {
+    _accountId: account.AccountId,
+    _vatBreakdown: computeVatBreakdown(grossAmount, account.Currency, treatment),
+    TransactionId: nextTxId(account, posted, txState),
+    TransactionReference: referenceNumber(rng, 'LocalBankTransfer', posted, 'INV'),
+    CreditDebitIndicator: 'Credit',
+    Status: maybePending(posted, now, rng),
+    BookingDateTime: isoOf(posted),
+    TransactionDateTime: isoOf(posted),
+    ValueDateTime: valueDateOf(posted, 'LocalBankTransfer', rng),
+    TransactionInformation: bankishNarrative('IBT', ['INVOICE', 'CR', counterparty.slice(0, 12).toUpperCase()]),
+    Amount: { Amount: grossAmount.toFixed(2), Currency: account.Currency },
+    TransactionType: 'LocalBankTransfer',
+    SubTransactionType: 'MoneyTransfer',
+    DebtorAgent: { SchemeName: 'BICFI', Identification: 'SYNAEAA', Name: counterparty },
+    DebtorAccount: { SchemeName: 'IBAN', Identification: synthCounterpartyIban(rng), Name: counterparty },
+  };
+}
+
+function makeB2bOutflow({ rng, account, date, grossAmount, counterparty, poolId, txState, now }) {
+  const posted = applyPostingTime(date, rng);
+  const treatment = vatTreatmentForPool(poolId);
+  // International suppliers go via InternationalTransfer (cross-border);
+  // local b2b via LocalBankTransfer. Heuristic on poolId.
+  const isIntl = poolId === 'b2b_intl' || poolId === 'cloud_suppliers';
+  const txType = isIntl ? 'InternationalTransfer' : 'LocalBankTransfer';
+  return {
+    _accountId: account.AccountId,
+    _vatBreakdown: computeVatBreakdown(grossAmount, account.Currency, treatment),
+    TransactionId: nextTxId(account, posted, txState),
+    TransactionReference: referenceNumber(rng, txType, posted, 'AP'),
+    CreditDebitIndicator: 'Debit',
+    Status: maybePending(posted, now, rng),
+    BookingDateTime: isoOf(posted),
+    TransactionDateTime: isoOf(posted),
+    ValueDateTime: valueDateOf(posted, txType, rng),
+    TransactionInformation: bankishNarrative(isIntl ? 'IBT' : 'LBT', ['SUPP', counterparty.slice(0, 12).toUpperCase()]),
+    Amount: { Amount: grossAmount.toFixed(2), Currency: account.Currency },
+    TransactionType: txType,
+    SubTransactionType: 'MoneyTransfer',
+    CreditorAgent: { SchemeName: 'BICFI', Identification: 'SYNAEAA', Name: counterparty },
+    CreditorAccount: [
+      { SchemeName: 'IBAN', Identification: synthCounterpartyIban(rng), Name: counterparty },
+    ],
+  };
+}
+
+function synthCounterpartyIban(rng) {
+  // Mod-97-valid synthetic counterparty IBAN. Bank_code "999" tags it
+  // as anonymous-synthetic (not bound to any named pool bank).
+  let account = '';
+  for (let i = 0; i < 16; i++) account += rngInt(rng, 0, 10);
+  const bban = '999' + account;
+  return `AE${b2bIbanCheck(bban)}${bban}`;
+}
+
+function b2bIbanCheck(bban) {
+  // Inline mod-97 to avoid an extra import. Same logic as
+  // identity.js#mod97IbanCheck for the AE country case.
+  // AE expanded: A=10, E=14 → "1014".
+  const concat = bban + '1014' + '00';
+  let r = 0;
+  for (const ch of concat) r = (r * 10 + (ch.charCodeAt(0) - 48)) % 97;
+  return (98 - r).toString().padStart(2, '0');
+}
