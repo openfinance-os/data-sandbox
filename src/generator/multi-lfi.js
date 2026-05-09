@@ -173,6 +173,111 @@ function pickRoleBank(personaId, role, slot, counterpartyBanksPool) {
  * CurrentAccount (operating account) — the realistic site for an
  * SME owner's outbound self-transfer.
  */
+/**
+ * Slice 5 — full Phase D role-bundle generation.
+ *
+ * For each non-primary footprint slot, project a minimal "role persona"
+ * with a single account at the role's deterministically-picked bank,
+ * then run the standard buildBundle() pipeline so the result is a
+ * spec-validated v2.1 envelope set. The projected persona's account
+ * pre-pins the bank + IBAN via accounts.js's _bankOverride / _ibanOverride
+ * hooks, so the IBAN BYTE-MATCHES the cross-LFI self-IBAN already
+ * surfaced as a `self-to-<role>` beneficiary in the primary bundle —
+ * closing the cross-bundle reference loop. A TPP / accounting system
+ * fetching both bundles can reconcile them by IBAN identity.
+ *
+ * Stage layout (D-11 forward-compat): primary stays at the historical
+ * `bundles/<persona>/<lfi>/seed-<n>/` URL contract; secondary/tertiary
+ * land at the new `bundles/<persona>/<role>/<lfi>/seed-<n>/` slot. No
+ * existing fixture URL changes.
+ *
+ * Account-type heuristic: islamic_deposit + escrow → Savings; everything
+ * else → CurrentAccount. The currency follows the primary bundle's
+ * default (AED) unless the role implies USD (trade_finance).
+ */
+export function projectPersonaForRole(persona, slotKey, bank) {
+  const ROLE_TO_ACCOUNT_TYPE = {
+    operating: 'CurrentAccount',
+    trade_finance: 'CurrentAccount',
+    acquiring: 'CurrentAccount',
+    islamic_deposit: 'Savings',
+    escrow: 'CurrentAccount',
+    digital_challenger: 'CurrentAccount',
+  };
+  const slot = persona.multi_lfi_footprint?.[slotKey];
+  if (!slot) return null;
+  const accountType = ROLE_TO_ACCOUNT_TYPE[slot.role] ?? 'CurrentAccount';
+  // Currency: trade_finance slots typically denominate in USD; everything
+  // else stays AED.
+  const currency = slot.role === 'trade_finance' ? 'USD' : 'AED';
+  // The cross-LFI self-IBAN keys on the slot KEY (secondary / tertiary),
+  // matching how buildCrossLfiSelfBeneficiaries derives the primary
+  // bundle's self-to-<slotKey> beneficiary IBAN — that's how the cross-
+  // bundle reference loop closes.
+  const iban = deriveCrossLfiSelfIban(persona.persona_id, slotKey, bank);
+  return {
+    ...persona,
+    // The projected persona keeps the same persona_id so PartyId etc.
+    // resolve consistently across primary and role bundles. The account
+    // index restarts at 1 so the AccountId fits in the 40-char maxLength.
+    accounts: [
+      {
+        type: accountType,
+        currency,
+        age_months: 36,
+        _bankOverride: bank,
+        _ibanOverride: iban,
+      },
+    ],
+    // No fixed commitments / cash-flow at the role bundle — the role-LFI
+    // sees only its slice of the persona's banking life. The primary
+    // bundle remains the source-of-truth for SOs, DDs, full transaction
+    // history.
+    fixed_commitments: [],
+    cash_flow: undefined,
+    // Role bundle has no merchant retail spend either — those land at the
+    // operating LFI.
+    spend_profile: {
+      groceries_aed_per_month_band: [0, 0],
+      fuel_aed_per_month_band: [0, 0],
+      dining_per_month_count_band: [0, 0],
+    },
+    cash_deposit_activity: false,
+    fx_activity: slot.role === 'trade_finance',
+    // Tag for downstream code that wants to know this is a role projection.
+    _projectedRoleSlot: slotKey,
+    _projectedRole: slot.role,
+    // Drop multi_lfi_footprint so cross-LFI self-beneficiary injection
+    // doesn't recurse into the role bundle.
+    multi_lfi_footprint: null,
+  };
+}
+
+/**
+ * Pure-function wrapper around buildBundle that emits a role-bundle
+ * (secondary/tertiary). Returns null if the role isn't declared OR no
+ * candidate bank is in the counterparty pool.
+ *
+ * NOTE: dynamically imports buildBundle to avoid the circular import
+ * src/generator/index.js → multi-lfi.js → index.js.
+ */
+export async function buildRoleBundle({ persona, slot: slotKey, lfi, seed, pools, now }) {
+  const slot = persona.multi_lfi_footprint?.[slotKey];
+  if (!slot) return null;
+  // Resolve the indexed-pools structure to the active counterparty-bank
+  // pool. build-fixture-package.mjs passes the full indexedPools object.
+  const counterpartyBanksPool =
+    pools.counterpartyBanks ??
+    pools.counterpartyBanksByCategory?.['counterparty_banks_uae_real'];
+  if (!counterpartyBanksPool) return null;
+  const bank = pickRoleBank(persona.persona_id, slotKey, slot, counterpartyBanksPool);
+  if (!bank) return null;
+  const projected = projectPersonaForRole(persona, slotKey, bank);
+  if (!projected) return null;
+  const { buildBundle } = await import('./index.js');
+  return buildBundle({ persona: projected, lfi, seed, pools, now });
+}
+
 export function buildCrossLfiSelfBeneficiaries({ persona, accounts, identity, pools }) {
   const footprint = persona.multi_lfi_footprint;
   if (!footprint) return [];

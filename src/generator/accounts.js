@@ -23,8 +23,13 @@ export function generateAccounts({ persona, identity, rng, pools, now }) {
   const personaSegment = persona.segment ?? 'Retail';
   const orgHolderName = persona.organisation?._resolved?.legalName ?? null;
   const accounts = persona.accounts.map((spec, idx) => {
-    const bank = drawCounterpartyBank(rng, pools.counterpartyBanks);
-    const iban = drawIban(rng, pools.ibans, bank);
+    // Phase D Slice 5: a role-bundle's projected persona pre-pins the
+    // bank + IBAN per account (so the secondary/tertiary bundle's
+    // IBAN matches the cross-LFI self-IBAN already surfaced as a
+    // beneficiary in the primary bundle). When neither is set, fall
+    // back to the random-pool draw — the v1 / Phase 1 default.
+    const bank = spec._bankOverride ?? drawCounterpartyBank(rng, pools.counterpartyBanks);
+    const iban = spec._ibanOverride ?? drawIban(rng, pools.ibans, bank);
     const opening = rngInt(rng, 1500, 9500);
     const accountType = spec.account_type ?? personaSegment;
     // Business accounts (SME/Corporate AccountType) use the organisation's

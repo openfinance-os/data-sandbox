@@ -27,16 +27,38 @@ export function listEndpoints(personaId, lfi = 'median') {
   if (!fx) throw new Error(`unknown fixture key: ${fixtureKey}`);
   return Object.keys(fx.endpoints);
 }
-export function loadFixture({ persona, lfi = 'median', seed, endpoint }) {
+export function loadFixture({ persona, lfi = 'median', seed, endpoint, lfi_role }) {
   const info = manifest.personas[persona];
   if (!info) throw new Error(`unknown persona: ${persona}`);
   const useSeed = seed ?? info.default_seed;
+  if (lfi_role && lfi_role !== 'primary') {
+    const rkey = `${persona}|${lfi_role}|${lfi}|${useSeed}`;
+    const rfx = (manifest.roleFixtures ?? {})[rkey];
+    if (!rfx) throw new Error(`no role-bundle fixture for ${rkey}`);
+    const rel = rfx.endpoints[endpoint];
+    if (!rel) throw new Error(`no fixture for endpoint ${endpoint} in ${rkey}`);
+    return JSON.parse(readFileSync(path.join(here, rel), 'utf8'));
+  }
   const key = `${persona}|${lfi}|${useSeed}`;
   const fx = manifest.fixtures[key];
   if (!fx) throw new Error(`no fixture for ${key}`);
   const rel = fx.endpoints[endpoint];
   if (!rel) throw new Error(`no fixture for endpoint ${endpoint} in ${key}`);
   return JSON.parse(readFileSync(path.join(here, rel), 'utf8'));
+}
+export function listRoleBundles(personaId) {
+  const out = [];
+  const rf = manifest.roleFixtures ?? {};
+  const info = manifest.personas[personaId];
+  if (!info) return out;
+  for (const slot of ['secondary', 'tertiary']) {
+    for (const lfi of ['rich', 'median', 'sparse']) {
+      if (rf[`${personaId}|${slot}|${lfi}|${info.default_seed}`]) {
+        if (!out.includes(slot)) out.push(slot);
+      }
+    }
+  }
+  return out;
 }
 export function loadJourney({ persona, lfi = 'median', seed } = {}) {
   const info = manifest.personas[persona];
