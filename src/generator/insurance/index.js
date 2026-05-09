@@ -21,6 +21,13 @@ import {
   generateHomePremium,
 } from './home-policy.js';
 import { generateHomeQuote } from './home-quote.js';
+import {
+  generateHealthProduct,
+  generateHealthEmployment,
+  generateHealthClaims,
+  generateHealthPremium,
+} from './health-policy.js';
+import { generateHealthQuote } from './health-quote.js';
 import { applyInsuranceLfiProfile } from './lfi-profile.js';
 
 const DEFAULT_NOW = new Date(Date.UTC(2026, 3, 1, 0, 0, 0));
@@ -62,6 +69,7 @@ export function buildInsuranceBundle({ persona, lfi, seed, pools, now = DEFAULT_
   const line = persona.line ?? 'motor';
   if (line === 'motor') return buildMotorBundle({ persona, lfi, seed, pools, now });
   if (line === 'home') return buildHomeBundle({ persona, lfi, seed, pools, now });
+  if (line === 'health') return buildHealthBundle({ persona, lfi, seed, pools, now });
   throw new Error(`unknown insurance line '${line}' for persona ${persona.persona_id}`);
 }
 
@@ -131,6 +139,79 @@ function buildMotorBundle({ persona, lfi, seed, pools, now }) {
     motorPolicySummaries: [motorPolicySummary],
     paymentDetails,
     motorQuote,
+  };
+
+  return applyInsuranceLfiProfile({ bundle, personaId: persona.persona_id, lfi, seed });
+}
+
+function buildHealthBundle({ persona, lfi, seed, pools, now }) {
+  const rng = makePrng(persona.persona_id, 'generator', seed);
+  const p = resolvePools(persona, pools);
+
+  const { name, policyHolder, identity } = generateInsuranceIdentity({
+    persona,
+    names: p.names,
+    rng,
+    now,
+  });
+
+  // Health PolicyHolder also carries an Employment block (different schema
+  // from motor/home PolicyHolder). Splice it onto the shared identity output.
+  const employment = generateHealthEmployment({ persona });
+  if (employment) policyHolder.Employment = employment;
+
+  const { product, policyNumber, startDate, endDate } = generateHealthProduct({
+    persona,
+    names: p.names,
+    rng,
+    now,
+  });
+  const claims = generateHealthClaims({ persona });
+  const premium = generateHealthPremium({ persona });
+
+  const insurancePolicyId = genUuid(rng);
+
+  const healthPolicyDetail = {
+    InsurancePolicyId: insurancePolicyId,
+    PolicyHolder: policyHolder,
+    Identity: identity,
+    Product: product,
+    Claims: claims,
+    Premium: premium,
+  };
+
+  const healthPolicySummary = {
+    InsurancePolicyId: insurancePolicyId,
+    PolicyNumber: policyNumber,
+    PolicyStatus: 'New',
+    PolicyStartDate: startDate,
+    PolicyEndDate: endDate,
+  };
+
+  const bankName = p.banks.banks[Math.floor(rng() * p.banks.banks.length)].name;
+  const accountIban = genUaeIban(rng);
+  const paymentDetails = {
+    Account: { Identification: accountIban, SchemeName: 'IBAN', Name: `${name.given} ${name.surname}` },
+    Bank: { Name: bankName },
+  };
+
+  const healthQuote = generateHealthQuote({ persona, rng, now });
+
+  const bundle = {
+    persona: persona.persona_id,
+    name: persona.name,
+    domain: 'insurance',
+    line: 'health',
+    identity: {
+      fullName: `${name.given} ${name.surname}`,
+      given: name.given,
+      surname: name.surname,
+      namePoolId: persona.demographics.nationality_pool,
+    },
+    healthPolicies: [healthPolicyDetail],
+    healthPolicySummaries: [healthPolicySummary],
+    paymentDetails,
+    healthQuote,
   };
 
   return applyInsuranceLfiProfile({ bundle, personaId: persona.persona_id, lfi, seed });

@@ -42,6 +42,7 @@ const REQUIRED_BY_DOMAIN = {
 const REQUIRED_BY_INSURANCE_LINE = {
   motor: [...COMMON_INSURANCE_KEYS, 'vehicle', 'policy'],
   home: [...COMMON_INSURANCE_KEYS, 'home'],
+  health: [...COMMON_INSURANCE_KEYS, 'health'],
 };
 
 const ALLOWED_DOMAINS = new Set(Object.keys(REQUIRED_BY_DOMAIN));
@@ -91,6 +92,12 @@ describe('persona manifests — EXP-02', () => {
         expect(['Villa', 'House', 'Apartment', 'Flat']).toContain(m.home.property.type_of_property);
         expect(typeof m.home.property_value.market_value_aed).toBe('number');
         expect(typeof m.home.policy.excess_aed).toBe('number');
+      } else if (line === 'health') {
+        expect(m.health.policy).toHaveProperty('cover_subjects');
+        expect(['Self', 'SelfAndSpouse', 'Spouse', 'SelfAndFamily', 'Dependents', 'Other'])
+          .toContain(m.health.policy.cover_subjects);
+        expect(typeof m.health.policy.annual_limit_aed).toBe('number');
+        expect(typeof m.health.policy.policyholder_insured).toBe('boolean');
       }
     }
   });

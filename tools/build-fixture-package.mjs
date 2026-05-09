@@ -144,10 +144,12 @@ async function emitPersona(personaId, persona, domain) {
     }
     const motorPolicyIds = bundle.motorPolicies?.map((p) => p.InsurancePolicyId) ?? [];
     const homePolicyIds = bundle.homePolicies?.map((p) => p.InsurancePolicyId) ?? [];
-    const policyIds = [...motorPolicyIds, ...homePolicyIds];
+    const healthPolicyIds = bundle.healthPolicies?.map((p) => p.InsurancePolicyId) ?? [];
+    const policyIds = [...motorPolicyIds, ...homePolicyIds, ...healthPolicyIds];
     const motorQuoteId = bundle.motorQuote?.QuoteId ?? null;
     const homeQuoteId = bundle.homeQuote?.QuoteId ?? null;
-    const quoteId = motorQuoteId ?? homeQuoteId; // back-compat single-line surface
+    const healthQuoteId = bundle.healthQuote?.QuoteId ?? null;
+    const quoteId = motorQuoteId ?? homeQuoteId ?? healthQuoteId; // back-compat single-line surface
     manifest.fixtures[`${personaId}|${lfi}|${seed}`] = {
       personaId, lfi, seed, domain,
       line: bundle.line ?? null,
@@ -156,6 +158,7 @@ async function emitPersona(personaId, persona, domain) {
       quoteId,
       motorQuoteId,
       homeQuoteId,
+      healthQuoteId,
       endpoints: aliasEndpoints,
     };
 

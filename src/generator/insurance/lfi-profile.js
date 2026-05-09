@@ -31,6 +31,13 @@ const OPTIONAL_FIELD_BANDS = [
   { path: 'Product.PropertyDetails.NumberOfRooms', band: 'Common' },
   { path: 'Product.PropertyDetails.YearOfConstruction', band: 'Common' },
   { path: 'Product.Mortgage', band: 'Variable' },
+  // Health (Phase 2.1). Care-network and regions-of-coverage strings are
+  // commonly populated in UAE health bundles; the optional Sponsor block
+  // surfaces the visa-sponsor relationship and is per-persona variable.
+  { path: 'Product.Policy.CareNetwork', band: 'Common' },
+  { path: 'Product.Policy.RegionsCoverage', band: 'Common' },
+  { path: 'Product.Sponsor', band: 'Variable' },
+  { path: 'PolicyHolder.Employment.SalaryBand', band: 'Variable' },
 ];
 
 function shouldKeep(profile, band, rng) {
@@ -72,6 +79,22 @@ export function applyInsuranceLfiProfile({ bundle, personaId, lfi, seed }) {
       if (!decide('Product.CarFinance', 'Variable')) {
         delete policy.Product.CarFinance;
       }
+    }
+  }
+
+  for (const policy of bundle.healthPolicies ?? []) {
+    if (policy.PolicyHolder && !decide('PolicyHolder.Salutation', 'Common')) {
+      delete policy.PolicyHolder.Salutation;
+    }
+    if (policy.PolicyHolder?.Employment && !decide('PolicyHolder.Employment.SalaryBand', 'Variable')) {
+      delete policy.PolicyHolder.Employment.SalaryBand;
+    }
+    if (policy.Product?.Policy) {
+      if (!decide('Product.Policy.CareNetwork', 'Common')) delete policy.Product.Policy.CareNetwork;
+      if (!decide('Product.Policy.RegionsCoverage', 'Common')) delete policy.Product.Policy.RegionsCoverage;
+    }
+    if (policy.Product?.Sponsor && !decide('Product.Sponsor', 'Variable')) {
+      delete policy.Product.Sponsor;
     }
   }
 

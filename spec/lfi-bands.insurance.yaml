@@ -34,3 +34,9 @@ overrides:
   Product.PropertyDetails.NumberOfRooms: Common
   Product.PropertyDetails.YearOfConstruction: Common
   Product.Mortgage: Variable
+  # Health (Phase 2.1). Care-network and regions-of-coverage are common
+  # populated strings; Sponsor and SalaryBand are per-persona variable.
+  Product.Policy.CareNetwork: Common
+  Product.Policy.RegionsCoverage: Common
+  Product.Sponsor: Variable
+  PolicyHolder.Employment.SalaryBand: Variable

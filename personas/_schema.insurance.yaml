@@ -12,9 +12,10 @@
 #
 # `line` discriminates which generator runs. Motor personas may omit the
 # field for back-compat (defaults to 'motor'). Home personas declare
-# `line: home` and a `home:` block in place of the motor blocks below.
-# The remaining 5 lines (Health, Life, Employment, Travel, Renters) +
-# Insurance Consents will extend this schema as their generators land.
+# `line: home` and a `home:` block; health personas declare `line: health`
+# and a `health:` block. The remaining 4 lines (Life, Employment, Travel,
+# Renters) + Insurance Consents will extend this schema as their
+# generators land.
 
 persona_id: <slug>
 domain: insurance
@@ -93,6 +94,46 @@ home:
     start_date_offset_days: <int>
     channel: <enum: Direct|Agent|Broker|Bank|Aggregator>
     takaful: <bool>
+  claims:
+    history_months: <int>
+    claims_in_period: <int>
+    approved_claims: <int>
+    total_gross_aed: <int>
+
+# ---------------------------------------------------------------------------
+# Health block (line: health) — drives AEHealthInsurancePolicyProperties1.
+# Required when line=health; omitted otherwise.
+# ---------------------------------------------------------------------------
+
+health:
+  policy:
+    cover_subjects: <enum: Self|SelfAndSpouse|Spouse|SelfAndFamily|Dependents|Other>
+    policyholder_insured: <bool>     # true when policyholder is also an insured person
+    type_of_policy: <enum: HealthInsuranceIndividual|PersonalAccidentInsurance>
+    annual_limit_aed: <int>          # cover-limit ceiling for inpatient cover
+    excess_aed: <int>
+    care_network: <string>           # e.g. "Network Plus", "Standard"
+    regions_coverage: <string>       # e.g. "UAE", "GCC", "Worldwide ex-USA"
+    takaful: <bool>
+    product_name: <string>           # business name shown to the customer
+    start_date_offset_days: <int>
+    channel: <enum: Direct|Agent|Broker|Bank|TPA|Aggregator>
+  employment:                        # required to surface PolicyHolder.Employment block
+    employer_name: <string>
+    monthly_income_aed: <int>        # required when employment present
+    salary_band: <enum: NoSalary|BelowAED4000PerMonth|AED4000ToAED12000PerMonth|AED12001AndAbove>
+    profession: <string?>
+    job_title: <string?>
+  insured_parties:                   # optional dependents — emits AEHealthInsuranceDataSharingInsuredParty[]
+    - relationship: <enum: Self|Spouse|Child|Parent|Other>
+      age: <int>
+      gender: <enum: Male|Female|Other>
+      given_name: <string?>
+      surname: <string?>
+  sponsor:                           # optional — drives AEHealthInsuranceSponsorProperties[]
+    type: <enum: Resident|Citizen|Establishment|PropertyOwner>
+    entity_id: <string>
+    entity_id_type: <enum: FileNumber|UID|EstablishmentCode>
   claims:
     history_months: <int>
     claims_in_period: <int>

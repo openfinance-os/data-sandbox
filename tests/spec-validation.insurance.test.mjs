@@ -91,6 +91,12 @@ describe('insurance spec validation — endpoints × persona × LFI', () => {
       '/home-insurance-policies/{InsurancePolicyId}/payment-details',
       '/home-insurance-quotes/{QuoteId}',
     ],
+    health: [
+      '/health-insurance-policies',
+      '/health-insurance-policies/{InsurancePolicyId}',
+      '/health-insurance-policies/{InsurancePolicyId}/payment-details',
+      '/health-insurance-quotes/{QuoteId}',
+    ],
   };
 
   function envelopeFor(endpoint, bundle) {
@@ -152,6 +158,36 @@ describe('insurance spec validation — endpoints × persona × LFI', () => {
         return {
           Data: quote,
           Links: baseLinks(`home-insurance-quotes/${quote.QuoteId}`),
+          Meta: baseMeta(),
+        };
+      }
+      case '/health-insurance-policies':
+        return {
+          Data: { Policies: bundle.healthPolicySummaries },
+          Links: baseLinks('health-insurance-policies'),
+          Meta: baseMeta(),
+        };
+      case '/health-insurance-policies/{InsurancePolicyId}': {
+        const policy = bundle.healthPolicies[0];
+        return {
+          Data: policy,
+          Links: baseLinks(`health-insurance-policies/${policy.InsurancePolicyId}`),
+          Meta: baseMeta(),
+        };
+      }
+      case '/health-insurance-policies/{InsurancePolicyId}/payment-details': {
+        const policy = bundle.healthPolicies[0];
+        return {
+          Data: bundle.paymentDetails,
+          Links: baseLinks(`health-insurance-policies/${policy.InsurancePolicyId}/payment-details`),
+          Meta: baseMeta(),
+        };
+      }
+      case '/health-insurance-quotes/{QuoteId}': {
+        const quote = bundle.healthQuote;
+        return {
+          Data: quote,
+          Links: baseLinks(`health-insurance-quotes/${quote.QuoteId}`),
           Meta: baseMeta(),
         };
       }

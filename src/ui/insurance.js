@@ -111,6 +111,23 @@ export function createInsurance(deps) {
         return state.bundle.homeQuote
           ? { kind: 'detail', Data: state.bundle.homeQuote }
           : null;
+      case '/health-insurance-policies':
+        return {
+          kind: 'list',
+          Data: { Policies: state.bundle.healthPolicySummaries ?? [] },
+        };
+      case '/health-insurance-policies/{InsurancePolicyId}': {
+        const policy = state.bundle.healthPolicies?.[0];
+        return policy ? { kind: 'detail', Data: policy } : null;
+      }
+      case '/health-insurance-policies/{InsurancePolicyId}/payment-details':
+        return state.bundle.paymentDetails && state.bundle.line === 'health'
+          ? { kind: 'detail', Data: state.bundle.paymentDetails }
+          : null;
+      case '/health-insurance-quotes/{QuoteId}':
+        return state.bundle.healthQuote
+          ? { kind: 'detail', Data: state.bundle.healthQuote }
+          : null;
       default:
         return null;
     }

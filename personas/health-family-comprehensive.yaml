@@ -1,0 +1,53 @@
+persona_id: health_family_comprehensive
+domain: insurance
+line: health
+name: "Aisha — Health (SelfAndFamily, Comprehensive)"
+archetype: health_employer_sponsored_family
+default_seed: 8431
+stress_coverage:
+  - employer_sponsored_health_family
+
+demographics:
+  nationality_pool: expat_arab
+  age_band: 35-45
+  emirate: AbuDhabi
+  has_visa: true
+
+health:
+  policy:
+    cover_subjects: SelfAndFamily
+    policyholder_insured: true
+    type_of_policy: HealthInsuranceIndividual
+    annual_limit_aed: 750000
+    excess_aed: 0
+    care_network: Network Plus
+    regions_coverage: UAE
+    takaful: false
+    product_name: Health Comprehensive Plus
+    start_date_offset_days: 120
+    channel: Bank
+  employment:
+    employer_name: Synthetic Holding LLC
+    monthly_income_aed: 32000
+    salary_band: AED12001AndAbove
+    profession: Engineering Manager
+    job_title: Senior Manager
+  insured_parties:
+    - relationship: Spouse
+      age: 36
+      gender: Male
+    - relationship: Child
+      age: 9
+      gender: Female
+    - relationship: Child
+      age: 6
+      gender: Male
+  sponsor:
+    type: Establishment
+    entity_id: 7720519
+    entity_id_type: EstablishmentCode
+  claims:
+    history_months: 12
+    claims_in_period: 2
+    approved_claims: 2
+    total_gross_aed: 14500

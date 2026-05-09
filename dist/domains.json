@@ -43,7 +43,11 @@
         "/home-insurance-policies",
         "/home-insurance-policies/{InsurancePolicyId}",
         "/home-insurance-policies/{InsurancePolicyId}/payment-details",
-        "/home-insurance-quotes/{QuoteId}"
+        "/home-insurance-quotes/{QuoteId}",
+        "/health-insurance-policies",
+        "/health-insurance-policies/{InsurancePolicyId}",
+        "/health-insurance-policies/{InsurancePolicyId}/payment-details",
+        "/health-insurance-quotes/{QuoteId}"
       ]
     }
   ]
