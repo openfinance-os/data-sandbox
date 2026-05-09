@@ -51,6 +51,37 @@ curl http://127.0.0.1:8787/health
 
 The endpoint is the [Streamable HTTP](https://spec.modelcontextprotocol.io/specification/basic/transports/#streamable-http) transport at `/mcp`. CORS is permissive (`*`); `Mcp-Session-Id` round-trips. One process serves many concurrent MCP sessions with per-session state isolation.
 
+### Deploying to Fly.io
+
+`fly.toml` at the repo root is the canonical deploy. First-time setup:
+
+```sh
+flyctl auth login
+flyctl launch --copy-config --no-deploy   # imports fly.toml, creates the app
+flyctl secrets set FLY_API_TOKEN=…        # (optional, for CD)
+flyctl deploy
+flyctl certs add mcp.openfinance-os.org   # custom domain
+```
+
+Subsequent deploys go via the `.github/workflows/deploy-mcp.yml` workflow, which fires on every push to `main` that touches the MCP server, its Dockerfile, `fly.toml`, or the workflow itself. Set `FLY_API_TOKEN` in repo Settings → Environments → `fly.io` (a deploy-only token from `flyctl tokens create deploy -a data-sandbox`).
+
+The default config:
+- `primary_region = "fra"` (Frankfurt — change in `fly.toml` if you want US or APAC)
+- `shared-cpu-1x` / `512mb` (covers expected traffic on the free tier; the bundled fixture corpus is ~14 MB JSON)
+- `auto_stop_machines = "stop"`, `min_machines_running = 0` — single machine, autostarts on first request. If long-lived MCP sessions start dropping at idle, raise `min_machines_running` so Streamable HTTP `GET /mcp` connections survive
+- `MCP_ALLOWED_HOSTS` env var pre-sets DNS-rebinding allowlist to `data-sandbox.fly.dev` and `mcp.openfinance-os.org`
+- Health check: `GET /health` every 30 s
+
+### Other deployment targets
+
+Anything that runs Docker continuously and supports long-lived HTTP connections works:
+- **Railway** — free $5/mo credit, Docker-from-repo, auto-deploy from tag.
+- **DigitalOcean App Platform** — `~$5/mo` basic tier, Docker-from-repo.
+- **Hetzner / Linode / DigitalOcean Droplet** (any small VPS) — `docker pull ghcr.io/<org>/sandbox-mcp:latest && docker run -d -p 443:8787 ...` plus Caddy/Traefik for TLS. Cheapest option.
+- **AWS Fargate / Azure Container Apps / GCP Cloud Run** — fine, but Cloud Run *requires* `--min-instances 1` because cold starts evict sessions.
+
+**Avoid** anything request-scoped or cold-start-prone: Cloudflare Workers / Pages, Vercel functions, Lambda, Render free tier. The Streamable HTTP transport holds long-lived per-session connections that those don't tolerate.
+
 ### Production hardening
 
 - **DNS-rebinding protection** is on by default — Host header is validated against `localhost`, `127.0.0.1`, the bound address (all `:port`), plus anything passed via `--allowed-host` (repeatable) or the `MCP_ALLOWED_HOSTS` env var (comma-separated). Pass `--no-dns-rebinding-protection` to disable.
