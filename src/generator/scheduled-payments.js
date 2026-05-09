@@ -14,7 +14,7 @@ export function generateScheduledPayments({ persona, accounts, rng, pools, now }
     const count = rngInt(rng, 0, 3);
     for (let i = 0; i < count; i++) {
       const counterpartyBank = drawCounterpartyBank(rng, pools.counterpartyBanks);
-      const iban = drawIban(rng, pools.ibans, counterpartyBank.iban_prefix);
+      const iban = drawIban(rng, pools.ibans, counterpartyBank);
       const beneficiary = drawName(rng, pools.names);
       const date = futureDate(now, rngInt(rng, 7, 90));
       out.push({

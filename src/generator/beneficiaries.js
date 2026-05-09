@@ -22,7 +22,7 @@ export function generateBeneficiaries({ persona, accounts, rng, pools, excludeBa
     const count = acc._meta.kind === 'CurrentAccount' ? 3 : 1;
     for (let i = 0; i < count; i++) {
       const counterpartyBank = drawCounterpartyBank(rng, filteredBanksPool);
-      const iban = drawIban(rng, pools.ibans, counterpartyBank.iban_prefix);
+      const iban = drawIban(rng, pools.ibans, counterpartyBank);
       const beneficiaryName = drawName(rng, pools.names);
       out.push({
         _accountId: acc.AccountId,

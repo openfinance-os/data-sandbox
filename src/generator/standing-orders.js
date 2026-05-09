@@ -18,7 +18,7 @@ export function generateStandingOrders({ persona, accounts, rng, pools, now }) {
       if (day == null) return;
       const amount = c.amount_aed ?? rngInt(rng, c.amount_aed_band[0], c.amount_aed_band[1] + 1);
       const counterpartyBank = drawCounterpartyBank(rng, pools.counterpartyBanks);
-      const creditorIban = drawIban(rng, pools.ibans, counterpartyBank.iban_prefix);
+      const creditorIban = drawIban(rng, pools.ibans, counterpartyBank);
       const firstPayment = monthsAgoAtDay(now, 24, day);
       const nextPayment = nextOccurrence(now, day);
       out.push({

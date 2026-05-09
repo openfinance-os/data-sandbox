@@ -33,6 +33,7 @@
 // any additional plumbing.
 
 import { makePrng, rngInt } from '../prng.js';
+import { mod97IbanCheck } from './identity.js';
 
 // Role → short id-suffix code. Kept to 2 chars so the resulting
 // BeneficiaryId stays under the v2.1 spec's 40-char maxLength even on
@@ -58,6 +59,17 @@ const ROLES = [
  */
 export function deriveCrossLfiSelfIban(personaId, role, bank) {
   const rng = makePrng(personaId, 'cross-lfi-self-iban', role);
+  // Mod-97 path (Slice 3): bank.bank_code (3 digits) + 16-digit account
+  // = 19-digit BBAN; check digits computed via ISO-13616. Falls back to
+  // the legacy 4-char prefix + 19-digit body if a bank predates the
+  // bank_code rollout (no current pool entries do — fallback is defensive).
+  if (bank.bank_code) {
+    let account = '';
+    for (let i = 0; i < 16; i++) account += rngInt(rng, 0, 10);
+    const bban = bank.bank_code + account;
+    const check = mod97IbanCheck('AE', bban);
+    return `AE${check}${bban}`;
+  }
   let body = '';
   for (let i = 0; i < 19; i++) body += rngInt(rng, 0, 10);
   return `${bank.iban_prefix}${body}`;

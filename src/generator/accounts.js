@@ -24,7 +24,7 @@ export function generateAccounts({ persona, identity, rng, pools, now }) {
   const orgHolderName = persona.organisation?._resolved?.legalName ?? null;
   const accounts = persona.accounts.map((spec, idx) => {
     const bank = drawCounterpartyBank(rng, pools.counterpartyBanks);
-    const iban = drawIban(rng, pools.ibans, bank.iban_prefix);
+    const iban = drawIban(rng, pools.ibans, bank);
     const opening = rngInt(rng, 1500, 9500);
     const accountType = spec.account_type ?? personaSegment;
     // Business accounts (SME/Corporate AccountType) use the organisation's

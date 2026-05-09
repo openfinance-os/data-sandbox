@@ -63,12 +63,14 @@ describe('Phase D-lite — cross-LFI self-IBAN derivation is pure', () => {
     expect(a).not.toBe(b);
   });
 
-  it('different banks produce different IBANs (prefix differs)', () => {
+  it('different banks produce different IBANs (bank_code embedded at positions 5–7)', () => {
     const a = deriveCrossLfiSelfIban('sme_fnb_multi_outlet', 'secondary', POOL.banks[0]);
     const b = deriveCrossLfiSelfIban('sme_fnb_multi_outlet', 'secondary', POOL.banks[1]);
     expect(a).not.toBe(b);
-    expect(a.slice(0, 4)).toBe(POOL.banks[0].iban_prefix);
-    expect(b.slice(0, 4)).toBe(POOL.banks[1].iban_prefix);
+    // Slice 3: under the mod-97 path the IBAN is AE + check(2) + bank_code(3)
+    // + account(16). Positions 5–7 carry the per-bank routing identifier.
+    expect(a.slice(4, 7)).toBe(POOL.banks[0].bank_code);
+    expect(b.slice(4, 7)).toBe(POOL.banks[1].bank_code);
   });
 
   it('IBAN body length is 23 chars (matching drawIban contract)', () => {
