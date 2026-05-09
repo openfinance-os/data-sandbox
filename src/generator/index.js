@@ -16,6 +16,7 @@ import { generateTransactions } from './transactions.js';
 import { generateStandingOrders } from './standing-orders.js';
 import { generateDirectDebits } from './direct-debits.js';
 import { generateBeneficiaries } from './beneficiaries.js';
+import { buildCrossLfiSelfBeneficiaries } from './multi-lfi.js';
 import { generateScheduledPayments } from './scheduled-payments.js';
 import { generateParties } from './parties.js';
 import { generateStatements } from './statements.js';
@@ -155,6 +156,16 @@ function buildBankingBundle({ persona, lfi, seed, pools, now = DEFAULT_NOW }) {
     rng,
     pools: { counterpartyBanks: p.counterpartyBanks, ibans: p.ibans, names: p.names },
   });
+  // Phase D-lite (D-14): for personas with multi_lfi_footprint, append
+  // one self-at-other-LFI beneficiary per declared non-primary slot, so
+  // the persona's multi-bank reality is visible in the rendered bundle
+  // without yet emitting a separate secondary bundle.
+  beneficiaries.push(
+    ...buildCrossLfiSelfBeneficiaries({
+      persona, accounts, identity,
+      pools: { counterpartyBanks: p.counterpartyBanks },
+    }),
+  );
   const scheduledPayments = generateScheduledPayments({
     persona,
     accounts,
