@@ -27,15 +27,21 @@ OpenAPI spec. Toggle an LFI population profile (Rich / Median / Sparse) to
 stress-test downstream design decisions against worst-case and best-case
 field shapes.
 
-## What's in v1
+## What's in the box
 
-- **10 synthetic UAE personas** — Salaried Expat Mid, Salaried Emirati Affluent,
-  Gig / Variable Income, Senior / Retiree, Recent Graduate Thin-File, Mortgage DBR
-  Heavy, SME Cash-Heavy, NSF / Distressed, HNW Multi-Currency, Joint Account /
-  Family. 14 stress-coverage terms exercised across the library.
-- **All 12 v2.1 Account Information endpoints** — generated and validated against
-  the v2.1 OpenAPI schema (360 spec-validation tests across persona × LFI ×
-  endpoint).
+- **21 synthetic UAE personas** — 18 banking (retail, SME, corporate) + 3
+  insurance (motor) — covering 30+ globally-unique stress-coverage terms.
+  Banking set spans salaried expat / Emirati, gig, senior, thin-file, mortgage
+  DBR-heavy, NSF / distressed, HNW multi-currency, joint family, corporate
+  treasury, and 7 SME archetypes (cash-heavy retail, F&B multi-outlet,
+  e-commerce marketplace, free-zone SaaS, construction sub-contractor,
+  healthcare clinic, RAK Emirati-owned trading). Most SME personas declare a
+  `multi_lfi_footprint` so primary + secondary + tertiary bundles can be
+  fetched independently and reconciled by IBAN.
+- **All 12 v2.1 Account Information endpoints** for banking + the 4-endpoint
+  motor-MVP for insurance — all generated and validated against the v2.1
+  OpenAPI schema (1500+ spec-validation tests across persona × LFI × endpoint
+  after `npm run build:site`).
 - **Three LFI populate-rate profiles** — Rich (every populate-band field
   populated) · Median (Commons-curated v1 calibration: Universal=1.0,
   Common=0.7, Variable=0.4, Rare=0.1) · Sparse (Universal-only worst case).
@@ -53,7 +59,9 @@ field shapes.
 - **Embed mode** — chrome-less variant for iframe consumption (slide decks,
   blog posts, LMS modules).
 
-All 27 EXP-NN requirements from the PRD are implemented.
+The full set of v1 EXP-NN PRD requirements is implemented; Phase 2.x adds
+multi-LFI footprints, role-keyed bundles, mod-97-valid IBANs, and an MCP
+server (`packages/sandbox-mcp/`).
 
 ## Architecture
 

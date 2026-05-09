@@ -1,4 +1,4 @@
-// Phase 0 sandbox UI — wires the three-pane layout to the deterministic
+// Sandbox UI entry — wires the three-pane layout to the deterministic
 // generator and the parsed SPEC.json. The browser fetches both as static
 // JSON (no build chain). State lives in a single object updated by select-
 // box and persona-card events; every change re-renders the active panes.
