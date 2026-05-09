@@ -13,6 +13,19 @@
 #                       Retail | SME | Corporate. Drives AccountType per account
 #                       and PartyCategory per party in the generated bundle.
 #                       Default: Retail.
+#   multi_lfi_footprint            optional. Documents the persona's plausible
+#                                  multi-bank reality: which LFI categories
+#                                  (operating / trade_finance / acquiring /
+#                                  islamic_deposit / escrow / digital_challenger)
+#                                  the persona realistically holds accounts at,
+#                                  and a candidate set of named UAE banks per
+#                                  slot. PURELY DESCRIPTIVE — does NOT bind a
+#                                  populate-rate to any named bank (NG5 / D-14).
+#                                  The Rich/Median/Sparse `lfi_default` per slot
+#                                  is anonymous and stays anonymous in any
+#                                  generated bundle. Used today for narrative
+#                                  + integration documentation; multi-LFI
+#                                  bundle-pair generation is a deferred slice.
 #   demographics.nationality_pool  references /synthetic-identity-pool/names/<pool>.yaml
 #   income.primary_employer_pool   references /synthetic-identity-pool/employers/<pool>.yaml
 #   income.flag_payroll            whether the salary credit carries v2.1 Flags=Payroll
@@ -93,3 +106,22 @@ fx_activity: <bool>
 cash_deposit_activity: <bool>
 distress_signals:
   nsf_events_per_year_band: <[int, int]>
+multi_lfi_footprint:                           # optional; D-14
+  primary:                                     # required if block present
+    role: <enum: operating|trade_finance|acquiring|islamic_deposit|escrow|digital_challenger>
+    lfi_default: <enum: Rich|Median|Sparse>    # anonymous populate-rate label;
+                                               # NEVER bound to a named bank
+    plausible_lfi_candidates:                  # named UAE banks ALLOWED here
+      - <bank_name_string>                     # purely a candidate set; no
+                                               # operational claim binds to any
+                                               # one entry
+  secondary:                                   # optional
+    role: <enum>
+    lfi_default: <enum: Rich|Median|Sparse>
+    plausible_lfi_candidates:
+      - <bank_name_string>
+  tertiary:                                    # optional
+    role: <enum>
+    lfi_default: <enum: Rich|Median|Sparse>
+    plausible_lfi_candidates:
+      - <bank_name_string>

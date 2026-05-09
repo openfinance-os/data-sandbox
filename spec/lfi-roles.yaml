@@ -1,0 +1,81 @@
+# Controlled vocabulary for `multi_lfi_footprint.*.role` (D-14, EXP-NN).
+# Each role identifies the FUNCTIONAL slot a persona's LFI relationship
+# fills — not the LFI itself. Real UAE bank names appear only in the
+# `plausible_lfi_candidates` array of a persona manifest, never bound
+# here. The Rich/Median/Sparse populate-rate label is independent of role.
+#
+# Adding a new role: extend this file + tools/lint-persona-spec-conformance.mjs
+# (which validates manifest values against this list).
+
+roles:
+  - id: operating
+    description: |
+      Primary AED operating account. WPS-eligible for SME/Corporate
+      personas. Most fixed-commitment direct debits (utilities, rent,
+      lease) are paid from the operating account. Most retail-card
+      receipts (POS, e-commerce settlements) sweep into it.
+    typical_for:
+      - retail
+      - sme_all_sectors
+      - corporate
+
+  - id: trade_finance
+    description: |
+      Trade-finance / cross-border-corridor relationship. LCs, BGs, USD
+      operating, supplier wires. Often a foreign-bank UAE branch or a
+      Tier-1 local with strong correspondent network. Distinct from
+      `operating` because the FX/wire footprint is materially different.
+    typical_for:
+      - sme_trading
+      - sme_manufacturing
+      - sme_gold_jewellery
+      - corporate
+
+  - id: acquiring
+    description: |
+      Card-acquiring / POS-settlement relationship. Daily settlement
+      from terminal-network into a settlement sub-account; periodic
+      sweep into operating. Acquiring relationship is often a different
+      LFI than the operating bank (Network International, Magnati,
+      Mashreq NEOPay are the dominant acquirers).
+    typical_for:
+      - sme_fnb
+      - sme_retail
+      - sme_ecommerce
+
+  - id: islamic_deposit
+    description: |
+      Sharia-compliant savings / term-deposit relationship. Often held
+      alongside a conventional `operating` slot for cultural or
+      retention-/escrow-rule reasons. Murabaha / Mudaraba product
+      shapes; no interest accruals.
+    typical_for:
+      - retail_emirati
+      - sme_construction
+      - sme_education
+      - sme_healthcare
+
+  - id: escrow
+    description: |
+      Regulator-mandated trust / escrow account separate from operating.
+      RERA escrow for real-estate brokerage, KHDA-mandated parent-fee
+      escrow, partnership-trust accounts in DIFC professional services.
+      Strict no-mingling rules apply.
+    typical_for:
+      - sme_real_estate
+      - sme_professional_services
+      - sme_education
+
+  - id: digital_challenger
+    description: |
+      Independently CBUAE-licensed digital-only bank (Wio, Zand, Mbank).
+      SME tooling, API-first, often the secondary or tertiary slot for
+      SME personas alongside a Tier-1 conventional `operating` primary.
+      Excludes digital sub-brands of conventional banks (Liv., NEO,
+      Hayyak, etc.) — those are channels of their parent's `operating`
+      relationship, not a separate LFI.
+    typical_for:
+      - sme_fnb
+      - sme_ecommerce
+      - sme_saas
+      - retail_tech_savvy
