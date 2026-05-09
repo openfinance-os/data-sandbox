@@ -1,8 +1,9 @@
-// EXP-10 acceptance for the Insurance domain — Phase 2.0 Motor MVP.
-// Runs the motor persona × 3 LFI profiles × 3 motor endpoints through AJV
-// against the parsed v2.1-errata1 insurance schemas. Mirrors the banking
-// spec-validation test, scoped to the 3 motor endpoints in
-// tools/domains.config.mjs.
+// EXP-10 acceptance for the Insurance domain — Phase 2.0 (Motor) + 2.1 (+Home).
+// Runs each insurance persona × 3 LFI profiles × the 4 endpoints in the
+// persona's line through AJV against the parsed v2.1-errata1 insurance
+// schemas. The persona's `line` discriminator (motor|home) selects which
+// endpoint subset applies; bundles for the other line are absent in that
+// persona's bundle so we skip the inapplicable endpoints.
 
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
@@ -67,7 +68,7 @@ const baseMeta = () => ({ TotalPages: 1 });
 
 const PROFILES = ['rich', 'median', 'sparse'];
 
-describe('insurance spec validation — Motor MVP (3 endpoints × persona × LFI)', () => {
+describe('insurance spec validation — endpoints × persona × LFI', () => {
   const spec = yaml.load(fs.readFileSync(SPEC_PATH, 'utf8'));
   const parsed = JSON.parse(fs.readFileSync(PARSED_PATH, 'utf8'));
   const personas = loadPersonasByDomain('insurance');
@@ -75,6 +76,22 @@ describe('insurance spec validation — Motor MVP (3 endpoints × persona × LFI
   const validators = Object.fromEntries(
     Object.entries(parsed.endpoints).map(([p, e]) => [p, compileSchema(spec, e.schemaRef)])
   );
+
+  // Per-line endpoint sets — each persona only emits envelopes for its line.
+  const ENDPOINTS_BY_LINE = {
+    motor: [
+      '/motor-insurance-policies',
+      '/motor-insurance-policies/{InsurancePolicyId}',
+      '/motor-insurance-policies/{InsurancePolicyId}/payment-details',
+      '/motor-insurance-quotes/{QuoteId}',
+    ],
+    home: [
+      '/home-insurance-policies',
+      '/home-insurance-policies/{InsurancePolicyId}',
+      '/home-insurance-policies/{InsurancePolicyId}/payment-details',
+      '/home-insurance-quotes/{QuoteId}',
+    ],
+  };
 
   function envelopeFor(endpoint, bundle) {
     switch (endpoint) {
@@ -108,18 +125,49 @@ describe('insurance spec validation — Motor MVP (3 endpoints × persona × LFI
           Meta: baseMeta(),
         };
       }
+      case '/home-insurance-policies':
+        return {
+          Data: { Policies: bundle.homePolicySummaries },
+          Links: baseLinks('home-insurance-policies'),
+          Meta: baseMeta(),
+        };
+      case '/home-insurance-policies/{InsurancePolicyId}': {
+        const policy = bundle.homePolicies[0];
+        return {
+          Data: policy,
+          Links: baseLinks(`home-insurance-policies/${policy.InsurancePolicyId}`),
+          Meta: baseMeta(),
+        };
+      }
+      case '/home-insurance-policies/{InsurancePolicyId}/payment-details': {
+        const policy = bundle.homePolicies[0];
+        return {
+          Data: bundle.paymentDetails,
+          Links: baseLinks(`home-insurance-policies/${policy.InsurancePolicyId}/payment-details`),
+          Meta: baseMeta(),
+        };
+      }
+      case '/home-insurance-quotes/{QuoteId}': {
+        const quote = bundle.homeQuote;
+        return {
+          Data: quote,
+          Links: baseLinks(`home-insurance-quotes/${quote.QuoteId}`),
+          Meta: baseMeta(),
+        };
+      }
       default:
         return null;
     }
   }
 
-  const endpoints = Object.keys(parsed.endpoints);
   const personaIds = Object.keys(personas);
 
   describe.each(personaIds)('persona=%s', (pid) => {
     const persona = personas[pid];
+    const line = persona.line ?? 'motor';
+    const endpoints = ENDPOINTS_BY_LINE[line];
     describe.each(PROFILES)('LFI=%s', (lfi) => {
-      const bundle = buildBundle({ persona, lfi, seed: 4729, pools });
+      const bundle = buildBundle({ persona, lfi, seed: persona.default_seed, pools });
       it.each(endpoints)('endpoint %s validates against v2.1-errata1 schema', (endpoint) => {
         const validate = validators[endpoint];
         const env = envelopeFor(endpoint, bundle);

@@ -87,12 +87,29 @@ export function createInsurance(deps) {
         return policy ? { kind: 'detail', Data: policy } : null;
       }
       case '/motor-insurance-policies/{InsurancePolicyId}/payment-details':
-        return state.bundle.paymentDetails
+        return state.bundle.paymentDetails && state.bundle.line === 'motor'
           ? { kind: 'detail', Data: state.bundle.paymentDetails }
           : null;
       case '/motor-insurance-quotes/{QuoteId}':
         return state.bundle.motorQuote
           ? { kind: 'detail', Data: state.bundle.motorQuote }
+          : null;
+      case '/home-insurance-policies':
+        return {
+          kind: 'list',
+          Data: { Policies: state.bundle.homePolicySummaries ?? [] },
+        };
+      case '/home-insurance-policies/{InsurancePolicyId}': {
+        const policy = state.bundle.homePolicies?.[0];
+        return policy ? { kind: 'detail', Data: policy } : null;
+      }
+      case '/home-insurance-policies/{InsurancePolicyId}/payment-details':
+        return state.bundle.paymentDetails && state.bundle.line === 'home'
+          ? { kind: 'detail', Data: state.bundle.paymentDetails }
+          : null;
+      case '/home-insurance-quotes/{QuoteId}':
+        return state.bundle.homeQuote
+          ? { kind: 'detail', Data: state.bundle.homeQuote }
           : null;
       default:
         return null;

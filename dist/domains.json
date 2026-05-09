@@ -39,7 +39,11 @@
         "/motor-insurance-policies",
         "/motor-insurance-policies/{InsurancePolicyId}",
         "/motor-insurance-policies/{InsurancePolicyId}/payment-details",
-        "/motor-insurance-quotes/{QuoteId}"
+        "/motor-insurance-quotes/{QuoteId}",
+        "/home-insurance-policies",
+        "/home-insurance-policies/{InsurancePolicyId}",
+        "/home-insurance-policies/{InsurancePolicyId}/payment-details",
+        "/home-insurance-quotes/{QuoteId}"
       ]
     }
   ]

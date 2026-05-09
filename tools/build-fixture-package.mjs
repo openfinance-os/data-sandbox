@@ -142,13 +142,20 @@ async function emitPersona(personaId, persona, domain) {
         }
       }
     }
-    const policyIds = bundle.motorPolicies?.map((p) => p.InsurancePolicyId) ?? [];
-    const quoteId = bundle.motorQuote?.QuoteId ?? null;
+    const motorPolicyIds = bundle.motorPolicies?.map((p) => p.InsurancePolicyId) ?? [];
+    const homePolicyIds = bundle.homePolicies?.map((p) => p.InsurancePolicyId) ?? [];
+    const policyIds = [...motorPolicyIds, ...homePolicyIds];
+    const motorQuoteId = bundle.motorQuote?.QuoteId ?? null;
+    const homeQuoteId = bundle.homeQuote?.QuoteId ?? null;
+    const quoteId = motorQuoteId ?? homeQuoteId; // back-compat single-line surface
     manifest.fixtures[`${personaId}|${lfi}|${seed}`] = {
       personaId, lfi, seed, domain,
+      line: bundle.line ?? null,
       accountIds,
       policyIds,
       quoteId,
+      motorQuoteId,
+      homeQuoteId,
       endpoints: aliasEndpoints,
     };
 

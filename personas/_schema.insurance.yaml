@@ -1,21 +1,24 @@
-# Insurance persona manifest schema — Phase 2.0.
+# Insurance persona manifest schema — Phase 2.0 (Motor) + Phase 2.1 (+Home).
 # Mirrors personas/_schema.yaml (banking) for domain: insurance.
 #
 # Each personas/*.yaml with `domain: insurance` must conform to this shape.
 # Validated in CI by tests/persona-manifest.test.mjs.
 #
-# The persona describes INPUTS to the motor-policy generator, not the
-# generated output. Identity bits (PolicyHolder name, Emirates ID, Visa,
-# mobile, email, address) are synthesized by the generator from
-# demographics.nationality_pool + emirate. Persona only declares the
-# narrative parameters that drive a coherent motor-insurance bundle.
+# The persona describes INPUTS to the per-line generator, not the generated
+# output. Identity bits (PolicyHolder name, Emirates ID, Visa, mobile, email,
+# address) are synthesized by the generator from demographics.nationality_pool
+# + emirate. Persona only declares the narrative parameters that drive a
+# coherent insurance bundle.
 #
-# Phase 2.0 MVP covers the Motor line only (3 endpoints). Other insurance
-# lines (Health, Home, Life, Renters, Travel, Employment) will extend this
-# schema as their generators land in Phase 2.1.
+# `line` discriminates which generator runs. Motor personas may omit the
+# field for back-compat (defaults to 'motor'). Home personas declare
+# `line: home` and a `home:` block in place of the motor blocks below.
+# The remaining 5 lines (Health, Life, Employment, Travel, Renters) +
+# Insurance Consents will extend this schema as their generators land.
 
 persona_id: <slug>
 domain: insurance
+line: <enum: motor|home>           # optional — defaults to 'motor' if absent
 name: <string>
 archetype: <string>                # e.g. motor_comprehensive_financed
 default_seed: <int>
@@ -28,7 +31,11 @@ demographics:
   emirate: <enum: AbuDhabi|Ajman|Dubai|Fujairah|RasAlKhaimah|Sharjah|UmmAlQuwain>
   has_visa: <bool>                 # emirati: false; expat: true
 
-vehicle:
+# ---------------------------------------------------------------------------
+# Motor blocks (line: motor) — drive AEMotorInsurancePolicyProperties1.
+# ---------------------------------------------------------------------------
+
+vehicle:                           # required when line=motor
   make: <string>                   # e.g. "Toyota"
   model: <string>                  # e.g. "Corolla"
   year: <int>                      # 4-digit model year
@@ -37,14 +44,14 @@ vehicle:
   valuation_aed: <int>             # current market value
   registration_emirate: <enum: AbuDhabi|Ajman|Dubai|Fujairah|RasAlKhaimah|Sharjah|UmmAlQuwain>
 
-policy:
+policy:                            # required when line=motor
   type: <enum: Comprehensive|ThirdPartyLiability>
   takaful: <bool>                  # Sharia-compliant?
   excess_aed: <int>
   start_date_offset_days: <int>    # days before `now` anchor (deterministic)
   channel: <enum: Direct|Broker|Aggregator>
 
-finance:                           # optional section — omit if no car finance
+finance:                           # optional — omit if no car finance
   has_finance: <bool>
   bank_pool: <pool_id?>            # references /synthetic-identity-pool/banks/<pool>.yaml
   amount_aed: <int?>
@@ -53,8 +60,41 @@ finance:                           # optional section — omit if no car finance
 additional_drivers:
   count: <int>                     # 0..3
 
-claims:
+claims:                            # used by line=motor; line=home uses home.claims
   history_months: <int>            # length of claims-summary window
   claims_in_period: <int>          # total claims in the window
   approved_claims: <int>           # subset of claims_in_period
   total_gross_aed: <int>           # sum of approved-claim payouts
+
+# ---------------------------------------------------------------------------
+# Home block (line: home) — drives AEHomeInsurancePolicyProperties1.
+# Required when line=home; omitted otherwise.
+# ---------------------------------------------------------------------------
+
+home:
+  property:
+    type_of_property: <enum: Villa|House|Apartment|Flat>
+    ownership_status: <enum: Owner|OwnerWithMortgage|Landlord|Tenant>
+    address_emirate: <enum: AbuDhabi|Ajman|Dubai|Fujairah|RasAlKhaimah|Sharjah|UmmAlQuwain>
+    number_of_floors: <int>
+    number_of_rooms: <int>
+    year_of_construction: <int>    # 4-digit year
+  property_value:
+    market_value_aed: <int>        # current market value
+    appraisal_value_aed: <int>     # most recent appraisal
+    purchase_price_aed: <int>      # original purchase price
+  mortgage:                        # optional — omit if owned outright
+    has_mortgage: <bool>
+    bank_pool: <pool_id?>          # references /synthetic-identity-pool/banks/<pool>.yaml
+    balance_aed: <int?>
+    monthly_payment_aed: <int?>
+  policy:
+    excess_aed: <int>
+    start_date_offset_days: <int>
+    channel: <enum: Direct|Agent|Broker|Bank|Aggregator>
+    takaful: <bool>
+  claims:
+    history_months: <int>
+    claims_in_period: <int>
+    approved_claims: <int>
+    total_gross_aed: <int>

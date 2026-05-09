@@ -1,0 +1,42 @@
+persona_id: home_mortgage_villa
+domain: insurance
+line: home
+name: "Khalid — Home (Villa, Mortgaged)"
+archetype: home_owner_mortgaged_villa
+default_seed: 7321
+stress_coverage:
+  - mortgage_linked_home_cover
+
+demographics:
+  nationality_pool: emirati
+  age_band: 38-48
+  emirate: Dubai
+  has_visa: false
+
+home:
+  property:
+    type_of_property: Villa
+    ownership_status: OwnerWithMortgage
+    address_emirate: Dubai
+    number_of_floors: 2
+    number_of_rooms: 6
+    year_of_construction: 2018
+  property_value:
+    market_value_aed: 4500000
+    appraisal_value_aed: 4400000
+    purchase_price_aed: 3900000
+  mortgage:
+    has_mortgage: true
+    bank_pool: counterparty_banks_uae_real
+    balance_aed: 2200000
+    monthly_payment_aed: 18000
+  policy:
+    excess_aed: 5000
+    start_date_offset_days: 60
+    channel: Bank
+    takaful: false
+  claims:
+    history_months: 24
+    claims_in_period: 0
+    approved_claims: 0
+    total_gross_aed: 0

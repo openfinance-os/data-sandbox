@@ -20,10 +20,17 @@ const MEDIAN_PROBABILITY = {
 };
 
 const OPTIONAL_FIELD_BANDS = [
+  // Motor (Phase 2.0).
   { path: 'PolicyHolder.Salutation', band: 'Common' },
   { path: 'Premium.PaymentMode', band: 'Common' },
   { path: 'Product.AdditionalDrivers', band: 'Variable' },
   { path: 'Product.CarFinance', band: 'Variable' },
+  // Home (Phase 2.1). Property structural facts are commonly populated;
+  // mortgage details mirror motor's CarFinance and so band Variable.
+  { path: 'Product.PropertyDetails.NumberOfFloors', band: 'Common' },
+  { path: 'Product.PropertyDetails.NumberOfRooms', band: 'Common' },
+  { path: 'Product.PropertyDetails.YearOfConstruction', band: 'Common' },
+  { path: 'Product.Mortgage', band: 'Variable' },
 ];
 
 function shouldKeep(profile, band, rng) {
@@ -65,6 +72,24 @@ export function applyInsuranceLfiProfile({ bundle, personaId, lfi, seed }) {
       if (!decide('Product.CarFinance', 'Variable')) {
         delete policy.Product.CarFinance;
       }
+    }
+  }
+
+  for (const policy of bundle.homePolicies ?? []) {
+    if (policy.PolicyHolder && !decide('PolicyHolder.Salutation', 'Common')) {
+      delete policy.PolicyHolder.Salutation;
+    }
+    if (policy.Premium && !decide('Premium.PaymentMode', 'Common')) {
+      delete policy.Premium.PaymentMode;
+    }
+    if (policy.Product?.PropertyDetails) {
+      const pd = policy.Product.PropertyDetails;
+      if (!decide('Product.PropertyDetails.NumberOfFloors', 'Common')) delete pd.NumberOfFloors;
+      if (!decide('Product.PropertyDetails.NumberOfRooms', 'Common')) delete pd.NumberOfRooms;
+      if (!decide('Product.PropertyDetails.YearOfConstruction', 'Common')) delete pd.YearOfConstruction;
+    }
+    if (policy.Product?.Mortgage && !decide('Product.Mortgage', 'Variable')) {
+      delete policy.Product.Mortgage;
     }
   }
 

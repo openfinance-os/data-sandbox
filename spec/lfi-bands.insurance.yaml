@@ -23,7 +23,14 @@
 # Data.* path so the redaction body in src/generator/insurance/lfi-profile.js
 # stays domain-shaped and short. SME review pending.
 overrides:
+  # Motor (Phase 2.0).
   PolicyHolder.Salutation: Common
   Premium.PaymentMode: Common
   Product.AdditionalDrivers: Variable
   Product.CarFinance: Variable
+  # Home (Phase 2.1). Property structural facts surface in most home policies
+  # at any LFI; mortgage block mirrors motor's CarFinance Variable band.
+  Product.PropertyDetails.NumberOfFloors: Common
+  Product.PropertyDetails.NumberOfRooms: Common
+  Product.PropertyDetails.YearOfConstruction: Common
+  Product.Mortgage: Variable

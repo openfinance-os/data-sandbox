@@ -13,8 +13,17 @@ function listManifests() {
 }
 
 // Domain-specific required top-level keys. Common keys live at the top of
-// each list; the tail is domain-shaped (banking has income+accounts;
-// insurance has vehicle+policy — see personas/_schema.{banking,insurance}.yaml).
+// each list; the tail is domain- and (for insurance) line-shaped. See
+// personas/_schema.{banking,insurance}.yaml for the canonical reference.
+const COMMON_INSURANCE_KEYS = [
+  'persona_id',
+  'domain',
+  'name',
+  'archetype',
+  'default_seed',
+  'stress_coverage',
+  'demographics',
+];
 const REQUIRED_BY_DOMAIN = {
   banking: [
     'persona_id',
@@ -27,17 +36,12 @@ const REQUIRED_BY_DOMAIN = {
     'income',
     'accounts',
   ],
-  insurance: [
-    'persona_id',
-    'domain',
-    'name',
-    'archetype',
-    'default_seed',
-    'stress_coverage',
-    'demographics',
-    'vehicle',
-    'policy',
-  ],
+  // Insurance keys are line-aware; resolved per-persona below.
+  insurance: COMMON_INSURANCE_KEYS,
+};
+const REQUIRED_BY_INSURANCE_LINE = {
+  motor: [...COMMON_INSURANCE_KEYS, 'vehicle', 'policy'],
+  home: [...COMMON_INSURANCE_KEYS, 'home'],
 };
 
 const ALLOWED_DOMAINS = new Set(Object.keys(REQUIRED_BY_DOMAIN));
@@ -51,7 +55,12 @@ describe('persona manifests — EXP-02', () => {
     const m = yaml.load(fs.readFileSync(path.join(MANIFEST_DIR, file), 'utf8'));
 
     expect(ALLOWED_DOMAINS.has(m.domain), `${file} has invalid domain ${m.domain}`).toBe(true);
-    const required = REQUIRED_BY_DOMAIN[m.domain];
+    let required = REQUIRED_BY_DOMAIN[m.domain];
+    if (m.domain === 'insurance') {
+      const line = m.line ?? 'motor';
+      expect(REQUIRED_BY_INSURANCE_LINE[line], `${file} has unknown insurance line ${line}`).toBeTruthy();
+      required = REQUIRED_BY_INSURANCE_LINE[line];
+    }
     for (const key of required) {
       expect(m, `${file} missing required key ${key}`).toHaveProperty(key);
     }
@@ -71,10 +80,18 @@ describe('persona manifests — EXP-02', () => {
         expect(a).toHaveProperty('currency');
       }
     } else if (m.domain === 'insurance') {
-      expect(m.vehicle).toHaveProperty('make');
-      expect(m.vehicle).toHaveProperty('model');
-      expect(typeof m.vehicle.year).toBe('number');
-      expect(['Comprehensive', 'ThirdPartyLiability']).toContain(m.policy.type);
+      const line = m.line ?? 'motor';
+      if (line === 'motor') {
+        expect(m.vehicle).toHaveProperty('make');
+        expect(m.vehicle).toHaveProperty('model');
+        expect(typeof m.vehicle.year).toBe('number');
+        expect(['Comprehensive', 'ThirdPartyLiability']).toContain(m.policy.type);
+      } else if (line === 'home') {
+        expect(m.home.property).toHaveProperty('type_of_property');
+        expect(['Villa', 'House', 'Apartment', 'Flat']).toContain(m.home.property.type_of_property);
+        expect(typeof m.home.property_value.market_value_aed).toBe('number');
+        expect(typeof m.home.policy.excess_aed).toBe('number');
+      }
     }
   });
 
