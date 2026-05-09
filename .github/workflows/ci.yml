@@ -19,6 +19,10 @@ jobs:
       - run: npm run verify:spec-shape
       - run: npm run build:spec
       - run: npm run build:data
+      # Fail fast if dist/ artifacts are stale relative to sources, so a
+      # contributor who forgot to re-bake them sees a clear signal here
+      # rather than a downstream test surprise.
+      - run: npm run check:dist-clean
       # tests/fixture-package.test.mjs reads from packages/sandbox-fixtures/
       # which is generated, not checked in.
       - run: npm run build:fixtures
