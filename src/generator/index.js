@@ -27,7 +27,7 @@ const DEFAULT_NOW = new Date(Date.UTC(2026, 3, 1, 0, 0, 0));
 
 // Pool category → pool_id we expect to find in the indexed-pools structure.
 // Defaults are used for any pools the persona doesn't reference directly.
-const DEFAULT_BANKS_POOL = 'counterparty_banks_domestic';
+const DEFAULT_BANKS_POOL = 'counterparty_banks_uae_real';
 const DEFAULT_IBANS_POOL = 'ibans_synthetic';
 const DEFAULT_GROCERIES = 'merchants_groceries';
 const DEFAULT_FUEL = 'merchants_fuel';

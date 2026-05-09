@@ -30,7 +30,7 @@ policy:
 
 finance:
   has_finance: true
-  bank_pool: counterparty_banks_domestic
+  bank_pool: counterparty_banks_uae_real
   amount_aed: 60000
   outstanding_aed: 32000
 

@@ -1,0 +1,102 @@
+pool_id: counterparty_banks_uae_real
+description: |
+  Real UAE counterparty banks (D-14). Banks named in this pool appear as
+  third-party counterparties to the persona's transactions, standing
+  orders, scheduled payments, and beneficiaries — i.e., the bank on the
+  OTHER side of an outbound transfer or inbound credit. Naming a real
+  bank here is descriptive of the persona's relationships, not an
+  operational claim about the named bank's data quality. NG5 / D-14
+  forbid the same names from appearing in any populate-rate context or
+  as the bundle-emitting LFI.
+
+  The `iban_prefix` field is a 4-character "AE" + 2-digit pseudo-check-
+  digit prefix used by drawIban() to generate synthetic 23-character
+  IBANs. The 2 digits do NOT encode the real CBUAE bank code; they
+  only give counterparty-IBAN diversity in rendered fixtures.
+
+  Coverage: post-2024 CBUAE-licensed bank set, organised by tier and
+  type so the generator's RNG draws yield a UAE-realistic mix across
+  any persona's transaction stream.
+
+banks:
+  # ─── Tier-1 conventional (locally incorporated) ─────────────────────
+  - name: "First Abu Dhabi Bank"
+    iban_prefix: "AE03"
+  - name: "Emirates NBD"
+    iban_prefix: "AE07"
+  - name: "Abu Dhabi Commercial Bank"
+    iban_prefix: "AE11"
+  - name: "Mashreq Bank"
+    iban_prefix: "AE15"
+  - name: "Commercial Bank of Dubai"
+    iban_prefix: "AE19"
+  # ─── Tier-1 Islamic (locally incorporated) ──────────────────────────
+  - name: "Dubai Islamic Bank"
+    iban_prefix: "AE23"
+  - name: "Abu Dhabi Islamic Bank"
+    iban_prefix: "AE27"
+  - name: "Emirates Islamic"
+    iban_prefix: "AE31"
+  - name: "Sharjah Islamic Bank"
+    iban_prefix: "AE35"
+  # ─── Tier-2 conventional / Islamic ──────────────────────────────────
+  - name: "RAKBANK"
+    iban_prefix: "AE39"
+  - name: "National Bank of Fujairah"
+    iban_prefix: "AE43"
+  - name: "United Arab Bank"
+    iban_prefix: "AE47"
+  - name: "Bank of Sharjah"
+    iban_prefix: "AE51"
+  - name: "Invest Bank"
+    iban_prefix: "AE55"
+  - name: "Commercial Bank International"
+    iban_prefix: "AE59"
+  - name: "National Bank of Umm Al Quwain"
+    iban_prefix: "AE63"
+  - name: "Al Masraf"
+    iban_prefix: "AE67"
+  - name: "Ajman Bank"
+    iban_prefix: "AE71"
+  - name: "Al Hilal Bank"
+    iban_prefix: "AE75"
+  # ─── Digital-only (separately CBUAE-licensed) ───────────────────────
+  - name: "Wio Bank"
+    iban_prefix: "AE79"
+  - name: "Zand Bank"
+    iban_prefix: "AE83"
+  - name: "Al Maryah Community Bank"
+    iban_prefix: "AE87"
+  # ─── Foreign branches active in UAE SME / corporate trade finance ──
+  - name: "HSBC Bank Middle East"
+    iban_prefix: "AE91"
+  - name: "Standard Chartered Bank"
+    iban_prefix: "AE93"
+  - name: "Citibank N.A."
+    iban_prefix: "AE95"
+  - name: "BNP Paribas"
+    iban_prefix: "AE97"
+  - name: "Deutsche Bank AG"
+    iban_prefix: "AE17"
+  - name: "Crédit Agricole CIB"
+    iban_prefix: "AE21"
+  - name: "ICBC"
+    iban_prefix: "AE25"
+  - name: "Bank of China"
+    iban_prefix: "AE29"
+  - name: "MUFG Bank"
+    iban_prefix: "AE33"
+  - name: "Mizuho Bank"
+    iban_prefix: "AE37"
+  - name: "Habib Bank AG Zurich"
+    iban_prefix: "AE41"
+  - name: "Bank of Baroda"
+    iban_prefix: "AE45"
+  - name: "Arab Bank"
+    iban_prefix: "AE49"
+  - name: "Doha Bank"
+    iban_prefix: "AE53"
+  - name: "Banque Misr"
+    iban_prefix: "AE57"
+  - name: "SNB Group"
+    iban_prefix: "AE61"
