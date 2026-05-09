@@ -93,10 +93,15 @@ fs.writeFileSync(path.join(out, 'index.html'), indexHtml);
 // .nojekyll so GitHub Pages skips Jekyll. Harmless on Cloudflare/Netlify.
 fs.writeFileSync(path.join(out, '.nojekyll'), '');
 
-// Optional Cloudflare Pages headers — long-cache for hashed assets,
-// short-cache for HTML so deploys propagate quickly. /fixtures/v1/* is
-// CORS-permissive (EXP-28) so TPP demos hosted on a different origin can
-// fetch them from the browser.
+// Optional Netlify / Cloudflare Pages _headers file — long-cache for
+// hashed assets, short-cache for HTML so deploys propagate quickly.
+// /fixtures/v1/* is CORS-permissive (EXP-28) so TPP demos hosted on a
+// different origin can fetch them from the browser. NOTE: the current
+// production deploy (.github/workflows/deploy.yml) targets GitHub Pages,
+// which DOES NOT honor _headers — these directives only take effect if
+// the staged site is served from a host that does (Netlify, Cloudflare
+// Pages, etc.). The file is emitted regardless so a host migration is
+// drop-in.
 const headers = `/dist/*
   Cache-Control: public, max-age=600, must-revalidate
 
