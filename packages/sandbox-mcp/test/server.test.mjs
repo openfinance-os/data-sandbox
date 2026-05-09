@@ -102,6 +102,25 @@ describe('sandbox-mcp server', () => {
     );
   });
 
+  it('list_personas surfaces multi_lfi_footprint for D-14 SME personas', async () => {
+    // D-14: an LLM consumer (e.g. an accounting-system integration) can
+    // discover the persona's plausible multi-bank reality directly from
+    // the tool response, without a separate persona://<id> fetch.
+    const all = JSON.parse(textOf(await client.callTool({ name: 'list_personas', arguments: {} })));
+    const fnb = all.personas.find((p) => p.id === 'sme_fnb_multi_outlet');
+    expect(fnb, 'sme_fnb_multi_outlet must be in the persona library').toBeDefined();
+    expect(fnb.multi_lfi_footprint).not.toBeNull();
+    const roles = fnb.multi_lfi_footprint.roles;
+    expect(roles.map((r) => r.slot)).toEqual(['primary', 'secondary', 'tertiary']);
+    // Primary slot is operating; candidates are real UAE banks.
+    const primary = roles.find((r) => r.slot === 'primary');
+    expect(primary.role).toBe('operating');
+    expect(primary.plausible_lfi_candidates.length).toBeGreaterThan(0);
+    // Personas without a footprint surface multi_lfi_footprint=null.
+    const senior = all.personas.find((p) => p.id === 'senior_retiree');
+    expect(senior.multi_lfi_footprint).toBeNull();
+  });
+
   it('set_session pins a persona and get_session echoes it', async () => {
     await client.callTool({
       name: 'set_session',

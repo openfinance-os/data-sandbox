@@ -80,6 +80,12 @@ function emitPersona(personaId, persona, domain) {
     default_seed: seed,
     domain,
     stress_coverage: persona.stress_coverage ?? [],
+    // D-14: surface a compact view of the persona's plausible multi-LFI
+    // footprint so MCP / npm / PyPI consumers can discover the multi-bank
+    // reality without re-reading the persona manifest. Each role keeps
+    // the anonymous Rich/Median/Sparse populate-rate label and the
+    // candidate-bank list (NG5/D-14 allow-site).
+    multi_lfi_footprint: persona.multi_lfi_footprint ?? null,
   };
   fs.writeFileSync(
     path.join(OUT, 'personas', `${personaId}.json`),

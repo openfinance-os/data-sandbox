@@ -6,13 +6,22 @@
 import { rngInt, rngPick } from '../prng.js';
 import { drawIban, drawCounterpartyBank, drawName } from './identity.js';
 
-export function generateBeneficiaries({ persona, accounts, rng, pools }) {
+export function generateBeneficiaries({ persona, accounts, rng, pools, excludeBankNames }) {
   const out = [];
+  // Phase D-lite coordination (D-14): if cross-LFI self-beneficiaries
+  // are about to be appended for `multi_lfi_footprint` personas, the
+  // banks they reserve are passed in via excludeBankNames so a regular
+  // beneficiary doesn't coincidentally land at the same bank — keeping
+  // the rendered bundle's multi-bank surface visually distinct.
+  const reservedNames = new Set(excludeBankNames ?? []);
+  const filteredBanksPool = reservedNames.size === 0
+    ? pools.counterpartyBanks
+    : { ...pools.counterpartyBanks, banks: pools.counterpartyBanks.banks.filter((b) => !reservedNames.has(b.name)) };
   // Phase 1 default: 3 named beneficiaries per current account, 1 per credit-card account.
   for (const acc of accounts) {
     const count = acc._meta.kind === 'CurrentAccount' ? 3 : 1;
     for (let i = 0; i < count; i++) {
-      const counterpartyBank = drawCounterpartyBank(rng, pools.counterpartyBanks);
+      const counterpartyBank = drawCounterpartyBank(rng, filteredBanksPool);
       const iban = drawIban(rng, pools.ibans, counterpartyBank.iban_prefix);
       const beneficiaryName = drawName(rng, pools.names);
       out.push({

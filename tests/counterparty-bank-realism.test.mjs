@@ -142,6 +142,33 @@ if (!FIXTURES_BUILT) {
       ).toBeGreaterThanOrEqual(minPrefixes);
     });
 
+    it(`${key} (${segment}) — every BICFI CreditorAgent.Identification across the bundle is a pool BIC`, () => {
+      // Spec-adherence: AEExternalFinancialInstitutionIdentificationCode
+      // is enum {BICFI, Other}; Identification_1 is string 1..35. We
+      // assert that every BICFI-flagged Identification in beneficiaries
+      // / standing orders / scheduled payments is one of the 37 synthetic
+      // BIC stems in the pool — i.e., no hand-rolled or stale-format BIC
+      // can sneak through.
+      const POOL_BICS = new Set(POOL.banks.map((b) => b.bic));
+      let checked = 0;
+      for (const id of fx.accountIds ?? []) {
+        for (const suffix of ['beneficiaries', 'standing-orders', 'scheduled-payments']) {
+          const env = readEnv(fx.endpoints[`/accounts/${id}/${suffix}`]);
+          const records = env.Data?.Beneficiary ?? env.Data?.StandingOrder ?? env.Data?.ScheduledPayment ?? [];
+          for (const rec of records) {
+            const ag = rec.CreditorAgent;
+            if (!ag) continue;
+            expect(ag.SchemeName, `${key} ${suffix} CreditorAgent.SchemeName`).toBe('BICFI');
+            expect(POOL_BICS.has(ag.Identification),
+              `${key} ${suffix} CreditorAgent.Identification="${ag.Identification}" not in pool`)
+              .toBe(true);
+            checked += 1;
+          }
+        }
+      }
+      expect(checked).toBeGreaterThan(0);
+    });
+
     it(`${key} (${segment}) — beneficiary CreditorAgent.Name surfaces real UAE bank names from the pool`, () => {
       const names = [...beneficiaryBankNames(fx)];
       expect(names.length, `${key} has zero beneficiary records with CreditorAgent.Name`).toBeGreaterThan(0);

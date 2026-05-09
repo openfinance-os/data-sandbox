@@ -150,22 +150,26 @@ function buildBankingBundle({ persona, lfi, seed, pools, now = DEFAULT_NOW }) {
     now,
   });
   const directDebits = generateDirectDebits({ persona, accounts, rng, now });
+  // Phase D-lite (D-14): build cross-LFI self-beneficiaries FIRST so we
+  // know which banks they reserve, then exclude those banks from the
+  // regular-beneficiary draw — the rendered bundle's multi-bank surface
+  // stays visually distinct (no coincidental overlap between a regular
+  // beneficiary and a self-to-<role> link).
+  const crossLfiSelfBeneficiaries = buildCrossLfiSelfBeneficiaries({
+    persona, accounts, identity,
+    pools: { counterpartyBanks: p.counterpartyBanks },
+  });
+  const reservedBankNames = crossLfiSelfBeneficiaries
+    .map((b) => b.CreditorAgent?.Name)
+    .filter(Boolean);
   const beneficiaries = generateBeneficiaries({
     persona,
     accounts,
     rng,
     pools: { counterpartyBanks: p.counterpartyBanks, ibans: p.ibans, names: p.names },
+    excludeBankNames: reservedBankNames,
   });
-  // Phase D-lite (D-14): for personas with multi_lfi_footprint, append
-  // one self-at-other-LFI beneficiary per declared non-primary slot, so
-  // the persona's multi-bank reality is visible in the rendered bundle
-  // without yet emitting a separate secondary bundle.
-  beneficiaries.push(
-    ...buildCrossLfiSelfBeneficiaries({
-      persona, accounts, identity,
-      pools: { counterpartyBanks: p.counterpartyBanks },
-    }),
-  );
+  beneficiaries.push(...crossLfiSelfBeneficiaries);
   const scheduledPayments = generateScheduledPayments({
     persona,
     accounts,

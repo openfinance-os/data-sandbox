@@ -467,7 +467,7 @@ export function createServer() {
     {
       title: 'List synthetic personas',
       description:
-        'List the curated synthetic UAE personas in this sandbox: 17 banking + 3 insurance preview. Returns id, display name, archetype, default seed, domain, and stress-coverage tags. Pass { domain: "banking" } or { domain: "insurance" } to filter; omit to get all 20.',
+        'List the curated synthetic UAE personas in this sandbox: 17 banking + 3 insurance preview. Returns id, display name, archetype, default seed, domain, stress-coverage tags, and a `multi_lfi_footprint` field declaring the persona\'s plausible multi-bank reality (primary / secondary / tertiary LFI roles, each with named real-UAE bank candidates — D-14 allow-site). Pass { domain: "banking" } or { domain: "insurance" } to filter; omit to get all 20.',
       inputSchema: {
         domain: z
           .enum(['banking', 'insurance'])
@@ -479,6 +479,7 @@ export function createServer() {
       const ids = domain ? listPersonas({ domain }) : listPersonas();
       const rows = ids.map((id) => {
         const info = getPersonaInfo(id);
+        const fp = info?.multi_lfi_footprint ?? null;
         return {
           id,
           name: info?.name ?? id,
@@ -486,6 +487,21 @@ export function createServer() {
           domain: info?.domain ?? 'banking',
           default_seed: info?.default_seed ?? null,
           stress_coverage: info?.stress_coverage ?? [],
+          // D-14: compact multi-LFI footprint so an LLM consumer can
+          // discover the persona's plausible multi-bank reality without
+          // a separate persona://<id> resource fetch. `multi_lfi_footprint`
+          // is null for personas without a declared footprint.
+          multi_lfi_footprint: fp
+            ? {
+                roles: ['primary', 'secondary', 'tertiary']
+                  .filter((r) => fp[r])
+                  .map((r) => ({
+                    slot: r,
+                    role: fp[r].role,
+                    plausible_lfi_candidates: fp[r].plausible_lfi_candidates ?? [],
+                  })),
+              }
+            : null,
         };
       });
       return textResult(JSON.stringify({ personas: rows, count: rows.length, domain: domain ?? 'all' }, null, 2));

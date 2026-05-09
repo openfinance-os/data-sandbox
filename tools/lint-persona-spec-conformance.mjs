@@ -121,6 +121,7 @@ for (const file of listManifests()) {
   // is a free string list (named UAE banks allowed per D-14).
   const footprint = m?.multi_lfi_footprint;
   if (footprint && typeof footprint === 'object') {
+    const declaredRoles = new Set();
     for (const slot of ['primary', 'secondary', 'tertiary']) {
       const v = footprint[slot];
       if (v == null) continue;
@@ -128,6 +129,43 @@ for (const file of listManifests()) {
       checkEnum(file, `multi_lfi_footprint.${slot}.lfi_default`, v.lfi_default, LFI_DEFAULTS);
       if (v.plausible_lfi_candidates != null && !Array.isArray(v.plausible_lfi_candidates)) {
         bad(file, `multi_lfi_footprint.${slot}.plausible_lfi_candidates must be an array of strings`);
+      }
+      if (v.role) declaredRoles.add(v.role);
+    }
+
+    // Manifest-level consistency: a declared role must be plausible
+    // given the rest of the persona. Catches silent inconsistencies
+    // (e.g. a `trade_finance` slot on a persona without FX activity,
+    // an `acquiring` slot on a persona with no merchant inflows).
+    if (declaredRoles.has('trade_finance')) {
+      const hasFx = m.fx_activity === true;
+      const hasNonAedAccount = (m.accounts ?? []).some(
+        (a) => a.currency && a.currency !== 'AED',
+      );
+      if (!hasFx && !hasNonAedAccount) {
+        bad(
+          file,
+          'multi_lfi_footprint declares a `trade_finance` role but the persona has neither fx_activity:true nor a non-AED account — the trade-finance slot should be paired with a cross-border/FX footprint',
+        );
+      }
+    }
+    if (declaredRoles.has('acquiring')) {
+      const hasMerchantInflows = m.cash_flow?.customer_inflows?.counterparty_pool;
+      if (!hasMerchantInflows) {
+        bad(
+          file,
+          'multi_lfi_footprint declares an `acquiring` role but the persona has no cash_flow.customer_inflows — acquiring slots only make sense for merchant-side personas with card-receipt / aggregator inflows',
+        );
+      }
+    }
+    if (declaredRoles.has('escrow')) {
+      // Escrow personas should declare ≥2 accounts so the no-mingling
+      // rule is even visible — otherwise the slot is decorative.
+      if ((m.accounts ?? []).length < 2) {
+        bad(
+          file,
+          'multi_lfi_footprint declares an `escrow` role but the persona has fewer than 2 accounts — escrow slots imply a structurally separate trust account from the operating account',
+        );
       }
     }
   }
