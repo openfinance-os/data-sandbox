@@ -33,7 +33,13 @@ export function generateStandingOrders({ persona, accounts, rng, pools, now }) {
       out.push({
         _accountId: acc.AccountId,
         StandingOrderId: `${acc.AccountId}-so-${String(i + 1).padStart(2, '0')}`,
-        Reference: c.purpose,
+        // AEStandingOrder spec field is `CreditorReference` (not `Reference`).
+        CreditorReference: c.purpose,
+        // The purpose-as-name lives at the AEStandingOrder.AccountHolderName
+        // level (allowed by spec); AECashAccount5_0 (which CreditorAccount
+        // uses on this resource) is locked to {SchemeName, Identification}
+        // and disallows Name.
+        AccountHolderName: prettyPurpose(c.purpose),
         Frequency: 'EvryDay:01:01',
         FirstPaymentDateTime: isoOf(firstPayment),
         NextPaymentDateTime: isoOf(nextPayment),
@@ -52,7 +58,7 @@ export function generateStandingOrders({ persona, accounts, rng, pools, now }) {
           Identification: counterpartyBank.bic ?? creditorIban.slice(0, 8),
         },
         CreditorAccount: [
-          { SchemeName: 'IBAN', Identification: creditorIban, Name: prettyPurpose(c.purpose) },
+          { SchemeName: 'IBAN', Identification: creditorIban },
         ],
       });
     });

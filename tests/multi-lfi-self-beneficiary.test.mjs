@@ -76,7 +76,8 @@ describe('Slice 4 — purpose-to-role routing in standing orders', () => {
   );
 
   it('zakat_distribution SO CreditorAgent.Identification is one of the islamic_deposit slot BICs', () => {
-    const zakat = sos.find((s) => s.Reference === 'zakat_distribution');
+    // AEStandingOrder spec field is `CreditorReference` (not `Reference`).
+    const zakat = sos.find((s) => s.CreditorReference === 'zakat_distribution');
     expect(zakat).toBeDefined();
     expect(islamicBics.has(zakat.CreditorAgent.Identification)).toBe(true);
   });
@@ -177,9 +178,10 @@ if (!FIXTURES_BUILT) {
           expect(POOL_BY_NAME.has(bankName), `bank "${bankName}" must be in pool`).toBe(true);
           // BIC matches the pool entry's bic stem.
           expect(ben.CreditorAgent.Identification).toBe(POOL_BY_NAME.get(bankName).bic);
-          // The CreditorAccount holder name is the persona's own
-          // signatory — self-transfer shape.
-          expect(ben.CreditorAccount?.[0]?.Name).toBeTruthy();
+          // The persona's own signatory name lives at the AEBeneficiary
+          // level (AccountHolderName) — AECashAccount5_0 (CreditorAccount)
+          // disallows Name per v2.1 spec.
+          expect(ben.AccountHolderName).toBeTruthy();
           // The IBAN is the deterministic cross-LFI self-IBAN.
           const role = ben.Reference.replace('self-to-', '');
           const expectedIban = deriveCrossLfiSelfIban(pid, role, POOL_BY_NAME.get(bankName));

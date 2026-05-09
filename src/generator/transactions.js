@@ -8,7 +8,7 @@
 // EXP-05 across cold starts. The transaction-id counter is scoped to the
 // caller's `txState` object so two buildBundle invocations don't collide.
 
-import { rngInt, rngPick } from '../prng.js';
+import { makePrng, rngInt, rngPick } from '../prng.js';
 import { drawMerchant, drawEmployer, drawCounterparty } from './identity.js';
 import {
   bankishNarrative,
@@ -396,7 +396,19 @@ function makeSalary({ rng, persona, date, accountId, currency, employerName, txS
     TransactionDateTime: isoOf(posted),
     ValueDateTime: isoOf(posted),
     TransactionInformation: bankishNarrative('SAL', ['PAYROLL', employerSlug]),
-    CreditorName: employerName, // structured field stays clean for downstream parsing
+    // AETransaction spec has no top-level CreditorName field. The employer
+    // (the debtor on a salary credit) lives in DebtorAccount.Name —
+    // AECashAccount6_1 permits Name. Underwriting / downstream readers
+    // pick this up via the spec-correct path. The IBAN draw uses a
+    // side-channel PRNG seeded on (accountId, posted-iso-date) so the
+    // main `rng` state is preserved — no downstream tx-count drift on
+    // personas whose transaction sequence depends on rng position.
+    DebtorAgent: { SchemeName: 'BICFI', Identification: 'SYNAEAA', Name: employerName },
+    DebtorAccount: {
+      SchemeName: 'IBAN',
+      Identification: synthEmployerIbanFor(accountId, posted),
+      Name: employerName,
+    },
     Amount: { Amount: persona.income.monthly_amount_aed.toFixed(2), Currency: currency },
     TransactionType: 'LocalBankTransfer',
     SubTransactionType: 'Deposit',
@@ -570,6 +582,19 @@ function makeB2bOutflow({ rng, account, date, grossAmount, counterparty, poolId,
       { SchemeName: 'IBAN', Identification: synthCounterpartyIban(rng), Name: counterparty },
     ],
   };
+}
+
+function synthEmployerIbanFor(accountId, posted) {
+  // Side-channel deterministic IBAN keyed on (accountId, posted-iso-date)
+  // so the main generator rng state is unaffected — adding the salary
+  // DebtorAccount.Identification post-hoc must not shift downstream
+  // tx-count distributions for any persona.
+  const isoDate = posted.toISOString().slice(0, 10);
+  const sideRng = makePrng(accountId, 'salary-debtor-iban', isoDate);
+  let account = '';
+  for (let i = 0; i < 16; i++) account += rngInt(sideRng, 0, 10);
+  const bban = '999' + account;
+  return `AE${b2bIbanCheck(bban)}${bban}`;
 }
 
 function synthCounterpartyIban(rng) {

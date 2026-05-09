@@ -90,17 +90,19 @@ export function generateParties({ persona, accounts, identity, rng, pools, now }
   // Calling-user /parties (single record). PartyCategory mirrors the persona
   // segment; for an SME/corporate persona the calling user is the principal
   // signatory's record rather than the natural-person identity.
-  const callingUserName =
-    personaSegment !== 'Retail' && persona.organisation?.signatories?.[0]?._resolved?.fullName
-      ? persona.organisation.signatories[0]._resolved.fullName
-      : identity.fullName;
+  // The spec's AEPartyIdentityAssurance2 has `additionalProperties: false`
+  // and its only properties are PartyId / PartyNumber / PartyType /
+  // PartyCategory / AccountRole / VerifiedClaims (no AccountRole on the
+  // calling-user record, only on per-account Party records). Identity
+  // (Name / FullLegalName / Email) belongs inside VerifiedClaims[].Claims
+  // per the OIDC IDA spec; emitting full Claims requires synthetic
+  // Emirates IDs, expiry dates, and ResidentialAddress objects which is
+  // a follow-up. For now, VerifiedClaims is an empty array — strict
+  // spec-compliant.
   const callingUser = {
     PartyId: `${persona.persona_id.replace(/_/g, '-')}-party`,
     PartyType: persona.organisation?.signatories?.[0]?.party_type ?? 'Sole',
     PartyCategory: personaSegment,
-    Name: callingUserName,
-    EmailAddress: synthEmailFromName(callingUserName),
-    FullLegalName: callingUserName,
     VerifiedClaims: [],
   };
 
@@ -108,11 +110,13 @@ export function generateParties({ persona, accounts, identity, rng, pools, now }
   void drawName;
   void rng;
   void pools;
+  void identity;
 
   return { perAccount, callingUser };
 }
 
 function makeParty({ _accountId, partySuffix, personaId, type, role, category, name }) {
+  void name; // identity goes into VerifiedClaims[].Claims when populated.
   const slug = personaId.replace(/_/g, '-');
   return {
     _accountId,
@@ -120,14 +124,6 @@ function makeParty({ _accountId, partySuffix, personaId, type, role, category, n
     PartyType: type,
     PartyCategory: category ?? 'Retail',
     AccountRole: role,
-    Name: name,
-    FullLegalName: name,
-    EmailAddress: synthEmailFromName(name),
     VerifiedClaims: [],
   };
-}
-
-function synthEmailFromName(name) {
-  const slug = name.toLowerCase().replace(/[^a-z]+/g, '.').replace(/^\.|\.$/g, '');
-  return `${slug}@example.test`;
 }

@@ -457,7 +457,10 @@ export function buildCrossLfiSelfBeneficiaries({ persona, accounts, identity, po
         PostalAddress: { AddressLine: ['Synthetic Branch'], Country: 'AE' },
       },
       CreditorAccount: [
-        { SchemeName: 'IBAN', Identification: iban, Name: identity.fullName },
+        // AECashAccount5_0 (used by AEBeneficiary.CreditorAccount) doesn't
+        // permit Name. Beneficiary's account-holder name lives at the
+        // AEBeneficiary.AccountHolderName level — set above.
+        { SchemeName: 'IBAN', Identification: iban },
       ],
     });
   }

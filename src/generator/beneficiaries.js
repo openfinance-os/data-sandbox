@@ -30,6 +30,10 @@ export function generateBeneficiaries({ persona, accounts, rng, pools, excludeBa
         BeneficiaryType: rngPick(rng, ['Activated', 'NotActivated']),
         AddedViaOF: rngInt(rng, 0, 2) === 0,
         Reference: `BEN-${rngInt(rng, 1000, 9999)}`,
+        // Beneficiary's account-holder name lives at the AEBeneficiary
+        // level (per spec); AECashAccount5_0 (which CreditorAccount uses)
+        // is locked to {SchemeName, Identification} and disallows Name.
+        AccountHolderName: beneficiaryName.full,
         CreditorAgent: {
           SchemeName: 'BICFI',
           Identification: counterpartyBank.bic ?? iban.slice(0, 8),
@@ -43,7 +47,7 @@ export function generateBeneficiaries({ persona, accounts, rng, pools, excludeBa
           PostalAddress: { AddressLine: ['Synthetic Branch'], Country: 'AE' },
         },
         CreditorAccount: [
-          { SchemeName: 'IBAN', Identification: iban, Name: beneficiaryName.full },
+          { SchemeName: 'IBAN', Identification: iban },
         ],
       });
     }

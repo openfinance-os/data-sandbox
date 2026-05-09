@@ -22,7 +22,11 @@ export function generateScheduledPayments({ persona, accounts, rng, pools, now }
         ScheduledPaymentId: `${acc.AccountId}-sp-${String(i + 1).padStart(2, '0')}`,
         ScheduledType: rngPick(rng, ['Arrival', 'Execution']),
         ScheduledPaymentDateTime: isoOf(date),
-        Reference: `SCHED-${rngInt(rng, 1000, 9999)}`,
+        // AEScheduledPayment spec field is `CreditorReference` (not `Reference`).
+        CreditorReference: `SCHED-${rngInt(rng, 1000, 9999)}`,
+        // Beneficiary name lives at the AEScheduledPayment.AccountHolderName
+        // level; AECashAccount5_0 disallows Name on CreditorAccount.
+        AccountHolderName: beneficiary.full,
         InstructedAmount: { Amount: rngInt(rng, 100, 5000).toFixed(2), Currency: acc.Currency },
         // AEScheduledPayment.CreditorAgent uses
         // AEBranchAndFinancialInstitutionIdentification5_1, locked to
@@ -34,7 +38,7 @@ export function generateScheduledPayments({ persona, accounts, rng, pools, now }
           Identification: counterpartyBank.bic ?? iban.slice(0, 8),
         },
         CreditorAccount: [
-          { SchemeName: 'IBAN', Identification: iban, Name: beneficiary.full },
+          { SchemeName: 'IBAN', Identification: iban },
         ],
       });
     }
