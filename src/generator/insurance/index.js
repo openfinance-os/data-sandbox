@@ -28,6 +28,12 @@ import {
   generateHealthPremium,
 } from './health-policy.js';
 import { generateHealthQuote } from './health-quote.js';
+import {
+  generateLifeProduct,
+  generateLifeClaims,
+  generateLifePremium,
+} from './life-policy.js';
+import { generateLifeQuote } from './life-quote.js';
 import { applyInsuranceLfiProfile } from './lfi-profile.js';
 
 const DEFAULT_NOW = new Date(Date.UTC(2026, 3, 1, 0, 0, 0));
@@ -41,10 +47,11 @@ function resolvePools(persona, indexedPools) {
       `name pool '${persona.demographics.nationality_pool}' not found for persona ${persona.persona_id}`
     );
   }
-  // Motor uses persona.finance.bank_pool; home uses persona.home.mortgage.bank_pool.
+  // Per-line bank-pool refs: motor.finance, home.mortgage, life.finance.
   const banksPoolId =
     persona.finance?.bank_pool ??
     persona.home?.mortgage?.bank_pool ??
+    persona.life?.finance?.bank_pool ??
     DEFAULT_BANKS_POOL;
   const banks = indexedPools.counterpartyBanksByCategory[banksPoolId];
   if (!banks) {
@@ -70,6 +77,7 @@ export function buildInsuranceBundle({ persona, lfi, seed, pools, now = DEFAULT_
   if (line === 'motor') return buildMotorBundle({ persona, lfi, seed, pools, now });
   if (line === 'home') return buildHomeBundle({ persona, lfi, seed, pools, now });
   if (line === 'health') return buildHealthBundle({ persona, lfi, seed, pools, now });
+  if (line === 'life') return buildLifeBundle({ persona, lfi, seed, pools, now });
   throw new Error(`unknown insurance line '${line}' for persona ${persona.persona_id}`);
 }
 
@@ -212,6 +220,80 @@ function buildHealthBundle({ persona, lfi, seed, pools, now }) {
     healthPolicySummaries: [healthPolicySummary],
     paymentDetails,
     healthQuote,
+  };
+
+  return applyInsuranceLfiProfile({ bundle, personaId: persona.persona_id, lfi, seed });
+}
+
+function buildLifeBundle({ persona, lfi, seed, pools, now }) {
+  const rng = makePrng(persona.persona_id, 'generator', seed);
+  const p = resolvePools(persona, pools);
+
+  const { name, policyHolder, identity } = generateInsuranceIdentity({
+    persona,
+    names: p.names,
+    rng,
+    now,
+  });
+
+  const { product, policyNumber, startDate, endDate } = generateLifeProduct({
+    persona,
+    policyHolder,
+    names: p.names,
+    banks: p.banks,
+    rng,
+    now,
+  });
+  const claims = generateLifeClaims({ persona });
+  const premium = generateLifePremium({ persona });
+
+  const insurancePolicyId = genUuid(rng);
+
+  const lifePolicyDetail = {
+    InsurancePolicyId: insurancePolicyId,
+    PolicyHolder: policyHolder,
+    Identity: identity,
+    Product: product,
+    Claims: claims,
+    Premium: premium,
+  };
+
+  const lifePolicySummary = {
+    InsurancePolicyId: insurancePolicyId,
+    PolicyNumber: policyNumber,
+    PolicyStatus: 'New',
+    PolicyStartDate: startDate,
+    PolicyEndDate: endDate,
+  };
+
+  // Use the FinanceAgainstPolicy bank when present (mortgage-protection
+  // narrative), otherwise draw a counterparty bank.
+  const bankName =
+    product.FinanceAgainstPolicy?.FinanceProvider ??
+    p.banks.banks[Math.floor(rng() * p.banks.banks.length)].name;
+  const accountIban = genUaeIban(rng);
+  const paymentDetails = {
+    Account: { Identification: accountIban, SchemeName: 'IBAN', Name: `${name.given} ${name.surname}` },
+    Bank: { Name: bankName },
+  };
+
+  const lifeQuote = generateLifeQuote({ persona, rng, now });
+
+  const bundle = {
+    persona: persona.persona_id,
+    name: persona.name,
+    domain: 'insurance',
+    line: 'life',
+    identity: {
+      fullName: `${name.given} ${name.surname}`,
+      given: name.given,
+      surname: name.surname,
+      namePoolId: persona.demographics.nationality_pool,
+    },
+    lifePolicies: [lifePolicyDetail],
+    lifePolicySummaries: [lifePolicySummary],
+    paymentDetails,
+    lifeQuote,
   };
 
   return applyInsuranceLfiProfile({ bundle, personaId: persona.persona_id, lfi, seed });

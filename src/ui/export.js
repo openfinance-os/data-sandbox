@@ -145,6 +145,13 @@ function insuranceEnvelopesFromBundle(bundle, ctx) {
     quoteKey: 'healthQuote',
     pathPrefix: 'health-insurance',
   });
+  emitLineEnvelopes(envelopes, bundle, ctx, {
+    line: 'life',
+    policiesKey: 'lifePolicies',
+    summariesKey: 'lifePolicySummaries',
+    quoteKey: 'lifeQuote',
+    pathPrefix: 'life-insurance',
+  });
   return envelopes;
 }
 

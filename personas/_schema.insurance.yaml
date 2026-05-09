@@ -13,13 +13,13 @@
 # `line` discriminates which generator runs. Motor personas may omit the
 # field for back-compat (defaults to 'motor'). Home personas declare
 # `line: home` and a `home:` block; health personas declare `line: health`
-# and a `health:` block. The remaining 4 lines (Life, Employment, Travel,
-# Renters) + Insurance Consents will extend this schema as their
-# generators land.
+# and a `health:` block; life personas declare `line: life` and a `life:`
+# block. The remaining 3 lines (Employment, Travel, Renters) + Insurance
+# Consents will extend this schema as their generators land.
 
 persona_id: <slug>
 domain: insurance
-line: <enum: motor|home>           # optional — defaults to 'motor' if absent
+line: <enum: motor|home|health|life>  # optional — defaults to 'motor' if absent
 name: <string>
 archetype: <string>                # e.g. motor_comprehensive_financed
 default_seed: <int>
@@ -134,6 +134,44 @@ health:
     type: <enum: Resident|Citizen|Establishment|PropertyOwner>
     entity_id: <string>
     entity_id_type: <enum: FileNumber|UID|EstablishmentCode>
+  claims:
+    history_months: <int>
+    claims_in_period: <int>
+    approved_claims: <int>
+    total_gross_aed: <int>
+
+# ---------------------------------------------------------------------------
+# Life block (line: life) — drives AELifeInsurancePolicyProperties1.
+# Required when line=life; omitted otherwise.
+# ---------------------------------------------------------------------------
+
+life:
+  policy:
+    cover_type: <enum: Sole|Joint>
+    policyholder_life_assured: <bool>
+    type_of_life_insurance: <enum: WholeLifeInsurance|LevelTermInsurance|DecreasingTermInsurance>
+    insurance_purpose: <enum: PersonalCover|FamilyProtection|MortgageCover>
+    sum_assured_aed: <int>
+    term_years: <int>                # used to compute PolicyTerm + PolicyEndDate
+    takaful: <bool>
+    product_name: <string?>          # business name shown to customer
+    start_date_offset_days: <int>
+    channel: <enum: Direct|Agent|Broker|Bank|InvFinInst|Aggregator>
+  insured_parties:                   # additional life-assured beyond the policyholder
+    - relationship: <enum: Self|Spouse|Child|Parent|Other>
+      age: <int>
+      gender: <enum: Male|Female|Other>
+      given_name: <string?>
+      surname: <string?>
+  beneficiaries:                     # nominees on the death benefit
+    - relationship: <enum: Self|Spouse|Child|Parent|Other>
+      given_name: <string?>
+      surname: <string?>
+  finance:                           # optional — set when policy assigned to mortgage / loan
+    has_finance: <bool>
+    bank_pool: <pool_id?>            # references /synthetic-identity-pool/banks/<pool>.yaml
+    amount_aed: <int>
+    value_against_policy_aed: <int?> # defaults to amount_aed
   claims:
     history_months: <int>
     claims_in_period: <int>

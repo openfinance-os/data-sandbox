@@ -40,3 +40,9 @@ overrides:
   Product.Policy.RegionsCoverage: Common
   Product.Sponsor: Variable
   PolicyHolder.Employment.SalaryBand: Variable
+  # Life (Phase 2.1). Beneficiary list mirrors home/motor's optional
+  # finance block; surrender / maturity values are per-product variable.
+  Product.Beneficiaries: Common
+  Product.FinanceAgainstPolicy: Variable
+  Product.Policy.SurrenderValueAmount: Variable
+  Product.Policy.MaturityValueAmount: Variable

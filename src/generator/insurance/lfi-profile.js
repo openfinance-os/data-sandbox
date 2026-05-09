@@ -38,6 +38,12 @@ const OPTIONAL_FIELD_BANDS = [
   { path: 'Product.Policy.RegionsCoverage', band: 'Common' },
   { path: 'Product.Sponsor', band: 'Variable' },
   { path: 'PolicyHolder.Employment.SalaryBand', band: 'Variable' },
+  // Life (Phase 2.1). Beneficiary list and finance-against-policy block
+  // mirror motor's CarFinance / home's Mortgage Variable banding.
+  { path: 'Product.Beneficiaries', band: 'Common' },
+  { path: 'Product.FinanceAgainstPolicy', band: 'Variable' },
+  { path: 'Product.Policy.SurrenderValueAmount', band: 'Variable' },
+  { path: 'Product.Policy.MaturityValueAmount', band: 'Variable' },
 ];
 
 function shouldKeep(profile, band, rng) {
@@ -78,6 +84,37 @@ export function applyInsuranceLfiProfile({ bundle, personaId, lfi, seed }) {
       }
       if (!decide('Product.CarFinance', 'Variable')) {
         delete policy.Product.CarFinance;
+      }
+    }
+  }
+
+  for (const policy of bundle.lifePolicies ?? []) {
+    if (policy.PolicyHolder && !decide('PolicyHolder.Salutation', 'Common')) {
+      delete policy.PolicyHolder.Salutation;
+    }
+    if (policy.Premium && !decide('Premium.PaymentMode', 'Common')) {
+      delete policy.Premium.PaymentMode;
+    }
+    if (policy.Product) {
+      if (policy.Product.Beneficiaries && !decide('Product.Beneficiaries', 'Common')) {
+        delete policy.Product.Beneficiaries;
+      }
+      if (policy.Product.FinanceAgainstPolicy && !decide('Product.FinanceAgainstPolicy', 'Variable')) {
+        delete policy.Product.FinanceAgainstPolicy;
+      }
+      if (policy.Product.Policy) {
+        if (
+          policy.Product.Policy.SurrenderValueAmount
+          && !decide('Product.Policy.SurrenderValueAmount', 'Variable')
+        ) {
+          delete policy.Product.Policy.SurrenderValueAmount;
+        }
+        if (
+          policy.Product.Policy.MaturityValueAmount
+          && !decide('Product.Policy.MaturityValueAmount', 'Variable')
+        ) {
+          delete policy.Product.Policy.MaturityValueAmount;
+        }
       }
     }
   }

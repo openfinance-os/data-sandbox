@@ -1,0 +1,41 @@
+persona_id: life_mortgage_protection
+domain: insurance
+line: life
+name: "Rashid — Life (Decreasing Term, Mortgage Protection)"
+archetype: life_mortgage_protection_term
+default_seed: 5102
+stress_coverage:
+  - life_mortgage_protection_term
+
+demographics:
+  nationality_pool: emirati
+  age_band: 36-46
+  emirate: Dubai
+  has_visa: false
+
+life:
+  policy:
+    cover_type: Sole
+    policyholder_life_assured: true
+    type_of_life_insurance: DecreasingTermInsurance
+    insurance_purpose: MortgageCover
+    sum_assured_aed: 2200000
+    term_years: 20
+    takaful: false
+    product_name: Mortgage Protect Term
+    start_date_offset_days: 75
+    channel: Bank
+  beneficiaries:
+    - relationship: Spouse
+    - relationship: Child
+    - relationship: Child
+  finance:
+    has_finance: true
+    bank_pool: counterparty_banks_uae_real
+    amount_aed: 2200000
+    value_against_policy_aed: 2200000
+  claims:
+    history_months: 60
+    claims_in_period: 0
+    approved_claims: 0
+    total_gross_aed: 0

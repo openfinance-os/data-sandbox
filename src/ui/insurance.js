@@ -128,6 +128,23 @@ export function createInsurance(deps) {
         return state.bundle.healthQuote
           ? { kind: 'detail', Data: state.bundle.healthQuote }
           : null;
+      case '/life-insurance-policies':
+        return {
+          kind: 'list',
+          Data: { Policies: state.bundle.lifePolicySummaries ?? [] },
+        };
+      case '/life-insurance-policies/{InsurancePolicyId}': {
+        const policy = state.bundle.lifePolicies?.[0];
+        return policy ? { kind: 'detail', Data: policy } : null;
+      }
+      case '/life-insurance-policies/{InsurancePolicyId}/payment-details':
+        return state.bundle.paymentDetails && state.bundle.line === 'life'
+          ? { kind: 'detail', Data: state.bundle.paymentDetails }
+          : null;
+      case '/life-insurance-quotes/{QuoteId}':
+        return state.bundle.lifeQuote
+          ? { kind: 'detail', Data: state.bundle.lifeQuote }
+          : null;
       default:
         return null;
     }

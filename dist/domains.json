@@ -47,7 +47,11 @@
         "/health-insurance-policies",
         "/health-insurance-policies/{InsurancePolicyId}",
         "/health-insurance-policies/{InsurancePolicyId}/payment-details",
-        "/health-insurance-quotes/{QuoteId}"
+        "/health-insurance-quotes/{QuoteId}",
+        "/life-insurance-policies",
+        "/life-insurance-policies/{InsurancePolicyId}",
+        "/life-insurance-policies/{InsurancePolicyId}/payment-details",
+        "/life-insurance-quotes/{QuoteId}"
       ]
     }
   ]
