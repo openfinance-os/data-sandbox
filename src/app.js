@@ -34,6 +34,7 @@ import {
 import { conditionalRule, isPii, whyEmpty } from './shared/field-knowledge.js';
 import { createUnderwriting } from './ui/underwriting.js';
 import { createFieldCard } from './ui/field-card.js';
+import { createHoverPreview } from './ui/hover-preview.js';
 
 // All 12 v1 endpoints (Appendix C). Three are bundle-level (no AccountId
 // scope): /accounts and /parties. The others are per-account.
@@ -128,6 +129,9 @@ const state = {
 // the Find box's "jump to field" path depends on its openFieldCard.
 const { openFieldCard } = createFieldCard({
   state, el, endpointFieldsByName, rowsForActiveEndpoint, setPaneCollapsed,
+});
+const { attachHoverPreview } = createHoverPreview({
+  state, el, endpointFieldsByName,
 });
 const { openFind, closeFind } = createFindBox({
   state, el, humanArchetype, rebuildAndRender, clearTxState,
@@ -1784,71 +1788,6 @@ function stripInternal(rec) {
     out[k] = v;
   }
   return out;
-}
-
-// ---- Hover preview tooltip — quick field-card peek (EXP-14) ----------------------------
-
-let hoverHideTimer = null;
-
-function attachHoverPreview(node, fieldName) {
-  let openTimer = null;
-  const open = () => {
-    clearTimeout(hoverHideTimer);
-    showHoverPreview(node, fieldName);
-  };
-  const hide = () => {
-    clearTimeout(openTimer);
-    hoverHideTimer = setTimeout(hideHoverPreview, 80);
-  };
-  node.addEventListener('mouseenter', () => { openTimer = setTimeout(open, 120); });
-  node.addEventListener('mouseleave', hide);
-  node.addEventListener('focus', open);
-  node.addEventListener('blur', hide);
-}
-
-function showHoverPreview(anchor, fieldName) {
-  const fieldsByName = endpointFieldsByName();
-  const f = fieldsByName.get(fieldName);
-  if (!f) return;
-  const card = document.getElementById('hovercard');
-  if (!card) return;
-  const band = bandForFieldName(fieldName, state.endpoint, state.spec);
-  const badge = statusBadge(f.status);
-
-  card.replaceChildren();
-  card.appendChild(el('div', { class: 'hc-title', text: fieldName }));
-  const status = el('div', { class: 'hc-status' });
-  status.appendChild(el('span', { class: `pill ${badge.shape}`, text: badge.label, attrs: { 'aria-label': badge.text } }));
-  status.appendChild(document.createTextNode(badge.text));
-  if (band) status.appendChild(el('span', {
-    attrs: { style: 'margin-left:6px;font-size:10px;color:var(--text-muted)' },
-    text: ` · ${band} band`,
-  }));
-  card.appendChild(status);
-  card.appendChild(el('div', { class: 'hc-guidance', text: realLfisGuidance(f, band) }));
-  const meta = `${f.type}${f.format ? ' · ' + f.format : ''}${Array.isArray(f.enum) ? ` · enum (${f.enum.length})` : ''}`;
-  card.appendChild(el('div', { class: 'hc-meta', text: meta }));
-  card.appendChild(el('div', {
-    class: 'hc-meta',
-    attrs: { style: 'margin-top:6px;font-style:italic' },
-    text: 'Click to pin full card →',
-  }));
-
-  // Position next to the anchor — prefer below, flip above if overflowing.
-  card.hidden = false;
-  const r = anchor.getBoundingClientRect();
-  const cardW = Math.min(card.offsetWidth, 320);
-  const cardH = card.offsetHeight;
-  let left = Math.min(window.innerWidth - cardW - 8, Math.max(8, r.left));
-  let top = r.bottom + 6;
-  if (top + cardH > window.innerHeight - 8) top = Math.max(8, r.top - cardH - 6);
-  card.style.left = `${left}px`;
-  card.style.top = `${top}px`;
-}
-
-function hideHoverPreview() {
-  const card = document.getElementById('hovercard');
-  if (card) card.hidden = true;
 }
 
 // ---- Embed-snippet copy — EXP-27 ergonomic affordance ----------------------------------
