@@ -46,3 +46,11 @@ overrides:
   Product.FinanceAgainstPolicy: Variable
   Product.Policy.SurrenderValueAmount: Variable
   Product.Policy.MaturityValueAmount: Variable
+  # Travel (Phase 2.1). Trip-level enums are commonly populated;
+  # optional cover add-ons / high-risk activities are per-product
+  # variable.
+  Product.Policy.PurposeOfTravel: Common
+  Product.Policy.TravellingWith: Common
+  Product.Policy.TravelDestinationRegion: Common
+  Product.OptionalTravelCoverOptions: Variable
+  Product.HighRiskActivities: Variable

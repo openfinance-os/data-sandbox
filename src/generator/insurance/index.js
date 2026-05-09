@@ -34,6 +34,12 @@ import {
   generateLifePremium,
 } from './life-policy.js';
 import { generateLifeQuote } from './life-quote.js';
+import {
+  generateTravelProduct,
+  generateTravelClaims,
+  generateTravelPremium,
+} from './travel-policy.js';
+import { generateTravelQuote } from './travel-quote.js';
 import { applyInsuranceLfiProfile } from './lfi-profile.js';
 
 const DEFAULT_NOW = new Date(Date.UTC(2026, 3, 1, 0, 0, 0));
@@ -78,6 +84,7 @@ export function buildInsuranceBundle({ persona, lfi, seed, pools, now = DEFAULT_
   if (line === 'home') return buildHomeBundle({ persona, lfi, seed, pools, now });
   if (line === 'health') return buildHealthBundle({ persona, lfi, seed, pools, now });
   if (line === 'life') return buildLifeBundle({ persona, lfi, seed, pools, now });
+  if (line === 'travel') return buildTravelBundle({ persona, lfi, seed, pools, now });
   throw new Error(`unknown insurance line '${line}' for persona ${persona.persona_id}`);
 }
 
@@ -220,6 +227,74 @@ function buildHealthBundle({ persona, lfi, seed, pools, now }) {
     healthPolicySummaries: [healthPolicySummary],
     paymentDetails,
     healthQuote,
+  };
+
+  return applyInsuranceLfiProfile({ bundle, personaId: persona.persona_id, lfi, seed });
+}
+
+function buildTravelBundle({ persona, lfi, seed, pools, now }) {
+  const rng = makePrng(persona.persona_id, 'generator', seed);
+  const p = resolvePools(persona, pools);
+
+  const { name, policyHolder, identity } = generateInsuranceIdentity({
+    persona,
+    names: p.names,
+    rng,
+    now,
+  });
+
+  const { product, policyNumber, startDate, endDate } = generateTravelProduct({
+    persona,
+    names: p.names,
+    rng,
+    now,
+  });
+  const claims = generateTravelClaims({ persona });
+  const premium = generateTravelPremium({ persona });
+
+  const insurancePolicyId = genUuid(rng);
+
+  const travelPolicyDetail = {
+    InsurancePolicyId: insurancePolicyId,
+    PolicyHolder: policyHolder,
+    Identity: identity,
+    Product: product,
+    Claims: claims,
+    Premium: premium,
+  };
+
+  const travelPolicySummary = {
+    InsurancePolicyId: insurancePolicyId,
+    PolicyNumber: policyNumber,
+    PolicyStatus: 'New',
+    PolicyStartDate: startDate,
+    PolicyEndDate: endDate,
+  };
+
+  const bankName = p.banks.banks[Math.floor(rng() * p.banks.banks.length)].name;
+  const accountIban = genUaeIban(rng);
+  const paymentDetails = {
+    Account: { Identification: accountIban, SchemeName: 'IBAN', Name: `${name.given} ${name.surname}` },
+    Bank: { Name: bankName },
+  };
+
+  const travelQuote = generateTravelQuote({ persona, rng, now });
+
+  const bundle = {
+    persona: persona.persona_id,
+    name: persona.name,
+    domain: 'insurance',
+    line: 'travel',
+    identity: {
+      fullName: `${name.given} ${name.surname}`,
+      given: name.given,
+      surname: name.surname,
+      namePoolId: persona.demographics.nationality_pool,
+    },
+    travelPolicies: [travelPolicyDetail],
+    travelPolicySummaries: [travelPolicySummary],
+    paymentDetails,
+    travelQuote,
   };
 
   return applyInsuranceLfiProfile({ bundle, personaId: persona.persona_id, lfi, seed });

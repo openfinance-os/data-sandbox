@@ -14,12 +14,13 @@
 # field for back-compat (defaults to 'motor'). Home personas declare
 # `line: home` and a `home:` block; health personas declare `line: health`
 # and a `health:` block; life personas declare `line: life` and a `life:`
-# block. The remaining 3 lines (Employment, Travel, Renters) + Insurance
-# Consents will extend this schema as their generators land.
+# block; travel personas declare `line: travel` and a `travel:` block.
+# The remaining 2 lines (Employment, Renters) + Insurance Consents will
+# extend this schema as their generators land.
 
 persona_id: <slug>
 domain: insurance
-line: <enum: motor|home|health|life>  # optional — defaults to 'motor' if absent
+line: <enum: motor|home|health|life|travel>  # optional — defaults to 'motor' if absent
 name: <string>
 archetype: <string>                # e.g. motor_comprehensive_financed
 default_seed: <int>
@@ -172,6 +173,40 @@ life:
     bank_pool: <pool_id?>            # references /synthetic-identity-pool/banks/<pool>.yaml
     amount_aed: <int>
     value_against_policy_aed: <int?> # defaults to amount_aed
+  claims:
+    history_months: <int>
+    claims_in_period: <int>
+    approved_claims: <int>
+    total_gross_aed: <int>
+
+# ---------------------------------------------------------------------------
+# Travel block (line: travel) — drives AETravelInsurancePolicyProperties1.
+# Required when line=travel; omitted otherwise.
+# ---------------------------------------------------------------------------
+
+travel:
+  policy:
+    trip_duration_days: <int>        # used for TripDuration; also bounds PolicyEndDate when single-trip
+    multi_trip: <bool>               # MultiTrip — annual multi-trip policies set this true
+    purpose: <enum: Personal|Business>
+    travelling_with: <enum: Individual|Couple|Family|Group>
+    destination_region: <enum: WithinUAE|Worldwide|WorldwideExcludingUSAandCanada>
+    cover_limit_aed: <int>           # CoverLimit on the TripCancellation cover
+    medical_limit_aed: <int>         # CoverLimit on the EmergencyMedical cover
+    excess_aed: <int>
+    takaful: <bool>
+    product_name: <string?>
+    start_date_offset_days: <int>
+    channel: <enum: Direct|Agent|Broker|Bank|Aggregator|OnlineInsideUAE|OnlineOutsideUAE>
+  adults: <int?>                     # NumberOfAdults (defaults to 1 + companions when absent)
+  children: <int?>                   # NumberOfChildren
+  seniors: <int?>                    # NumberOfSeniors
+  companions:                        # InsuredParties[] (omitted when policyholder travels alone)
+    - relationship: <enum: Spouse|Child|FamilyMember|GroupMember>
+      age: <int>
+      gender: <enum: Male|Female|Other>
+      given_name: <string?>
+      surname: <string?>
   claims:
     history_months: <int>
     claims_in_period: <int>

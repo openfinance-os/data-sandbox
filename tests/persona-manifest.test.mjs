@@ -44,6 +44,7 @@ const REQUIRED_BY_INSURANCE_LINE = {
   home: [...COMMON_INSURANCE_KEYS, 'home'],
   health: [...COMMON_INSURANCE_KEYS, 'health'],
   life: [...COMMON_INSURANCE_KEYS, 'life'],
+  travel: [...COMMON_INSURANCE_KEYS, 'travel'],
 };
 
 const ALLOWED_DOMAINS = new Set(Object.keys(REQUIRED_BY_DOMAIN));
@@ -107,6 +108,14 @@ describe('persona manifests — EXP-02', () => {
           .toContain(m.life.policy.insurance_purpose);
         expect(typeof m.life.policy.sum_assured_aed).toBe('number');
         expect(typeof m.life.policy.term_years).toBe('number');
+      } else if (line === 'travel') {
+        expect(typeof m.travel.policy.trip_duration_days).toBe('number');
+        expect(typeof m.travel.policy.multi_trip).toBe('boolean');
+        expect(['Personal', 'Business']).toContain(m.travel.policy.purpose);
+        expect(['Individual', 'Couple', 'Family', 'Group'])
+          .toContain(m.travel.policy.travelling_with);
+        expect(['WithinUAE', 'Worldwide', 'WorldwideExcludingUSAandCanada'])
+          .toContain(m.travel.policy.destination_region);
       }
     }
   });

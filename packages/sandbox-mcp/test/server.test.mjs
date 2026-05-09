@@ -67,10 +67,10 @@ describe('sandbox-mcp server', () => {
     expect(names).toEqual([...EXPECTED_TOOLS].sort());
   });
 
-  it('list_personas returns all 24 personas across both domains by default', async () => {
+  it('list_personas returns all 25 personas across both domains by default', async () => {
     const r = await client.callTool({ name: 'list_personas', arguments: {} });
     const payload = JSON.parse(textOf(r));
-    expect(payload.count).toBe(24);
+    expect(payload.count).toBe(25);
     const ids = payload.personas.map((p) => p.id);
     expect(ids).toContain('salaried_expat_mid');
     expect(ids).toContain('motor_comprehensive_mid');
@@ -91,7 +91,7 @@ describe('sandbox-mcp server', () => {
     const insurance = JSON.parse(
       textOf(await client.callTool({ name: 'list_personas', arguments: { domain: 'insurance' } })),
     );
-    expect(insurance.count).toBe(6);
+    expect(insurance.count).toBe(7);
     expect(insurance.personas.every((p) => p.domain === 'insurance')).toBe(true);
     expect(insurance.personas.map((p) => p.id)).toEqual(
       expect.arrayContaining([
@@ -101,6 +101,7 @@ describe('sandbox-mcp server', () => {
         'home_mortgage_villa',
         'health_family_comprehensive',
         'life_mortgage_protection',
+        'travel_annual_multitrip_expat',
       ]),
     );
   });

@@ -51,7 +51,11 @@
         "/life-insurance-policies",
         "/life-insurance-policies/{InsurancePolicyId}",
         "/life-insurance-policies/{InsurancePolicyId}/payment-details",
-        "/life-insurance-quotes/{QuoteId}"
+        "/life-insurance-quotes/{QuoteId}",
+        "/travel-insurance-policies",
+        "/travel-insurance-policies/{InsurancePolicyId}",
+        "/travel-insurance-policies/{InsurancePolicyId}/payment-details",
+        "/travel-insurance-quotes/{QuoteId}"
       ]
     }
   ]

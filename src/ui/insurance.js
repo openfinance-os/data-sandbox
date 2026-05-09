@@ -145,6 +145,23 @@ export function createInsurance(deps) {
         return state.bundle.lifeQuote
           ? { kind: 'detail', Data: state.bundle.lifeQuote }
           : null;
+      case '/travel-insurance-policies':
+        return {
+          kind: 'list',
+          Data: { Policies: state.bundle.travelPolicySummaries ?? [] },
+        };
+      case '/travel-insurance-policies/{InsurancePolicyId}': {
+        const policy = state.bundle.travelPolicies?.[0];
+        return policy ? { kind: 'detail', Data: policy } : null;
+      }
+      case '/travel-insurance-policies/{InsurancePolicyId}/payment-details':
+        return state.bundle.paymentDetails && state.bundle.line === 'travel'
+          ? { kind: 'detail', Data: state.bundle.paymentDetails }
+          : null;
+      case '/travel-insurance-quotes/{QuoteId}':
+        return state.bundle.travelQuote
+          ? { kind: 'detail', Data: state.bundle.travelQuote }
+          : null;
       default:
         return null;
     }

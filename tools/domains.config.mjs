@@ -50,12 +50,12 @@ export const DOMAINS = [
     upstreamRepo: 'Nebras-Open-Finance/api-specs',
     upstreamPath: 'dist/standards/v2.1-errata1/uae-insurance-openapi.yaml',
     defaultEndpoint: '/motor-insurance-policies',
-    // Phase 2.1 in-scope: motor (full from Phase 2.0) + home + health + life.
-    // Each line follows the same 4-endpoint shape: list, detail,
-    // payment-details, read-quote. POST/PATCH on the bare
+    // Phase 2.1 in-scope: motor (full from Phase 2.0) + home + health +
+    // life + travel. Each line follows the same 4-endpoint shape: list,
+    // detail, payment-details, read-quote. POST/PATCH on the bare
     // /<line>-insurance-quotes path are TPP→LFI write ops, outside the
-    // read-only sandbox surface. The remaining 3 lines (Employment,
-    // Travel, Renters) + Insurance Consents land in subsequent slices.
+    // read-only sandbox surface. The remaining 2 lines (Employment,
+    // Renters) + Insurance Consents land in subsequent slices.
     inScopePaths: [
       '/motor-insurance-policies',
       '/motor-insurance-policies/{InsurancePolicyId}',
@@ -73,6 +73,10 @@ export const DOMAINS = [
       '/life-insurance-policies/{InsurancePolicyId}',
       '/life-insurance-policies/{InsurancePolicyId}/payment-details',
       '/life-insurance-quotes/{QuoteId}',
+      '/travel-insurance-policies',
+      '/travel-insurance-policies/{InsurancePolicyId}',
+      '/travel-insurance-policies/{InsurancePolicyId}/payment-details',
+      '/travel-insurance-quotes/{QuoteId}',
     ],
   },
 ];

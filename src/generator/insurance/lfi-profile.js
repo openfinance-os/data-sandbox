@@ -44,6 +44,14 @@ const OPTIONAL_FIELD_BANDS = [
   { path: 'Product.FinanceAgainstPolicy', band: 'Variable' },
   { path: 'Product.Policy.SurrenderValueAmount', band: 'Variable' },
   { path: 'Product.Policy.MaturityValueAmount', band: 'Variable' },
+  // Travel (Phase 2.1). Trip-level enums (PurposeOfTravel, TravellingWith,
+  // TravelDestinationRegion) are commonly populated; OptionalTravelCover
+  // / HighRiskActivities are per-product variable.
+  { path: 'Product.Policy.PurposeOfTravel', band: 'Common' },
+  { path: 'Product.Policy.TravellingWith', band: 'Common' },
+  { path: 'Product.Policy.TravelDestinationRegion', band: 'Common' },
+  { path: 'Product.OptionalTravelCoverOptions', band: 'Variable' },
+  { path: 'Product.HighRiskActivities', band: 'Variable' },
 ];
 
 function shouldKeep(profile, band, rng) {
@@ -85,6 +93,26 @@ export function applyInsuranceLfiProfile({ bundle, personaId, lfi, seed }) {
       if (!decide('Product.CarFinance', 'Variable')) {
         delete policy.Product.CarFinance;
       }
+    }
+  }
+
+  for (const policy of bundle.travelPolicies ?? []) {
+    if (policy.PolicyHolder && !decide('PolicyHolder.Salutation', 'Common')) {
+      delete policy.PolicyHolder.Salutation;
+    }
+    if (policy.Premium && !decide('Premium.PaymentMode', 'Common')) {
+      delete policy.Premium.PaymentMode;
+    }
+    if (policy.Product?.Policy) {
+      if (!decide('Product.Policy.PurposeOfTravel', 'Common')) delete policy.Product.Policy.PurposeOfTravel;
+      if (!decide('Product.Policy.TravellingWith', 'Common')) delete policy.Product.Policy.TravellingWith;
+      if (!decide('Product.Policy.TravelDestinationRegion', 'Common')) delete policy.Product.Policy.TravelDestinationRegion;
+    }
+    if (policy.Product?.OptionalTravelCoverOptions && !decide('Product.OptionalTravelCoverOptions', 'Variable')) {
+      delete policy.Product.OptionalTravelCoverOptions;
+    }
+    if (policy.Product?.HighRiskActivities && !decide('Product.HighRiskActivities', 'Variable')) {
+      delete policy.Product.HighRiskActivities;
     }
   }
 
