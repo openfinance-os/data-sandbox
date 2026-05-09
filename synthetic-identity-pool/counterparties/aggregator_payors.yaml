@@ -1,0 +1,17 @@
+# Synthetic delivery / ride-hail aggregator payors — settlement counterparties
+# that pay F&B operators / fleet owners / merchant SMEs from a marketplace
+# float. All names are fictional. Naming-pattern intent: evoke
+# Talabat / Deliveroo / Careem / Noon-Food / Uber Eats settlement flows
+# without naming any real company. EXP-07: only place these counterparty
+# names may originate.
+pool_id: aggregator_payors
+description: Synthetic delivery-/ride-hail aggregator settlement counterparties (F&B + fleet inflows).
+counterparties:
+  - "Deltabite Marketplace FZ-LLC"
+  - "Glide Eats Aggregator FZ-LLC"
+  - "Sandstone Rides Settlement DMCC"
+  - "Falcon Wheels Aggregator FZ-LLC"
+  - "Marketmark Foods Aggregator FZ-LLC"
+  - "Cedar Express Marketplace DMCC"
+  - "Crestline Couriers FZ-LLC"
+  - "Skylane Eats Settlement FZ-LLC"

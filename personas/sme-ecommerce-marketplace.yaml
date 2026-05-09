@@ -1,0 +1,120 @@
+persona_id: sme_ecommerce_marketplace
+domain: banking
+name: "Indigo Storefront FZ-LLC — E-commerce Marketplace Seller"
+archetype: sme_ecommerce
+default_seed: 8294
+segment: SME
+stress_coverage:
+  - multi_psp_settlement_netting
+
+demographics:
+  # Principal signatory — the founder pulled for Party records.
+  nationality_pool: expat_indian
+  age_band: 28-40
+  emirate: dubai
+
+organisation:
+  legal_name_pool: sme_freezone
+  signatories:
+    - signatory_pool: expat_indian
+      account_role: Principal
+      party_type: Sole
+    - signatory_pool: expat_indian
+      account_role: Administrator
+      party_type: Delegate
+
+income:
+  # Self-pay; bulk of inflows is the cash_flow customer-inflow stream.
+  primary_employer_pool: tech_freezone
+  monthly_amount_aed: 22000
+  pay_day: 25
+  variability: medium
+  flag_payroll: false
+
+cash_flow:
+  customer_inflows:
+    counterparty_pool: marketplace_payors
+    monthly_amount_aed_band: [180000, 360000]
+    invoice_cadence: biweekly
+  supplier_outflows:
+    counterparty_pool: b2b_intl
+    monthly_amount_aed_band: [85000, 175000]
+  payroll_outflow_aed: 38000
+
+accounts:
+  - type: CurrentAccount
+    currency: AED
+    age_months: 42
+  - type: CurrentAccount
+    currency: USD
+    age_months: 24
+
+fixed_commitments:
+  - kind: direct_debit
+    purpose: utilities_dewa
+    amount_aed_band: [600, 1100]
+    schedule: monthly_5
+  - kind: direct_debit
+    purpose: psp_processing_fee
+    amount_aed_band: [9000, 18000]
+    schedule: monthly_10
+  - kind: direct_debit
+    purpose: courier_cod_remittance_fee
+    amount_aed_band: [3500, 7500]
+    schedule: monthly_15
+  - kind: standing_order
+    purpose: warehouse_rent_jafza
+    amount_aed: 22000
+    schedule: monthly_27
+  - kind: standing_order
+    purpose: digital_ad_spend
+    amount_aed: 28000
+    schedule: monthly_3
+
+spend_profile:
+  groceries_aed_per_month_band: [0, 0]
+  fuel_aed_per_month_band: [200, 500]
+  dining_per_month_count_band: [3, 8]
+
+fx_activity: true
+cash_deposit_activity: false
+
+distress_signals:
+  nsf_events_per_year_band: [0, 1]
+
+multi_lfi_footprint:
+  primary:
+    role: digital_challenger
+    lfi_default: Rich
+    plausible_lfi_candidates:
+      - "Wio Bank"
+      - "Mashreq Bank"
+  secondary:
+    role: operating
+    lfi_default: Median
+    plausible_lfi_candidates:
+      - "Abu Dhabi Commercial Bank"
+      - "Emirates NBD"
+      - "Commercial Bank of Dubai"
+  tertiary:
+    role: trade_finance
+    lfi_default: Sparse
+    plausible_lfi_candidates:
+      - "HSBC Bank Middle East"
+      - "Standard Chartered Bank"
+      - "First Abu Dhabi Bank"
+
+narrative: |
+  Indigo Storefront sells consumer-electronics and home goods across
+  multiple online channels: a marketplace-aggregator presence, a brand-
+  owned Shopify-style storefront, and direct-to-consumer Instagram
+  orders. Inflows are bi-weekly net-of-commission marketplace payouts,
+  card-payment-gateway daily payouts (separately netted of processing
+  fees), and irregular courier COD remittances. AED operating account
+  for domestic flows; a USD operating account for international supplier
+  wires (FX-active). Two structurally distinct PSPs and one marketplace
+  payor across three settlement cadences make the gross-to-net
+  reconciliation the core accounting pain — and the strongest argument
+  for OF-fed bank feeds in lieu of monthly PSP-portal CSVs. SME-digital-
+  challenger primary banker, conventional Tier-1 secondary, foreign-
+  branch trade-finance tertiary for the supplier-wire corridor.

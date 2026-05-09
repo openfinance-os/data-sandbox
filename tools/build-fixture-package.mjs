@@ -8,6 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildBundle } from '../src/generator/index.js';
+import { buildRoleBundle } from '../src/generator/multi-lfi.js';
 import { envelopesFromBundle } from '../src/ui/export.js';
 import { loadPersonasByDomain, loadAllPools } from './load-fixtures.mjs';
 
@@ -66,13 +67,21 @@ const manifest = {
   nowAnchor: NOW_ANCHOR,
   domains: ['banking', 'insurance'],
   fixtures: {},
+  // Phase D Slice 5: secondary/tertiary role bundles emitted alongside
+  // the primary fixture per persona × LFI. Same envelope shape (v2.1
+  // spec-validated) at a role-keyed stage path. Cross-bundle IBAN
+  // identity holds: `roleFixtures[…].accountIds[0]`'s IBAN (in the
+  // role bundle's /accounts envelope) byte-matches the
+  // `self-to-<role>` beneficiary's CreditorAccount.Identification in
+  // the primary bundle.
+  roleFixtures: {},
   personas: {},
 };
 
 let fileCount = 0;
 let totalBytes = 0;
 
-function emitPersona(personaId, persona, domain) {
+async function emitPersona(personaId, persona, domain) {
   const seed = persona.default_seed ?? 1;
   manifest.personas[personaId] = {
     name: persona.name,
@@ -80,6 +89,12 @@ function emitPersona(personaId, persona, domain) {
     default_seed: seed,
     domain,
     stress_coverage: persona.stress_coverage ?? [],
+    // D-14: surface a compact view of the persona's plausible multi-LFI
+    // footprint so MCP / npm / PyPI consumers can discover the multi-bank
+    // reality without re-reading the persona manifest. Each role keeps
+    // the anonymous Rich/Median/Sparse populate-rate label and the
+    // candidate-bank list (NG5/D-14 allow-site).
+    multi_lfi_footprint: persona.multi_lfi_footprint ?? null,
   };
   fs.writeFileSync(
     path.join(OUT, 'personas', `${personaId}.json`),
@@ -136,14 +151,59 @@ function emitPersona(personaId, persona, domain) {
       quoteId,
       endpoints: aliasEndpoints,
     };
+
+    // Phase D Slice 5: emit secondary/tertiary role bundles for any
+    // banking persona declaring multi_lfi_footprint. Each role bundle
+    // is a minimal v2.1 envelope set (single account at the role's
+    // bank, balances, parties) staged at
+    //   `bundles/<persona>/<role>/<lfi>/seed-<n>/...`
+    // The primary bundle stays at the historical path (D-11 forward-
+    // compat). Insurance personas don't carry a footprint.
+    if (domain === 'banking' && persona.multi_lfi_footprint) {
+      for (const slotKey of ['secondary', 'tertiary']) {
+        if (!persona.multi_lfi_footprint[slotKey]) continue;
+        const roleBundle = await buildRoleBundle({ persona, slot: slotKey, lfi, seed, pools, now });
+        if (!roleBundle) continue;
+        const roleEnvelopes = envelopesFromBundle(roleBundle, ctx);
+        const roleDir = path.join(OUT, 'bundles', personaId, slotKey, lfi, `seed-${seed}`);
+        fs.mkdirSync(roleDir, { recursive: true });
+        const roleFiles = {};
+        for (const [endpoint, env] of Object.entries(roleEnvelopes)) {
+          const fname = `${safeName(endpoint)}.json`;
+          const fp = path.join(roleDir, fname);
+          const text = JSON.stringify(env, null, 2);
+          fs.writeFileSync(fp, text);
+          roleFiles[endpoint] = path.relative(OUT, fp).split(path.sep).join('/');
+          fileCount += 1;
+          totalBytes += text.length;
+        }
+        const roleAccountIds = roleBundle.accounts?.map((a) => a.AccountId) ?? [];
+        const aliasRoleEndpoints = { ...roleFiles };
+        const firstRoleAccountId = roleAccountIds[0];
+        if (firstRoleAccountId) {
+          for (const [endpoint, rel] of Object.entries(roleFiles)) {
+            const alias = endpoint.replace(`/accounts/${firstRoleAccountId}`, '/accounts/{AccountId}');
+            if (alias !== endpoint && !aliasRoleEndpoints[alias]) {
+              aliasRoleEndpoints[alias] = rel;
+            }
+          }
+        }
+        manifest.roleFixtures[`${personaId}|${slotKey}|${lfi}|${seed}`] = {
+          personaId, slot: slotKey, role: persona.multi_lfi_footprint[slotKey].role,
+          lfi, seed, domain,
+          accountIds: roleAccountIds,
+          endpoints: aliasRoleEndpoints,
+        };
+      }
+    }
   }
 }
 
 for (const [personaId, persona] of Object.entries(bankingPersonas)) {
-  emitPersona(personaId, persona, 'banking');
+  await emitPersona(personaId, persona, 'banking');
 }
 for (const [personaId, persona] of Object.entries(insurancePersonas)) {
-  emitPersona(personaId, persona, 'insurance');
+  await emitPersona(personaId, persona, 'insurance');
 }
 
 // Write banking + insurance SPEC.json into the package so consumers can
@@ -192,7 +252,7 @@ fs.writeFileSync(path.join(OUT, 'pools.json'), JSON.stringify(pools));
 const pkgJson = {
   name: '@openfinance-os/sandbox-fixtures',
   version: PKG_VERSION,
-  description: 'Deterministic, v2.1-shaped UAE Open Finance synthetic fixtures from the Open Finance Data Sandbox. 12 banking personas + 3 insurance preview personas × 3 LFI profiles × every in-scope endpoint. CC0 data, MIT loader code.',
+  description: 'Deterministic, v2.1-shaped UAE Open Finance synthetic fixtures from the Open Finance Data Sandbox. 18 banking personas + 3 insurance preview personas × 3 LFI profiles × every in-scope endpoint. CC0 data, MIT loader code.',
   keywords: ['open-finance', 'uae', 'synthetic-data', 'fixtures', 'v2.1', 'tpp', 'commons', 'insurance'],
   homepage: 'https://github.com/openfinance-os/data-sandbox',
   repository: { type: 'git', url: 'https://github.com/openfinance-os/data-sandbox.git', directory: 'packages/sandbox-fixtures' },
@@ -245,10 +305,18 @@ export function listEndpoints(personaId, lfi = 'median') {
   if (!fx) throw new Error(\`unknown fixture key: \${fixtureKey}\`);
   return Object.keys(fx.endpoints);
 }
-export function loadFixture({ persona, lfi = 'median', seed, endpoint }) {
+export function loadFixture({ persona, lfi = 'median', seed, endpoint, lfi_role }) {
   const info = manifest.personas[persona];
   if (!info) throw new Error(\`unknown persona: \${persona}\`);
   const useSeed = seed ?? info.default_seed;
+  if (lfi_role && lfi_role !== 'primary') {
+    const rkey = \`\${persona}|\${lfi_role}|\${lfi}|\${useSeed}\`;
+    const rfx = (manifest.roleFixtures ?? {})[rkey];
+    if (!rfx) throw new Error(\`no role-bundle fixture for \${rkey}\`);
+    const rel = rfx.endpoints[endpoint];
+    if (!rel) throw new Error(\`no fixture for endpoint \${endpoint} in \${rkey}\`);
+    return JSON.parse(readFileSync(path.join(here, rel), 'utf8'));
+  }
   const key = \`\${persona}|\${lfi}|\${useSeed}\`;
   const fx = manifest.fixtures[key];
   if (!fx) throw new Error(\`no fixture for \${key}\`);
@@ -256,10 +324,46 @@ export function loadFixture({ persona, lfi = 'median', seed, endpoint }) {
   if (!rel) throw new Error(\`no fixture for endpoint \${endpoint} in \${key}\`);
   return JSON.parse(readFileSync(path.join(here, rel), 'utf8'));
 }
-export function loadJourney({ persona, lfi = 'median', seed } = {}) {
+export function listRoleBundles(personaId) {
+  const out = [];
+  const rf = manifest.roleFixtures ?? {};
+  const info = manifest.personas[personaId];
+  if (!info) return out;
+  for (const slot of ['secondary', 'tertiary']) {
+    for (const lfi of ['rich', 'median', 'sparse']) {
+      if (rf[\`\${personaId}|\${slot}|\${lfi}|\${info.default_seed}\`]) {
+        if (!out.includes(slot)) out.push(slot);
+      }
+    }
+  }
+  return out;
+}
+export function loadJourney({ persona, lfi = 'median', seed, lfi_role } = {}) {
   const info = manifest.personas[persona];
   if (!info) throw new Error(\`unknown persona: \${persona}\`);
   const useSeed = seed ?? info.default_seed;
+  if (lfi_role && lfi_role !== 'primary') {
+    const rkey = \`\${persona}|\${lfi_role}|\${lfi}|\${useSeed}\`;
+    const rfx = (manifest.roleFixtures ?? {})[rkey];
+    if (!rfx) throw new Error(\`no role-bundle journey for \${rkey}\`);
+    const endpoints = {};
+    for (const [endpoint, rel] of Object.entries(rfx.endpoints)) {
+      endpoints[endpoint] = JSON.parse(readFileSync(path.join(here, rel), 'utf8'));
+    }
+    return {
+      persona, lfi, lfi_role,
+      seed: useSeed,
+      domain: info.domain ?? 'banking',
+      accountIds: rfx.accountIds ?? [],
+      policyIds: [],
+      quoteId: null,
+      customerId: endpoints['/parties']?.Data?.Party?.PartyId ?? null,
+      specVersion: manifest.specVersion,
+      specSha: manifest.specSha,
+      version: manifest.version,
+      endpoints,
+    };
+  }
   const key = \`\${persona}|\${lfi}|\${useSeed}\`;
   const fx = manifest.fixtures[key];
   if (!fx) throw new Error(\`no fixture for \${key}\`);
@@ -270,6 +374,7 @@ export function loadJourney({ persona, lfi = 'median', seed } = {}) {
   return {
     persona,
     lfi,
+    lfi_role: 'primary',
     seed: useSeed,
     domain: info.domain ?? 'banking',
     accountIds: fx.accountIds ?? [],
@@ -348,12 +453,37 @@ function loadFixture(opts) {
   const info = manifest.personas[persona];
   if (!info) throw new Error('unknown persona: ' + persona);
   const useSeed = opts.seed != null ? opts.seed : info.default_seed;
+  const role = opts.lfi_role;
+  if (role && role !== 'primary') {
+    const rkey = persona + '|' + role + '|' + lfi + '|' + useSeed;
+    const rfx = (manifest.roleFixtures || {})[rkey];
+    if (!rfx) throw new Error('no role-bundle fixture for ' + rkey);
+    const rel = rfx.endpoints[opts.endpoint];
+    if (!rel) throw new Error('no fixture for endpoint ' + opts.endpoint + ' in ' + rkey);
+    return JSON.parse(fs.readFileSync(path.join(here, rel), 'utf8'));
+  }
   const key = persona + '|' + lfi + '|' + useSeed;
   const fx = manifest.fixtures[key];
   if (!fx) throw new Error('no fixture for ' + key);
   const rel = fx.endpoints[opts.endpoint];
   if (!rel) throw new Error('no fixture for endpoint ' + opts.endpoint + ' in ' + key);
   return JSON.parse(fs.readFileSync(path.join(here, rel), 'utf8'));
+}
+function listRoleBundles(personaId) {
+  const out = [];
+  const rf = manifest.roleFixtures || {};
+  const info = manifest.personas[personaId];
+  if (!info) return out;
+  const slots = ['secondary', 'tertiary'];
+  const lfis = ['rich', 'median', 'sparse'];
+  for (let i = 0; i < slots.length; i++) {
+    for (let j = 0; j < lfis.length; j++) {
+      if (rf[personaId + '|' + slots[i] + '|' + lfis[j] + '|' + info.default_seed]) {
+        if (out.indexOf(slots[i]) < 0) out.push(slots[i]);
+      }
+    }
+  }
+  return out;
 }
 function loadJourney(opts) {
   opts = opts || {};
@@ -362,6 +492,35 @@ function loadJourney(opts) {
   const info = manifest.personas[persona];
   if (!info) throw new Error('unknown persona: ' + persona);
   const useSeed = opts.seed != null ? opts.seed : info.default_seed;
+  const role = opts.lfi_role;
+  if (role && role !== 'primary') {
+    const rkey = persona + '|' + role + '|' + lfi + '|' + useSeed;
+    const rfx = (manifest.roleFixtures || {})[rkey];
+    if (!rfx) throw new Error('no role-bundle journey for ' + rkey);
+    const endpoints = {};
+    const epEntries = Object.entries(rfx.endpoints);
+    for (let i = 0; i < epEntries.length; i++) {
+      const ep = epEntries[i][0];
+      const rel = epEntries[i][1];
+      endpoints[ep] = JSON.parse(fs.readFileSync(path.join(here, rel), 'utf8'));
+    }
+    const parties = endpoints['/parties'];
+    return {
+      persona: persona,
+      lfi: lfi,
+      lfi_role: role,
+      seed: useSeed,
+      domain: info.domain || 'banking',
+      accountIds: rfx.accountIds || [],
+      policyIds: [],
+      quoteId: null,
+      customerId: (parties && parties.Data && parties.Data.Party && parties.Data.Party.PartyId) || null,
+      specVersion: manifest.specVersion,
+      specSha: manifest.specSha,
+      version: manifest.version,
+      endpoints: endpoints,
+    };
+  }
   const key = persona + '|' + lfi + '|' + useSeed;
   const fx = manifest.fixtures[key];
   if (!fx) throw new Error('no fixture for ' + key);
@@ -376,6 +535,7 @@ function loadJourney(opts) {
   return {
     persona: persona,
     lfi: lfi,
+    lfi_role: 'primary',
     seed: useSeed,
     domain: info.domain || 'banking',
     accountIds: fx.accountIds || [],
@@ -418,6 +578,7 @@ async function getEngine() {
 }
 module.exports = {
   manifest, listPersonas, getPersonaInfo, listEndpoints, loadFixture,
+  listRoleBundles,
   loadJourney, loadSpec, loadPersonaManifest, getPools, getEngine,
 };
 `;
@@ -476,11 +637,20 @@ export function loadFixture(opts: {
   lfi?: 'rich' | 'median' | 'sparse';
   seed?: number;
   endpoint: string;
+  /** D-14 / Phase D Slice 5: 'secondary' or 'tertiary' to read the
+   * persona's multi-LFI footprint role bundle instead of the primary
+   * fixture. Omit (or pass 'primary') for the historical primary path. */
+  lfi_role?: 'primary' | 'secondary' | 'tertiary';
 }): unknown;
+export function listRoleBundles(personaId: string): Array<'secondary' | 'tertiary'>;
 export function loadJourney(opts: {
   persona: string;
   lfi?: 'rich' | 'median' | 'sparse';
   seed?: number;
+  /** D-14 / Slice 8: load the persona's role-keyed bundle instead of the
+   * primary. Only valid for personas with multi_lfi_footprint declaring
+   * the slot AND a role bundle emitted (see listRoleBundles). */
+  lfi_role?: 'primary' | 'secondary' | 'tertiary';
 }): Journey;
 export function loadSpec(opts?: { domain?: Domain }): unknown;
 export function loadPersonaManifest(personaId: string): unknown;
@@ -537,9 +707,9 @@ const readme = `# @openfinance-os/sandbox-fixtures
 Deterministic, v2.1-shaped UAE Open Finance synthetic fixtures from the
 [Open Finance Data Sandbox](https://github.com/openfinance-os/data-sandbox).
 
-12 banking personas × 3 LFI profiles × every v2.1 Account-Information
-endpoint per persona's accounts = **900+ fixtures** (912 in the current
-build), plus the parsed v2.1 OpenAPI spec and the persona manifests.
+18 banking personas × 3 LFI profiles × every v2.1 Account-Information
+endpoint per persona's accounts = **900+ fixtures**, plus the parsed v2.1
+OpenAPI spec and the persona manifests.
 
 ## Install
 
@@ -585,7 +755,7 @@ const { loadFixture } = require('@openfinance-os/sandbox-fixtures');
 
 ## What's in the box
 
-- \`bundles/<persona>/<lfi>/seed-<n>/<endpoint>.json\` — 900+ fixtures (12 banking personas × 3 LFIs × every Account-Information endpoint per persona's accounts; the per-account endpoints multiply by account count). Each is a v2.1-correct \`{ Data, Links, Meta }\` envelope plus watermark fields (\`_persona\`, \`_lfi\`, \`_seed\`, \`_specSha\`).
+- \`bundles/<persona>/<lfi>/seed-<n>/<endpoint>.json\` — 900+ fixtures (18 banking personas × 3 LFIs × every Account-Information endpoint per persona's accounts; the per-account endpoints multiply by account count). Each is a v2.1-correct \`{ Data, Links, Meta }\` envelope plus watermark fields (\`_persona\`, \`_lfi\`, \`_seed\`, \`_specSha\`).
 - \`personas/<persona>.json\` — persona manifest (demographics, fixed commitments, stress coverage, narrative).
 - \`spec.json\` — the parsed UAE Open Finance v2.1 OpenAPI spec, keyed by endpoint with field metadata.
 - \`manifest.json\` — top-level index keyed by \`<persona>|<lfi>|<seed>\`.

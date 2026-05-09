@@ -16,6 +16,11 @@ import { generateTransactions } from './transactions.js';
 import { generateStandingOrders } from './standing-orders.js';
 import { generateDirectDebits } from './direct-debits.js';
 import { generateBeneficiaries } from './beneficiaries.js';
+import {
+  buildCrossLfiSelfBeneficiaries,
+  computeCrossLfiLedger,
+  derivePrimaryAccountIban,
+} from './multi-lfi.js';
 import { generateScheduledPayments } from './scheduled-payments.js';
 import { generateParties } from './parties.js';
 import { generateStatements } from './statements.js';
@@ -27,7 +32,7 @@ const DEFAULT_NOW = new Date(Date.UTC(2026, 3, 1, 0, 0, 0));
 
 // Pool category → pool_id we expect to find in the indexed-pools structure.
 // Defaults are used for any pools the persona doesn't reference directly.
-const DEFAULT_BANKS_POOL = 'counterparty_banks_domestic';
+const DEFAULT_BANKS_POOL = 'counterparty_banks_uae_real';
 const DEFAULT_IBANS_POOL = 'ibans_synthetic';
 const DEFAULT_GROCERIES = 'merchants_groceries';
 const DEFAULT_FUEL = 'merchants_fuel';
@@ -131,12 +136,51 @@ function buildBankingBundle({ persona, lfi, seed, pools, now = DEFAULT_NOW }) {
         dining: p.dining,
         utilities: p.utilities,
         employers: p.employers,
+        // Slice 10: B2B inflows / outflows resolve cash_flow.*.counterparty_pool
+        // against the indexed pools structure. Empty `{}` for personas
+        // whose load fixtures don't include a counterparties index.
+        counterparties: pools.counterpartiesByPoolId ?? {},
       },
       runningBalance,
       now,
       txState,
     });
     transactions.push(...accTx);
+  }
+
+  // Slice 7 (D-14): cross-LFI mirror ledger. For personas with
+  // `multi_lfi_footprint`, append 12 monthly self-sweep transactions
+  // per declared non-primary slot. The same pure-function ledger is
+  // computed for primary AND role bundles — primary gets the outflow
+  // half (CreditDebitIndicator='Debit'), role bundles get the inflow
+  // half ('Credit'). Each pair shares TransactionDateTime + Amount +
+  // Reference + counterparty IBAN, so a TPP-side accounting integration
+  // (Naqood-grade) can reconcile by IBAN identity.
+  const sourcePersona = persona._sourcePersona ?? persona;
+  if (sourcePersona.multi_lfi_footprint) {
+    const isProjection = persona._projectedRoleSlot != null;
+    const slotKey = isProjection ? persona._projectedRoleSlot : 'primary';
+    // Primary's anchor account = first CurrentAccount in the source
+    // persona's account list. Its IBAN was overridden in accounts.js
+    // to a deterministic synthetic AE99/999 value (see
+    // derivePrimaryAccountIban).
+    const firstCurrentIdx = (sourcePersona.accounts ?? []).findIndex((s) => s.type === 'CurrentAccount');
+    const primaryAccountId = firstCurrentIdx >= 0
+      ? `${sourcePersona.persona_id.replace(/_/g, '-')}-acct-${String(firstCurrentIdx + 1).padStart(2, '0')}`
+      : null;
+    const primaryIban = firstCurrentIdx >= 0
+      ? derivePrimaryAccountIban(sourcePersona.persona_id, firstCurrentIdx)
+      : null;
+    if (primaryAccountId && primaryIban) {
+      const ledger = computeCrossLfiLedger({
+        persona: sourcePersona,
+        primaryAccountId,
+        primaryIban,
+        counterpartyBanksPool: p.counterpartyBanks,
+        now,
+      });
+      transactions.push(...(ledger[slotKey] ?? []));
+    }
   }
 
   const balances = generateBalances({ accounts, transactions, now });
@@ -149,12 +193,26 @@ function buildBankingBundle({ persona, lfi, seed, pools, now = DEFAULT_NOW }) {
     now,
   });
   const directDebits = generateDirectDebits({ persona, accounts, rng, now });
+  // Phase D-lite (D-14): build cross-LFI self-beneficiaries FIRST so we
+  // know which banks they reserve, then exclude those banks from the
+  // regular-beneficiary draw — the rendered bundle's multi-bank surface
+  // stays visually distinct (no coincidental overlap between a regular
+  // beneficiary and a self-to-<role> link).
+  const crossLfiSelfBeneficiaries = buildCrossLfiSelfBeneficiaries({
+    persona, accounts, identity,
+    pools: { counterpartyBanks: p.counterpartyBanks },
+  });
+  const reservedBankNames = crossLfiSelfBeneficiaries
+    .map((b) => b.CreditorAgent?.Name)
+    .filter(Boolean);
   const beneficiaries = generateBeneficiaries({
     persona,
     accounts,
     rng,
     pools: { counterpartyBanks: p.counterpartyBanks, ibans: p.ibans, names: p.names },
+    excludeBankNames: reservedBankNames,
   });
+  beneficiaries.push(...crossLfiSelfBeneficiaries);
   const scheduledPayments = generateScheduledPayments({
     persona,
     accounts,

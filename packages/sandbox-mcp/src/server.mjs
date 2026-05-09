@@ -5,6 +5,7 @@ import {
   loadSpec,
   listPersonas,
   listEndpoints,
+  listRoleBundles,
   getPersonaInfo,
   buildBundle,
   expandRecipe,
@@ -26,7 +27,7 @@ const PKG_VERSION = '0.0.1';
 
 const PFM_INSTRUCTIONS = [
   'You are wired to a sandbox of synthetic UAE Open Finance v2.1 payloads across two domains:',
-  '  • Bank Data Sharing (12 banking personas) — accounts, balances, transactions, parties, etc.',
+  '  • Bank Data Sharing (18 banking personas) — accounts, balances, transactions, parties, etc.',
   '  • Insurance Data Sharing preview (3 motor-insurance personas) — motor policies, payment',
   '    details, and a read-quote endpoint, all v2.1-errata1 shaped.',
   'All data is fictional — no real customer, no real institution. Every response carries a `_watermark`',
@@ -467,7 +468,7 @@ export function createServer() {
     {
       title: 'List synthetic personas',
       description:
-        'List the curated synthetic UAE personas in this sandbox: 12 banking + 3 insurance preview. Returns id, display name, archetype, default seed, domain, and stress-coverage tags. Pass { domain: "banking" } or { domain: "insurance" } to filter; omit to get all 15.',
+        'List the curated synthetic UAE personas in this sandbox: 18 banking + 3 insurance preview. Returns id, display name, archetype, default seed, domain, stress-coverage tags, and a `multi_lfi_footprint` field declaring the persona\'s plausible multi-bank reality (primary / secondary / tertiary LFI roles, each with named real-UAE bank candidates — D-14 allow-site). Pass { domain: "banking" } or { domain: "insurance" } to filter; omit to get all 21.',
       inputSchema: {
         domain: z
           .enum(['banking', 'insurance'])
@@ -479,6 +480,14 @@ export function createServer() {
       const ids = domain ? listPersonas({ domain }) : listPersonas();
       const rows = ids.map((id) => {
         const info = getPersonaInfo(id);
+        const fp = info?.multi_lfi_footprint ?? null;
+        // Slice 8: which non-primary slots actually have role bundles
+        // emitted in the fixture package. `multi_lfi_footprint.roles`
+        // shows what's DECLARED; `available_lfi_roles` shows what's
+        // LOADABLE via set_session({lfi_role}). Some declared slots
+        // resolve to candidates that aren't in the counterparty pool
+        // (e.g. acquirer-only slots) and silently drop.
+        const availableRoles = ['primary', ...(info?.domain === 'banking' ? listRoleBundles(id) : [])];
         return {
           id,
           name: info?.name ?? id,
@@ -486,6 +495,22 @@ export function createServer() {
           domain: info?.domain ?? 'banking',
           default_seed: info?.default_seed ?? null,
           stress_coverage: info?.stress_coverage ?? [],
+          // D-14: compact multi-LFI footprint so an LLM consumer can
+          // discover the persona's plausible multi-bank reality without
+          // a separate persona://<id> resource fetch. `multi_lfi_footprint`
+          // is null for personas without a declared footprint.
+          multi_lfi_footprint: fp
+            ? {
+                roles: ['primary', 'secondary', 'tertiary']
+                  .filter((r) => fp[r])
+                  .map((r) => ({
+                    slot: r,
+                    role: fp[r].role,
+                    plausible_lfi_candidates: fp[r].plausible_lfi_candidates ?? [],
+                  })),
+              }
+            : null,
+          available_lfi_roles: availableRoles,
         };
       });
       return textResult(JSON.stringify({ personas: rows, count: rows.length, domain: domain ?? 'all' }, null, 2));
@@ -513,9 +538,9 @@ export function createServer() {
   server.registerTool(
     'set_session',
     {
-      title: 'Pin persona + LFI profile + seed',
+      title: 'Pin persona + LFI profile + seed (+ optional multi-LFI role)',
       description:
-        'Pin the active persona, LFI profile, and seed for subsequent tool calls. lfi defaults to "median". seed defaults to the persona\'s default_seed (recommended). The same (persona, lfi, seed) is deterministic across calls and across processes.',
+        'Pin the active persona, LFI profile, and seed for subsequent tool calls. lfi defaults to "median". seed defaults to the persona\'s default_seed (recommended). The same (persona, lfi, seed) is deterministic across calls and across processes. D-14: pass `lfi_role: "secondary"` or `"tertiary"` to view the persona at one of their non-primary banks (only valid for personas that declare a multi_lfi_footprint with that slot — see list_personas).',
       inputSchema: {
         persona: z
           .string()
@@ -525,12 +550,16 @@ export function createServer() {
           .optional()
           .describe('LFI populate-rate profile. Default: median.'),
         seed: z.number().int().optional().describe('RNG seed. Default: persona.default_seed.'),
+        lfi_role: z
+          .enum(['primary', 'secondary', 'tertiary'])
+          .optional()
+          .describe('Which slot of the persona\'s multi_lfi_footprint to load. Default: primary (the historical bundle). secondary/tertiary load the role-keyed bundle emitted in Phase D Slice 5.'),
       },
     },
-    async ({ persona, lfi, seed }) => {
-      const s = session.setCurated({ persona, lfi, seed });
+    async ({ persona, lfi, seed, lfi_role }) => {
+      const s = session.setCurated({ persona, lfi, seed, lfi_role });
       return textResult(
-        `session set → persona:${s.persona} (${s.personaName}) lfi:${s.lfi} seed:${s.seed}`,
+        `session set → persona:${s.persona} (${s.personaName}) lfi:${s.lfi} role:${s.lfi_role} seed:${s.seed}`,
       );
     },
   );
@@ -1100,7 +1129,7 @@ export function createServer() {
       const j =
         s.kind === 'custom'
           ? s.journey
-          : loadJourney({ persona: s.persona, lfi: s.lfi, seed: s.seed });
+          : loadJourney({ persona: s.persona, lfi: s.lfi, seed: s.seed, lfi_role: s.lfi_role });
       return textResult(JSON.stringify(j, null, 2));
     },
   );

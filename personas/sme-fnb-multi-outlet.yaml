@@ -1,0 +1,124 @@
+persona_id: sme_fnb_multi_outlet
+domain: banking
+name: "Saffron Plate Group LLC — F&B Multi-Outlet Operator"
+archetype: sme_fnb
+default_seed: 5172
+segment: SME
+stress_coverage:
+  - aggregator_settlement_reconciliation
+
+demographics:
+  # Principal signatory — the founder/operator pulled for Party records.
+  nationality_pool: expat_arab
+  age_band: 32-45
+  emirate: dubai
+
+organisation:
+  legal_name_pool: sme_mainland
+  signatories:
+    - signatory_pool: expat_arab
+      account_role: Principal
+      party_type: Sole
+    - signatory_pool: expat_arab
+      account_role: Administrator
+      party_type: Delegate
+
+income:
+  # Self-pay; the bulk of inflows is the cash_flow customer-inflow stream
+  # below (POS settlements + aggregator payouts).
+  primary_employer_pool: tech_freezone
+  monthly_amount_aed: 28000
+  pay_day: 28
+  variability: medium
+  flag_payroll: false
+
+cash_flow:
+  customer_inflows:
+    counterparty_pool: aggregator_payors
+    monthly_amount_aed_band: [320000, 540000]
+    invoice_cadence: weekly
+  supplier_outflows:
+    counterparty_pool: b2b_local
+    monthly_amount_aed_band: [180000, 290000]
+  payroll_outflow_aed: 86000
+
+accounts:
+  - type: CurrentAccount
+    currency: AED
+    age_months: 72
+  - type: CurrentAccount
+    currency: AED
+    age_months: 30
+
+fixed_commitments:
+  - kind: direct_debit
+    purpose: utilities_dewa
+    amount_aed_band: [3200, 5800]
+    schedule: monthly_5
+  - kind: direct_debit
+    purpose: pos_terminal_lease
+    amount_aed: 1800
+    schedule: monthly_8
+  - kind: direct_debit
+    purpose: aggregator_commission
+    amount_aed_band: [22000, 38000]
+    schedule: monthly_15
+  - kind: standing_order
+    purpose: outlet_rent_marina
+    amount_aed: 48000
+    schedule: monthly_27
+  - kind: standing_order
+    purpose: outlet_rent_jbr
+    amount_aed: 41000
+    schedule: monthly_27
+
+spend_profile:
+  groceries_aed_per_month_band: [0, 0]
+  fuel_aed_per_month_band: [400, 900]
+  dining_per_month_count_band: [2, 6]
+
+fx_activity: false
+cash_deposit_activity: true
+cash_deposits_per_month_band: [6, 18]
+cash_deposit_amount_aed_band: [1500, 9000]
+
+distress_signals:
+  nsf_events_per_year_band: [0, 1]
+
+multi_lfi_footprint:
+  primary:
+    role: operating
+    lfi_default: Rich
+    plausible_lfi_candidates:
+      - "Emirates NBD"
+      - "Mashreq Bank"
+      - "Abu Dhabi Commercial Bank"
+      - "Commercial Bank of Dubai"
+  secondary:
+    role: acquiring
+    lfi_default: Median
+    plausible_lfi_candidates:
+      - "Network International"
+      - "Magnati"
+      - "Mashreq Bank"
+  tertiary:
+    role: digital_challenger
+    lfi_default: Sparse
+    plausible_lfi_candidates:
+      - "Wio Bank"
+      - "Zand Bank"
+
+narrative: |
+  Saffron Plate Group operates a 3-outlet café-and-casual-dining chain
+  across Dubai Marina and JBR. The principal owner is the sole signatory
+  on the operating account; an outlet-manager delegate is added under
+  Administrator / Delegate for day-to-day reconciliation. Inflows are
+  weekly aggregator payouts net of platform commission (booked against
+  the aggregator-commission DD), plus daily POS settlements that sweep
+  into the operating account from the acquiring relationship — a
+  structurally separate LFI from the operating bank. Two outlet rents,
+  utilities, and a POS-terminal lease are the fixed commitments; payroll
+  is a single ~86k AED WPS batch monthly. The reconciliation stress is
+  the gap between gross orders, aggregator commission, refunds, and
+  daily settlement timing — a TPP-side accounting integration over OF
+  collapses three EOD CSVs into one journal.

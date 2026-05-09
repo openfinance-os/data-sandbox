@@ -1,0 +1,115 @@
+persona_id: sme_construction_pdc
+domain: banking
+name: "Meridian Build Works LLC — Construction Sub-Contractor"
+archetype: sme_construction
+default_seed: 6431
+segment: SME
+stress_coverage:
+  - pdc_retention_milestone_billing
+
+demographics:
+  # Principal signatory — owner pulled for Party records.
+  nationality_pool: expat_arab
+  age_band: 40-55
+  emirate: sharjah
+
+organisation:
+  legal_name_pool: sme_mainland
+  signatories:
+    - signatory_pool: expat_arab
+      account_role: Principal
+      party_type: Sole
+    - signatory_pool: expat_arab
+      account_role: PowerOfAttorney
+      party_type: Delegate
+
+income:
+  # Self-pay; bulk of inflows is the milestone-billed customer-inflow
+  # stream below (main contractor certified payments net of retention).
+  primary_employer_pool: tech_freezone
+  monthly_amount_aed: 24000
+  pay_day: 28
+  variability: high
+  flag_payroll: false
+
+cash_flow:
+  customer_inflows:
+    counterparty_pool: b2b_local
+    monthly_amount_aed_band: [220000, 480000]
+    invoice_cadence: irregular
+  supplier_outflows:
+    counterparty_pool: b2b_local
+    monthly_amount_aed_band: [110000, 240000]
+  payroll_outflow_aed: 192000
+
+accounts:
+  - type: CurrentAccount
+    currency: AED
+    age_months: 96
+  - type: Savings
+    currency: AED
+    age_months: 60
+
+fixed_commitments:
+  - kind: direct_debit
+    purpose: utilities_dewa
+    amount_aed_band: [1400, 2400]
+    schedule: monthly_5
+  - kind: direct_debit
+    purpose: machinery_lease
+    amount_aed: 14000
+    schedule: monthly_8
+  - kind: direct_debit
+    purpose: labour_camp_utilities
+    amount_aed_band: [3800, 5400]
+    schedule: monthly_5
+  - kind: standing_order
+    purpose: yard_rent
+    amount_aed: 32000
+    schedule: monthly_27
+
+spend_profile:
+  groceries_aed_per_month_band: [0, 0]
+  fuel_aed_per_month_band: [3500, 6500]
+  dining_per_month_count_band: [2, 6]
+
+fx_activity: false
+cash_deposit_activity: false
+
+distress_signals:
+  nsf_events_per_year_band: [1, 4]
+
+multi_lfi_footprint:
+  primary:
+    role: operating
+    lfi_default: Rich
+    plausible_lfi_candidates:
+      - "Emirates NBD"
+      - "Abu Dhabi Commercial Bank"
+      - "Commercial Bank of Dubai"
+      - "Mashreq Bank"
+  secondary:
+    role: islamic_deposit
+    lfi_default: Median
+    plausible_lfi_candidates:
+      - "Sharjah Islamic Bank"
+      - "Dubai Islamic Bank"
+      - "Abu Dhabi Islamic Bank"
+      - "Emirates Islamic"
+
+narrative: |
+  Meridian Build Works is a Sharjah-mainland sub-contractor on civil
+  works — certified-payment-based receivables from a small set of main
+  contractors, milestone-billed and irregular. Inflows arrive 30–60
+  days after certification, often net of 5–10% retention; some are
+  post-dated cheques. Two signatories: the principal owner (Sole) and
+  a delegated power-of-attorney holder authorised for cheque deposit
+  and yard-supplier AP. ~80 labourers on a single monthly WPS batch is
+  the dominant outflow. Retention release lands as occasional large
+  unbatched lump-sum credits months after the original certification.
+  Operating account is a Tier-1 conventional bank; secondary at an
+  Islamic bank for term deposit of the principal's own savings. NSF
+  events occur 1–4 per year — typical for the working-capital squeeze
+  of milestone-billed civil-works SMEs. Stress: PDC handling, retention
+  release matching, large-batch WPS payroll — none of which the existing
+  SME personas exercise.

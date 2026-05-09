@@ -24,12 +24,37 @@ function loadFixture(opts) {
   const info = manifest.personas[persona];
   if (!info) throw new Error('unknown persona: ' + persona);
   const useSeed = opts.seed != null ? opts.seed : info.default_seed;
+  const role = opts.lfi_role;
+  if (role && role !== 'primary') {
+    const rkey = persona + '|' + role + '|' + lfi + '|' + useSeed;
+    const rfx = (manifest.roleFixtures || {})[rkey];
+    if (!rfx) throw new Error('no role-bundle fixture for ' + rkey);
+    const rel = rfx.endpoints[opts.endpoint];
+    if (!rel) throw new Error('no fixture for endpoint ' + opts.endpoint + ' in ' + rkey);
+    return JSON.parse(fs.readFileSync(path.join(here, rel), 'utf8'));
+  }
   const key = persona + '|' + lfi + '|' + useSeed;
   const fx = manifest.fixtures[key];
   if (!fx) throw new Error('no fixture for ' + key);
   const rel = fx.endpoints[opts.endpoint];
   if (!rel) throw new Error('no fixture for endpoint ' + opts.endpoint + ' in ' + key);
   return JSON.parse(fs.readFileSync(path.join(here, rel), 'utf8'));
+}
+function listRoleBundles(personaId) {
+  const out = [];
+  const rf = manifest.roleFixtures || {};
+  const info = manifest.personas[personaId];
+  if (!info) return out;
+  const slots = ['secondary', 'tertiary'];
+  const lfis = ['rich', 'median', 'sparse'];
+  for (let i = 0; i < slots.length; i++) {
+    for (let j = 0; j < lfis.length; j++) {
+      if (rf[personaId + '|' + slots[i] + '|' + lfis[j] + '|' + info.default_seed]) {
+        if (out.indexOf(slots[i]) < 0) out.push(slots[i]);
+      }
+    }
+  }
+  return out;
 }
 function loadJourney(opts) {
   opts = opts || {};
@@ -38,6 +63,35 @@ function loadJourney(opts) {
   const info = manifest.personas[persona];
   if (!info) throw new Error('unknown persona: ' + persona);
   const useSeed = opts.seed != null ? opts.seed : info.default_seed;
+  const role = opts.lfi_role;
+  if (role && role !== 'primary') {
+    const rkey = persona + '|' + role + '|' + lfi + '|' + useSeed;
+    const rfx = (manifest.roleFixtures || {})[rkey];
+    if (!rfx) throw new Error('no role-bundle journey for ' + rkey);
+    const endpoints = {};
+    const epEntries = Object.entries(rfx.endpoints);
+    for (let i = 0; i < epEntries.length; i++) {
+      const ep = epEntries[i][0];
+      const rel = epEntries[i][1];
+      endpoints[ep] = JSON.parse(fs.readFileSync(path.join(here, rel), 'utf8'));
+    }
+    const parties = endpoints['/parties'];
+    return {
+      persona: persona,
+      lfi: lfi,
+      lfi_role: role,
+      seed: useSeed,
+      domain: info.domain || 'banking',
+      accountIds: rfx.accountIds || [],
+      policyIds: [],
+      quoteId: null,
+      customerId: (parties && parties.Data && parties.Data.Party && parties.Data.Party.PartyId) || null,
+      specVersion: manifest.specVersion,
+      specSha: manifest.specSha,
+      version: manifest.version,
+      endpoints: endpoints,
+    };
+  }
   const key = persona + '|' + lfi + '|' + useSeed;
   const fx = manifest.fixtures[key];
   if (!fx) throw new Error('no fixture for ' + key);
@@ -52,6 +106,7 @@ function loadJourney(opts) {
   return {
     persona: persona,
     lfi: lfi,
+    lfi_role: 'primary',
     seed: useSeed,
     domain: info.domain || 'banking',
     accountIds: fx.accountIds || [],
@@ -94,5 +149,6 @@ async function getEngine() {
 }
 module.exports = {
   manifest, listPersonas, getPersonaInfo, listEndpoints, loadFixture,
+  listRoleBundles,
   loadJourney, loadSpec, loadPersonaManifest, getPools, getEngine,
 };

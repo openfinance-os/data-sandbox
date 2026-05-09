@@ -67,10 +67,10 @@ describe('sandbox-mcp server', () => {
     expect(names).toEqual([...EXPECTED_TOOLS].sort());
   });
 
-  it('list_personas returns all 15 personas across both domains by default', async () => {
+  it('list_personas returns all 21 personas across both domains by default', async () => {
     const r = await client.callTool({ name: 'list_personas', arguments: {} });
     const payload = JSON.parse(textOf(r));
-    expect(payload.count).toBe(15);
+    expect(payload.count).toBe(21);
     const ids = payload.personas.map((p) => p.id);
     expect(ids).toContain('salaried_expat_mid');
     expect(ids).toContain('motor_comprehensive_mid');
@@ -85,7 +85,7 @@ describe('sandbox-mcp server', () => {
     const banking = JSON.parse(
       textOf(await client.callTool({ name: 'list_personas', arguments: { domain: 'banking' } })),
     );
-    expect(banking.count).toBe(12);
+    expect(banking.count).toBe(18);
     expect(banking.personas.every((p) => p.domain === 'banking')).toBe(true);
 
     const insurance = JSON.parse(
@@ -100,6 +100,57 @@ describe('sandbox-mcp server', () => {
         'motor_high_claim_multi_driver',
       ]),
     );
+  });
+
+  it('list_personas surfaces multi_lfi_footprint for D-14 SME personas', async () => {
+    // D-14: an LLM consumer (e.g. an accounting-system integration) can
+    // discover the persona's plausible multi-bank reality directly from
+    // the tool response, without a separate persona://<id> fetch.
+    const all = JSON.parse(textOf(await client.callTool({ name: 'list_personas', arguments: {} })));
+    const fnb = all.personas.find((p) => p.id === 'sme_fnb_multi_outlet');
+    expect(fnb, 'sme_fnb_multi_outlet must be in the persona library').toBeDefined();
+    expect(fnb.multi_lfi_footprint).not.toBeNull();
+    const roles = fnb.multi_lfi_footprint.roles;
+    expect(roles.map((r) => r.slot)).toEqual(['primary', 'secondary', 'tertiary']);
+    // Primary slot is operating; candidates are real UAE banks.
+    const primary = roles.find((r) => r.slot === 'primary');
+    expect(primary.role).toBe('operating');
+    expect(primary.plausible_lfi_candidates.length).toBeGreaterThan(0);
+    // Personas without a footprint surface multi_lfi_footprint=null.
+    const senior = all.personas.find((p) => p.id === 'senior_retiree');
+    expect(senior.multi_lfi_footprint).toBeNull();
+    // Slice 8: available_lfi_roles surfaces which slots actually have
+    // role bundles emitted. Primary always present; secondary/tertiary
+    // present iff the slot's plausible candidates resolve to a pool bank.
+    expect(fnb.available_lfi_roles).toContain('primary');
+    expect(senior.available_lfi_roles).toEqual(['primary']);
+  });
+
+  it('Slice 8: set_session({lfi_role: "tertiary"}) routes get_* to the role bundle', async () => {
+    await client.callTool({
+      name: 'set_session',
+      arguments: { persona: 'sme_fnb_multi_outlet', lfi: 'rich', lfi_role: 'tertiary' },
+    });
+    const sess = JSON.parse(textOf(await client.callTool({ name: 'get_session', arguments: {} })));
+    expect(sess.lfi_role).toBe('tertiary');
+    // /accounts under the role session returns the SINGLE role-bundle
+    // account, not the persona's full primary account list.
+    const raw = textOf(await client.callTool({ name: 'get_accounts', arguments: {} }));
+    const accounts = JSON.parse(raw.slice(raw.indexOf('{')));
+    expect(accounts.Data.Account.length).toBe(1);
+    // The IBAN must be the cross-LFI self-IBAN (mod-97 valid AE...).
+    expect(accounts.Data.Account[0].AccountIdentifiers[0].Identification).toMatch(/^AE\d{21}$/);
+  });
+
+  it('Slice 8: set_session rejects an undeclared lfi_role with a clear error', async () => {
+    // The MCP SDK surfaces tool errors as { isError: true, content: [...] }
+    // rather than throwing; assert on that shape.
+    const r = await client.callTool({
+      name: 'set_session',
+      arguments: { persona: 'senior_retiree', lfi_role: 'secondary' },
+    });
+    expect(r.isError).toBe(true);
+    expect(textOf(r)).toMatch(/does not declare an lfi_role|secondary/);
   });
 
   it('set_session pins a persona and get_session echoes it', async () => {

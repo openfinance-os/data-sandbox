@@ -14,7 +14,7 @@ export function generateScheduledPayments({ persona, accounts, rng, pools, now }
     const count = rngInt(rng, 0, 3);
     for (let i = 0; i < count; i++) {
       const counterpartyBank = drawCounterpartyBank(rng, pools.counterpartyBanks);
-      const iban = drawIban(rng, pools.ibans, counterpartyBank.iban_prefix);
+      const iban = drawIban(rng, pools.ibans, counterpartyBank);
       const beneficiary = drawName(rng, pools.names);
       const date = futureDate(now, rngInt(rng, 7, 90));
       out.push({
@@ -22,11 +22,23 @@ export function generateScheduledPayments({ persona, accounts, rng, pools, now }
         ScheduledPaymentId: `${acc.AccountId}-sp-${String(i + 1).padStart(2, '0')}`,
         ScheduledType: rngPick(rng, ['Arrival', 'Execution']),
         ScheduledPaymentDateTime: isoOf(date),
-        Reference: `SCHED-${rngInt(rng, 1000, 9999)}`,
+        // AEScheduledPayment spec field is `CreditorReference` (not `Reference`).
+        CreditorReference: `SCHED-${rngInt(rng, 1000, 9999)}`,
+        // Beneficiary name lives at the AEScheduledPayment.AccountHolderName
+        // level; AECashAccount5_0 disallows Name on CreditorAccount.
+        AccountHolderName: beneficiary.full,
         InstructedAmount: { Amount: rngInt(rng, 100, 5000).toFixed(2), Currency: acc.Currency },
-        CreditorAgent: { SchemeName: 'BICFI', Identification: iban.slice(0, 8) },
+        // AEScheduledPayment.CreditorAgent uses
+        // AEBranchAndFinancialInstitutionIdentification5_1, locked to
+        // { SchemeName, Identification } with additionalProperties: false —
+        // bank Name cannot be surfaced. The synthetic per-bank BIC stem
+        // from the pool gives bank-distinctive Identification.
+        CreditorAgent: {
+          SchemeName: 'BICFI',
+          Identification: counterpartyBank.bic ?? iban.slice(0, 8),
+        },
         CreditorAccount: [
-          { SchemeName: 'IBAN', Identification: iban, Name: beneficiary.full },
+          { SchemeName: 'IBAN', Identification: iban },
         ],
       });
     }

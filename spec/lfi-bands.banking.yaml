@@ -20,4 +20,14 @@ overrides:
   Transaction.MerchantDetails: Variable
   Transaction.MerchantDetails.MerchantCategoryCode: Variable
   Transaction.MerchantDetails.MerchantName: Common
+  # Counterparty fields on Transaction (Slice 7 — cross-LFI mirror
+  # ledger). Optional in the v2.1 spec but commonly populated for non-
+  # cash transactions; Common = 0.7 under Median, kept under Rich,
+  # stripped under Sparse. The realistic shape: an LFI that surfaces
+  # counterparty IBAN / BIC on outbound transfers is the norm, but a
+  # Sparse-profile LFI legitimately strips them.
+  Transaction.CreditorAccount: Common
+  Transaction.DebtorAccount: Common
+  Transaction.CreditorAgent: Common
+  Transaction.DebtorAgent: Common
   Balance.CreditLine: Variable

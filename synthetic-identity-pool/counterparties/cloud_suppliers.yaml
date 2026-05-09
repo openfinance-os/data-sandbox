@@ -1,0 +1,17 @@
+# Synthetic cloud-infrastructure supplier counterparties. Used as supplier-
+# outflow counterparties for SaaS / tech-startup SMEs whose AP profile is
+# dominated by USD cloud-provider charges. All names are fictional.
+# Naming-pattern intent: evoke AWS / GCP / Azure / Cloudflare / Datadog /
+# Stripe-fee outflows without naming any real provider. EXP-07: only
+# place these counterparty names may originate.
+pool_id: cloud_suppliers
+description: Synthetic international cloud-infrastructure supplier counterparties (SaaS COGS).
+counterparties:
+  - "Lumen Cloud Compute Inc"
+  - "Helix Hyperscale Services Inc"
+  - "Indigo Object Storage LLC"
+  - "Quartz Edge Network Inc"
+  - "Polaris Telemetry Cloud Inc"
+  - "Talisman Identity Services Inc"
+  - "Onyx Container Platform Inc"
+  - "Meridian Observability Cloud Inc"

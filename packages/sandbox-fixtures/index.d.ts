@@ -50,11 +50,20 @@ export function loadFixture(opts: {
   lfi?: 'rich' | 'median' | 'sparse';
   seed?: number;
   endpoint: string;
+  /** D-14 / Phase D Slice 5: 'secondary' or 'tertiary' to read the
+   * persona's multi-LFI footprint role bundle instead of the primary
+   * fixture. Omit (or pass 'primary') for the historical primary path. */
+  lfi_role?: 'primary' | 'secondary' | 'tertiary';
 }): unknown;
+export function listRoleBundles(personaId: string): Array<'secondary' | 'tertiary'>;
 export function loadJourney(opts: {
   persona: string;
   lfi?: 'rich' | 'median' | 'sparse';
   seed?: number;
+  /** D-14 / Slice 8: load the persona's role-keyed bundle instead of the
+   * primary. Only valid for personas with multi_lfi_footprint declaring
+   * the slot AND a role bundle emitted (see listRoleBundles). */
+  lfi_role?: 'primary' | 'secondary' | 'tertiary';
 }): Journey;
 export function loadSpec(opts?: { domain?: Domain }): unknown;
 export function loadPersonaManifest(personaId: string): unknown;

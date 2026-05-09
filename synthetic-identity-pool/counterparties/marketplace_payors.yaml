@@ -1,0 +1,19 @@
+# Synthetic e-commerce marketplace + PSP settlement payors. Used as customer-
+# inflow counterparties for e-commerce SMEs whose receivables are net
+# marketplace / PSP payouts (gross sales − commission − refunds − courier
+# COD). All names are fictional. Naming-pattern intent: evoke
+# Noon / Amazon.ae / Shopify / Telr / Network / Stripe / Tabby payouts
+# without naming any real platform. EXP-07: only place these counterparty
+# names may originate.
+pool_id: marketplace_payors
+description: Synthetic e-commerce marketplace + PSP settlement counterparties (e-commerce inflows).
+counterparties:
+  - "Marketmark Online Marketplace FZ-LLC"
+  - "Falcon Bazaar Settlement FZ-LLC"
+  - "Glide Commerce Payouts DMCC"
+  - "Skylane Storefront Settlement FZ-LLC"
+  - "Northstar PSP Gateway DMCC"
+  - "Crestline Pay Settlement FZ-LLC"
+  - "Saffron Pay Aggregator DMCC"
+  - "Beacon Checkout FZ-LLC"
+  - "Solstice BNPL Settlement FZ-LLC"

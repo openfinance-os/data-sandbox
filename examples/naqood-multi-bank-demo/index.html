@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Naqood-style multi-bank reconciliation demo</title>
+    <style>
+      :root { color-scheme: light dark; }
+      body { font-family: -apple-system, system-ui, sans-serif; max-width: 980px; margin: 2rem auto; padding: 0 1.25rem; line-height: 1.45; }
+      h1 { margin-bottom: 0.25rem; }
+      .lede { color: #555; margin-top: 0; }
+      [hidden] { display: none !important; }
+      .err { color: #c00; padding: 0.75rem; background: #fee; border-left: 3px solid #c00; }
+      table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.92rem; }
+      th, td { padding: 0.45rem 0.6rem; text-align: left; border-bottom: 1px solid #ddd; vertical-align: top; }
+      th { background: #f4f4f4; font-weight: 600; }
+      .lfi-pill { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px; background: #eef; font-size: 0.78rem; }
+      .role-primary { background: #e7f5ff; color: #036; }
+      .role-secondary { background: #fff5e6; color: #6a3500; }
+      .role-tertiary { background: #f0fff0; color: #036020; }
+      .iban { font-family: 'SF Mono', Monaco, monospace; font-size: 0.87rem; }
+      .match { color: #050; font-weight: 600; }
+      .row-link { background: #fffae6; }
+      .ledger-row { font-family: monospace; font-size: 0.88rem; }
+      .controls { margin: 1rem 0; }
+      select { padding: 0.4rem; }
+      .watermark { color: #888; font-size: 0.78rem; margin-top: 1.5rem; }
+    </style>
+  </head>
+  <body>
+    <h1>Naqood-style multi-bank reconciliation</h1>
+    <p class="lede">
+      A worked example: a TPP-side accounting system fetches an SME persona's
+      bank feeds across <strong>multiple LFIs in parallel</strong> via the Open Finance
+      Data Sandbox, and reconciles them by IBAN identity. This is the
+      Naqood ↔ Woven ↔ ADCB use case: same legal entity, multiple banks, one
+      consolidated ledger.
+    </p>
+    <p class="lede">
+      Each persona declares a <code>multi_lfi_footprint</code> with primary /
+      secondary / tertiary slots. The sandbox emits a separate v2.1-shaped
+      bundle per slot at <code>/fixtures/v1/bundles/&lt;persona&gt;/&lt;slot&gt;/&lt;lfi&gt;/seed-N/</code>.
+      The cross-bundle deterministic IBAN means the primary's
+      <code>self-to-&lt;slot&gt;</code> beneficiary points at the same IBAN that
+      the role bundle declares as its own account — so the TPP can prove
+      "these are the same persona at two banks" without any out-of-band
+      identifier.
+    </p>
+
+    <div class="controls">
+      <label>Persona:
+        <select id="persona-select"></select>
+      </label>
+      <label>LFI populate-rate profile:
+        <select id="lfi-select">
+          <option value="rich">Rich</option>
+          <option value="median" selected>Median</option>
+          <option value="sparse">Sparse</option>
+        </select>
+      </label>
+    </div>
+
+    <p class="err" id="err" hidden></p>
+
+    <h2>1. Persona's declared multi-LFI footprint</h2>
+    <p>
+      From <code>list_personas</code> / <code>manifest.json</code>. Each row
+      is a banking relationship the persona plausibly holds. Bank names are
+      real UAE banks; the populate-rate label
+      (Rich/Median/Sparse) stays anonymous (NG5 / D-14).
+    </p>
+    <table id="footprint-table">
+      <thead>
+        <tr><th>Slot</th><th>Role</th><th>Plausible LFI candidates</th><th>Populate-rate</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <h2>2. Cross-bundle IBAN reconciliation</h2>
+    <p>
+      Fetched in parallel:
+      <strong>primary's beneficiaries</strong> (looking for
+      <code>self-to-&lt;slot&gt;</code> entries) +
+      <strong>each role bundle's /accounts</strong>. Highlighted rows are
+      the IBAN matches that close the cross-bundle reference loop.
+    </p>
+    <table id="recon-table">
+      <thead>
+        <tr><th>Source</th><th>Bank</th><th>BIC</th><th>IBAN</th><th>Holder</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <h2>3. Consolidated multi-bank ledger view</h2>
+    <p>
+      What Naqood (or any accounting system consuming the OF feeds) would
+      show: a single legal entity's accounts across every bank, computed
+      from the joined bundles.
+    </p>
+    <table id="ledger-table">
+      <thead>
+        <tr><th>Slot</th><th>Bank</th><th>Account ID</th><th>Currency</th><th>IBAN</th><th>Balance</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <p class="watermark" id="watermark"></p>
+
+    <script src="./app.js" type="module"></script>
+  </body>
+</html>

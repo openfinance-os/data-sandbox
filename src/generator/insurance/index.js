@@ -16,7 +16,7 @@ import { applyInsuranceLfiProfile } from './lfi-profile.js';
 
 const DEFAULT_NOW = new Date(Date.UTC(2026, 3, 1, 0, 0, 0));
 
-const DEFAULT_BANKS_POOL = 'counterparty_banks_domestic';
+const DEFAULT_BANKS_POOL = 'counterparty_banks_uae_real';
 
 function resolvePools(persona, indexedPools) {
   const namePool = indexedPools.namesByPoolId[persona.demographics.nationality_pool];

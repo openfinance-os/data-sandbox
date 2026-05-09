@@ -1,0 +1,124 @@
+persona_id: sme_saas_freezone
+domain: banking
+name: "Talisman Software FZ-LLC — Free-Zone SaaS Startup"
+archetype: sme_saas
+default_seed: 3957
+segment: SME
+stress_coverage:
+  - usd_aed_sme_dual_currency_ops
+
+demographics:
+  # Principal signatory — founding CEO pulled for Party records.
+  nationality_pool: expat_arab
+  age_band: 30-42
+  emirate: dubai
+
+organisation:
+  legal_name_pool: sme_freezone
+  signatories:
+    - signatory_pool: expat_arab
+      account_role: Principal
+      party_type: Sole
+    - signatory_pool: expat_indian
+      account_role: SecondaryOwner
+      party_type: Joint
+    - signatory_pool: expat_arab
+      account_role: Administrator
+      party_type: Delegate
+
+income:
+  # Self-pay; the bulk of inflows is the customer-inflow stream below
+  # (USD subscription revenue from international customers).
+  primary_employer_pool: tech_freezone
+  monthly_amount_aed: 38000
+  pay_day: 25
+  variability: low
+  flag_payroll: false
+
+cash_flow:
+  customer_inflows:
+    counterparty_pool: b2b_intl
+    monthly_amount_aed_band: [240000, 480000]
+    invoice_cadence: monthly
+  supplier_outflows:
+    counterparty_pool: cloud_suppliers
+    monthly_amount_aed_band: [55000, 95000]
+  payroll_outflow_aed: 145000
+
+accounts:
+  - type: CurrentAccount
+    currency: AED
+    age_months: 36
+  - type: CurrentAccount
+    currency: USD
+    age_months: 36
+  - type: Savings
+    currency: USD
+    age_months: 18
+
+fixed_commitments:
+  - kind: direct_debit
+    purpose: utilities_dewa
+    amount_aed_band: [900, 1600]
+    schedule: monthly_5
+  - kind: direct_debit
+    purpose: saas_subscriptions
+    amount_aed_band: [7500, 14000]
+    schedule: monthly_12
+  - kind: standing_order
+    purpose: difc_office_lease
+    amount_aed: 32000
+    schedule: monthly_27
+  - kind: standing_order
+    purpose: founder_secondary_loan_repayment
+    amount_aed: 8000
+    schedule: monthly_28
+
+spend_profile:
+  groceries_aed_per_month_band: [0, 0]
+  fuel_aed_per_month_band: [300, 700]
+  dining_per_month_count_band: [6, 14]
+
+fx_activity: true
+cash_deposit_activity: false
+
+distress_signals:
+  nsf_events_per_year_band: [0, 0]
+
+multi_lfi_footprint:
+  primary:
+    role: operating
+    lfi_default: Rich
+    plausible_lfi_candidates:
+      - "Mashreq Bank"
+      - "Abu Dhabi Commercial Bank"
+      - "First Abu Dhabi Bank"
+  secondary:
+    role: trade_finance
+    lfi_default: Median
+    plausible_lfi_candidates:
+      - "HSBC Bank Middle East"
+      - "Standard Chartered Bank"
+      - "Citibank N.A."
+  tertiary:
+    role: digital_challenger
+    lfi_default: Sparse
+    plausible_lfi_candidates:
+      - "Wio Bank"
+      - "Zand Bank"
+
+narrative: |
+  Talisman Software is a Series-A SaaS company licensed in a Dubai free
+  zone (DIFC-style flavour) with a small distributed team. Customer
+  inflows are monthly USD subscription receipts from international
+  customers, settled into the USD operating account. Supplier outflows
+  are USD cloud-infrastructure charges (compute, observability, identity
+  services). AED operating account holds the WPS payroll batch and the
+  AED-denominated office lease + DEWA. A USD savings account holds
+  Series-A runway. Two co-founders are joint signatories on the AED
+  operating account; an operations-manager delegate is added for AP
+  reconciliation. FX-active edge of the v2.1 spec exercised by the
+  USD-AED dual-currency operating reality and FX-rate-bearing cross-
+  account transfers. Trade-finance secondary at a foreign-branch bank
+  for the international wire corridor; digital-challenger tertiary for
+  founder card / expense reimbursement.

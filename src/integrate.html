@@ -196,6 +196,10 @@
         <td>Driving Claude (Desktop, Code, claude.ai) as a dynamic PFM against a synthetic customer</td>
         <td>Path 5 — <a href="#path-mcp">MCP connector</a></td>
       </tr>
+      <tr>
+        <td>Building a multi-bank reconciliation flow (accounting platform / Naqood-style integration)</td>
+        <td>Any path + <a href="#multi-lfi">multi-LFI consent flow</a> (D-14)</td>
+      </tr>
     </tbody>
   </table>
 
@@ -372,6 +376,127 @@ https://openfinance-os.org/commons/data-sandbox/fixtures/v1/bundles/&lt;persona&
     for the full tool list (<code>get_party</code>, <code>get_accounts</code>,
     <code>get_balances</code>, <code>get_transactions</code>, …) and the
     <code>build_persona</code> custom-recipe path.
+  </p>
+
+  <h2 id="multi-lfi">Multi-LFI consent flow (D-14)</h2>
+  <p>
+    UAE SMEs are typically multi-banked — operating account at a Tier-1
+    conventional bank, Islamic deposit / savings at a second LFI, and
+    increasingly a digital-challenger relationship for SME tooling. The
+    Naqood-grade accounting integration consumes feeds from <em>all</em> of
+    these in parallel and reconciles them into one ledger. The sandbox
+    surfaces this multi-bank reality at three layers, every layer
+    spec-validated against v2.1.
+  </p>
+
+  <h3>1. Discoverability — what the persona declares</h3>
+  <p>
+    Every persona's manifest entry in
+    <code>/fixtures/v1/manifest.json#personas[&lt;id&gt;]</code> carries an
+    optional <code>multi_lfi_footprint</code> block:
+  </p>
+  <pre><code>{
+  "name": "&lt;persona display name&gt;",
+  "domain": "banking",
+  "default_seed": 5172,
+  "stress_coverage": ["aggregator_settlement_reconciliation"],
+  "multi_lfi_footprint": {
+    "primary":   { "role": "operating",          "lfi_default": "Rich",   "plausible_lfi_candidates": [/* real UAE Tier-1 bank names — see manifest.json */] },
+    "secondary": { "role": "acquiring",          "lfi_default": "Median", "plausible_lfi_candidates": [/* card-acquiring banks */] },
+    "tertiary":  { "role": "digital_challenger", "lfi_default": "Sparse", "plausible_lfi_candidates": [/* digital-only CBUAE-licensed banks */] }
+  }
+}</code></pre>
+  <p>
+    Real UAE bank names appear inside
+    <code>plausible_lfi_candidates</code> in the live manifest per PRD
+    decision D-14: a candidate set with no populate-rate binding is
+    descriptive of the persona's banking reality, not an operational
+    claim about any named bank. The <code>lfi_default</code>
+    populate-rate label (<code>Rich</code> / <code>Median</code> /
+    <code>Sparse</code>) stays anonymous. The MCP
+    <code>list_personas</code> tool surfaces the same block plus an
+    <code>available_lfi_roles</code> list of slots that actually have
+    role bundles emitted (some declared slots resolve to candidates that
+    aren't deposit-taking banks and are silently dropped).
+  </p>
+
+  <h3>2. Role-keyed bundles (Phase D Slice 5)</h3>
+  <p>
+    For personas with <code>multi_lfi_footprint</code>, the sandbox emits
+    separate v2.1-shaped bundles for each declared non-primary slot at a
+    role-keyed stage path. The primary stays at the historical URL
+    (D-11 forward-compat); secondary / tertiary land at:
+  </p>
+  <pre><code>/fixtures/v1/bundles/&lt;persona&gt;/&lt;slot&gt;/&lt;lfi&gt;/seed-N/accounts.json
+/fixtures/v1/bundles/&lt;persona&gt;/&lt;slot&gt;/&lt;lfi&gt;/seed-N/accounts__&lt;AccountId&gt;__balances.json
+/fixtures/v1/bundles/&lt;persona&gt;/&lt;slot&gt;/&lt;lfi&gt;/seed-N/accounts__&lt;AccountId&gt;__transactions.json
+... (and the rest of the v2.1 in-scope endpoints, single-account)</code></pre>
+  <p>
+    The role-bundle's <code>/accounts</code> envelope contains a single
+    <code>Account</code> at the slot's deterministically-picked bank;
+    its IBAN byte-matches the corresponding <code>self-to-&lt;slot&gt;</code>
+    beneficiary's <code>CreditorAccount.Identification</code> in the
+    primary bundle's <code>/accounts/{AccountId}/beneficiaries</code>.
+    That match closes the cross-bundle reference loop:
+  </p>
+  <pre><code>// In the primary's beneficiaries:
+{
+  "Reference": "self-to-tertiary",
+  "AccountHolderName": "&lt;persona organisation legal name&gt;",
+  "CreditorAgent": { "SchemeName": "BICFI", "Identification": "&lt;bank BIC&gt;", "Name": "&lt;bank name&gt;" },
+  "CreditorAccount": [{ "SchemeName": "IBAN",
+                        "Identification": "AE228302598803958486047",   // ←─┐
+                        "Name": "&lt;persona organisation legal name&gt;" }] //   │
+}                                                                       //   │ MATCH
+                                                                        //   │
+// In the tertiary bundle's /accounts:                                  //   │
+{ "AccountIdentifiers": [{ "SchemeName": "IBAN",                       //   │
+                            "Identification": "AE228302598803958486047" }] }//←┘</code></pre>
+  <p>
+    Manifest registry: <code>manifest.json#roleFixtures</code> indexes
+    every role bundle by
+    <code>"&lt;persona&gt;|&lt;slot&gt;|&lt;lfi&gt;|&lt;seed&gt;"</code>.
+    npm / PyPI loaders accept an optional
+    <code>lfi_role: 'secondary'|'tertiary'</code> param on
+    <code>loadFixture()</code> and <code>loadJourney()</code>; the new
+    <code>listRoleBundles(personaId)</code> helper enumerates the slots
+    a persona has emitted bundles for.
+  </p>
+
+  <h3>3. Cross-LFI mirror ledger (Slice 7)</h3>
+  <p>
+    For every <code>(persona, lfi, seed)</code> with
+    <code>multi_lfi_footprint</code>, the primary bundle's transaction
+    stream carries 12 monthly self-sweep outflows per declared
+    non-primary slot, byte-mirrored as inflows in the corresponding role
+    bundle's <code>/accounts/{AccountId}/transactions</code>. Each pair
+    shares <code>TransactionDateTime</code>, <code>Amount</code>,
+    <code>Currency</code>, <code>TransactionReference</code>
+    (<code>XLFI-&lt;sN&gt;-NN</code>), plus cross-pointers via
+    <code>CreditorAccount.Identification</code> on the primary side and
+    <code>DebtorAccount.Identification</code> on the role side — both
+    mod-97-valid IBANs whose identity proves "same persona, two banks."
+    A TPP can join by <code>TransactionId</code> stem
+    (<code>&lt;persona&gt;-xlfi-&lt;sN&gt;-NN-&lt;dir&gt;</code>) which
+    survives any LFI populate-rate profile, or by
+    <code>(TransactionDateTime, Amount, Currency)</code> under Sparse
+    where counterparty fields are stripped.
+  </p>
+
+  <h3>MCP plug-point — pin a role at runtime</h3>
+  <p>
+    An LLM-driven integration calls
+    <code>set_session({ persona, lfi, lfi_role: 'secondary' })</code> on
+    the <code>@openfinance-os/sandbox-mcp</code> connector and gets the
+    role bundle's slice for every subsequent <code>get_*</code> tool —
+    <code>get_accounts</code>, <code>get_balances</code>,
+    <code>get_transactions</code>, <code>load_journey</code> all route to
+    the role-keyed manifest entry. Switching slots is a fresh
+    <code>set_session</code> call.
+  </p>
+  <p>
+    Worked example with running code:
+    <a href="https://github.com/openfinance-os/data-sandbox/tree/main/examples/naqood-multi-bank-demo">examples/naqood-multi-bank-demo/</a>.
   </p>
 
   <h2>Cross-endpoint coherence</h2>

@@ -1,0 +1,126 @@
+persona_id: sme_rak_trading_emirati
+domain: banking
+name: "Falcon Pearl General Trading LLC — RAK Free-Zone Trading SME"
+archetype: sme_trading_emirati
+default_seed: 4106
+segment: SME
+stress_coverage:
+  - emirati_owned_sme_northern_emirates
+
+demographics:
+  # Principal signatory — Emirati owner pulled for Party records.
+  nationality_pool: emirati
+  age_band: 35-50
+  emirate: other
+
+organisation:
+  legal_name_pool: sme_freezone
+  signatories:
+    - signatory_pool: emirati
+      account_role: Principal
+      party_type: Sole
+    - signatory_pool: emirati
+      account_role: SecondaryOwner
+      party_type: Joint
+    - signatory_pool: expat_arab
+      account_role: PowerOfAttorney
+      party_type: Delegate
+
+income:
+  # Self-pay; bulk of inflows is the customer-inflow stream below.
+  primary_employer_pool: tech_freezone
+  monthly_amount_aed: 42000
+  pay_day: 25
+  variability: low
+  flag_payroll: false
+
+cash_flow:
+  customer_inflows:
+    counterparty_pool: b2b_local
+    monthly_amount_aed_band: [240000, 420000]
+    invoice_cadence: monthly
+  supplier_outflows:
+    counterparty_pool: b2b_intl
+    monthly_amount_aed_band: [110000, 195000]
+  payroll_outflow_aed: 56000
+
+accounts:
+  - type: CurrentAccount
+    currency: AED
+    age_months: 108
+  - type: CurrentAccount
+    currency: USD
+    age_months: 60
+  - type: Savings
+    currency: AED
+    age_months: 84
+
+fixed_commitments:
+  - kind: direct_debit
+    purpose: utilities_dewa
+    amount_aed_band: [1600, 2800]
+    schedule: monthly_5
+  - kind: direct_debit
+    purpose: warehouse_insurance
+    amount_aed: 4200
+    schedule: monthly_8
+  - kind: standing_order
+    purpose: rakez_freezone_lease
+    amount_aed: 24000
+    schedule: monthly_27
+  - kind: standing_order
+    purpose: zakat_distribution
+    amount_aed: 6000
+    schedule: monthly_15
+
+spend_profile:
+  groceries_aed_per_month_band: [0, 0]
+  fuel_aed_per_month_band: [800, 1500]
+  dining_per_month_count_band: [4, 12]
+
+fx_activity: true
+cash_deposit_activity: false
+
+distress_signals:
+  nsf_events_per_year_band: [0, 0]
+
+multi_lfi_footprint:
+  primary:
+    role: operating
+    lfi_default: Rich
+    plausible_lfi_candidates:
+      - "RAKBANK"
+      - "National Bank of Fujairah"
+      - "United Arab Bank"
+  secondary:
+    role: islamic_deposit
+    lfi_default: Median
+    plausible_lfi_candidates:
+      - "Sharjah Islamic Bank"
+      - "Ajman Bank"
+      - "Abu Dhabi Islamic Bank"
+  tertiary:
+    role: trade_finance
+    lfi_default: Sparse
+    plausible_lfi_candidates:
+      - "HSBC Bank Middle East"
+      - "Standard Chartered Bank"
+      - "First Abu Dhabi Bank"
+
+narrative: |
+  Falcon Pearl General Trading is a RAKEZ free-zone-licensed trading
+  company owned by an Emirati principal with his brother as joint
+  secondary owner; the operations manager (an expat-Arab finance
+  professional) holds Power-of-Attorney on the operating account. The
+  principal lives between Ras Al Khaimah and Sharjah; the warehouse and
+  back-office sit inside the RAK free zone. Inflows are monthly B2B
+  invoices to UAE-mainland customers; supplier outflows go cross-border
+  in USD/EUR for finished goods. Tier-2-conventional primary banker
+  is realistic for Northern-Emirates SMEs that prefer regional
+  relationships over the Tier-1 Abu Dhabi / Dubai brands; Islamic-deposit
+  secondary holds the principal's term-deposit and the zakat-distribution
+  standing order; foreign-branch trade-finance tertiary handles the
+  international wire corridor. Stress: first persona to anchor at a
+  Tier-2 conventional primary slot, first Emirati-owned SME, first
+  Northern-Emirates persona — exercises the demographic + bank-tier
+  dimensions the Dubai/Sharjah-skewed SME set doesn't reach.

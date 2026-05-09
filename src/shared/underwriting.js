@@ -5,6 +5,20 @@
 // institution's underwriting policy. Each signal exposes its source-field
 // contributors so a user can audit how the number was computed.
 
+// Spec-correct counterparty extraction: AETransaction has no top-level
+// CreditorName / DebtorName fields. The counterparty's legal name lives
+// in DebtorAccount.Name on Credit transactions (the persona received
+// from this party) and in CreditorAccount.Name on Debit transactions
+// (the persona paid this party). Returns null when the field isn't
+// populated by the LFI profile (Sparse strips it).
+function counterpartyOf(t) {
+  if (t?.CreditDebitIndicator === 'Credit') {
+    return t?.DebtorAccount?.Name ?? t?.DebtorAgent?.Name ?? null;
+  }
+  // Debit
+  return t?.CreditorAccount?.[0]?.Name ?? t?.CreditorAgent?.Name ?? null;
+}
+
 const ZERO_VOLUME_GUARD = { tx: 50, distinctMonths: 6 };
 
 const FREQUENCY_TO_MONTHLY = {
@@ -92,7 +106,10 @@ export function computeImpliedIncome(transactions, now) {
         TransactionId: t.TransactionId,
         BookingDateTime: t.BookingDateTime,
         Amount: t.Amount,
-        CreditorName: t.CreditorName,
+        // Spec-correct path: salary employer lives in DebtorAccount.Name on
+        // a Credit transaction (AECashAccount6_1 permits Name). The legacy
+        // top-level CreditorName field has been removed (not in v2.1 spec).
+        CounterpartyName: counterpartyOf(t),
         Flags: t.Flags,
       })),
     };
@@ -121,15 +138,17 @@ export function computeImpliedIncome(transactions, now) {
         TransactionId: t.TransactionId,
         BookingDateTime: t.BookingDateTime,
         Amount: t.Amount,
-        CreditorName: t.CreditorName,
+        CounterpartyName: counterpartyOf(t),
       })),
     };
   }
 
-  // Fallback B: top recurring counterparty (CreditorName cluster)
+  // Fallback B: top recurring counterparty (DebtorAccount.Name cluster
+  // for credits, CreditorAccount.Name for debits — the spec-correct path
+  // post the v2.1-conformance pass that removed the legacy CreditorName).
   const byCounterparty = new Map();
   for (const t of inWindow) {
-    const key = t.CreditorName ?? '(unnamed)';
+    const key = counterpartyOf(t) ?? '(unnamed)';
     if (!byCounterparty.has(key)) byCounterparty.set(key, []);
     byCounterparty.get(key).push(t);
   }
