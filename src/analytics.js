@@ -103,6 +103,7 @@ function loadPosthog() {
   const pending = import(/* @vite-ignore */ sdkUrl)
     .then((mod) => {
       const ph = mod.default ?? mod;
+      installIngestFailureWarning();
       ph.init(key, {
         api_host: POSTHOG_HOST,
         // EXP-21: every default that captures something we didn't ask for
@@ -169,6 +170,47 @@ export async function track(event, props = {}) {
   // calls reuse the cached promise.
   const ph = await loadPosthog();
   ph?.capture?.(event, sanitised);
+}
+
+// One-shot transport-level guard for ingest rejection. The PostHog SDK
+// has no stable cross-version error callback for failed `/e/` POSTs, so
+// a revoked key, an Authorized-URLs allowlist mismatch, or a billing
+// pause produces a 401/403 in the network tab and silence in the
+// console. This wrapper logs once on the first non-2xx response from
+// `i.posthog.com` and then restores the original fetch — repeated
+// warnings would just be noise on every captured event.
+function installIngestFailureWarning() {
+  if (typeof window === 'undefined') return;
+  const orig = window.fetch;
+  if (typeof orig !== 'function') return;
+  let warned = false;
+  const wrapped = function (input, init) {
+    const url =
+      typeof input === 'string'
+        ? input
+        : input && typeof input.url === 'string'
+          ? input.url
+          : '';
+    const result = orig.apply(this, arguments);
+    if (!warned && url.includes('i.posthog.com')) {
+      Promise.resolve(result)
+        .then((res) => {
+          if (warned || !res || res.ok) return;
+          warned = true;
+          if (window.fetch === wrapped) window.fetch = orig;
+          if (typeof console !== 'undefined') {
+            console.warn(
+              `[analytics] PostHog ingest rejected with HTTP ${res.status}; events are not being delivered. ` +
+                `Common causes: rotated/revoked POSTHOG_KEY, project Authorized-URLs allowlist excluding this origin, ` +
+                `or project billing pause. See tools/stage-site.mjs for the key-injection wiring.`
+            );
+          }
+        })
+        .catch(() => {});
+    }
+    return result;
+  };
+  window.fetch = wrapped;
 }
 
 function sanitise(props) {
