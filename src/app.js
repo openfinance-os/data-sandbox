@@ -4,6 +4,7 @@
 // box and persona-card events; every change re-renders the active panes.
 
 import { buildBundle } from './generator/index.js';
+import { track } from './analytics.js';
 import {
   coverage,
   coverageByBand,
@@ -294,6 +295,19 @@ async function init() {
   // that lands, custom-persona bundles are accessible via the npm engine
   // (plug-point 2) and the static-fixture zip download (plug-point 3).
   rebuildAndRender();
+  emitPersonaLoad();
+}
+
+// EXP-21 helpers — kept thin and centralised so analytics call sites are
+// auditable in one place and the per-event property allowlist matches
+// src/analytics.js exactly.
+function emitPersonaLoad() {
+  track('persona_load', {
+    persona_id: state.personaId,
+    domain: state.domain,
+    lfi: state.lfi,
+    custom: state.personaId === CUSTOM_PERSONA_SLUG,
+  });
 }
 
 // Workstream B — wire the "+ Build a custom persona" CTA in the persona pane
@@ -616,12 +630,17 @@ function attachEventHandlers() {
     state.endpoint = OVERVIEW_PSEUDO;
     state.selectedAccountId = null;
     rebuildAndRender();
+    emitPersonaLoad();
   });
   // LFI segmented control — replaces the v1 dropdown with a visible lever.
   for (const btn of document.querySelectorAll('#lfi-seg button[data-lfi]')) {
     btn.addEventListener('click', () => {
-      state.lfi = btn.dataset.lfi;
+      const from = state.lfi;
+      const to = btn.dataset.lfi;
+      if (from === to) return;
+      state.lfi = to;
       rebuildAndRender();
+      track('lfi_switch', { from, to });
     });
   }
   // Compare toggle — adds a partner LFI row that drives EXP-16 side-by-side.
@@ -644,6 +663,7 @@ function attachEventHandlers() {
     state.lfi = state.compareWith;
     state.compareWith = tmp;
     rebuildAndRender();
+    track('lfi_switch', { from: tmp, to: state.lfi });
   });
   for (const btn of document.querySelectorAll('#lfi-seg-compare button[data-cmp-lfi]')) {
     btn.addEventListener('click', () => {
@@ -666,12 +686,16 @@ function attachEventHandlers() {
     rebuildAndRender();
   });
   document.getElementById('view-rendered').addEventListener('click', () => {
+    if (state.view === 'rendered') return;
     state.view = 'rendered';
     renderPayload();
+    track('raw_json_toggle', { mode: 'rendered' });
   });
   document.getElementById('view-raw').addEventListener('click', () => {
+    if (state.view === 'raw') return;
     state.view = 'raw';
     renderPayload();
+    track('raw_json_toggle', { mode: 'raw' });
   });
   document.getElementById('toggle-expand-all')?.addEventListener('change', (e) => {
     state.expandFields = !!e.target.checked;
@@ -681,16 +705,29 @@ function attachEventHandlers() {
     state.piiOnly = !!e.target.checked;
     renderPayload();
   });
-  document.getElementById('export-json').addEventListener('click', exportActiveJson);
-  document.getElementById('export-csv').addEventListener('click', exportActiveCsv);
-  document.getElementById('export-tar').addEventListener('click', exportTarball);
-  document.getElementById('export-embed')?.addEventListener('click', copyEmbedSnippet);
+  document.getElementById('export-json').addEventListener('click', () => {
+    exportActiveJson();
+    track('export', { format: 'json' });
+  });
+  document.getElementById('export-csv').addEventListener('click', () => {
+    exportActiveCsv();
+    track('export', { format: 'csv' });
+  });
+  document.getElementById('export-tar').addEventListener('click', () => {
+    exportTarball();
+    track('export', { format: 'tarball' });
+  });
+  document.getElementById('export-embed')?.addEventListener('click', () => {
+    copyEmbedSnippet();
+    track('share', { kind: 'embed' });
+  });
   document.getElementById('tour-btn').addEventListener('click', () => startTour());
   document.getElementById('find-btn').addEventListener('click', openFind);
   // EXP-17 Share — pushPermalink keeps window.location.href canonical on every
   // state change, so the live href is the right thing to put on the clipboard.
   document.getElementById('share-btn').addEventListener('click', () => {
     copyToClipboard(window.location.href, 'Permalink copied.');
+    track('share', { kind: 'permalink' });
   });
   // ⌘K / Ctrl+K opens the find box from anywhere in the app.
   window.addEventListener('keydown', (e) => {
@@ -921,6 +958,7 @@ async function switchDomain(newDomain) {
   buildPersonaList();
   renderDomainChip();
   rebuildAndRender();
+  emitPersonaLoad();
 }
 
 function pushPermalink() {
@@ -1021,6 +1059,7 @@ function renderNavigator() {
           clearTxState();
           renderNavigator();
           renderPayload();
+          track('endpoint_nav', { endpoint: ep, domain: state.domain });
         },
       })
     );
@@ -1049,6 +1088,7 @@ function renderNavigator() {
             clearTxState();
             renderNavigator();
             renderPayload();
+            track('endpoint_nav', { endpoint: ep, domain: state.domain });
           },
         })
       );
