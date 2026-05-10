@@ -63,9 +63,14 @@ export const ALLOWED_PROP_KEYS = Object.freeze([
 const ALLOWED_PROP_KEY_SET = new Set(ALLOWED_PROP_KEYS);
 
 const POSTHOG_HOST = 'https://us.i.posthog.com';
-// CDN-hosted ESM build, pinned to the v1 major. Lazy-imported on first
-// gesture so the cold-load bundle stays clean (EXP-24 budget).
-const POSTHOG_MODULE_URL = 'https://unpkg.com/posthog-js@1/dist/module.js';
+// SDK is self-hosted (PR 7) — tools/stage-site.mjs copies
+// node_modules/posthog-js/dist/module.slim.js to
+// _site/src/vendor/posthog-js-<sha8>.js and writes a config script
+// that sets window.__POSTHOG_SDK_URL__ to the hashed filename. The
+// fallback below is what local dev / the e2e harness use when no
+// config script ran — they either short-circuit on a missing key
+// (dev) or stub the import via Playwright route-fulfill (e2e).
+const POSTHOG_DEFAULT_SDK_URL = './vendor/posthog-js.js';
 
 let posthogPromise = null;
 
@@ -83,7 +88,8 @@ function loadPosthog() {
     posthogPromise = Promise.resolve(null);
     return posthogPromise;
   }
-  const pending = import(/* @vite-ignore */ POSTHOG_MODULE_URL)
+  const sdkUrl = window.__POSTHOG_SDK_URL__ || POSTHOG_DEFAULT_SDK_URL;
+  const pending = import(/* @vite-ignore */ sdkUrl)
     .then((mod) => {
       const ph = mod.default ?? mod;
       ph.init(key, {

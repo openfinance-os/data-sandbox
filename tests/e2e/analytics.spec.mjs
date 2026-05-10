@@ -3,18 +3,28 @@
 // can't reach: lazy-load timing, cookie / localStorage absence, and
 // the actual capture() payload shape after a real user gesture.
 //
-// Strategy: stub `window.__POSTHOG_KEY__` via addInitScript so the SDK
-// loader thinks a key is configured, then intercept the unpkg ESM
-// fetch with a thin in-test module that records every capture() call
-// onto `window.__phStub`. Tests assert against that record. This is
-// strictly more rigorous than hitting the real CDN — flaky-CI-free,
-// no real PostHog project polluted with test events, and the exact
-// capture-payload shape is observable.
+// Strategy: addInitScript sets window.__POSTHOG_KEY__ + a known
+// __POSTHOG_SDK_URL__, then page.route() intercepts the dynamic import
+// of that SDK URL with a thin in-test module that records every
+// capture() call onto `window.__phStub`. Tests assert against that
+// record. This is strictly more rigorous than hitting the real PostHog
+// CDN: flaky-CI-free, no real PostHog project polluted with test
+// events, and the exact capture-payload shape is observable.
+//
+// PR 7 self-hosts the SDK (tools/stage-site.mjs vendors
+// _site/src/vendor/posthog-js-<sha>.js) so production traffic never
+// touches unpkg either — but the e2e harness runs against the
+// non-staged tree where vendor/ doesn't exist, so the route-fulfill
+// is what supplies the module body.
 
 import { test, expect } from '@playwright/test';
 
 const FAKE_KEY = 'phc_e2e_test_stub_key';
-const SDK_URL = 'https://unpkg.com/posthog-js@1/dist/module.js';
+// Distinctive path the e2e harness routes; matches the production
+// shape (vendor/posthog-js-*.js) so the test exercises the same
+// load codepath staged builds use.
+const SDK_URL_TEST = 'vendor/posthog-js-e2etest.js';
+const SDK_URL_PATTERN = '**/vendor/posthog-js-*.js';
 
 // Minimal ESM stub matching the surface src/analytics.js calls into.
 // Records init options + every capture() call onto window.__phStub so
@@ -38,13 +48,21 @@ export default posthog;
 
 async function configurePosthogStub(page, { withKey = true } = {}) {
   if (withKey) {
-    await page.addInitScript((key) => {
-      // eslint-disable-next-line no-undef
-      window.__POSTHOG_KEY__ = key;
-    }, FAKE_KEY);
+    await page.addInitScript(
+      ({ key, sdkUrl }) => {
+        // eslint-disable-next-line no-undef
+        window.__POSTHOG_KEY__ = key;
+        // eslint-disable-next-line no-undef
+        window.__POSTHOG_SDK_URL__ = sdkUrl;
+      },
+      { key: FAKE_KEY, sdkUrl: SDK_URL_TEST },
+    );
   }
-  // Intercept the dynamic import of the SDK and return our stub.
-  await page.route(SDK_URL, (route) =>
+  // Intercept the dynamic import of the self-hosted SDK and return our
+  // stub. The glob matches the production filename shape
+  // (vendor/posthog-js-<sha>.js) so the test routes whatever URL the
+  // analytics module ends up requesting.
+  await page.route(SDK_URL_PATTERN, (route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/javascript',
