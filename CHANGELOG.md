@@ -5,9 +5,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follo
 
 ## [Unreleased]
 
-### Added — EXP-21: about-page transparency section
+### Added — EXP-21: about-page transparency section + missing-key visibility + Cloudflare Pages doc
 
 - **`src/about.html`** — new "Privacy & analytics" section between "Reporting issues" and "Licensing". Lists every event the bundle emits (table: name × trigger × properties), enumerates what is never captured (no IP, no URL, no referrer, no user-agent, no cookies, no `localStorage`, no field values, no search input, no transaction values, no cross-session identifier), names the strict SDK options (`autocapture: false`, `capture_pageview: false`, `disable_session_recording: true`, `persistence: 'memory'`, full property blacklist), and links to the two test files (`tests/analytics-allowlist.test.mjs` + `tests/e2e/analytics.spec.mjs`) as the live build-time audit. Closes the queued #8 from the post-PR-#34 review.
+- **`src/analytics.js`** — `loadPosthog()` now logs `console.info('[analytics] POSTHOG_KEY not configured ...')` once when `window.__POSTHOG_KEY__` is unset in a browser context. Surfaces the missing-key state in DevTools instead of leaving a future maintainer to wonder why no events are flowing. `console.info` (not `error` / `warn`) so it doesn't trip the smoke spec's no-console-errors gate or PostHog's own error reporting.
+- **Cloudflare Pages env-var gotcha documented.** Diagnosed in production: `data-sandbox.openfinance-os.org` is served by Cloudflare Pages, not GitHub Pages. Cloudflare runs its own build container that doesn't see GitHub Actions secrets. The wire-up landed in PR #34 only sets `POSTHOG_KEY` on the GH Actions side, so Cloudflare-served deploys had `process.env.POSTHOG_KEY` empty → `tools/stage-site.mjs` took the no-key branch → no `vendor/posthog-config.js` was emitted → `analytics.js` short-circuited → zero events. Fix is platform-side (set `POSTHOG_KEY` in the Cloudflare Pages dashboard → Settings → Environment variables, Production scope, then redeploy). Comment blocks in `tools/stage-site.mjs` and `.github/workflows/deploy.yml` now spell this out per platform (GitHub Pages / Cloudflare Pages / Netlify / Vercel / Fly) so the next deploy-target migration doesn't trip on the same thing.
 
 ### Added — EXP-21 / D-08: PostHog wired (anonymous analytics)
 

@@ -56,6 +56,22 @@ cprf(path.join(repoRoot, 'dist'), path.join(out, 'dist'));
 // file is not written and no `<script>` tag is injected. analytics.js
 // then short-circuits to a no-op — the EXP-21 contract is never
 // violated by a missing-key state.
+//
+// ⚠ Deploy-target gotcha: this env var must be set on whichever build
+// container actually publishes to the production origin. Each platform
+// is its own world:
+//   - GitHub Pages: .github/workflows/deploy.yml passes
+//     `secrets.POSTHOG_KEY` to the `npm run build:site` step. Set the
+//     repo secret in GitHub → Settings → Secrets and variables → Actions.
+//   - Cloudflare Pages: Cloudflare runs its own build container that
+//     does NOT see GitHub Actions secrets. Set the env var in the
+//     Cloudflare dashboard → Workers & Pages → <project> → Settings →
+//     Environment variables (Production scope), then redeploy.
+//   - Netlify / Vercel / Fly: same pattern — set the env var on the
+//     platform that builds, not on GitHub Actions.
+// If you wire a new deploy target and forget this step, the deployed
+// `data-sandbox.<host>/src/vendor/posthog-config.js` 404s and
+// analytics.js logs `POSTHOG_KEY not configured` in DevTools console.
 const SDK_SRC = path.join(repoRoot, 'node_modules/posthog-js/dist/module.slim.js');
 const stagedVendor = path.join(out, 'src', 'vendor');
 fs.mkdirSync(stagedVendor, { recursive: true });
