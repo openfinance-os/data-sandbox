@@ -190,6 +190,51 @@
     maintainer-curated.
   </p>
 
+  <h2>Privacy &amp; analytics</h2>
+  <p>
+    The sandbox emits anonymous usage analytics to PostHog so the
+    maintainer can see which personas, endpoints and integration plug-points
+    actually get used. The full event list is exhaustive — these seven names
+    are the only events the bundle will ever send, and the property keys
+    they carry are likewise restricted:
+  </p>
+  <table class="band-table" aria-label="EXP-21 event allowlist">
+    <thead><tr><th>Event</th><th>Fires when</th><th>Properties</th></tr></thead>
+    <tbody>
+      <tr><td><code>persona_load</code></td><td>Page mount, persona switch, domain switch</td><td><code>persona_id</code>, <code>domain</code>, <code>lfi</code>, <code>custom</code></td></tr>
+      <tr><td><code>lfi_switch</code></td><td>LFI selector or compare-partner change</td><td><code>from</code>, <code>to</code></td></tr>
+      <tr><td><code>endpoint_nav</code></td><td>Navigator endpoint click</td><td><code>endpoint</code>, <code>domain</code></td></tr>
+      <tr><td><code>field_click</code></td><td>Field-name click in a payload table</td><td><code>status</code>, <code>endpoint</code></td></tr>
+      <tr><td><code>raw_json_toggle</code></td><td>Rendered ↔ Raw JSON toggle</td><td><code>mode</code></td></tr>
+      <tr><td><code>export</code></td><td>JSON / CSV / tarball download</td><td><code>format</code></td></tr>
+      <tr><td><code>share</code></td><td>Permalink, embed, npm, PyPI or curl snippet copy</td><td><code>kind</code></td></tr>
+    </tbody>
+  </table>
+  <p>
+    What is <strong>never</strong> captured: no IP address, no URL or
+    referrer, no user agent or device fingerprint, no cookies, no
+    <code>localStorage</code>, no field values, no search input, no persona
+    identity beyond the seven persona slugs, no transaction values, no
+    cross-session identifier. The PostHog SDK is initialised with
+    <code>autocapture: false</code>, <code>capture_pageview: false</code>,
+    <code>disable_session_recording: true</code>,
+    <code>persistence: 'memory'</code>, and a property blacklist covering
+    every auto-property the SDK might otherwise attach. Each page reload
+    generates a fresh random distinct-ID so PostHog cannot reconstruct a
+    visitor across sessions.
+  </p>
+  <p>
+    The contract is enforced at build time:
+    <a href="https://github.com/openfinance-os/data-sandbox/blob/main/tests/analytics-allowlist.test.mjs" target="_blank" rel="noopener noreferrer"><code>tests/analytics-allowlist.test.mjs</code></a>
+    fails CI on any non-allowlisted event, non-allowlisted property key,
+    or PII-shaped key name; a Playwright contract
+    (<a href="https://github.com/openfinance-os/data-sandbox/blob/main/tests/e2e/analytics.spec.mjs" target="_blank" rel="noopener noreferrer"><code>tests/e2e/analytics.spec.mjs</code></a>)
+    additionally asserts the SDK init options, the captured payload shape,
+    and the absence of cookies and <code>localStorage</code>. To opt out
+    entirely, any standard tracker-blocker (uBlock Origin, Brave Shields,
+    Pi-hole) blocks the SDK without affecting the rest of the page.
+  </p>
+
   <h2>Licensing</h2>
   <ul>
     <li><strong>Code:</strong> MIT.</li>

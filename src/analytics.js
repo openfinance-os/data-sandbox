@@ -85,6 +85,17 @@ function loadPosthog() {
   }
   const key = window.__POSTHOG_KEY__;
   if (!key || typeof key !== 'string') {
+    // Surface this once in DevTools so a maintainer wondering why no
+    // events are flowing has a one-line answer in Console instead of
+    // having to read the source. Common cause: deployed via Cloudflare
+    // Pages (or another non-GH-Actions target) without the POSTHOG_KEY
+    // environment variable set on that target. See tools/stage-site.mjs
+    // and .github/workflows/deploy.yml for the per-target wiring story.
+    if (typeof console !== 'undefined') {
+      console.info(
+        '[analytics] POSTHOG_KEY not configured (window.__POSTHOG_KEY__ is unset); analytics disabled'
+      );
+    }
     posthogPromise = Promise.resolve(null);
     return posthogPromise;
   }

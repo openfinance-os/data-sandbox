@@ -28,7 +28,7 @@ jobs:
       - run: npm run build:site
         env:
           # EXP-21 / D-08 — tools/stage-site.mjs reads this and injects
-          # `<script>window.__POSTHOG_KEY__='...'</script>` into the
+          # the `<script src="vendor/posthog-config.js">` into the
           # staged entry HTMLs. PostHog project keys are public-by-design
           # (they ship in every visitor's HTML on every PostHog-using
           # site) but we still funnel through a GH Actions secret so the
@@ -36,6 +36,13 @@ jobs:
           # secret update rather than a code change. If the secret is
           # unset (e.g. a fork build) stage-site logs that analytics will
           # be off and the EXP-21 contract holds trivially.
+          #
+          # NOTE — this env var only reaches the GitHub Pages build. If
+          # the production origin is served by Cloudflare Pages / Netlify
+          # / Vercel / Fly, those platforms run their own build container
+          # and don't see GitHub Actions secrets. Set POSTHOG_KEY in each
+          # platform's own dashboard. tools/stage-site.mjs has the full
+          # rundown of where to add it per platform.
           POSTHOG_KEY: ${{ secrets.POSTHOG_KEY }}
       - uses: actions/upload-pages-artifact@v3
         with:
