@@ -29,6 +29,45 @@ fs.mkdirSync(out, { recursive: true });
 cprf(path.join(repoRoot, 'src'), path.join(out, 'src'));
 cprf(path.join(repoRoot, 'dist'), path.join(out, 'dist'));
 
+// EXP-21 / D-08 — inject the PostHog project key into every staged entry
+// HTML so src/analytics.js can pick it up at runtime. The key arrives via
+// the POSTHOG_KEY GitHub Actions secret (see .github/workflows/deploy.yml).
+// Posting it into a global is the documented PostHog client-side pattern;
+// project keys are public-by-design and ship in every visitor's HTML on
+// every PostHog-using site. The reason to inject from a secret rather
+// than hard-code is to keep the source tree clean and let staging vs
+// production diverge if the maintainer ever spins up a second project.
+//
+// When the secret is unset (local `npm run serve`, a fork build, a
+// deploy from a contributor without secret access) the script tag is
+// simply not written. analytics.js short-circuits to a no-op in that
+// case — the EXP-21 contract is never violated by a missing-key state.
+const posthogKey = process.env.POSTHOG_KEY ?? '';
+if (posthogKey) {
+  // Sanity check the shape — PostHog project keys start with `phc_`. If
+  // a contributor pastes the personal-API key by mistake the deploy
+  // should fail loudly here rather than ship a broken bundle.
+  if (!/^phc_[A-Za-z0-9]+$/.test(posthogKey)) {
+    throw new Error(
+      "[stage-site] POSTHOG_KEY does not look like a PostHog project key (expected /^phc_[A-Za-z0-9]+$/). Refusing to inject — check the secret value."
+    );
+  }
+  const injection = `<script>window.__POSTHOG_KEY__=${JSON.stringify(posthogKey)};</script>`;
+  const stagedSrc = path.join(out, 'src');
+  let injectedCount = 0;
+  for (const entry of fs.readdirSync(stagedSrc)) {
+    if (!entry.endsWith('.html')) continue;
+    const p = path.join(stagedSrc, entry);
+    const html = fs.readFileSync(p, 'utf8');
+    if (!html.includes('</head>')) continue;
+    fs.writeFileSync(p, html.replace('</head>', `${injection}\n</head>`));
+    injectedCount += 1;
+  }
+  console.log(`[stage-site] injected POSTHOG_KEY into ${injectedCount} entry HTML(s)`);
+} else {
+  console.log('[stage-site] POSTHOG_KEY not set — analytics will be off in this build');
+}
+
 // Stage the worked TPP example so the integration guide's link resolves
 // at the deployed origin and a TPP can preview the journey live.
 const examplesSrc = path.join(repoRoot, 'examples');

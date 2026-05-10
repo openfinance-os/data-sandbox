@@ -26,6 +26,17 @@ jobs:
       - run: npm ci
       - run: npm run verify:spec-shape
       - run: npm run build:site
+        env:
+          # EXP-21 / D-08 — tools/stage-site.mjs reads this and injects
+          # `<script>window.__POSTHOG_KEY__='...'</script>` into the
+          # staged entry HTMLs. PostHog project keys are public-by-design
+          # (they ship in every visitor's HTML on every PostHog-using
+          # site) but we still funnel through a GH Actions secret so the
+          # source tree stays key-free and a key rotation is a one-click
+          # secret update rather than a code change. If the secret is
+          # unset (e.g. a fork build) stage-site logs that analytics will
+          # be off and the EXP-21 contract holds trivially.
+          POSTHOG_KEY: ${{ secrets.POSTHOG_KEY }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
