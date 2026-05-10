@@ -1,9 +1,10 @@
-// EXP-10 acceptance for the Insurance domain — Phase 2.0 (Motor) + 2.1 (+Home).
+// EXP-10 acceptance for the Insurance domain — Phase 2.1 GA (all 7 lines:
+// motor, home, health, life, travel, renters, employment).
 // Runs each insurance persona × 3 LFI profiles × the 4 endpoints in the
 // persona's line through AJV against the parsed v2.1-errata1 insurance
-// schemas. The persona's `line` discriminator (motor|home) selects which
-// endpoint subset applies; bundles for the other line are absent in that
-// persona's bundle so we skip the inapplicable endpoints.
+// schemas. The persona's `line` discriminator selects which endpoint subset
+// applies; bundles for other lines are absent in that persona's bundle so
+// we skip the inapplicable endpoints.
 
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';

@@ -8,6 +8,7 @@
 
 import { bandForFieldName, realLfisGuidance, specCitationUrl, statusBadge } from '../shared/spec-helpers.js';
 import { conditionalRule, isPii } from '../shared/field-knowledge.js';
+import { track } from '../analytics.js';
 
 const ISSUE_REPO = 'openfinance-os/data-sandbox';
 
@@ -24,6 +25,7 @@ export function createFieldCard(deps) {
     const fieldsByName = endpointFieldsByName();
     const f = fieldsByName.get(name);
     if (!f) return;
+    track('field_click', { status: f.status, endpoint: state.endpoint });
     const empty = document.getElementById('fc-empty');
     const content = document.getElementById('fc-content');
     empty.hidden = true;

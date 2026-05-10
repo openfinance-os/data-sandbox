@@ -4,6 +4,7 @@
 // box and persona-card events; every change re-renders the active panes.
 
 import { buildBundle } from './generator/index.js';
+import { track } from './analytics.js';
 import {
   coverage,
   coverageByBand,
@@ -294,6 +295,19 @@ async function init() {
   // that lands, custom-persona bundles are accessible via the npm engine
   // (plug-point 2) and the static-fixture zip download (plug-point 3).
   rebuildAndRender();
+  emitPersonaLoad();
+}
+
+// EXP-21 helpers — kept thin and centralised so analytics call sites are
+// auditable in one place and the per-event property allowlist matches
+// src/analytics.js exactly.
+function emitPersonaLoad() {
+  track('persona_load', {
+    persona_id: state.personaId,
+    domain: state.domain,
+    lfi: state.lfi,
+    custom: state.personaId === CUSTOM_PERSONA_SLUG,
+  });
 }
 
 // Workstream B — wire the "+ Build a custom persona" CTA in the persona pane
@@ -616,12 +630,17 @@ function attachEventHandlers() {
     state.endpoint = OVERVIEW_PSEUDO;
     state.selectedAccountId = null;
     rebuildAndRender();
+    emitPersonaLoad();
   });
   // LFI segmented control — replaces the v1 dropdown with a visible lever.
   for (const btn of document.querySelectorAll('#lfi-seg button[data-lfi]')) {
     btn.addEventListener('click', () => {
-      state.lfi = btn.dataset.lfi;
+      const from = state.lfi;
+      const to = btn.dataset.lfi;
+      if (from === to) return;
+      state.lfi = to;
       rebuildAndRender();
+      track('lfi_switch', { from, to });
     });
   }
   // Compare toggle — adds a partner LFI row that drives EXP-16 side-by-side.
@@ -644,12 +663,17 @@ function attachEventHandlers() {
     state.lfi = state.compareWith;
     state.compareWith = tmp;
     rebuildAndRender();
+    track('lfi_switch', { from: tmp, to: state.lfi });
   });
   for (const btn of document.querySelectorAll('#lfi-seg-compare button[data-cmp-lfi]')) {
     btn.addEventListener('click', () => {
-      state.compareWith = btn.dataset.cmpLfi;
+      const from = state.compareWith;
+      const to = btn.dataset.cmpLfi;
+      if (from === to) return;
+      state.compareWith = to;
       syncControls();
       renderPayload();
+      track('lfi_switch', { from, to });
     });
   }
   document.getElementById('seed-input').addEventListener('change', (e) => {
@@ -666,12 +690,16 @@ function attachEventHandlers() {
     rebuildAndRender();
   });
   document.getElementById('view-rendered').addEventListener('click', () => {
+    if (state.view === 'rendered') return;
     state.view = 'rendered';
     renderPayload();
+    track('raw_json_toggle', { mode: 'rendered' });
   });
   document.getElementById('view-raw').addEventListener('click', () => {
+    if (state.view === 'raw') return;
     state.view = 'raw';
     renderPayload();
+    track('raw_json_toggle', { mode: 'raw' });
   });
   document.getElementById('toggle-expand-all')?.addEventListener('change', (e) => {
     state.expandFields = !!e.target.checked;
@@ -681,16 +709,29 @@ function attachEventHandlers() {
     state.piiOnly = !!e.target.checked;
     renderPayload();
   });
-  document.getElementById('export-json').addEventListener('click', exportActiveJson);
-  document.getElementById('export-csv').addEventListener('click', exportActiveCsv);
-  document.getElementById('export-tar').addEventListener('click', exportTarball);
-  document.getElementById('export-embed')?.addEventListener('click', copyEmbedSnippet);
+  document.getElementById('export-json').addEventListener('click', () => {
+    exportActiveJson();
+    track('export', { format: 'json' });
+  });
+  document.getElementById('export-csv').addEventListener('click', () => {
+    exportActiveCsv();
+    track('export', { format: 'csv' });
+  });
+  document.getElementById('export-tar').addEventListener('click', () => {
+    exportTarball();
+    track('export', { format: 'tarball' });
+  });
+  document.getElementById('export-embed')?.addEventListener('click', () => {
+    copyEmbedSnippet();
+    track('share', { kind: 'embed' });
+  });
   document.getElementById('tour-btn').addEventListener('click', () => startTour());
   document.getElementById('find-btn').addEventListener('click', openFind);
   // EXP-17 Share — pushPermalink keeps window.location.href canonical on every
   // state change, so the live href is the right thing to put on the clipboard.
   document.getElementById('share-btn').addEventListener('click', () => {
     copyToClipboard(window.location.href, 'Permalink copied.');
+    track('share', { kind: 'permalink' });
   });
   // ⌘K / Ctrl+K opens the find box from anywhere in the app.
   window.addEventListener('keydown', (e) => {
@@ -783,13 +824,25 @@ function rebuildAndRender() {
   body?.classList.add('is-fading');
 
   const persona = state.data.personas[state.personaId];
-  state.bundle = buildBundle({
-    persona,
-    lfi: state.lfi,
-    seed: state.seed,
-    pools: state.data.pools,
-    now: new Date(state.data.buildInfo.nowIso),
-  });
+  try {
+    state.bundle = buildBundle({
+      persona,
+      lfi: state.lfi,
+      seed: state.seed,
+      pools: state.data.pools,
+      now: new Date(state.data.buildInfo.nowIso),
+    });
+  } catch (err) {
+    // Bundle-level error boundary (counterpart to EXP-26 at the field
+    // level). A malformed persona manifest, a generator regression, or a
+    // missing pool reference reaches us here. Render an in-pane fallback
+    // with the active (persona, lfi, seed) tuple and a "Report this" link
+    // pre-filled against the GitHub issue tracker rather than letting the
+    // page go blank.
+    renderBundleError(err, persona);
+    body?.classList.remove('is-fading');
+    return;
+  }
 
   if (state.domain !== 'banking') {
     // Phase 2.0 motor full-coverage: insurance bundles render through a
@@ -815,6 +868,54 @@ function rebuildAndRender() {
   pushPermalink();
 
   setTimeout(() => body?.classList.remove('is-fading'), 30);
+}
+
+function renderBundleError(err, persona) {
+  const body = document.getElementById('payload-body');
+  if (!body) return;
+  const message = String(err?.message ?? err);
+  const issueTitle = `[bundle-error] ${state.personaId} / ${state.lfi} / seed ${state.seed} — ${message.slice(0, 80)}`;
+  const issueBody = [
+    '## Bundle build failed',
+    `- **Persona:** \`${state.personaId}\``,
+    `- **Domain:** \`${persona?.domain ?? 'unknown'}\``,
+    `- **LFI profile:** \`${state.lfi}\``,
+    `- **Seed:** \`${state.seed}\``,
+    `- **Pinned spec SHA:** \`${state.spec?.pinSha ?? 'unknown'}\``,
+    '',
+    '## Error',
+    '```',
+    message,
+    '```',
+    '',
+    '## What you were doing',
+    '<!-- describe -->',
+    '',
+  ].join('\n');
+  const params = new URLSearchParams();
+  params.set('title', issueTitle);
+  params.set('body', issueBody);
+  const issueUrl = `https://github.com/openfinance-os/data-sandbox/issues/new?${params.toString()}`;
+
+  body.replaceChildren(
+    el(
+      'div',
+      { class: 'bundle-error', attrs: { role: 'alert', style: 'padding:16px;border:1px solid #c33;background:#fee;color:#600;border-radius:6px;margin:12px' } },
+      el('strong', { text: 'Couldn’t build this bundle.' }),
+      el('p', { text: `${state.personaId} · ${state.lfi} · seed ${state.seed}` }),
+      el('pre', { text: message, attrs: { style: 'white-space:pre-wrap;background:#fff;padding:8px;border-radius:4px;border:1px solid #fbb' } }),
+      el(
+        'p',
+        {},
+        el('a', {
+          text: 'Report this on GitHub →',
+          attrs: { href: issueUrl, target: '_blank', rel: 'noopener noreferrer' },
+        })
+      )
+    )
+  );
+  // eslint-disable-next-line no-console
+  console.error('buildBundle failed', err);
 }
 
 // Slice 8b: visible domain selector. The chip lists every domain from
@@ -861,6 +962,7 @@ async function switchDomain(newDomain) {
   buildPersonaList();
   renderDomainChip();
   rebuildAndRender();
+  emitPersonaLoad();
 }
 
 function pushPermalink() {
@@ -961,6 +1063,7 @@ function renderNavigator() {
           clearTxState();
           renderNavigator();
           renderPayload();
+          track('endpoint_nav', { endpoint: ep, domain: state.domain });
         },
       })
     );
@@ -989,6 +1092,7 @@ function renderNavigator() {
             clearTxState();
             renderNavigator();
             renderPayload();
+            track('endpoint_nav', { endpoint: ep, domain: state.domain });
           },
         })
       );
@@ -1646,6 +1750,8 @@ curl -fsS '${curlUrl}'`;
       snippet: iframeSnippet,
       copyLabel: 'Copy iframe',
       doneLabel: 'Iframe snippet copied — paste into your HTML.',
+      // EXP-21 share `kind` enum.
+      kind: 'embed',
     },
     {
       eyebrow: 'Path 2 · npm — Node / TypeScript',
@@ -1653,6 +1759,7 @@ curl -fsS '${curlUrl}'`;
       snippet: npmSnippet,
       copyLabel: 'Copy npm snippet',
       doneLabel: 'npm snippet copied.',
+      kind: 'npm',
     },
     {
       eyebrow: 'Path 3 · PyPI — Python',
@@ -1660,6 +1767,7 @@ curl -fsS '${curlUrl}'`;
       snippet: pipSnippet,
       copyLabel: 'Copy pip snippet',
       doneLabel: 'pip snippet copied.',
+      kind: 'pypi',
     },
     {
       eyebrow: 'Path 4 · raw HTTPS — Swift / Kotlin / Postman / curl / .NET',
@@ -1667,6 +1775,7 @@ curl -fsS '${curlUrl}'`;
       snippet: curlSnippet,
       copyLabel: 'Copy curl',
       doneLabel: 'curl snippet copied.',
+      kind: 'fixture-url',
     },
   ];
 
@@ -1681,7 +1790,10 @@ curl -fsS '${curlUrl}'`;
       class: 'demo-row-copy',
       attrs: { type: 'button' },
       text: r.copyLabel,
-      onClick: () => copyToClipboard(r.snippet, r.doneLabel),
+      onClick: () => {
+        copyToClipboard(r.snippet, r.doneLabel);
+        track('share', { kind: r.kind });
+      },
     });
     row.appendChild(btn);
     details.appendChild(row);

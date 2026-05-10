@@ -11,6 +11,7 @@
 // directly until lfi-bands.insurance.yaml grows beyond the 4-path starter).
 
 import { leafFields, statusBadge } from '../shared/spec-helpers.js';
+import { track } from '../analytics.js';
 
 export function createInsurance(deps) {
   const { state, el, syncControls, pushPermalink } = deps;
@@ -56,6 +57,7 @@ export function createInsurance(deps) {
             renderInsurancePayload();
             renderInsuranceCoverage();
             pushPermalink();
+            track('endpoint_nav', { endpoint: ep, domain: state.domain });
           },
         },
         el('span', { class: 'nav-endpoint-label', text: ep })
