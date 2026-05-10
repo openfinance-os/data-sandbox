@@ -69,16 +69,6 @@ const POSTHOG_MODULE_URL = 'https://unpkg.com/posthog-js@1/dist/module.js';
 
 let posthogPromise = null;
 
-/** @internal — exported only for tests so they can stub the loader. */
-export function _setPosthogLoader(loader) {
-  posthogPromise = loader();
-}
-
-/** @internal — exported only for tests so they can reset state between cases. */
-export function _resetPosthogForTests() {
-  posthogPromise = null;
-}
-
 function loadPosthog() {
   if (posthogPromise) return posthogPromise;
   // Browser-only. Importing this module from Node (vitest, the npm
@@ -93,7 +83,7 @@ function loadPosthog() {
     posthogPromise = Promise.resolve(null);
     return posthogPromise;
   }
-  posthogPromise = import(/* @vite-ignore */ POSTHOG_MODULE_URL)
+  const pending = import(/* @vite-ignore */ POSTHOG_MODULE_URL)
     .then((mod) => {
       const ph = mod.default ?? mod;
       ph.init(key, {
@@ -108,12 +98,14 @@ function loadPosthog() {
         disable_surveys: true,
         // EXP-22: no cookies, no localStorage. distinctID is a fresh
         // UUID per page reload, so PostHog never builds a cross-session
-        // identity for an anonymous visitor.
+        // identity for an anonymous visitor. crypto.randomUUID is
+        // required — modern browsers (Chrome 92+, Safari 15.4+, Firefox
+        // 95+) all support it, and EXP-24's mid-tier-mobile target sits
+        // well above the floor. If it's missing the init throws and the
+        // SDK never starts (analytics off, page still works).
         persistence: 'memory',
         bootstrap: {
-          distinctID: typeof crypto !== 'undefined' && crypto.randomUUID
-            ? crypto.randomUUID()
-            : `s-${Math.random().toString(36).slice(2)}-${Date.now()}`,
+          distinctID: crypto.randomUUID(),
         },
         property_blacklist: [
           '$ip',
@@ -136,10 +128,15 @@ function loadPosthog() {
     })
     .catch((err) => {
       if (typeof console !== 'undefined') {
-        console.warn('[analytics] PostHog SDK failed to load; analytics disabled', err);
+        console.warn('[analytics] PostHog SDK failed to load; will retry on next track()', err);
       }
+      // Drop the cached rejection so the next track() call retries. A
+      // transient unpkg blip shouldn't kill analytics for the rest of
+      // the session.
+      if (posthogPromise === pending) posthogPromise = null;
       return null;
     });
+  posthogPromise = pending;
   return posthogPromise;
 }
 

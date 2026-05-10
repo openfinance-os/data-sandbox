@@ -667,9 +667,13 @@ function attachEventHandlers() {
   });
   for (const btn of document.querySelectorAll('#lfi-seg-compare button[data-cmp-lfi]')) {
     btn.addEventListener('click', () => {
-      state.compareWith = btn.dataset.cmpLfi;
+      const from = state.compareWith;
+      const to = btn.dataset.cmpLfi;
+      if (from === to) return;
+      state.compareWith = to;
       syncControls();
       renderPayload();
+      track('lfi_switch', { from, to });
     });
   }
   document.getElementById('seed-input').addEventListener('change', (e) => {
@@ -1746,6 +1750,8 @@ curl -fsS '${curlUrl}'`;
       snippet: iframeSnippet,
       copyLabel: 'Copy iframe',
       doneLabel: 'Iframe snippet copied — paste into your HTML.',
+      // EXP-21 share `kind` enum.
+      kind: 'embed',
     },
     {
       eyebrow: 'Path 2 · npm — Node / TypeScript',
@@ -1753,6 +1759,7 @@ curl -fsS '${curlUrl}'`;
       snippet: npmSnippet,
       copyLabel: 'Copy npm snippet',
       doneLabel: 'npm snippet copied.',
+      kind: 'npm',
     },
     {
       eyebrow: 'Path 3 · PyPI — Python',
@@ -1760,6 +1767,7 @@ curl -fsS '${curlUrl}'`;
       snippet: pipSnippet,
       copyLabel: 'Copy pip snippet',
       doneLabel: 'pip snippet copied.',
+      kind: 'pypi',
     },
     {
       eyebrow: 'Path 4 · raw HTTPS — Swift / Kotlin / Postman / curl / .NET',
@@ -1767,6 +1775,7 @@ curl -fsS '${curlUrl}'`;
       snippet: curlSnippet,
       copyLabel: 'Copy curl',
       doneLabel: 'curl snippet copied.',
+      kind: 'fixture-url',
     },
   ];
 
@@ -1781,7 +1790,10 @@ curl -fsS '${curlUrl}'`;
       class: 'demo-row-copy',
       attrs: { type: 'button' },
       text: r.copyLabel,
-      onClick: () => copyToClipboard(r.snippet, r.doneLabel),
+      onClick: () => {
+        copyToClipboard(r.snippet, r.doneLabel);
+        track('share', { kind: r.kind });
+      },
     });
     row.appendChild(btn);
     details.appendChild(row);
