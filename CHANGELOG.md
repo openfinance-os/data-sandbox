@@ -5,6 +5,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follo
 
 ## [Unreleased]
 
+### Added — EXP-21: about-page transparency section
+
+- **`src/about.html`** — new "Privacy & analytics" section between "Reporting issues" and "Licensing". Lists every event the bundle emits (table: name × trigger × properties), enumerates what is never captured (no IP, no URL, no referrer, no user-agent, no cookies, no `localStorage`, no field values, no search input, no transaction values, no cross-session identifier), names the strict SDK options (`autocapture: false`, `capture_pageview: false`, `disable_session_recording: true`, `persistence: 'memory'`, full property blacklist), and links to the two test files (`tests/analytics-allowlist.test.mjs` + `tests/e2e/analytics.spec.mjs`) as the live build-time audit. Closes the queued #8 from the post-PR-#34 review.
+
 ### Added — EXP-21 / D-08: PostHog wired (anonymous analytics)
 
 - **D-08 flips from "wire-up deferred" to "wired"**. Anonymous analytics surface lands end-to-end across four PRs onto branch `claude/codebase-review-dIzX6` (PR #34): allowlist shim → 7 call sites → lazy SDK loader → secret injection → Playwright contract.
