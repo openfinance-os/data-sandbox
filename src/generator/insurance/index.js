@@ -1,9 +1,11 @@
 // Insurance generator orchestrator.
 // Turns (insurance persona, lfi, seed) into a bundle covering the in-scope
-// insurance endpoints. Phase 2.0 shipped Motor (4 endpoints, 3 personas);
-// Phase 2.1 adds Home as the first non-motor line. Each persona declares a
-// `line` field (motor | home) — defaulting to 'motor' for back-compat with
-// the existing 3 motor personas.
+// insurance endpoints. Phase 2.1 GA covers all 7 lines: motor, home, health,
+// life, travel, renters, employment. Each persona declares a `line` field —
+// defaulting to 'motor' for back-compat with the original 3 motor personas.
+//
+// Adding a new line is a registry entry below + a `<line>-policy.js` /
+// `<line>-quote.js` pair — no orchestrator changes.
 //
 // EXP-05 / §8.3: bundle is a pure function of (persona, lfi, seed, now).
 
@@ -93,17 +95,27 @@ function genUaeIban(rng) {
   return `AE${checkDigits}${bban1}${bban2}`;
 }
 
+// Per-line builder registry. New lines drop in here without touching
+// the dispatcher. Each builder MUST return a bundle that already has its
+// per-line LFI profile applied — `buildInsuranceBundle` only adds the
+// (LFI-exempt) consent record on top.
+const LINE_BUILDERS = {
+  motor: buildMotorBundle,
+  home: buildHomeBundle,
+  health: buildHealthBundle,
+  life: buildLifeBundle,
+  travel: buildTravelBundle,
+  renters: buildRentersBundle,
+  employment: buildEmploymentBundle,
+};
+
 export function buildInsuranceBundle({ persona, lfi, seed, pools, now = DEFAULT_NOW }) {
   const line = persona.line ?? 'motor';
-  let bundle;
-  if (line === 'motor') bundle = buildMotorBundle({ persona, lfi, seed, pools, now });
-  else if (line === 'home') bundle = buildHomeBundle({ persona, lfi, seed, pools, now });
-  else if (line === 'health') bundle = buildHealthBundle({ persona, lfi, seed, pools, now });
-  else if (line === 'life') bundle = buildLifeBundle({ persona, lfi, seed, pools, now });
-  else if (line === 'travel') bundle = buildTravelBundle({ persona, lfi, seed, pools, now });
-  else if (line === 'renters') bundle = buildRentersBundle({ persona, lfi, seed, pools, now });
-  else if (line === 'employment') bundle = buildEmploymentBundle({ persona, lfi, seed, pools, now });
-  else throw new Error(`unknown insurance line '${line}' for persona ${persona.persona_id}`);
+  const builder = LINE_BUILDERS[line];
+  if (!builder) {
+    throw new Error(`unknown insurance line '${line}' for persona ${persona.persona_id}`);
+  }
+  const bundle = builder({ persona, lfi, seed, pools, now });
 
   // Every insurance bundle carries one consent record covering its own
   // line. Consent generation uses an independent RNG stream so the consent

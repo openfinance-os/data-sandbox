@@ -36,7 +36,7 @@ An interactive, **client-side static** sandbox that lets a TPP-perspective user 
 - `src/` — frontend sources (vanilla JS) + Service Worker.
 - `spec/` — vendored OpenAPI YAMLs (banking v2.1, insurance) + `lfi-bands.banking.yaml`.
 - `tools/` — spec parser, data builder, fixture-package builders, site stager, lints.
-- `personas/` — YAML persona manifests (18 banking + 3 insurance = 21 total).
+- `personas/` — YAML persona manifests (18 banking + 9 insurance = 27 total).
 - `synthetic-identity-pool/` — name/IBAN/phone/DOB pools.
 - `tests/` — Vitest suites (spec validation, replay, LFI bands, fixture-package, integrate-staging, journey-coherence, etc.) + Playwright e2e under `tests/e2e/`.
 - `packages/sandbox-fixtures/` — `@openfinance-os/sandbox-fixtures` (npm). Exports: `loadFixture`, `loadJourney`, `buildBundle`, `expandRecipe`, `encodeRecipe`, `recipeHash`, `validateRecipe`, `listPersonas`, `listEndpoints`, `loadSpec`, `getPools`, `manifest`.
@@ -51,7 +51,7 @@ An interactive, **client-side static** sandbox that lets a TPP-perspective user 
 - `npm run build:spec` — parse vendored YAMLs to `dist/SPEC*.json`.
 - `npm run build:fixtures` — build the npm + PyPI fixture packages (unblocks the EXP-20 / EXP-32 test suites).
 - `npm run build:site` — full pipeline: build:spec → build:data → fixture packages → stage `_site/` (unblocks the EXP-28..31 staging-contract tests).
-- `npm test` — vitest. After `build:site`, all suites unblock (1530 tests, 0 skipped); without it, ~11 cases skip with messages pointing at the right command.
+- `npm test` — vitest. After `build:site`, all suites unblock (~1668 tests, 0 skipped); without it, ~11 cases skip with messages pointing at the right command.
 - `npm run test:e2e` — Playwright smoke + a11y.
 - `npm run test:perf` — Lighthouse CI (EXP-24 budget).
 - `npm run serve` — quick `python3 -m http.server` on `src/` for local dev.
@@ -60,7 +60,7 @@ An interactive, **client-side static** sandbox that lets a TPP-perspective user 
 
 Documented end-to-end in `src/integrate.html`; verified in the test harness. Four ways a TPP gets persona data, all returning the same v2.1 envelope shape (`Data` / `Links` / `Meta`):
 
-1. **Static fixtures** — `…/fixtures/v1/bundles/<persona>/<lfi>/seed-<n>/<endpoint>.json`. Built by `stage-site.mjs`. `_site/_headers` declares `Access-Control-Allow-Origin: *` and `Cache-Control: public, max-age=600` on `/fixtures/v1/*`.
+1. **Static fixtures** — `…/fixtures/v1/bundles/<persona>/<lfi>/seed-<n>/<endpoint>.json`. Built by `stage-site.mjs`. `_site/_headers` declares `Access-Control-Allow-Origin: *` and `Cache-Control: public, max-age=600` on `/fixtures/v1/*`. Note: GitHub Pages (the current deploy target) ignores `_headers` directives, but it serves `Access-Control-Allow-Origin: *` by default, so EXP-28 still holds. The cache directives are no-ops on GH Pages — they take effect only on Netlify / Cloudflare Pages. See `tools/stage-site.mjs:96` for the full nuance.
 2. **Service Worker dynamic** for custom personas (recipe-driven) — `src/sw-fixtures.js` + `src/persona-builder/fixture-handler.js`. Returns 409 on recipe-hash tamper.
 3. **Embed iframe** (chrome-less) — `src/embed.html` + `src/embed.js`, EXP-27.
 4. **npm / PyPI package** — `packages/sandbox-fixtures{,-py}/`, EXP-20.
@@ -99,7 +99,9 @@ The PRD assigns every requirement an `EXP-NN` ID (PRD §4). When discussing or i
 - **Phase 0 (spike)** — done.
 - **Phase 1 (v1)** — done. 12 banking personas × all 12 v2.1 Account Information endpoints × 3 LFI profiles. Endpoints listed in PRD Appendix C.
 - **Phase 1.5** — landed: Compare-LFIs mode, Underwriting Scenario panel, custom-persona builder, Service-Worker fixture mock, fixture package `@openfinance-os/sandbox-fixtures` (npm) and `openfinance-os-sandbox-fixtures` (PyPI mirror) — MIT code, CC0 data.
-- **Phase 2** — in progress. Persona library at 21 (18 banking + 3 insurance). Insurance domain motor-MVP shipped (4 endpoints, 3 motor personas; see `PHASE2_INSURANCE_PLAN.md`). Phase 2.x SME expansion (D-14): real-UAE counterparty-bank pool, 6 new SME personas (F&B multi-outlet, e-commerce marketplace, free-zone SaaS, construction sub-contractor, healthcare clinic, RAK Emirati trading) each carrying a `multi_lfi_footprint`; mod-97-valid IBANs; full Phase D role-bundle generation (primary + secondary + tertiary URLs under `bundles/<persona>/{secondary,tertiary}/<lfi>/seed-<n>/`); cross-LFI mirror-ledger transactions; footprint-aware SO routing; MCP server (`packages/sandbox-mcp/`) deployed to Fly. Phase 2.1 (full Insurance endpoint coverage), Open Wealth (Phase 2.2), and PostHog key wiring still ahead.
+- **Phase 2.0** — done. Insurance domain motor-MVP (4 endpoints, 3 motor personas; see `PHASE2_INSURANCE_PLAN.md`). Phase 2.x SME expansion (D-14): real-UAE counterparty-bank pool, 6 new SME personas (F&B multi-outlet, e-commerce marketplace, free-zone SaaS, construction sub-contractor, healthcare clinic, RAK Emirati trading) each carrying a `multi_lfi_footprint`; mod-97-valid IBANs; full Phase D role-bundle generation (primary + secondary + tertiary URLs under `bundles/<persona>/{secondary,tertiary}/<lfi>/seed-<n>/`); cross-LFI mirror-ledger transactions; footprint-aware SO routing; MCP server (`packages/sandbox-mcp/`) deployed to Fly.
+- **Phase 2.1** — done. Insurance flipped from `preview` → `ga`; full read-only coverage of all 7 lines (motor + home + health + life + travel + renters + employment) plus Insurance Consents = 30 endpoints. Six new insurance personas: `home-mortgage-villa`, `health-family-comprehensive`, `life-mortgage-protection`, `travel-annual-multitrip-expat`, `renters-apartment-tenant`, `employment-iloe-private`. Library at 27 (18 banking + 9 insurance). Per-line generator modules under `src/generator/insurance/<line>.js` with a registry-driven dispatcher.
+- **Phase 2.x** — Open Wealth (Phase 2.2), Arabic / RTL i18n, restoration of the deferred v1.5 trio (Domestic Worker, PEP-flagged, Returning Expat), PostHog wire-up (D-08; project key + autocapture config — bundle currently emits zero analytics events).
 
 ## Working with the user
 

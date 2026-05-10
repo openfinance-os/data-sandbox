@@ -783,13 +783,25 @@ function rebuildAndRender() {
   body?.classList.add('is-fading');
 
   const persona = state.data.personas[state.personaId];
-  state.bundle = buildBundle({
-    persona,
-    lfi: state.lfi,
-    seed: state.seed,
-    pools: state.data.pools,
-    now: new Date(state.data.buildInfo.nowIso),
-  });
+  try {
+    state.bundle = buildBundle({
+      persona,
+      lfi: state.lfi,
+      seed: state.seed,
+      pools: state.data.pools,
+      now: new Date(state.data.buildInfo.nowIso),
+    });
+  } catch (err) {
+    // Bundle-level error boundary (counterpart to EXP-26 at the field
+    // level). A malformed persona manifest, a generator regression, or a
+    // missing pool reference reaches us here. Render an in-pane fallback
+    // with the active (persona, lfi, seed) tuple and a "Report this" link
+    // pre-filled against the GitHub issue tracker rather than letting the
+    // page go blank.
+    renderBundleError(err, persona);
+    body?.classList.remove('is-fading');
+    return;
+  }
 
   if (state.domain !== 'banking') {
     // Phase 2.0 motor full-coverage: insurance bundles render through a
@@ -815,6 +827,54 @@ function rebuildAndRender() {
   pushPermalink();
 
   setTimeout(() => body?.classList.remove('is-fading'), 30);
+}
+
+function renderBundleError(err, persona) {
+  const body = document.getElementById('payload-body');
+  if (!body) return;
+  const message = String(err?.message ?? err);
+  const issueTitle = `[bundle-error] ${state.personaId} / ${state.lfi} / seed ${state.seed} — ${message.slice(0, 80)}`;
+  const issueBody = [
+    '## Bundle build failed',
+    `- **Persona:** \`${state.personaId}\``,
+    `- **Domain:** \`${persona?.domain ?? 'unknown'}\``,
+    `- **LFI profile:** \`${state.lfi}\``,
+    `- **Seed:** \`${state.seed}\``,
+    `- **Pinned spec SHA:** \`${state.spec?.pinSha ?? 'unknown'}\``,
+    '',
+    '## Error',
+    '```',
+    message,
+    '```',
+    '',
+    '## What you were doing',
+    '<!-- describe -->',
+    '',
+  ].join('\n');
+  const params = new URLSearchParams();
+  params.set('title', issueTitle);
+  params.set('body', issueBody);
+  const issueUrl = `https://github.com/openfinance-os/data-sandbox/issues/new?${params.toString()}`;
+
+  body.replaceChildren(
+    el(
+      'div',
+      { class: 'bundle-error', attrs: { role: 'alert', style: 'padding:16px;border:1px solid #c33;background:#fee;color:#600;border-radius:6px;margin:12px' } },
+      el('strong', { text: 'Couldn’t build this bundle.' }),
+      el('p', { text: `${state.personaId} · ${state.lfi} · seed ${state.seed}` }),
+      el('pre', { text: message, attrs: { style: 'white-space:pre-wrap;background:#fff;padding:8px;border-radius:4px;border:1px solid #fbb' } }),
+      el(
+        'p',
+        {},
+        el('a', {
+          text: 'Report this on GitHub →',
+          attrs: { href: issueUrl, target: '_blank', rel: 'noopener noreferrer' },
+        })
+      )
+    )
+  );
+  // eslint-disable-next-line no-console
+  console.error('buildBundle failed', err);
 }
 
 // Slice 8b: visible domain selector. The chip lists every domain from

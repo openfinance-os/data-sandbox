@@ -5,12 +5,17 @@
 // organisation.signatories[].party_type) MUST be drawn from the pinned
 // v2.1-errata1 OpenAPI enum. No hand-authored enum values.
 //
-// Loads spec/uae-account-information-openapi.yaml, extracts the enums:
+// Banking enums loaded from spec/uae-account-information-openapi.yaml:
 //   - AEBankDataSharing.AEExternalAccountSubTypeCode
 //   - AEBankDataSharing.AEExternalAccountTypeCode
 //   - AEPartyIdentityAssurance2.PartyCategory
 //   - AEExternalPartyTypeCode
 //   - AEExternalAccountRoleCode
+//
+// Insurance enums loaded from spec/uae-insurance-openapi.yaml:
+//   - line discriminator (manifest-level, drives the per-line generator)
+//   - motor `policy.type` → AEMotorInsuranceQuoteCoverTypes
+//   - emirate (banking + insurance) → AEUaeAddress.UAEEmirate
 // then walks /personas/*.yaml and fails the build on any persona enum value
 // that isn't a member of the corresponding spec enum.
 
@@ -24,11 +29,14 @@ const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..');
 
 const SPEC_PATH = path.join(repoRoot, 'spec/uae-account-information-openapi.yaml');
+const INSURANCE_SPEC_PATH = path.join(repoRoot, 'spec/uae-insurance-openapi.yaml');
 const PERSONAS_DIR = path.join(repoRoot, 'personas');
 const LFI_ROLES_PATH = path.join(repoRoot, 'spec/lfi-roles.yaml');
 
 const spec = yaml.load(fs.readFileSync(SPEC_PATH, 'utf8'));
 const schemas = spec?.components?.schemas ?? {};
+const insuranceSpec = yaml.load(fs.readFileSync(INSURANCE_SPEC_PATH, 'utf8'));
+const insuranceSchemas = insuranceSpec?.components?.schemas ?? {};
 
 const LFI_ROLES = (() => {
   const doc = yaml.load(fs.readFileSync(LFI_ROLES_PATH, 'utf8'));
@@ -40,6 +48,14 @@ function enumOf(name) {
   const s = schemas[name];
   if (!s || !Array.isArray(s.enum)) {
     throw new Error(`spec schema ${name} missing or has no enum (${SPEC_PATH})`);
+  }
+  return new Set(s.enum);
+}
+
+function enumOfInsurance(name) {
+  const s = insuranceSchemas[name];
+  if (!s || !Array.isArray(s.enum)) {
+    throw new Error(`insurance spec schema ${name} missing or has no enum (${INSURANCE_SPEC_PATH})`);
   }
   return new Set(s.enum);
 }
@@ -63,6 +79,21 @@ const ACCOUNT_TYPE = enumOf('AEBankDataSharing.AEExternalAccountTypeCode');
 const PARTY_TYPE = enumOf('AEExternalPartyTypeCode');
 const ACCOUNT_ROLE = enumOf('AEExternalAccountRoleCode');
 const PARTY_CATEGORY = inlineEnumAt('AEPartyIdentityAssurance2', 'PartyCategory');
+
+// Insurance enums. `line` is a manifest-level discriminator (not a spec
+// field) — the value drives which per-line generator runs, and must match
+// the in-scope lines in tools/domains.config.mjs.
+const INSURANCE_LINE = new Set([
+  'motor',
+  'home',
+  'health',
+  'life',
+  'travel',
+  'renters',
+  'employment',
+]);
+const MOTOR_POLICY_TYPE = enumOfInsurance('AEMotorInsuranceQuoteCoverTypes');
+const VALID_DOMAIN = new Set(['banking', 'insurance']);
 
 let violations = 0;
 
@@ -90,7 +121,29 @@ function listManifests() {
 
 for (const file of listManifests()) {
   const m = yaml.load(fs.readFileSync(file, 'utf8'));
-  if (!m || m.domain !== 'banking') continue;
+  if (!m) continue;
+
+  // Every persona must declare a recognised domain.
+  checkEnum(file, 'domain', m.domain, VALID_DOMAIN);
+
+  if (m.domain === 'insurance') {
+    // line is a manifest-level discriminator (defaults to 'motor' for
+    // back-compat per personas/_schema.insurance.yaml). Validate when
+    // present.
+    if (m.line != null) {
+      checkEnum(file, 'line', m.line, INSURANCE_LINE);
+    }
+    // Motor TypeOfPolicy is the only insurance enum that lives directly
+    // in the persona manifest (other lines hide their type behind the
+    // `line` discriminator). The spec enum is the source of truth.
+    const effectiveLine = m.line ?? 'motor';
+    if (effectiveLine === 'motor' && m.policy?.type != null) {
+      checkEnum(file, 'policy.type', m.policy.type, MOTOR_POLICY_TYPE);
+    }
+    continue;
+  }
+
+  if (m.domain !== 'banking') continue;
 
   // segment ⊆ AccountType ∩ PartyCategory (the spec's two enums are identical
   // here — Retail|SME|Corporate — and the persona's segment drives both).

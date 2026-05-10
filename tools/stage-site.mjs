@@ -96,12 +96,21 @@ fs.writeFileSync(path.join(out, '.nojekyll'), '');
 // Optional Netlify / Cloudflare Pages _headers file — long-cache for
 // hashed assets, short-cache for HTML so deploys propagate quickly.
 // /fixtures/v1/* is CORS-permissive (EXP-28) so TPP demos hosted on a
-// different origin can fetch them from the browser. NOTE: the current
-// production deploy (.github/workflows/deploy.yml) targets GitHub Pages,
-// which DOES NOT honor _headers — these directives only take effect if
-// the staged site is served from a host that does (Netlify, Cloudflare
-// Pages, etc.). The file is emitted regardless so a host migration is
-// drop-in.
+// different origin can fetch them from the browser.
+//
+// Deploy-target nuance (the v0.10 review watch item):
+//   - The current production deploy (.github/workflows/deploy.yml) targets
+//     GitHub Pages, which DOES NOT honor `_headers` directives — so the
+//     `Cache-Control` lines below are best-effort defaults only.
+//   - GitHub Pages DOES serve `Access-Control-Allow-Origin: *` by default
+//     on every static asset, so the EXP-28 cross-origin-fetch contract
+//     still holds in practice on GH Pages even though our `_headers` file
+//     is silently ignored. This is verified at runtime by
+//     `tests/integrate-staging.test.mjs` and asserted against the deployed
+//     origin in the e2e suite.
+//   - On Netlify / Cloudflare Pages (the eventual OF-OS Commons target)
+//     these directives do take effect verbatim.
+// The file is emitted regardless so a host migration is drop-in.
 const headers = `/dist/*
   Cache-Control: public, max-age=600, must-revalidate
 
