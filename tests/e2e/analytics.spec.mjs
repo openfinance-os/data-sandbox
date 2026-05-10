@@ -23,7 +23,9 @@ const FAKE_KEY = 'phc_e2e_test_stub_key';
 // Distinctive path the e2e harness routes; matches the production
 // shape (vendor/posthog-js-*.js) so the test exercises the same
 // load codepath staged builds use.
-const SDK_URL_TEST = 'vendor/posthog-js-e2etest.js';
+// Leading `./` is load-bearing — see analytics.js / stage-site.mjs
+// note. Browsers reject bare-relative module specifiers in import().
+const SDK_URL_TEST = './vendor/posthog-js-e2etest.js';
 const SDK_URL_PATTERN = '**/vendor/posthog-js-*.js';
 
 // Minimal ESM stub matching the surface src/analytics.js calls into.
