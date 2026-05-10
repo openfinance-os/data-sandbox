@@ -119,11 +119,11 @@ describe('EXP-21 track() runtime behaviour', () => {
     warn.mockRestore();
   });
 
-  it('does not load the PostHog SDK on import (PR 1: shim-only)', async () => {
-    // If the SDK were loaded eagerly, importing `analytics.js` from a
-    // Node test would either throw (no DOM) or attempt a network fetch.
-    // Smoke check: a plain track() call with no SDK loader configured
-    // resolves to undefined without throwing.
+  it('does not load the PostHog SDK in a Node environment (no window)', async () => {
+    // The lazy loader gates on `typeof window !== 'undefined'`, so a
+    // vitest run (Node, no DOM) never triggers a network fetch and a
+    // plain track() call resolves cleanly. This is also the dev-server
+    // posture — no POSTHOG_KEY → no SDK → analytics off.
     await expect(track('persona_load', { persona_id: 'x', lfi: 'rich' })).resolves.toBeUndefined();
   });
 });

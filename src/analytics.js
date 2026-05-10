@@ -1,7 +1,6 @@
-// EXP-21 anonymous analytics shim. The PostHog SDK isn't loaded here
-// (PR 2 wires that) — this file enforces the allowlist + property
-// sanitisation so call sites can land first and the SDK swap is
-// mechanical. Until the SDK is loaded, every `track()` call is a no-op.
+// EXP-21 anonymous analytics. The PostHog SDK is lazy-loaded on the first
+// allowlisted track() call, so the cold path stays clean (EXP-24 budget)
+// and a visitor who never interacts emits zero PostHog requests.
 //
 // Load-bearing invariants (PRD §4.5b / EXP-21):
 //   - event names ∈ ALLOWED_EVENTS (any other event drops with a warn).
@@ -11,11 +10,20 @@
 //     text capture — search queries, narrative strings, etc).
 //   - no nested objects (defends against accidental whole-record capture).
 //
-// EXP-22 (no persistent identifiers): the SDK init in PR 2 sets
+// EXP-22 (no persistent identifiers): SDK init below sets
 // `persistence: 'memory'` and blacklists `$ip` / `$current_url` etc., so
-// a reload is a fresh session from PostHog's perspective. This shim is
+// a reload is a fresh session from PostHog's perspective. distinctID is
+// a per-reload UUID — no cookie, no localStorage. This shim is
 // transport-agnostic — it would behave identically against a different
 // analytics backend.
+//
+// Project-key delivery: tools/stage-site.mjs injects
+// `<script>window.__POSTHOG_KEY__='...'</script>` from the POSTHOG_KEY
+// GitHub Actions secret at deploy time. If the global is unset (local
+// `npm run serve`, vitest, or a deploy without the secret) the loader
+// short-circuits to `null` and analytics stay off — the EXP-21 contract
+// is never violated by a missing-key state, only by a non-allowlisted
+// event, which is caught at CI time by tests/analytics-allowlist.test.mjs.
 
 export const ALLOWED_EVENTS = Object.freeze([
   'persona_load',
@@ -54,11 +62,85 @@ export const ALLOWED_PROP_KEYS = Object.freeze([
 
 const ALLOWED_PROP_KEY_SET = new Set(ALLOWED_PROP_KEYS);
 
+const POSTHOG_HOST = 'https://us.i.posthog.com';
+// CDN-hosted ESM build, pinned to the v1 major. Lazy-imported on first
+// gesture so the cold-load bundle stays clean (EXP-24 budget).
+const POSTHOG_MODULE_URL = 'https://unpkg.com/posthog-js@1/dist/module.js';
+
 let posthogPromise = null;
 
-/** @internal — PR 2 sets this. Exported only for tests. */
+/** @internal — exported only for tests so they can stub the loader. */
 export function _setPosthogLoader(loader) {
   posthogPromise = loader();
+}
+
+/** @internal — exported only for tests so they can reset state between cases. */
+export function _resetPosthogForTests() {
+  posthogPromise = null;
+}
+
+function loadPosthog() {
+  if (posthogPromise) return posthogPromise;
+  // Browser-only. Importing this module from Node (vitest, the npm
+  // fixture package, the MCP server) must never trigger a network
+  // fetch. typeof-window is the cleanest gate.
+  if (typeof window === 'undefined') {
+    posthogPromise = Promise.resolve(null);
+    return posthogPromise;
+  }
+  const key = window.__POSTHOG_KEY__;
+  if (!key || typeof key !== 'string') {
+    posthogPromise = Promise.resolve(null);
+    return posthogPromise;
+  }
+  posthogPromise = import(/* @vite-ignore */ POSTHOG_MODULE_URL)
+    .then((mod) => {
+      const ph = mod.default ?? mod;
+      ph.init(key, {
+        api_host: POSTHOG_HOST,
+        // EXP-21: every default that captures something we didn't ask for
+        // is turned off explicitly. Defense in depth — the property
+        // allowlist in sanitise() is the actual gate.
+        autocapture: false,
+        capture_pageview: false,
+        capture_pageleave: false,
+        disable_session_recording: true,
+        disable_surveys: true,
+        // EXP-22: no cookies, no localStorage. distinctID is a fresh
+        // UUID per page reload, so PostHog never builds a cross-session
+        // identity for an anonymous visitor.
+        persistence: 'memory',
+        bootstrap: {
+          distinctID: typeof crypto !== 'undefined' && crypto.randomUUID
+            ? crypto.randomUUID()
+            : `s-${Math.random().toString(36).slice(2)}-${Date.now()}`,
+        },
+        property_blacklist: [
+          '$ip',
+          '$current_url',
+          '$pathname',
+          '$referrer',
+          '$initial_referrer',
+          '$referring_domain',
+          '$initial_referring_domain',
+          '$host',
+          '$browser',
+          '$device_id',
+          '$user_agent',
+        ],
+        sanitize_properties: (props) => sanitise(props ?? {}),
+        // SDK noise off — the shim already warns on bad input.
+        loaded: () => {},
+      });
+      return ph;
+    })
+    .catch((err) => {
+      if (typeof console !== 'undefined') {
+        console.warn('[analytics] PostHog SDK failed to load; analytics disabled', err);
+      }
+      return null;
+    });
+  return posthogPromise;
 }
 
 export async function track(event, props = {}) {
@@ -69,8 +151,9 @@ export async function track(event, props = {}) {
     return;
   }
   const sanitised = sanitise(props);
-  if (!posthogPromise) return;
-  const ph = await posthogPromise;
+  // Trigger the lazy load on the first allowlisted track() call. Subsequent
+  // calls reuse the cached promise.
+  const ph = await loadPosthog();
   ph?.capture?.(event, sanitised);
 }
 
