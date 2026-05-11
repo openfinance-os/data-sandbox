@@ -6,14 +6,18 @@
 //
 // Asserts:
 //   1. GET /health → { ok: true }
-//   2. POST /mcp initialize + tools/list returns the documented 16 tools
+//   2. POST /mcp initialize + tools/list returns the documented 26 tools
 //
 // Exits non-zero on any failure so deploy-mcp.yml can gate on it. Catches
 // the case where Fly says "deployed" but the container is crash-looping.
+//
+// Keep EXPECTED_TOOL_COUNT in lockstep with EXPECTED_TOOLS in
+// packages/sandbox-mcp/test/server.test.mjs — that list is the source of
+// truth for what tools/list should return.
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 
-const EXPECTED_TOOL_COUNT = 16;
+const EXPECTED_TOOL_COUNT = 26;
 const baseUrl = (process.argv[2] || '').replace(/\/+$/, '');
 if (!baseUrl) {
   console.error('usage: smoke.mjs <base-url>');
