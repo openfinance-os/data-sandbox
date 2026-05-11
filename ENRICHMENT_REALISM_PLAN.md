@@ -111,9 +111,13 @@ gated, so the existing replay tests (deterministic snapshots) only
 break where we explicitly enable the new layers.
 
 Hard constraint: every output must still fit `TransactionInformation`'s
-v2.1 length bound. Wrap the final assembly in the existing 22-char
-truncation, OR check the spec's actual `maxLength` and lift the cap if
-it's higher than 22.
+v2.1 length bound. Spec audit (see §Spec-conformance audit below):
+`TransactionInformation` is `type: string, minLength: 1, maxLength: 500`,
+no regex pattern. The current 22-char truncation in `bankishNarrative`
+is **generator policy, not a spec limit** — we can extend the working
+bound to ~80 chars (matching real ISO 20022 narrative widths) and stay
+well inside the 500-char ceiling. Arabic-script and other non-ASCII
+content is permitted (no `pattern` constraint).
 
 Files to modify:
 - `src/generator/realism.js` — new helpers
@@ -138,14 +142,22 @@ In `src/generator/transactions.js`:
   - `5541 → 5411 (petrol convenience store rings as grocery)`
   - `5812 → 5814 (cafe rings as fast-food)`
   - `5912 → 5411 (pharmacy in supermarket)`
-- Tag noisy transactions with an internal `_mccNoiseApplied: true`
-  field, **stripped on export** (per the existing `_*` convention in
-  `src/ui/export.js:16-23`). Ground truth still ships clean in
-  `MerchantDetails.MerchantCategoryCode`; the noise is in the dirty
-  narrative's category cues only.
+- The noisy MCC is the value emitted in
+  `MerchantDetails.MerchantCategoryCode` (this is what the bank would
+  actually send — the misrouting is real). The "true" MCC is stashed
+  internally as `_trueMcc`, **stripped on export** per the `_*`
+  convention in `src/ui/export.js:16-23`, and surfaced separately in a
+  ground-truth sidecar (see R4) keyed by `TransactionId`. That keeps
+  the v2.1 envelope honest while still giving the enrichment engine
+  something to score against.
 
 This way the enrichment engine's MCC-correction logic can be scored
 end-to-end: did it spot the misrouted ones?
+
+Spec note: `MerchantCategoryCode` is `type: string, minLength: 3,
+maxLength: 4` (ISO 18245). Any 4-digit MCC — correct or misrouted —
+is spec-valid; the spec doesn't validate semantic merchant↔MCC
+correctness.
 
 Files to add/modify:
 - `synthetic-identity-pool/merchants/mcc-confusion.yaml`
@@ -155,17 +167,22 @@ Files to add/modify:
 
 ## Phase R4 — Logo / brand reference sidecar
 
-v2.1 doesn't define a logo field — don't shoehorn one into
-`MerchantDetails`. Instead ship a separate, opt-in reference dataset.
+v2.1 doesn't define a logo field, **and the spec actively forbids
+extending the envelope to add one**. Both `AEMerchantDetails1` and
+`AESupplementaryData` carry `additionalProperties: false`, which
+means we can't smuggle a `Logo` field into either block — any
+extension attempt would fail spec validation (EXP-10). Sidecar is
+the only spec-conformant path.
 
 New artefact: `synthetic-identity-pool/merchants/_brand-registry.json`
 (generated, gitignored; built by a new `tools/build-brand-registry.mjs`).
-Shape:
+Keyed by the same `MerchantId` integer the v2.1 payload already emits
+(spec: `type: integer, minLength: 8, maxLength: 20`). Shape:
 
 ```json
 {
-  "Marketmark Hypermarket": {
-    "merchantId": "M-MARKETMARK",
+  "10000042": {
+    "merchantName": "Marketmark Hypermarket",
     "logoUrl": "/fixtures/v1/brands/marketmark.svg",
     "primaryColor": "#1f7a44",
     "website": "https://marketmark.example",
@@ -202,11 +219,16 @@ A short list of high-value edge cases worth seeding:
 
 - **Refund linking** — emit refund/reversal transactions whose
   narrative shares the original merchant cue but uses a `RFD/` or
-  `REV/` prefix. Enrichment should pair them.
+  `REV/` prefix. Set `SubTransactionType` to `Refund` or `Reversal`
+  (both already in the `AESubTransactionType` enum at spec line 4655).
+  Enrichment should pair them by merchant + amount + temporal proximity.
 - **Recurring subscriptions** — same merchant + same amount + monthly
   cadence. Enrichment should classify as recurring vs one-off. Already
   half-modelled by standing orders; extend to card-recurring (Netflix-
-  style) where the standing-order endpoint wouldn't show it.
+  style) where the standing-order endpoint wouldn't show it. Spec note:
+  the `Flags` enum (line 1487) does NOT include a `Recurring` value —
+  recurrence is detectable only via narrative cues + cadence pattern,
+  not via a structured flag. That's actually realistic.
 - **Tip-bearing dining** — split base + tip in the narrative
   (`POS/CEDARPLATE+T 18%`) — enrichment should recover base amount.
 - **Multi-currency same merchant** — same coffee chain in DXB (AED) +
@@ -324,6 +346,37 @@ For each phase:
   models) — wrong tool, wrong dataset
 - Insurance domain — same realism principles would apply but a separate
   plan; this doc is banking-only
+
+## Spec-conformance audit
+
+Every recommendation above has been checked against
+`spec/uae-account-information-openapi.yaml` (UAE Open Finance v2.1,
+pinned). Citations:
+
+| Field / construct          | Spec line | Constraint                                                  | Implication for the plan                                                |
+|---------------------------- |---------- |------------------------------------------------------------ |------------------------------------------------------------------------ |
+| `TransactionInformation`   | 2262      | `string`, 1–500, no `pattern`                               | R2 narrative dirtying + Arabic-Latin transliteration both fit; raise the in-generator 22-char policy cap to ~80 |
+| `MerchantName`             | 2857      | `string`, 1–350                                             | R2 DBA-drift variants fit easily                                        |
+| `MerchantCategoryCode`     | 2861      | `string`, 3–4 (ISO 18245)                                   | R1's new MCCs and R3's misrouted MCCs are all spec-valid                |
+| `MerchantId`               | 2852      | **`integer`**, 8–20 digits                                  | R4 brand-registry MUST be keyed by integer MerchantId, not a string slug — corrected above |
+| `TerminalId`               | 3641      | **`integer`**, 8–20 digits                                  | If we ever populate this field (currently we don't), digits only — narrative suffixes are unconstrained |
+| `TransactionType` enum     | 1468      | `POS`, `ECommerce`, `ATM`, `BillPayments`, `LocalBankTransfer`, `SameBankTransfer`, `InternationalTransfer`, `Teller`, `Cheque`, `Other` | R1's new categories all map to these — `ride_hailing` → `POS`/`ECommerce`, `government` → `BillPayments`, `subscriptions` → `ECommerce`, etc. No new enum values needed |
+| `AESubTransactionType` enum | 4655     | includes `Purchase`, `Reversal`, `Refund`, `WithdrawalReversal`, `DepositReversal`, `MoneyTransfer`, `Repayments`, `Fee`, `Charges`, `Rewards`, … | R5 refund/reversal/retry edge cases are spec-supported via this field   |
+| `Flags` enum               | 1487      | `Cashback`, `Payroll`, `DirectDebit`, `StandingOrder`, `Finance`, `Dividend`, `OpenFinance` | No `Recurring` flag — R5 recurring-subscription detection must be inferred, not flagged |
+| `AEMerchantDetails1`       | 2844      | `additionalProperties: false`                               | **Cannot add `Logo` or any new field to MerchantDetails** — sidecar required (R4) |
+| `AESupplementaryData`      | 3223      | `properties: {}`, `additionalProperties: false`             | **Cannot extend the envelope at all via SupplementaryData** — sidecar is the only legal extension surface (R4) |
+| `AETransaction.required`   | 3257      | `TransactionId`, `CreditDebitIndicator`, `Status`, `BookingDateTime`, `Amount`, `TransactionDateTime`, `TransactionType`, `SubTransactionType` | Mandatory set unchanged by this plan; LFI redaction (Sparse profile) must continue to leave these alone (EXP-04) |
+
+**Net spec-conformance verdict**: every phase of this plan stays
+inside v2.1. The two would-have-been-tempting shortcuts — adding a
+`Logo` field to `MerchantDetails` or stuffing arbitrary enrichment
+hints into `SupplementaryData` — are both blocked by
+`additionalProperties: false`, which is why R4 ships as a sidecar
+dataset rather than an envelope extension. The single existing CI
+check that enforces this is the per-endpoint snapshot validation
+(EXP-10 — `tests/spec-validation.test.js` runs every generated
+payload through the v2.1 schema). All R1–R6 changes need to leave
+that suite green at every commit.
 
 ## Open questions for the maintainer
 
