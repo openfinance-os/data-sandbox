@@ -10,7 +10,7 @@
 //   /accounts/{AccountId}/beneficiaries — CreditorAccount[].Identification
 //   /accounts/{AccountId}/standing-orders — CreditorAccount[].Identification
 //   /accounts/{AccountId}/scheduled-payments — CreditorAccount[].Identification
-// is checked. That's 21 personas × 3 LFIs × ~10 IBAN-bearing records per
+// is checked. That's 27 personas × 3 LFIs × ~10 IBAN-bearing records per
 // account = several thousand validations.
 
 import { describe, it, expect } from 'vitest';

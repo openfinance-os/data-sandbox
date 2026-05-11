@@ -58,6 +58,13 @@ import {
 import { generateEmploymentQuote } from './employment-quote.js';
 import { generateConsentRecord } from './consents.js';
 import { applyInsuranceLfiProfile } from './lfi-profile.js';
+import {
+  makePolicyDetail,
+  makePolicySummary,
+  makePaymentDetails,
+  makeBundleIdentity,
+  pickRandomBankName,
+} from './_shared.js';
 
 const DEFAULT_NOW = new Date(Date.UTC(2026, 3, 1, 0, 0, 0));
 
@@ -151,31 +158,20 @@ function buildMotorBundle({ persona, lfi, seed, pools, now }) {
 
   const insurancePolicyId = genUuid(rng);
 
-  const motorPolicyDetail = {
-    InsurancePolicyId: insurancePolicyId,
-    PolicyHolder: policyHolder,
-    Identity: identity,
-    Product: product,
-    Claims: claims,
-    Premium: premium,
-  };
+  const motorPolicyDetail = makePolicyDetail({ insurancePolicyId, policyHolder, identity, product, claims, premium });
 
-  const motorPolicySummary = {
-    InsurancePolicyId: insurancePolicyId,
-    PolicyNumber: product.Policy.PolicyNumber,
-    PolicyStatus: 'New',
-    PolicyStartDate: product.Policy.PolicyStartDate,
-    PolicyEndDate: isoDate(now, 365 - persona.policy.start_date_offset_days),
-  };
+  const motorPolicySummary = makePolicySummary({
+    insurancePolicyId,
+    policyNumber: product.Policy.PolicyNumber,
+    startDate: product.Policy.PolicyStartDate,
+    endDate: isoDate(now, 365 - persona.policy.start_date_offset_days),
+  });
 
-  const bank =
-    product.CarFinance?.BankName ??
-    p.banks.banks[Math.floor(rng() * p.banks.banks.length)].name;
+  // Motor's bank fallback uses CarFinance.BankName when present; only draw
+  // from the counterparty pool otherwise — matches pre-refactor draw order.
+  const bank = product.CarFinance?.BankName ?? pickRandomBankName(p.banks, rng);
   const accountIban = genUaeIban(rng);
-  const paymentDetails = {
-    Account: { Identification: accountIban, SchemeName: 'IBAN', Name: `${name.given} ${name.surname}` },
-    Bank: { Name: bank },
-  };
+  const paymentDetails = makePaymentDetails({ accountIban, name, bankName: bank });
 
   const motorQuote = generateMotorQuote({ persona, rng, now });
 
@@ -184,12 +180,7 @@ function buildMotorBundle({ persona, lfi, seed, pools, now }) {
     name: persona.name,
     domain: 'insurance',
     line: 'motor',
-    identity: {
-      fullName: `${name.given} ${name.surname}`,
-      given: name.given,
-      surname: name.surname,
-      namePoolId: persona.demographics.nationality_pool,
-    },
+    identity: makeBundleIdentity({ name, persona }),
     motorPolicies: [motorPolicyDetail],
     motorPolicySummaries: [motorPolicySummary],
     paymentDetails,
@@ -226,29 +217,12 @@ function buildHealthBundle({ persona, lfi, seed, pools, now }) {
 
   const insurancePolicyId = genUuid(rng);
 
-  const healthPolicyDetail = {
-    InsurancePolicyId: insurancePolicyId,
-    PolicyHolder: policyHolder,
-    Identity: identity,
-    Product: product,
-    Claims: claims,
-    Premium: premium,
-  };
+  const healthPolicyDetail = makePolicyDetail({ insurancePolicyId, policyHolder, identity, product, claims, premium });
+  const healthPolicySummary = makePolicySummary({ insurancePolicyId, policyNumber, startDate, endDate });
 
-  const healthPolicySummary = {
-    InsurancePolicyId: insurancePolicyId,
-    PolicyNumber: policyNumber,
-    PolicyStatus: 'New',
-    PolicyStartDate: startDate,
-    PolicyEndDate: endDate,
-  };
-
-  const bankName = p.banks.banks[Math.floor(rng() * p.banks.banks.length)].name;
+  const bankName = pickRandomBankName(p.banks, rng);
   const accountIban = genUaeIban(rng);
-  const paymentDetails = {
-    Account: { Identification: accountIban, SchemeName: 'IBAN', Name: `${name.given} ${name.surname}` },
-    Bank: { Name: bankName },
-  };
+  const paymentDetails = makePaymentDetails({ accountIban, name, bankName });
 
   const healthQuote = generateHealthQuote({ persona, rng, now });
 
@@ -257,12 +231,7 @@ function buildHealthBundle({ persona, lfi, seed, pools, now }) {
     name: persona.name,
     domain: 'insurance',
     line: 'health',
-    identity: {
-      fullName: `${name.given} ${name.surname}`,
-      given: name.given,
-      surname: name.surname,
-      namePoolId: persona.demographics.nationality_pool,
-    },
+    identity: makeBundleIdentity({ name, persona }),
     healthPolicies: [healthPolicyDetail],
     healthPolicySummaries: [healthPolicySummary],
     paymentDetails,
@@ -293,29 +262,12 @@ function buildRentersBundle({ persona, lfi, seed, pools, now }) {
 
   const insurancePolicyId = genUuid(rng);
 
-  const rentersPolicyDetail = {
-    InsurancePolicyId: insurancePolicyId,
-    PolicyHolder: policyHolder,
-    Identity: identity,
-    Product: product,
-    Claims: claims,
-    Premium: premium,
-  };
+  const rentersPolicyDetail = makePolicyDetail({ insurancePolicyId, policyHolder, identity, product, claims, premium });
+  const rentersPolicySummary = makePolicySummary({ insurancePolicyId, policyNumber, startDate, endDate });
 
-  const rentersPolicySummary = {
-    InsurancePolicyId: insurancePolicyId,
-    PolicyNumber: policyNumber,
-    PolicyStatus: 'New',
-    PolicyStartDate: startDate,
-    PolicyEndDate: endDate,
-  };
-
-  const bankName = p.banks.banks[Math.floor(rng() * p.banks.banks.length)].name;
+  const bankName = pickRandomBankName(p.banks, rng);
   const accountIban = genUaeIban(rng);
-  const paymentDetails = {
-    Account: { Identification: accountIban, SchemeName: 'IBAN', Name: `${name.given} ${name.surname}` },
-    Bank: { Name: bankName },
-  };
+  const paymentDetails = makePaymentDetails({ accountIban, name, bankName });
 
   const rentersQuote = generateRentersQuote({ persona, rng, now });
 
@@ -324,12 +276,7 @@ function buildRentersBundle({ persona, lfi, seed, pools, now }) {
     name: persona.name,
     domain: 'insurance',
     line: 'renters',
-    identity: {
-      fullName: `${name.given} ${name.surname}`,
-      given: name.given,
-      surname: name.surname,
-      namePoolId: persona.demographics.nationality_pool,
-    },
+    identity: makeBundleIdentity({ name, persona }),
     rentersPolicies: [rentersPolicyDetail],
     rentersPolicySummaries: [rentersPolicySummary],
     paymentDetails,
@@ -369,29 +316,12 @@ function buildEmploymentBundle({ persona, lfi, seed, pools, now }) {
 
   const insurancePolicyId = genUuid(rng);
 
-  const employmentPolicyDetail = {
-    InsurancePolicyId: insurancePolicyId,
-    PolicyHolder: policyHolder,
-    Identity: identity,
-    Product: product,
-    Claims: claims,
-    Premium: premium,
-  };
+  const employmentPolicyDetail = makePolicyDetail({ insurancePolicyId, policyHolder, identity, product, claims, premium });
+  const employmentPolicySummary = makePolicySummary({ insurancePolicyId, policyNumber, startDate, endDate });
 
-  const employmentPolicySummary = {
-    InsurancePolicyId: insurancePolicyId,
-    PolicyNumber: policyNumber,
-    PolicyStatus: 'New',
-    PolicyStartDate: startDate,
-    PolicyEndDate: endDate,
-  };
-
-  const bankName = p.banks.banks[Math.floor(rng() * p.banks.banks.length)].name;
+  const bankName = pickRandomBankName(p.banks, rng);
   const accountIban = genUaeIban(rng);
-  const paymentDetails = {
-    Account: { Identification: accountIban, SchemeName: 'IBAN', Name: `${name.given} ${name.surname}` },
-    Bank: { Name: bankName },
-  };
+  const paymentDetails = makePaymentDetails({ accountIban, name, bankName });
 
   const employmentQuote = generateEmploymentQuote({ persona, rng, now });
 
@@ -400,12 +330,7 @@ function buildEmploymentBundle({ persona, lfi, seed, pools, now }) {
     name: persona.name,
     domain: 'insurance',
     line: 'employment',
-    identity: {
-      fullName: `${name.given} ${name.surname}`,
-      given: name.given,
-      surname: name.surname,
-      namePoolId: persona.demographics.nationality_pool,
-    },
+    identity: makeBundleIdentity({ name, persona }),
     employmentPolicies: [employmentPolicyDetail],
     employmentPolicySummaries: [employmentPolicySummary],
     paymentDetails,
@@ -437,29 +362,12 @@ function buildTravelBundle({ persona, lfi, seed, pools, now }) {
 
   const insurancePolicyId = genUuid(rng);
 
-  const travelPolicyDetail = {
-    InsurancePolicyId: insurancePolicyId,
-    PolicyHolder: policyHolder,
-    Identity: identity,
-    Product: product,
-    Claims: claims,
-    Premium: premium,
-  };
+  const travelPolicyDetail = makePolicyDetail({ insurancePolicyId, policyHolder, identity, product, claims, premium });
+  const travelPolicySummary = makePolicySummary({ insurancePolicyId, policyNumber, startDate, endDate });
 
-  const travelPolicySummary = {
-    InsurancePolicyId: insurancePolicyId,
-    PolicyNumber: policyNumber,
-    PolicyStatus: 'New',
-    PolicyStartDate: startDate,
-    PolicyEndDate: endDate,
-  };
-
-  const bankName = p.banks.banks[Math.floor(rng() * p.banks.banks.length)].name;
+  const bankName = pickRandomBankName(p.banks, rng);
   const accountIban = genUaeIban(rng);
-  const paymentDetails = {
-    Account: { Identification: accountIban, SchemeName: 'IBAN', Name: `${name.given} ${name.surname}` },
-    Bank: { Name: bankName },
-  };
+  const paymentDetails = makePaymentDetails({ accountIban, name, bankName });
 
   const travelQuote = generateTravelQuote({ persona, rng, now });
 
@@ -468,12 +376,7 @@ function buildTravelBundle({ persona, lfi, seed, pools, now }) {
     name: persona.name,
     domain: 'insurance',
     line: 'travel',
-    identity: {
-      fullName: `${name.given} ${name.surname}`,
-      given: name.given,
-      surname: name.surname,
-      namePoolId: persona.demographics.nationality_pool,
-    },
+    identity: makeBundleIdentity({ name, persona }),
     travelPolicies: [travelPolicyDetail],
     travelPolicySummaries: [travelPolicySummary],
     paymentDetails,
@@ -507,33 +410,14 @@ function buildLifeBundle({ persona, lfi, seed, pools, now }) {
 
   const insurancePolicyId = genUuid(rng);
 
-  const lifePolicyDetail = {
-    InsurancePolicyId: insurancePolicyId,
-    PolicyHolder: policyHolder,
-    Identity: identity,
-    Product: product,
-    Claims: claims,
-    Premium: premium,
-  };
-
-  const lifePolicySummary = {
-    InsurancePolicyId: insurancePolicyId,
-    PolicyNumber: policyNumber,
-    PolicyStatus: 'New',
-    PolicyStartDate: startDate,
-    PolicyEndDate: endDate,
-  };
+  const lifePolicyDetail = makePolicyDetail({ insurancePolicyId, policyHolder, identity, product, claims, premium });
+  const lifePolicySummary = makePolicySummary({ insurancePolicyId, policyNumber, startDate, endDate });
 
   // Use the FinanceAgainstPolicy bank when present (mortgage-protection
   // narrative), otherwise draw a counterparty bank.
-  const bankName =
-    product.FinanceAgainstPolicy?.FinanceProvider ??
-    p.banks.banks[Math.floor(rng() * p.banks.banks.length)].name;
+  const bankName = product.FinanceAgainstPolicy?.FinanceProvider ?? pickRandomBankName(p.banks, rng);
   const accountIban = genUaeIban(rng);
-  const paymentDetails = {
-    Account: { Identification: accountIban, SchemeName: 'IBAN', Name: `${name.given} ${name.surname}` },
-    Bank: { Name: bankName },
-  };
+  const paymentDetails = makePaymentDetails({ accountIban, name, bankName });
 
   const lifeQuote = generateLifeQuote({ persona, rng, now });
 
@@ -542,12 +426,7 @@ function buildLifeBundle({ persona, lfi, seed, pools, now }) {
     name: persona.name,
     domain: 'insurance',
     line: 'life',
-    identity: {
-      fullName: `${name.given} ${name.surname}`,
-      given: name.given,
-      surname: name.surname,
-      namePoolId: persona.demographics.nationality_pool,
-    },
+    identity: makeBundleIdentity({ name, persona }),
     lifePolicies: [lifePolicyDetail],
     lifePolicySummaries: [lifePolicySummary],
     paymentDetails,
@@ -573,7 +452,7 @@ function buildHomeBundle({ persona, lfi, seed, pools, now }) {
   // the persona's Mortgage.BankName and the payment-details Bank.Name.
   let mortgageBankName = null;
   if (persona.home?.mortgage?.has_mortgage) {
-    mortgageBankName = p.banks.banks[Math.floor(rng() * p.banks.banks.length)].name;
+    mortgageBankName = pickRandomBankName(p.banks, rng);
     persona = {
       ...persona,
       home: {
@@ -593,30 +472,12 @@ function buildHomeBundle({ persona, lfi, seed, pools, now }) {
 
   const insurancePolicyId = genUuid(rng);
 
-  const homePolicyDetail = {
-    InsurancePolicyId: insurancePolicyId,
-    PolicyHolder: policyHolder,
-    Identity: identity,
-    Product: product,
-    Claims: claims,
-    Premium: premium,
-  };
+  const homePolicyDetail = makePolicyDetail({ insurancePolicyId, policyHolder, identity, product, claims, premium });
+  const homePolicySummary = makePolicySummary({ insurancePolicyId, policyNumber, startDate, endDate });
 
-  const homePolicySummary = {
-    InsurancePolicyId: insurancePolicyId,
-    PolicyNumber: policyNumber,
-    PolicyStatus: 'New',
-    PolicyStartDate: startDate,
-    PolicyEndDate: endDate,
-  };
-
-  const bankName =
-    mortgageBankName ?? p.banks.banks[Math.floor(rng() * p.banks.banks.length)].name;
+  const bankName = mortgageBankName ?? pickRandomBankName(p.banks, rng);
   const accountIban = genUaeIban(rng);
-  const paymentDetails = {
-    Account: { Identification: accountIban, SchemeName: 'IBAN', Name: `${name.given} ${name.surname}` },
-    Bank: { Name: bankName },
-  };
+  const paymentDetails = makePaymentDetails({ accountIban, name, bankName });
 
   const homeQuote = generateHomeQuote({ persona, rng, now });
 
@@ -625,12 +486,7 @@ function buildHomeBundle({ persona, lfi, seed, pools, now }) {
     name: persona.name,
     domain: 'insurance',
     line: 'home',
-    identity: {
-      fullName: `${name.given} ${name.surname}`,
-      given: name.given,
-      surname: name.surname,
-      namePoolId: persona.demographics.nationality_pool,
-    },
+    identity: makeBundleIdentity({ name, persona }),
     homePolicies: [homePolicyDetail],
     homePolicySummaries: [homePolicySummary],
     paymentDetails,

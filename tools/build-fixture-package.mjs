@@ -10,40 +10,21 @@ import { fileURLToPath } from 'node:url';
 import { buildBundle } from '../src/generator/index.js';
 import { buildRoleBundle } from '../src/generator/multi-lfi.js';
 import { envelopesFromBundle } from '../src/ui/export.js';
-import { loadPersonasByDomain, loadAllPools } from './load-fixtures.mjs';
+import { loadPersonasByDomain, loadAllPools, repoRoot } from './load-fixtures.mjs';
+import {
+  readPackageVersion,
+  readNowAnchor,
+  readSpecSha,
+  safeEndpointName as safeName,
+} from './build-shared.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const repoRoot = path.resolve(__dirname, '..');
 
-const PKG_VERSION = readSandboxVersion() || '0.0.0';
+const PKG_VERSION = readPackageVersion() || '0.0.0';
 const OUT = path.join(repoRoot, 'packages/sandbox-fixtures');
 const NOW_ANCHOR = readNowAnchor();
-const SHA = readSha();
-
-function readSandboxVersion() {
-  try {
-    const pkg = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
-    return pkg.version;
-  } catch { return null; }
-}
-
-function readNowAnchor() {
-  const f = path.join(repoRoot, 'spec/SPEC_PIN.retrieved');
-  if (!fs.existsSync(f)) return new Date(Date.UTC(2026, 3, 1)).toISOString();
-  const ts = fs.readFileSync(f, 'utf8').trim();
-  const d = new Date(ts);
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)).toISOString();
-}
-
-function readSha() {
-  const f = path.join(repoRoot, 'spec/SPEC_PIN.sha');
-  return fs.existsSync(f) ? fs.readFileSync(f, 'utf8').trim() : 'unknown';
-}
-
-function safeName(s) {
-  return s.replace(/^\//, '').replace(/\//g, '__').replace(/[{}]/g, '');
-}
+const SHA = readSpecSha();
 
 if (fs.existsSync(OUT)) fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(path.join(OUT, 'bundles'), { recursive: true });
@@ -735,9 +716,9 @@ const readme = `# @openfinance-os/sandbox-fixtures
 Deterministic, v2.1-shaped UAE Open Finance synthetic fixtures from the
 [Open Finance Data Sandbox](https://github.com/openfinance-os/data-sandbox).
 
-18 banking personas × 3 LFI profiles × every v2.1 Account-Information
-endpoint per persona's accounts = **900+ fixtures**, plus the parsed v2.1
-OpenAPI spec and the persona manifests.
+27 personas (18 banking + 9 insurance) × 3 LFI profiles × every v2.1 endpoint
+per persona's accounts/policies = **~2,000 fixtures**, plus the parsed v2.1
+OpenAPI specs (banking + insurance) and the persona manifests.
 
 ## Install
 
@@ -783,9 +764,9 @@ const { loadFixture } = require('@openfinance-os/sandbox-fixtures');
 
 ## What's in the box
 
-- \`bundles/<persona>/<lfi>/seed-<n>/<endpoint>.json\` — 900+ fixtures (18 banking personas × 3 LFIs × every Account-Information endpoint per persona's accounts; the per-account endpoints multiply by account count). Each is a v2.1-correct \`{ Data, Links, Meta }\` envelope plus watermark fields (\`_persona\`, \`_lfi\`, \`_seed\`, \`_specSha\`).
+- \`bundles/<persona>/<lfi>/seed-<n>/<endpoint>.json\` — ~2,000 fixtures across two domains. Banking: 18 personas × 3 LFIs × every Account-Information endpoint per persona's accounts. Insurance: 9 personas (motor, home, health, life, travel, renters, employment) × 3 LFIs × the per-line endpoint set. Each is a v2.1-correct \`{ Data, Links, Meta }\` envelope plus watermark fields (\`_persona\`, \`_lfi\`, \`_seed\`, \`_specSha\`).
 - \`personas/<persona>.json\` — persona manifest (demographics, fixed commitments, stress coverage, narrative).
-- \`spec.json\` — the parsed UAE Open Finance v2.1 OpenAPI spec, keyed by endpoint with field metadata.
+- \`spec.json\` — the parsed UAE Open Finance v2.1 Account-Information spec, keyed by endpoint with field metadata. The insurance spec is sibling-loadable via \`loadSpec({ domain: 'insurance' })\`.
 - \`manifest.json\` — top-level index keyed by \`<persona>|<lfi>|<seed>\`.
 
 ## Determinism

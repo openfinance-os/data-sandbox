@@ -2,10 +2,10 @@
 // validates against the v2.1 OpenAPI schema after underscore-prefixed
 // sandbox metadata is stripped. This covers:
 //
-//   - Primary bundles (manifest.fixtures) for all 21 personas × 3 LFIs.
+//   - Primary bundles (manifest.fixtures) for all 27 personas × 3 LFIs.
 //   - Role bundles (manifest.roleFixtures) for the 6 personas with
 //     multi_lfi_footprint × {secondary, tertiary} × 3 LFIs.
-//   - Insurance bundles for the motor-domain personas.
+//   - Insurance bundles for all 9 insurance personas across 7 lines.
 //
 // Defense-in-depth on top of `tests/spec-validation.test.mjs` (which
 // validates the IN-MEMORY bundle after strip) — this test ensures

@@ -19,6 +19,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..');
 
+// Cycle guard depth ceiling. The v2.1 spec's deepest legitimate path bottoms
+// out around 12 (Account → Servicer → … → Address); 32 leaves headroom for
+// future spec growth without exploding on a malformed self-referential $ref.
+const MAX_SCHEMA_DEPTH = 32;
+
 /** Resolve a $ref like "#/components/schemas/X" to the referenced node. */
 function resolveRef(spec, ref) {
   if (typeof ref !== 'string' || !ref.startsWith('#/')) return null;
@@ -41,7 +46,7 @@ function resolveRef(spec, ref) {
  * @param {object[]} out - Accumulator for emitted field records.
  */
 function walkSchema(spec, schema, pathParts, parentRequired, seen, out, depth = 0) {
-  if (!schema || depth > 32) return;
+  if (!schema || depth > MAX_SCHEMA_DEPTH) return;
 
   // Resolve a top-level $ref by following it once.
   if (schema.$ref) {
