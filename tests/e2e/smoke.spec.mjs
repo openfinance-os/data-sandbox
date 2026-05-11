@@ -1,17 +1,14 @@
 // Phase 0 e2e smoke + a11y. Loads the sandbox, asserts the persona list and
 // payload table render, switches to the transactions endpoint and asserts the
 // row count, then runs axe-core (EXP-23 acceptance gate).
+//
+// Console / pageerror catcher is provided globally by `_fixtures.mjs` — any
+// console error fails the test.
 
-import { test, expect } from '@playwright/test';
+import { test, expect, loadPersona } from './_fixtures.mjs';
 import AxeBuilder from '@axe-core/playwright';
 
 test('renders Sara, switches endpoints, no console errors, axe-clean', async ({ page }) => {
-  const consoleErrors = [];
-  page.on('console', (msg) => {
-    if (msg.type() === 'error') consoleErrors.push(msg.text());
-  });
-  page.on('pageerror', (err) => consoleErrors.push(`pageerror: ${err.message}`));
-
   await page.goto('/src/index.html');
 
   // Persona list rendered.
@@ -46,14 +43,10 @@ test('renders Sara, switches endpoints, no console errors, axe-clean', async ({ 
     console.error('axe violations:', JSON.stringify(axeResults.violations, null, 2));
   }
   expect(axeResults.violations).toEqual([]);
-
-  // No console errors throughout the run.
-  expect(consoleErrors, `console errors: ${consoleErrors.join('\n')}`).toHaveLength(0);
 });
 
 test('determinism — same URL produces same coverage on two loads', async ({ page }) => {
-  await page.goto('/src/index.html?lfi=median&seed=4729');
-  await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
+  await loadPersona(page, { persona: 'salaried_expat_mid', lfi: 'median', seed: '4729' });
   const first = await page.locator('#coverage-pct').textContent();
   await page.reload();
   await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
@@ -62,22 +55,30 @@ test('determinism — same URL produces same coverage on two loads', async ({ pa
 });
 
 test('transactions filter narrows the row set — EXP-11', async ({ page }) => {
-  await page.goto('/src/index.html?persona=hnw_multicurrency&lfi=median&seed=1');
-  await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
-  await page.locator('.nav-endpoint', { hasText: '/transactions' }).first().click();
-  const beforeCount = await page.locator('.payload-rendered tbody tr').count();
+  await loadPersona(page, {
+    persona: 'hnw_multicurrency',
+    lfi: 'median',
+    seed: '1',
+    endpoint: '/transactions',
+  });
+  const rows = page.locator('.payload-rendered tbody tr');
+  const beforeCount = await rows.count();
   expect(beforeCount).toBeGreaterThan(0);
   await page.locator('select[name="type"]').selectOption('InternationalTransfer');
-  await page.waitForTimeout(150);
-  const afterCount = await page.locator('.payload-rendered tbody tr').count();
-  expect(afterCount).toBeLessThan(beforeCount);
+  // Wait for the filtered set to settle below the original count rather than
+  // sleeping a wall-clock 150 ms.
+  await expect.poll(() => rows.count()).toBeLessThan(beforeCount);
+  const afterCount = await rows.count();
   expect(afterCount).toBeGreaterThan(0);
 });
 
 test('cross-link from standing-orders highlights matching transactions — EXP-12', async ({ page }) => {
-  await page.goto('/src/index.html?persona=salaried_emirati_affluent&lfi=median&seed=1');
-  await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
-  await page.locator('.nav-endpoint', { hasText: '/standing-orders' }).first().click();
+  await loadPersona(page, {
+    persona: 'salaried_emirati_affluent',
+    lfi: 'median',
+    seed: '1',
+    endpoint: '/standing-orders',
+  });
   await page.locator('.payload-rendered tbody tr').first().click();
   await expect(page.locator('.cross-link-banner')).toBeVisible();
   await expect(page.locator('#endpoint-label')).toContainText('/transactions');
@@ -101,8 +102,7 @@ test('identity posture — no cookies / localStorage writes / non-static fetches
   page.on('request', (req) => {
     if (req.frame() === page.mainFrame()) fetchedUrls.push(req.url());
   });
-  await page.goto('/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729');
-  await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
+  await loadPersona(page, { persona: 'salaried_expat_mid', lfi: 'median', seed: '4729' });
 
   // Cookies — none should be set by the app on this origin.
   const cookies = await context.cookies('http://127.0.0.1:8765');
@@ -137,10 +137,8 @@ test('about page renders with live spec metadata', async ({ page }) => {
 });
 
 test('insurance domain renders motor persona, switches endpoints, no console errors', async ({ page }) => {
-  const consoleErrors = [];
-  page.on('console', (msg) => { if (msg.type() === 'error') consoleErrors.push(msg.text()); });
-  page.on('pageerror', (err) => consoleErrors.push(`pageerror: ${err.message}`));
-
+  // Insurance personas don't drive coverage-pct, so use a raw goto + body wait
+  // instead of the loadPersona helper (which polls #coverage-pct).
   await page.goto('/src/index.html?domain=insurance&persona=motor_comprehensive_mid&lfi=median&seed=4729');
 
   // Active persona card is the motor one.
@@ -157,13 +155,10 @@ test('insurance domain renders motor persona, switches endpoints, no console err
   // Click into the payment-details endpoint and verify the body re-renders.
   await page.locator('.nav-endpoint', { hasText: '/payment-details' }).first().click();
   await expect(page.locator('.insurance-payload')).toBeVisible();
-
-  expect(consoleErrors, `console errors: ${consoleErrors.join('\n')}`).toEqual([]);
 });
 
 test('tour walks through 5 steps and finishes cleanly', async ({ page }) => {
-  await page.goto('/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729');
-  await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
+  await loadPersona(page);
   await page.locator('#tour-btn').click();
   // Step 1 visible.
   await expect(page.locator('#tour-overlay')).toBeVisible();
@@ -179,8 +174,7 @@ test('tour walks through 5 steps and finishes cleanly', async ({ page }) => {
 });
 
 test('Cmd+K opens find box and field result jumps to the field card', async ({ page }) => {
-  await page.goto('/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729');
-  await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
+  await loadPersona(page);
   await page.locator('#find-btn').click();
   await expect(page.locator('#find-overlay')).toBeVisible();
   await page.locator('.find-input').fill('Payroll');
@@ -191,9 +185,7 @@ test('Cmd+K opens find box and field result jumps to the field card', async ({ p
 });
 
 test('Compare-LFIs shows two side-by-side panels with diff classes — EXP-16', async ({ page }) => {
-  await page.goto('/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729');
-  await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
-  await page.locator('.nav-endpoint', { hasText: '/transactions' }).first().click();
+  await loadPersona(page, { endpoint: '/transactions' });
   // Compare is decoupled from the rendered/raw view-mode toggle (PRD §UX
   // audit recommendation #6) — '+ Compare' in the LFI segmented control
   // turns on a partner LFI and pivots renderPayload to the side-by-side.
@@ -208,8 +200,7 @@ test('Compare-LFIs shows two side-by-side panels with diff classes — EXP-16', 
 });
 
 test('Stress-chip filter narrows the persona library', async ({ page }) => {
-  await page.goto('/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729');
-  await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
+  await loadPersona(page);
   const fullCount = await page.locator('.persona-card').count();
   // Click the first stress chip on Khalid's card (high DBR)
   await page.locator('.persona-card', { hasText: 'Khalid' }).locator('.stress-chip', { hasText: 'high DBR' }).first().click();
@@ -221,9 +212,7 @@ test('Stress-chip filter narrows the persona library', async ({ page }) => {
 });
 
 test('Monthly summary shows 12-row roll-up on /transactions', async ({ page }) => {
-  await page.goto('/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729');
-  await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
-  await page.locator('.nav-endpoint', { hasText: '/transactions' }).first().click();
+  await loadPersona(page, { endpoint: '/transactions' });
   const rolled = page.locator('.tx-monthly');
   await expect(rolled).toBeVisible();
   await expect(rolled.locator('summary')).toContainText('Monthly summary');
@@ -234,8 +223,7 @@ test('Monthly summary shows 12-row roll-up on /transactions', async ({ page }) =
 });
 
 test('Underwriting panel renders 4 signals — EXP-18', async ({ page }) => {
-  await page.goto('/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729');
-  await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
+  await loadPersona(page);
   await page.locator('.nav-endpoint', { hasText: 'Underwriting summary' }).click();
   await expect(page.locator('.uw-panel')).toBeVisible();
   await expect(page.locator('.uw-card-title', { hasText: 'Implied monthly net income' })).toBeVisible();
@@ -245,8 +233,7 @@ test('Underwriting panel renders 4 signals — EXP-18', async ({ page }) => {
 });
 
 test('Senior persona triggers low-volume guard — EXP-18', async ({ page }) => {
-  await page.goto('/src/index.html?persona=senior_retiree&lfi=median&seed=4729');
-  await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
+  await loadPersona(page, { persona: 'senior_retiree' });
   await page.locator('.nav-endpoint', { hasText: 'Underwriting summary' }).click();
   await expect(page.locator('.uw-guard')).toBeVisible();
   await expect(page.locator('.uw-guard')).toContainText('Low-volume guard');
@@ -256,9 +243,7 @@ test('Senior persona triggers low-volume guard — EXP-18', async ({ page }) => 
 });
 
 test('field card shows all 9 elements + Report-an-issue link', async ({ page }) => {
-  await page.goto('/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729');
-  await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
-  await page.locator('.nav-endpoint', { hasText: '/transactions' }).first().click();
+  await loadPersona(page, { endpoint: '/transactions' });
   await page.locator('.field-name', { hasText: 'TransactionId' }).first().click();
   const fc = page.locator('#fc-content');
   await expect(fc).toBeVisible();
