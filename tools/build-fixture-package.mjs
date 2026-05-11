@@ -10,40 +10,21 @@ import { fileURLToPath } from 'node:url';
 import { buildBundle } from '../src/generator/index.js';
 import { buildRoleBundle } from '../src/generator/multi-lfi.js';
 import { envelopesFromBundle } from '../src/ui/export.js';
-import { loadPersonasByDomain, loadAllPools } from './load-fixtures.mjs';
+import { loadPersonasByDomain, loadAllPools, repoRoot } from './load-fixtures.mjs';
+import {
+  readPackageVersion,
+  readNowAnchor,
+  readSpecSha,
+  safeEndpointName as safeName,
+} from './build-shared.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const repoRoot = path.resolve(__dirname, '..');
 
-const PKG_VERSION = readSandboxVersion() || '0.0.0';
+const PKG_VERSION = readPackageVersion() || '0.0.0';
 const OUT = path.join(repoRoot, 'packages/sandbox-fixtures');
 const NOW_ANCHOR = readNowAnchor();
-const SHA = readSha();
-
-function readSandboxVersion() {
-  try {
-    const pkg = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
-    return pkg.version;
-  } catch { return null; }
-}
-
-function readNowAnchor() {
-  const f = path.join(repoRoot, 'spec/SPEC_PIN.retrieved');
-  if (!fs.existsSync(f)) return new Date(Date.UTC(2026, 3, 1)).toISOString();
-  const ts = fs.readFileSync(f, 'utf8').trim();
-  const d = new Date(ts);
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)).toISOString();
-}
-
-function readSha() {
-  const f = path.join(repoRoot, 'spec/SPEC_PIN.sha');
-  return fs.existsSync(f) ? fs.readFileSync(f, 'utf8').trim() : 'unknown';
-}
-
-function safeName(s) {
-  return s.replace(/^\//, '').replace(/\//g, '__').replace(/[{}]/g, '');
-}
+const SHA = readSpecSha();
 
 if (fs.existsSync(OUT)) fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(path.join(OUT, 'bundles'), { recursive: true });

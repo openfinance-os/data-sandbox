@@ -26,12 +26,8 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import yaml from 'js-yaml';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const repoRoot = path.resolve(__dirname, '..');
+import { LintReporter, repoRoot, walk } from './lint-shared.mjs';
 
 const DENYLIST = [
   // Tier-1 conventional
@@ -94,14 +90,6 @@ const ALLOWED_EXT = /\.(yaml|yml|json|md|js|mjs|html|css)$/;
 const ALLOWED_PATH_PREFIXES = [
   'synthetic-identity-pool/counterparty-banks/',
 ];
-
-function* walk(dir) {
-  for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, ent.name);
-    if (ent.isDirectory()) yield* walk(full);
-    else if (ent.isFile() && ALLOWED_EXT.test(ent.name)) yield full;
-  }
-}
 
 function isAllowedPath(rel) {
   const posix = rel.split(path.sep).join('/');
@@ -168,23 +156,23 @@ function scanPersonaManifest(file, rel) {
   return violations.map((v) => ({ rel, ...v }));
 }
 
-let bad = 0;
-function reportTextScan(file, rel, text) {
+const reporter = new LintReporter('lint-no-institution-leak');
+
+function reportTextScan(rel, text) {
   // Reset stateful regex
   DENY_RE.lastIndex = 0;
   const matches = [...text.matchAll(DENY_RE)];
   for (const m of matches) {
     const idx = m.index ?? 0;
     const line = text.slice(0, idx).split('\n').length;
-    console.error(`institution-leak at ${rel}:${line} — matches "${m[0]}"`);
-    bad += 1;
+    reporter.add(`institution-leak at ${rel}:${line} — matches "${m[0]}"`);
   }
 }
 
 for (const dir of SCAN_DIRS) {
   const abs = path.join(repoRoot, dir);
   if (!fs.existsSync(abs)) continue;
-  for (const file of walk(abs)) {
+  for (const file of walk(abs, ALLOWED_EXT)) {
     const rel = path.relative(repoRoot, file);
     if (isAllowedPath(rel)) continue;
 
@@ -199,18 +187,13 @@ for (const dir of SCAN_DIRS) {
     if (isPersonaManifest) {
       const vs = scanPersonaManifest(file, rel);
       for (const v of vs) {
-        console.error(`institution-leak at ${rel} (${v.path}) — matches "${v.term}"`);
-        bad += 1;
+        reporter.add(`institution-leak at ${rel} (${v.path}) — matches "${v.term}"`);
       }
     } else {
       const text = fs.readFileSync(file, 'utf8');
-      reportTextScan(file, rel, text);
+      reportTextScan(rel, text);
     }
   }
 }
 
-if (bad > 0) {
-  console.error(`lint-no-institution-leak: ${bad} violation(s)`);
-  process.exit(1);
-}
-console.log('lint-no-institution-leak OK');
+reporter.finish();

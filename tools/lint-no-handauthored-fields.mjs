@@ -10,29 +10,16 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const repoRoot = path.resolve(__dirname, '..');
+import { LintReporter, repoRoot, walk } from './lint-shared.mjs';
 
 const ALLOWLIST = new Set([
   // status enum constants in spec-helpers are allowed.
   'src/shared/spec-helpers.js',
 ]);
 
-const STATUS_LITERAL_RE = /['"](mandatory|optional|conditional)['"]/i;
+const reporter = new LintReporter('lint-no-handauthored-fields');
 
-function* walk(dir) {
-  for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, ent.name);
-    if (ent.isDirectory()) yield* walk(full);
-    else if (ent.isFile() && /\.(mjs|js|html)$/.test(ent.name)) yield full;
-  }
-}
-
-let bad = 0;
-for (const file of walk(path.join(repoRoot, 'src'))) {
+for (const file of walk(path.join(repoRoot, 'src'), /\.(mjs|js|html)$/)) {
   const rel = path.relative(repoRoot, file);
   if (ALLOWLIST.has(rel)) continue;
   const text = fs.readFileSync(file, 'utf8');
@@ -53,8 +40,9 @@ for (const file of walk(path.join(repoRoot, 'src'))) {
       if (consec === 0) firstBadLine = i + 1;
       consec += 1;
       if (consec >= 3) {
-        console.error(`hand-authored field status table at ${rel}:${firstBadLine} — EXP-01 violation. Status must come from dist/SPEC.json.`);
-        bad += 1;
+        reporter.add(
+          `hand-authored field status table at ${rel}:${firstBadLine} — EXP-01 violation. Status must come from dist/SPEC.json.`,
+        );
         break;
       }
     } else {
@@ -67,16 +55,9 @@ for (const file of walk(path.join(repoRoot, 'src'))) {
   // `someField.status = 'mandatory'` directly.
   for (let i = 0; i < lines.length; i++) {
     if (/\.status\s*=\s*['"](mandatory|optional|conditional)['"]/i.test(lines[i])) {
-      console.error(`hand-authored status assignment at ${rel}:${i + 1} — EXP-01 violation.`);
-      bad += 1;
+      reporter.add(`hand-authored status assignment at ${rel}:${i + 1} — EXP-01 violation.`);
     }
   }
-
-  void STATUS_LITERAL_RE; // retained for future widening
 }
 
-if (bad > 0) {
-  console.error(`lint-no-handauthored-fields: ${bad} violation(s)`);
-  process.exit(1);
-}
-console.log('lint-no-handauthored-fields OK');
+reporter.finish();
