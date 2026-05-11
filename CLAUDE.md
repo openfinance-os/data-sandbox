@@ -14,7 +14,7 @@ Key documents in the repo:
 - `PRD_OF_Data_Explorer_Review.md` — historical (Tier-1 items folded into v0.5–v0.8; remainder closed in v0.9).
 - `PRD_OF_Data_Explorer_Spec_Validation.md` — applies to the prototype HTML, not the PRD.
 - `PRD_OF_Data_Explorer_Deployment.md` — superseded (hosting locked to OF-OS Commons per D-05).
-- `of-sandbox-prototype.html` — original single-file prototype; basis for the v1 build.
+- `archive/of-sandbox-prototype.html` — original single-file prototype; basis for the v1 build. Kept for historical reference only (see `archive/README.md`).
 
 ## What the product is
 

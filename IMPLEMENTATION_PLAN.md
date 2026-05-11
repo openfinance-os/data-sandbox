@@ -1,5 +1,11 @@
 # Implementation Plan — Open Finance Data Sandbox
 
+> **Historical (Phase 0–1.5).** This plan covered the path from spike to v1.5
+> Commons publication and is retained for traceability. Phase 2+ work is
+> tracked in `PHASE2_INSURANCE_PLAN.md`, `CHANGELOG.md`, and the current PRD.
+> Path references in this file (e.g. `of-sandbox-prototype.html`) reflect the
+> Phase 0 layout — the prototype now lives under `archive/`.
+
 | Field | Value |
 |---|---|
 | **Document type** | Implementation plan companion to `PRD_OF_Data_Explorer.md` v0.9 |

@@ -2,14 +2,14 @@
 
 MCP server that exposes the [Open Finance Data Sandbox](https://github.com/openfinance-os/data-sandbox) — synthetic UAE Open Finance v2.1 Bank Data Sharing payloads — as MCP tools, resources, and prompts.
 
-The intended use: run Claude as a **dynamic PFM** against a synthetic customer. Pick one of 12 curated personas (salaried expat, gig worker, mortgage holder, SME owner, …) and let Claude answer balance, spend, and obligation questions over deterministic v2.1-shaped JSON.
+The intended use: run Claude as a **dynamic PFM** against a synthetic customer. Pick one of 27 curated personas (18 banking + 9 insurance — salaried expat, gig worker, mortgage holder, SME owner, motor / home / health / life / travel / renters / employment-insured, …) and let Claude answer balance, spend, obligation, and coverage questions over deterministic v2.1-shaped JSON.
 
 > **All data is synthetic.** No real customer, no real institution. Every tool response carries a `_watermark` field such as `SYNTHETIC — Open Finance Data Sandbox · OpenFinance-OS Commons · persona:salaried_expat_mid lfi:median seed:4729 retrieved:2026-04-01T00:00:00.000Z`. Preserve this watermark in any export or summary.
 
 ## Scope
 
-- **Two domains** — Bank Data Sharing v2.1 (all 12 Account-Information endpoints) and an Insurance Data Sharing preview (motor v2.1-errata1: policies list, policy detail, payment-details, read-quote).
-- **21 curated personas (18 banking + 3 motor-insurance) + a custom-persona builder** — pick from the curated list with `set_session`, or compose a recipe and call `build_persona` to generate a fresh deterministic persona at runtime.
+- **Two domains** — Bank Data Sharing v2.1 (all 12 Account-Information endpoints) and Insurance Data Sharing v2.1 GA (7 lines: motor, home, health, life, travel, renters, employment — each with the 4-endpoint MVP + cross-line Consents = 30 endpoints).
+- **27 curated personas (18 banking + 9 insurance) + a custom-persona builder** — pick from the curated list with `set_session`, or compose a recipe and call `build_persona` to generate a fresh deterministic persona at runtime.
 - **Read-only** — no writes, no Service Initiation.
 - **Anonymous** — no auth, no API keys, no OAuth. The data is synthetic so there is nothing real to protect.
 - **Two transports** — stdio (default, for `npx` / Claude Desktop / Claude Code) and Streamable HTTP (for the Claude marketplace listing and any browser-side client). PRD decision D-13.
@@ -118,7 +118,7 @@ claude mcp add open-finance-sandbox -- npx -y @openfinance-os/sandbox-mcp
 
 | Tool | Purpose |
 |---|---|
-| `list_personas` | List the 21 synthetic personas (18 banking + 3 motor-insurance) with id, name, archetype, default seed, domain, and stress-coverage tags. Pass `{ domain: 'banking' \| 'insurance' }` to filter. |
+| `list_personas` | List the 27 synthetic personas (18 banking + 9 insurance: 3 motor, 1 home, 1 health, 1 life, 1 travel, 1 renters, 1 employment) with id, name, archetype, default seed, domain, and stress-coverage tags. Pass `{ domain: 'banking' \| 'insurance' }` to filter. Note: the MCP `get_motor_*` tools cover the 3 motor personas only; non-motor insurance personas are introspectable via `persona://<id>` and `list_endpoints`, but per-line `get_*` tools (home/health/life/travel/renters/employment) are not yet wired. |
 | `lfi_profiles` | Describe the three LFI populate-rate profiles (rich/median/sparse) and the EXP-04 invariant that mandatory fields are never redacted. |
 | `set_session` | Pin a curated persona via `{ persona, lfi?, seed? }`. `lfi` defaults to `median`; `seed` defaults to `persona.default_seed`. |
 | `get_session` | Echo the active persona / lfi / seed (and recipe hash for custom personas). |
@@ -149,7 +149,7 @@ claude mcp add open-finance-sandbox -- npx -y @openfinance-os/sandbox-mcp
 | `get_statements` | `/accounts/{AccountId}/statements`. `accountId` required. |
 | `load_journey` | Every endpoint in one call. Verbose — prefer the granular tools. |
 
-### Insurance endpoints (motor v2.1-errata1, Phase 2.0 preview)
+### Insurance endpoints (motor v2.1; non-motor lines exposed via fixture resources only)
 
 | Tool | Purpose |
 |---|---|
@@ -197,11 +197,11 @@ session set → persona:salaried_expat_mid (Salaried Expat — Mid) lfi:median s
   "_watermark": "SYNTHETIC — Open Finance Data Sandbox · …" }
 ```
 
-### Insurance read-quote (motor preview)
+### Insurance read-quote (motor)
 
 ```text
 > list_personas { domain: "insurance" }
-{ "personas": [{ "id": "motor_comprehensive_mid", ... }, ...], "count": 3 }
+{ "personas": [{ "id": "motor_comprehensive_mid", ... }, ...], "count": 9 }
 
 > set_session { persona: "motor_comprehensive_mid" }
 session set → persona:motor_comprehensive_mid (Motor Comprehensive — Mid) lfi:median seed:8112
