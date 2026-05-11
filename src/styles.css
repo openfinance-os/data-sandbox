@@ -250,8 +250,29 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   overflow-x: auto;
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-size: 11px;
-  white-space: pre;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
   color: var(--text);
+}
+
+.payload-error {
+  background: var(--accent-soft, #fff4f4);
+  border: 1px solid var(--border-strong, #d44);
+  border-radius: 4px;
+  padding: 12px;
+  margin: 8px 0;
+  font-size: 12px;
+  color: var(--text);
+}
+.payload-error strong { display: block; margin-bottom: 6px; font-size: 13px; }
+.payload-error p { margin: 0 0 6px; color: var(--text-muted); }
+.payload-error pre {
+  margin: 0;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--text-muted);
 }
 
 /* Topbar overflow menu — Integrate / About live behind a "More" disclosure
@@ -1980,6 +2001,18 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   padding: 1px 4px;
   margin: 0;
   cursor: help;
+}
+/* In the compact toolbar/header legend, drop the pill-conditional fx
+   indicator and its extra padding so M, O, C read as a matched set.
+   The full pill-conditional treatment remains on field-card column
+   headers where it carries semantic weight. */
+.toolbar-legend .pill-conditional,
+.status-legend .pill-conditional {
+  padding-right: 4px;
+}
+.toolbar-legend .pill-conditional::after,
+.status-legend .pill-conditional::after {
+  content: none;
 }
 .toolbar-legend .legend-text {
   margin-right: 6px;
