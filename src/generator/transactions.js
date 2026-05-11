@@ -24,6 +24,23 @@ import { vatTreatmentForPool, computeVatBreakdown } from './vat.js';
 
 const TWELVE_MONTHS = 12;
 
+// Per-category knobs for the merchant-spend loop. The PRNG draw order across
+// categories is load-bearing for EXP-05 (deterministic-replay), so this list
+// is iterated in declaration order and each category contributes the same
+// sequence of draws as the pre-refactor inline loops did:
+//   1× count via monthlyCountFromSpend, then per-tx: drawMerchant → rngInt
+//   amount → rngInt day → weekdayBias internal draws → optional pending mark.
+// `weekdayBiasFactor` and `defaultCountBand` reproduce the per-loop literals
+// from the pre-extraction version.
+const SPEND_CATEGORIES = [
+  { id: 'groceries', mccCategory: 'GRC',  weekdayBiasFactor: 0.4, defaultCountBand: [4, 9],
+    countBandKey: 'groceries_per_month_count_band', aedBandKey: 'groceries_aed_per_month_band' },
+  { id: 'fuel',      mccCategory: 'FUEL', weekdayBiasFactor: 0.4, defaultCountBand: [2, 5],
+    countBandKey: 'fuel_per_month_count_band',      aedBandKey: 'fuel_aed_per_month_band' },
+  { id: 'dining',    mccCategory: 'DIN',  weekdayBiasFactor: 0.3, defaultCountBand: [4, 12],
+    countBandKey: 'dining_per_month_count_band',    aedBandKey: 'dining_aed_per_month_band' },
+];
+
 export function generateTransactions({ persona, account, rng, pools, runningBalance, now, txState }) {
   const out = [];
   const today = new Date(now.getTime());
@@ -63,54 +80,25 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
         runningBalance.balance -= amount;
       }
 
-      const groceriesCount = monthlyCountFromSpend({
-        rng,
-        countBand: persona.spend_profile?.groceries_per_month_count_band,
-        aedBand: persona.spend_profile?.groceries_aed_per_month_band,
-        pool: pools.groceries,
-        defaultBand: [4, 9],
-      });
-      for (let i = 0; i < groceriesCount; i++) {
-        const merchant = drawMerchant(rng, pools.groceries);
-        const amount = rngInt(rng, merchant.typical_amount_aed_band[0], merchant.typical_amount_aed_band[1] + 1);
-        const day = rngInt(rng, 1, 28);
-        out.push(makePosTransaction({
-          rng, account, date: weekdayBias(dateForDay(monthStart, day), rng, 0.4),
-          amount, merchant, mcc: pools.groceries.mcc, txState, now, mccCategory: 'GRC',
-        }));
-        runningBalance.balance -= amount;
-      }
-      const fuelCount = monthlyCountFromSpend({
-        rng,
-        countBand: persona.spend_profile?.fuel_per_month_count_band,
-        aedBand: persona.spend_profile?.fuel_aed_per_month_band,
-        pool: pools.fuel,
-        defaultBand: [2, 5],
-      });
-      for (let i = 0; i < fuelCount; i++) {
-        const merchant = drawMerchant(rng, pools.fuel);
-        const amount = rngInt(rng, merchant.typical_amount_aed_band[0], merchant.typical_amount_aed_band[1] + 1);
-        const day = rngInt(rng, 1, 28);
-        out.push(makePosTransaction({
-          rng, account, date: weekdayBias(dateForDay(monthStart, day), rng, 0.4),
-          amount, merchant, mcc: pools.fuel.mcc, txState, now, mccCategory: 'FUEL',
-        }));
-        runningBalance.balance -= amount;
-      }
-      const diningCount = rngInt(
-        rng,
-        persona.spend_profile?.dining_per_month_count_band?.[0] ?? 4,
-        (persona.spend_profile?.dining_per_month_count_band?.[1] ?? 12) + 1
-      );
-      for (let i = 0; i < diningCount; i++) {
-        const merchant = drawMerchant(rng, pools.dining);
-        const amount = rngInt(rng, merchant.typical_amount_aed_band[0], merchant.typical_amount_aed_band[1] + 1);
-        const day = rngInt(rng, 1, 28);
-        out.push(makePosTransaction({
-          rng, account, date: weekdayBias(dateForDay(monthStart, day), rng, 0.3),
-          amount, merchant, mcc: pools.dining.mcc, txState, now, mccCategory: 'DIN',
-        }));
-        runningBalance.balance -= amount;
+      for (const cat of SPEND_CATEGORIES) {
+        const pool = pools[cat.id];
+        const count = monthlyCountFromSpend({
+          rng,
+          countBand: persona.spend_profile?.[cat.countBandKey],
+          aedBand: persona.spend_profile?.[cat.aedBandKey],
+          pool,
+          defaultBand: cat.defaultCountBand,
+        });
+        for (let i = 0; i < count; i++) {
+          const merchant = drawMerchant(rng, pool);
+          const amount = rngInt(rng, merchant.typical_amount_aed_band[0], merchant.typical_amount_aed_band[1] + 1);
+          const day = rngInt(rng, 1, 28);
+          out.push(makePosTransaction({
+            rng, account, date: weekdayBias(dateForDay(monthStart, day), rng, cat.weekdayBiasFactor),
+            amount, merchant, mcc: pool.mcc, txState, now, mccCategory: cat.mccCategory,
+          }));
+          runningBalance.balance -= amount;
+        }
       }
     }
 
