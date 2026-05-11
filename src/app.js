@@ -1072,9 +1072,44 @@ function endpointFieldsByName() {
 }
 
 function renderPayload() {
+  try {
+    renderPayloadUnsafe();
+  } catch (err) {
+    // Error boundary — without this, a throw mid-render leaves an empty
+    // body and only a console trace. The toggle handlers (view, expand,
+    // pii) all call renderPayload directly, so any failure here would
+    // otherwise blank the pane until full reload. Surface it instead.
+    console.error('renderPayload failed', err);
+    const body = document.getElementById('payload-body');
+    if (body) {
+      body.replaceChildren();
+      body.appendChild(el('div', {
+        class: 'payload-error',
+        attrs: { role: 'alert' },
+      },
+        el('strong', { text: 'Failed to render payload.' }),
+        el('p', { text: 'See the browser console for details.' }),
+        el('pre', { text: String(err && err.stack ? err.stack : err) }),
+      ));
+    }
+  }
+}
+
+function renderPayloadUnsafe() {
   document.getElementById('endpoint-label').textContent = labelForEndpoint(state.endpoint);
   const body = document.getElementById('payload-body');
   body.replaceChildren();
+
+  // Non-banking domains share the toolbar (view tabs, expand-fields,
+  // pii-only) with banking, but the renderPayload pipeline below is
+  // banking-shaped (rowsForActiveEndpoint walks state.bundle.accounts,
+  // which insurance bundles don't have). Mirror the rebuildAndRender
+  // branch and route to the preview-JSON inspector here so any toggle
+  // handler can safely re-render an insurance bundle.
+  if (state.domain && state.domain !== 'banking') {
+    renderPreviewBundle();
+    return;
+  }
 
   // Cold-landing welcome — three jump cards routing the user to the surface
   // that matches their JTBD (Sara explore vs. Maryam embed vs. Hamid
