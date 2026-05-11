@@ -38,33 +38,26 @@ import { createFieldCard } from './ui/field-card.js';
 import { createHoverPreview } from './ui/hover-preview.js';
 import { createEmbedSnippet } from './ui/embed-snippet.js';
 import { copyToClipboard } from './ui/clipboard.js';
-
-// All 12 v1 endpoints (Appendix C). Three are bundle-level (no AccountId
-// scope): /accounts and /parties. The others are per-account.
-// EXP-18 Underwriting Scenario panel sits as a virtual bundle-level entry —
-// not a wire endpoint, just a derived view over the live bundle. The
-// Persona Overview is a second virtual bundle-level entry — the natural
-// landing for "who is this person?" before drilling into wire endpoints.
-const UNDERWRITING_PSEUDO = '/(underwriting)';
-const OVERVIEW_PSEUDO = '/(overview)';
-const ENDPOINTS = [
-  { path: OVERVIEW_PSEUDO, scope: 'bundle' },
-  { path: '/accounts', scope: 'bundle' },
-  { path: '/accounts/{AccountId}', scope: 'account' },
-  { path: '/accounts/{AccountId}/balances', scope: 'account' },
-  { path: '/accounts/{AccountId}/transactions', scope: 'account' },
-  { path: '/accounts/{AccountId}/standing-orders', scope: 'account' },
-  { path: '/accounts/{AccountId}/direct-debits', scope: 'account' },
-  { path: '/accounts/{AccountId}/beneficiaries', scope: 'account' },
-  { path: '/accounts/{AccountId}/scheduled-payments', scope: 'account' },
-  { path: '/accounts/{AccountId}/product', scope: 'account' },
-  { path: '/accounts/{AccountId}/parties', scope: 'account' },
-  { path: '/parties', scope: 'bundle' },
-  { path: '/accounts/{AccountId}/statements', scope: 'account' },
-  { path: UNDERWRITING_PSEUDO, scope: 'bundle' },
-];
-const ACCOUNT_SCOPED_PATHS = ENDPOINTS.filter((e) => e.scope === 'account').map((e) => e.path);
-const BUNDLE_SCOPED_PATHS = ENDPOINTS.filter((e) => e.scope === 'bundle').map((e) => e.path);
+import {
+  el,
+  isDateField,
+  humaniseDate,
+  humanArchetype,
+  humanStressTerm,
+  formatAmount,
+} from './app/utils.js';
+import {
+  UNDERWRITING_PSEUDO,
+  OVERVIEW_PSEUDO,
+  ENDPOINTS,
+  ACCOUNT_SCOPED_PATHS,
+  BUNDLE_SCOPED_PATHS,
+  JTBD_PRESETS,
+  STRESS_BEST_FOR,
+  LFI_CAPTIONS,
+  PANE_COLLAPSE_CLASS,
+  MEDIAN_HINT,
+} from './app/constants.js';
 
 const state = {
   spec: null,
@@ -160,22 +153,6 @@ const { renderInsuranceBundle } = createInsurance({
 const { renderUnderwritingStrip, renderUnderwritingPanel } = createUnderwriting({
   state, el, formatAmount, renderNavigator, renderPayload, UNDERWRITING_PSEUDO,
 });
-
-function isDateField(name) {
-  return /(?:Date|DateTime)$/.test(name);
-}
-
-const DATE_FORMATTER = new Intl.DateTimeFormat('en-GB', {
-  day: '2-digit', month: 'short', year: 'numeric',
-  hour: '2-digit', minute: '2-digit',
-  timeZone: 'Asia/Dubai', timeZoneName: 'short', hour12: false,
-});
-
-function humaniseDate(iso) {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return DATE_FORMATTER.format(d);
-}
 
 function emptyTxFilter() {
   return {
@@ -338,61 +315,6 @@ function attachBuilderHandlers() {
   });
 }
 
-function el(tag, opts = {}, ...children) {
-  const node = document.createElement(tag);
-  if (opts.class) node.className = opts.class;
-  if (opts.text != null) node.textContent = String(opts.text);
-  if (opts.attrs) {
-    for (const [k, v] of Object.entries(opts.attrs)) {
-      if (v == null) continue;
-      node.setAttribute(k, String(v));
-    }
-  }
-  if (opts.dataset) {
-    for (const [k, v] of Object.entries(opts.dataset)) node.dataset[k] = String(v);
-  }
-  if (opts.onClick) node.addEventListener('click', opts.onClick);
-  for (const c of children) {
-    if (c == null) continue;
-    if (typeof c === 'string') node.appendChild(document.createTextNode(c));
-    else node.appendChild(c);
-  }
-  return node;
-}
-
-// JTBD presets — map a job-to-be-done bucket (per PRD §3) to the
-// stress_coverage terms a persona must include to qualify. One-tap
-// filters for Aisha (AML), Faisal (affordability/DBR), Layla (FX),
-// Daniel/Maryam (low-volume edge cases), Hamid (Sharia/multi-product).
-const JTBD_PRESETS = Object.freeze({
-  affordability: { label: 'Affordability',  terms: ['salary_payroll_flag', 'high_dbr', 'mortgage_long_dated', 'credit_line_block', 'gig_irregular_inflow'] },
-  aml:           { label: 'AML',            terms: ['cash_dominant_flows', 'multi_party_accounts', 'joint_custodian'] },
-  thinFile:      { label: 'Thin file',      terms: ['thin_file_short_tenure'] },
-  fx:            { label: 'FX',             terms: ['fx_currency_exchange', 'multi_currency_accounts'] },
-  distress:      { label: 'NSF / distress', terms: ['nsf_distress', 'low_volume_inference'] },
-  sharia:        { label: 'Sharia',         terms: ['sharia_compliant_product'] },
-});
-
-// "Best for" — per-stress-term human one-liner driving the persona-card
-// summary. Derived from PRD §3.2 JTBD wording so the library answers
-// "which persona answers my job?" without reading every narrative.
-const STRESS_BEST_FOR = Object.freeze({
-  salary_payroll_flag:       'Baseline affordability case (Flags=Payroll income marker)',
-  credit_line_block:         'Credit-line / card commitment shape',
-  multi_currency_accounts:   'Multi-currency / FX edge cases',
-  fx_currency_exchange:      'CurrencyExchange handling',
-  multi_party_accounts:      'Multi-party / custodianship accounts',
-  joint_custodian:           'Joint + custodian-for-minor account roles',
-  high_dbr:                  'DBR-stretched affordability stress test',
-  mortgage_long_dated:       'Long-dated mortgage commitments',
-  nsf_distress:              'NSF / behavioural distress signal detection',
-  thin_file_short_tenure:    'Thin-file / short-tenure underwriting',
-  sharia_compliant_product:  'Sharia-compliant product handling',
-  cash_dominant_flows:       'AML rule design — sparse merchant detail',
-  gig_irregular_inflow:      'Income verification for gig / variable patterns',
-  low_volume_inference:      'Low-volume / pension cadence (formula breaks here)',
-});
-
 function bestForLine(persona) {
   const terms = persona.stress_coverage ?? [];
   const lines = [];
@@ -542,31 +464,6 @@ function buildPersonaList() {
   }
 }
 
-// Convert snake_case archetype slug to a human label.
-function humanArchetype(s) {
-  if (!s) return '';
-  return s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-// Stress-coverage terms come from PRD Appendix F controlled vocabulary.
-// Render as concise human labels with the slug retained as a tooltip.
-function humanStressTerm(t) {
-  return t
-    .replace(/_/g, ' ')
-    .replace(/\bdbr\b/i, 'DBR')
-    .replace(/\bfx\b/i, 'FX')
-    .replace(/\bnsf\b/i, 'NSF')
-    .replace(/\bpep\b/i, 'PEP')
-    .replace(/\bkyc\b/i, 'KYC')
-    .replace(/\buae\b/i, 'UAE');
-}
-
-const LFI_CAPTIONS = Object.freeze({
-  rich:   'Rich. Every populate-band optional field set — best-case ecosystem.',
-  median: 'Median. Universal=1.0, Common=0.7, Variable=0.4, Rare=0.1 (v1 calibration).',
-  sparse: 'Sparse. Mandatory + Universal-band only — every other optional field dropped.',
-});
-
 function syncControls() {
   document.getElementById('persona-select').value = state.personaId;
   // Hidden legacy <select> kept for any URL-encoded form handlers and as a
@@ -599,7 +496,6 @@ function syncControls() {
 // lives in JS only (EXP-22 forbids storage), so a refresh restores both
 // panes. Field-card opens auto-expand the right pane (matches the existing
 // .field-detail.open overlay behavior used at ≤1099 px).
-const PANE_COLLAPSE_CLASS = { 'persona-pane': 'left-collapsed', 'field-detail': 'right-collapsed' };
 function setPaneCollapsed(target, collapsed) {
   const root = document.getElementById('three-pane');
   if (!root) return;
@@ -1035,13 +931,6 @@ function renderCoverage() {
     host.appendChild(wrap);
   }
 }
-
-const MEDIAN_HINT = Object.freeze({
-  Universal: 'Median expectation: every LFI populates.',
-  Common:    'Median expectation: ~70% of LFIs populate.',
-  Variable:  'Median expectation: ~40% of LFIs populate.',
-  Rare:      'Median expectation: ~10% of LFIs populate (premium-product only).',
-});
 
 function renderNavigator() {
   const nav = document.getElementById('nav-tree');
@@ -1483,11 +1372,6 @@ function renderPayload() {
   }
 
   body.appendChild(wrap);
-}
-
-function formatAmount(n) {
-  if (!Number.isFinite(n)) return '—';
-  return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
 }
 
 // ---- Cold-landing welcome cards — route by JTBD bucket ------------------------------------
