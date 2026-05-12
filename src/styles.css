@@ -2507,7 +2507,13 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
 .insurance-field-tree {
   margin: 0;
   display: grid;
-  grid-template-columns: minmax(160px, max-content) 1fr;
+  /* fit-content caps the label column so a wide enum chip (e.g. Status's
+     six-value enum on /insurance-consents/{ConsentId}) can't blow out the
+     value column. minmax(0, 1fr) lets the value column shrink with available
+     space — without it, word-break: break-word on .insurance-field-value
+     makes the column's min-content 1 char wide and deeply-nested string
+     arrays (Permissions[]) break per character. */
+  grid-template-columns: minmax(140px, fit-content(220px)) minmax(0, 1fr);
   column-gap: 16px;
   row-gap: 4px;
   align-items: baseline;
