@@ -104,6 +104,15 @@ spend_profile:
   dining_per_month_count_band: <[int, int]?>
 fx_activity: <bool>
 cash_deposit_activity: <bool>
+enable_refunds: <bool>                         # optional; default false.
+                                               # Phase R5 — when true, the
+                                               # generator emits paired
+                                               # refund / reversal credits
+                                               # against ~3% of POS /
+                                               # ECommerce purchases.
+                                               # Side-channel PRNG so
+                                               # toggling does not shift
+                                               # other tx draws.
 distress_signals:
   nsf_events_per_year_band: <[int, int]>
 multi_lfi_footprint:                           # optional; D-14
