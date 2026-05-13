@@ -211,7 +211,7 @@ const GLYPHS = {
   cash: (a) =>
     `<rect x="28" y="56" width="64" height="32" rx="3" fill="${a}"/>` +
     `<circle cx="60" cy="72" r="8" fill="#fff"/>` +
-    `<text x="60" y="76" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="${a}">د.إ</text>` +
+    `<text x="60" y="76" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" font-weight="700" fill="${a}">د.إ</text>` +
     `<rect x="32" y="48" width="56" height="6" rx="2" fill="${a}" opacity="0.6"/>` +
     `<rect x="36" y="42" width="48" height="4" rx="2" fill="${a}" opacity="0.4"/>`,
   // Corporate — skyline of three towers

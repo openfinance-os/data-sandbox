@@ -187,14 +187,25 @@ async function init() {
 
   // Slice 8: domain manifest drives which SPEC.json to lazy-load. Banking
   // remains the default; unknown domain values fall back to banking.
+  // Avatars are presentation-only — a 404 / non-JSON response or transient
+  // network blip must not block the rest of init (the fallback initials
+  // path covers any missing avatar). data / domains are load-bearing and
+  // stay strict.
   const [domainsRes, dataRes, avatarsRes] = await Promise.all([
     fetch('../dist/domains.json'),
     fetch('../dist/data.json'),
-    fetch('../dist/avatars.json'),
+    fetch('../dist/avatars.json').catch(() => null),
   ]);
   const domainsManifest = await domainsRes.json();
   state.data = await dataRes.json();
-  state.avatars = (await avatarsRes.json()).avatars ?? {};
+  state.avatars = {};
+  if (avatarsRes && avatarsRes.ok) {
+    try {
+      state.avatars = (await avatarsRes.json()).avatars ?? {};
+    } catch {
+      // Malformed avatars.json — fall through to the initials fallback.
+    }
+  }
   state.domains = Object.fromEntries(domainsManifest.domains.map((d) => [d.id, d]));
 
   let resolvedDomain = url.domain;
