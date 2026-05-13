@@ -140,12 +140,20 @@ function enrichOne(tx) {
   const merchantName = tx.MerchantDetails?.MerchantName ?? null;
   const mcc = tx.MerchantDetails?.MerchantCategoryCode ?? null;
   const taxonomy = (mcc && MCC_TAXONOMY[mcc]) || fallbackForShape(tx);
+  // Phase R2 — parent-group ownership graph. The makePosTransaction
+  // helper tags every POS / ECommerce tx with `_parentGroup` +
+  // `_parentGroupAcronym` (strips on export). We surface those here so
+  // the enriched-view consumer can show "Marketmark Hypermarket (FHG)"
+  // or run group-level rollups. Null when the merchant has no declared
+  // parent or for non-merchant tx shapes (salary, transfers, NSFs).
   return {
     merchant: merchantName,
     mcc,
     category: taxonomy.category,
     subcategory: taxonomy.subcategory,
     logoSlug: slugify(merchantName),
+    parentGroup: tx._parentGroup ?? null,
+    parentGroupAcronym: tx._parentGroupAcronym ?? null,
   };
 }
 

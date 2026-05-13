@@ -4,11 +4,19 @@ mcc: "4121"
 merchants:
   - name: "DesertRide"
     typical_amount_aed_band: [18, 90]
+    display_variants: ["DESERTRIDE", "DSRTRDE", "DESERT RIDE TRIP"]
   - name: "OasisGo"
     typical_amount_aed_band: [20, 110]
+    display_variants: ["OASISGO", "OASIS GO", "OASISGO RIDE"]
   - name: "MarinaCab"
     typical_amount_aed_band: [25, 140]
+    parent_group: oasis_group
+    display_variants: ["MARINACAB", "MRNA CAB", "MARINA CAB"]
   - name: "DuneShare"
     typical_amount_aed_band: [22, 120]
+    display_variants: ["DUNESHARE", "DUNE SHARE", "DNSHARE TRIP"]
   - name: "PalmFare"
     typical_amount_aed_band: [15, 70]
+    parent_group: palm_corp
+    display_variants: ["PALMFARE", "PALM FARE", "PLMFARE TRIP"]
+    display_variants_ar: ["TAXI NAKHEEL"]

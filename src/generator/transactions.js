@@ -19,6 +19,11 @@ import {
   valueDateOffset,
   referenceNumber,
   pendingForRecent,
+  buildDirtyPosNarrative,
+  emirateCode,
+  aggregatorPrefix,
+  terminalSuffix,
+  fxClutter,
 } from './realism.js';
 import { vatTreatmentForPool, computeVatBreakdown } from './vat.js';
 import { EXTENDED_SPEND_CATEGORIES, defaultCountBand } from './banking/spend-profiles.js';
@@ -109,6 +114,7 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
           out.push(makePosTransaction({
             rng, account, date: weekdayBias(dateForDay(monthStart, day), rng, cat.weekdayBiasFactor),
             amount, merchant, mcc: pool.mcc, txState, now, mccCategory: cat.mccCategory,
+            familyGroups: pools.familyGroups,
           }));
           runningBalance.balance -= amount;
         }
@@ -158,6 +164,7 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
               rng, account, date, amount, merchant, mcc: pool.mcc, txState, now,
               mccCategory: cat.mccCategory,
               transactionType: cat.isEcommerce ? 'ECommerce' : 'POS',
+              familyGroups: pools.familyGroups,
             }));
             runningBalance.balance -= amount;
           }
@@ -174,7 +181,7 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
         out.push(makePosTransaction({
           rng, account, date: weekdayBias(dateForDay(monthStart, day), rng, 0.3),
           amount, merchant, mcc: pools.dining.mcc, txState, now, mccCategory: 'DIN',
-          isCreditCard: true,
+          isCreditCard: true, familyGroups: pools.familyGroups,
         }));
       }
 
@@ -214,7 +221,7 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
             rng, account, date: weekdayBias(dateForDay(monthStart, day), rng, cat.weekdayBiasFactor),
             amount, merchant, mcc: pool.mcc, txState, now, mccCategory: cat.mccCategory,
             transactionType: cat.isEcommerce ? 'ECommerce' : 'POS',
-            isCreditCard: true,
+            isCreditCard: true, familyGroups: pools.familyGroups,
           }));
         }
       }
@@ -384,7 +391,13 @@ function makeFxTransaction({ rng, account, date, aedAmount, fxAmount, fxCurrency
     BookingDateTime: isoOf(posted),
     TransactionDateTime: isoOf(posted),
     ValueDateTime: valueDateOf(posted, 'InternationalTransfer', rng),
-    TransactionInformation: bankishNarrative('FX', [`${account.Currency}-${fxCurrency}`, 'IBT']),
+    TransactionInformation: bankishNarrative('FX', [
+      `${account.Currency}-${fxCurrency}`,
+      'IBT',
+      // Phase R2 — add the source-currency + amount + country tail
+      // a real card scheme appends on cross-border transactions.
+      fxClutter(fxCurrency, fxAmount, rng, 0.9),
+    ].filter(Boolean)),
     Amount: { Amount: aedAmount.toFixed(2), Currency: account.Currency },
     TransactionType: 'InternationalTransfer',
     SubTransactionType: 'MoneyTransfer',
@@ -535,14 +548,21 @@ function makeFixedCommitment({ rng, account, date, amount, purpose, kind, txStat
   };
 }
 
-function makePosTransaction({ rng, account, date, amount, merchant, mcc, isCreditCard = false, txState, now, mccCategory = 'POS', transactionType = 'POS' }) {
+function makePosTransaction({ rng, account, date, amount, merchant, mcc, isCreditCard = false, txState, now, mccCategory = 'POS', transactionType = 'POS', familyGroups }) {
   const posted = applyPostingTime(date, rng);
   // Real POS amounts carry fils precision — typical retail pricing patterns.
   const amt = fractionalAmount(rng, amount);
-  // Bank narratives often cap at ~22 chars and cram merchant + city. Synthetic
-  // pool merchants are 2-3 words; truncate aggressively.
-  const merchantToken = merchant.name.toUpperCase().replace(/[^A-Z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+  // Phase R2 dirty narrative — composer in realism.js folds in
+  // aggregator-prefix / parent-group / DBA-drift / terminal-id /
+  // emirate-code / Arabic-Latin descriptor with probability gates.
+  // The merchant token (drifted form) stays a substring so existing
+  // cross-link/search substring-match logic (app.js:1791-1811) is
+  // unaffected. MerchantName stays the canonical pool value so the
+  // enrichment sidecar can always recover the clean form for the
+  // "Show enriched" toggle. Spec ceiling is 500 chars; the helper
+  // caps at 80 — comfortably under.
   const narrativeTag = transactionType === 'ECommerce' ? 'ECM' : 'POS';
+  const channel = transactionType === 'ECommerce' ? 'ecommerce' : 'pos';
   return {
     _accountId: account.AccountId,
     TransactionId: nextTxId(account, posted, txState),
@@ -552,19 +572,30 @@ function makePosTransaction({ rng, account, date, amount, merchant, mcc, isCredi
     BookingDateTime: isoOf(posted),
     TransactionDateTime: isoOf(posted),
     ValueDateTime: isoOf(posted),
-    TransactionInformation: bankishNarrative(narrativeTag, [merchantToken, 'DXB']),
+    TransactionInformation: buildDirtyPosNarrative({
+      rng, channel, prefix: narrativeTag, merchant, registry: familyGroups,
+    }),
     Amount: { Amount: amt.toFixed(2), Currency: account.Currency },
     TransactionType: transactionType,
     SubTransactionType: 'Purchase',
     MerchantDetails: { MerchantName: merchant.name, MerchantCategoryCode: mcc },
     _isCreditCard: isCreditCard,
     _mccCategory: mccCategory,
+    // Phase R2 — internal back-reference so the enrichment sidecar can
+    // surface parent-group ownership without re-loading the merchant
+    // pool. The `_` prefix strips on export per the standard convention.
+    _parentGroup: merchant.parent_group ?? null,
+    _parentGroupAcronym: merchant.parent_group ? (familyGroups?.[merchant.parent_group]?.acronym ?? null) : null,
   };
 }
 
 function makeAtmWithdrawal({ rng, account, date, amount, merchant, mcc, txState, now }) {
   const posted = applyPostingTime(date, rng);
   const networkToken = merchant.name.toUpperCase().replace(/[^A-Z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const terminal = terminalSuffix(rng, 0.8); // ATM terminals near-always carry an id
+  const branch = `BR${String(rngInt(rng, 100, 999))}`;
+  const emirate = emirateCode(rng);
+  const parts = terminal ? [networkToken, branch, terminal, emirate] : [networkToken, branch, emirate];
   return {
     _accountId: account.AccountId,
     TransactionId: nextTxId(account, posted, txState),
@@ -574,7 +605,7 @@ function makeAtmWithdrawal({ rng, account, date, amount, merchant, mcc, txState,
     BookingDateTime: isoOf(posted),
     TransactionDateTime: isoOf(posted),
     ValueDateTime: isoOf(posted),
-    TransactionInformation: bankishNarrative('ATM', [networkToken, `BR${String(rngInt(rng, 100, 999))}`]),
+    TransactionInformation: bankishNarrative('ATM', parts),
     Amount: { Amount: amount.toFixed(2), Currency: account.Currency },
     TransactionType: 'ATM',
     SubTransactionType: 'Withdrawal',
@@ -586,6 +617,10 @@ function makeAtmWithdrawal({ rng, account, date, amount, merchant, mcc, txState,
 function makeGovBillPayment({ rng, account, date, amount, merchant, mcc, txState, now }) {
   const posted = applyPostingTime(date, rng);
   const billerToken = merchant.name.toUpperCase().replace(/[^A-Z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+  // Government bill payments often carry a reference number + emirate
+  // code on the statement. Aggregator prefixes don't apply (this rail
+  // doesn't route via TST*/SQ*/PYPL*).
+  const ref = String(rngInt(rng, 1000, 9999));
   return {
     _accountId: account.AccountId,
     TransactionId: nextTxId(account, posted, txState),
@@ -595,7 +630,7 @@ function makeGovBillPayment({ rng, account, date, amount, merchant, mcc, txState
     BookingDateTime: isoOf(posted),
     TransactionDateTime: isoOf(posted),
     ValueDateTime: valueDateOf(posted, 'BillPayments', rng),
-    TransactionInformation: bankishNarrative('GOV', [billerToken, String(rngInt(rng, 1000, 9999))]),
+    TransactionInformation: bankishNarrative('GOV', [billerToken, ref, emirateCode(rng)]),
     Amount: { Amount: amount.toFixed(2), Currency: account.Currency },
     TransactionType: 'BillPayments',
     SubTransactionType: 'Repayments',

@@ -740,6 +740,10 @@ export interface EnrichmentRecord {
   category: string;
   subcategory: string;
   logoSlug: string | null;
+  /** Phase R2 — synthetic UAE family-conglomerate parent group id. */
+  parentGroup: string | null;
+  /** Phase R2 — short acronym used as a narrative prefix on the raw side. */
+  parentGroupAcronym: string | null;
 }
 export interface EnrichmentSidecar {
   schema: string;

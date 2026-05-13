@@ -14,6 +14,11 @@ export function indexPools(rawPools) {
   const ibansByCategory = {};
   const organisationsByPoolId = {};
   const counterpartiesByPoolId = {};
+  // Phase R2 — synthetic UAE family-conglomerate registry. Discriminator
+  // is the top-level `groups` array. Indexed as a flat { groupId →
+  // groupRecord } map so the narrative-grammar helpers can resolve a
+  // merchant's `parent_group` in O(1).
+  const familyGroupsById = {};
 
   for (const p of rawPools) {
     if (!p || typeof p.pool_id !== 'string') continue;
@@ -31,6 +36,10 @@ export function indexPools(rawPools) {
       organisationsByPoolId[p.pool_id] = p;
     } else if (Array.isArray(p.counterparties)) {
       counterpartiesByPoolId[p.pool_id] = p;
+    } else if (Array.isArray(p.groups)) {
+      for (const g of p.groups) {
+        if (g && typeof g.id === 'string') familyGroupsById[g.id] = g;
+      }
     }
   }
   return {
@@ -41,5 +50,6 @@ export function indexPools(rawPools) {
     ibansByCategory,
     organisationsByPoolId,
     counterpartiesByPoolId,
+    familyGroupsById,
   };
 }

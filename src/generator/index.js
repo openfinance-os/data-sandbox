@@ -106,6 +106,11 @@ function resolvePools(persona, indexedPools) {
     ...extendedPools(indexedPools),
     counterpartyBanks: indexedPools.counterpartyBanksByCategory[DEFAULT_BANKS_POOL],
     ibans: indexedPools.ibansByCategory[DEFAULT_IBANS_POOL],
+    // Phase R2 — flat family-groups registry, resolved by id from the
+    // synthetic UAE-conglomerate pool. The narrative-grammar helpers in
+    // realism.js look up a merchant's `parent_group` here to get the
+    // group's acronym for the narrative prefix.
+    familyGroups: indexedPools.familyGroupsById ?? {},
   };
 }
 
@@ -180,6 +185,9 @@ function buildBankingBundle({ persona, lfi, seed, pools, now = DEFAULT_NOW }) {
         education: p.education,
         telecom: p.telecom,
         atm: p.atm,
+        // Phase R2 — narrative dirtying needs the family-group registry
+        // so parentGroupPrefix can resolve a merchant's owner.
+        familyGroups: p.familyGroups,
         // Slice 10: B2B inflows / outflows resolve cash_flow.*.counterparty_pool
         // against the indexed pools structure. Empty `{}` for personas
         // whose load fixtures don't include a counterparties index.
