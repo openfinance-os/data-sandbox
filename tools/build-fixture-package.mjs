@@ -29,6 +29,7 @@ const SHA = readSpecSha();
 if (fs.existsSync(OUT)) fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(path.join(OUT, 'bundles'), { recursive: true });
 fs.mkdirSync(path.join(OUT, 'personas'), { recursive: true });
+fs.mkdirSync(path.join(OUT, 'enrichment'), { recursive: true });
 
 // Banking + insurance: both domains are now bundled. Fixture file layout
 // stays `bundles/<persona>/<lfi>/seed-<n>/<endpoint>.json` because persona
@@ -92,6 +93,32 @@ async function emitPersona(personaId, persona, domain) {
     const envelopes = envelopesFromBundle(bundle, ctx);
     const dir = path.join(OUT, 'bundles', personaId, lfi, `seed-${seed}`);
     fs.mkdirSync(dir, { recursive: true });
+
+    // Phase R1.5 — emit the per-(persona, seed) enrichment sidecar on the
+    // first LFI pass only. The sidecar is computed pre-LFI inside the
+    // generator so it's byte-identical under rich/median/sparse — writing
+    // once is correct. URL: /enrichment/<persona>/seed-<n>.json.
+    if (lfi === 'rich' && bundle._enrichment) {
+      const enrichDir = path.join(OUT, 'enrichment', personaId);
+      fs.mkdirSync(enrichDir, { recursive: true });
+      const enrichFp = path.join(enrichDir, `seed-${seed}.json`);
+      const enrichText = JSON.stringify({
+        schema: 'openfinance-os/data-sandbox/enrichment/v1',
+        personaId,
+        seed,
+        generatedAt: new Date(NOW_ANCHOR).toISOString(),
+        records: bundle._enrichment,
+      }, null, 2);
+      fs.writeFileSync(enrichFp, enrichText);
+      const relEnrich = path.relative(OUT, enrichFp).split(path.sep).join('/');
+      manifest.personas[personaId] = {
+        ...(manifest.personas[personaId] ?? {}),
+        enrichmentFile: relEnrich,
+        enrichmentRecordCount: Object.keys(bundle._enrichment).length,
+      };
+      fileCount += 1;
+      totalBytes += enrichText.length;
+    }
 
     const endpointFiles = {};
     for (const [endpoint, env] of Object.entries(envelopes)) {
@@ -279,7 +306,7 @@ const pkgJson = {
     './personas/*': './personas/*',
     './lib/*': './lib/*',
   },
-  files: ['index.mjs', 'index.cjs', 'index.d.ts', 'manifest.json', 'spec.json', 'spec.insurance.json', 'pools.json', 'bundles/', 'personas/', 'lib/', 'README.md'],
+  files: ['index.mjs', 'index.cjs', 'index.d.ts', 'manifest.json', 'spec.json', 'spec.insurance.json', 'pools.json', 'bundles/', 'personas/', 'enrichment/', 'lib/', 'README.md'],
   publishConfig: { access: 'public' },
 };
 fs.writeFileSync(path.join(OUT, 'package.json'), JSON.stringify(pkgJson, null, 2));
@@ -404,6 +431,29 @@ export function loadSpec(opts = {}) {
 }
 export function loadPersonaManifest(personaId) {
   return JSON.parse(readFileSync(path.join(here, 'personas', \`\${personaId}.json\`), 'utf8'));
+}
+
+// Phase R1.5 — per-(persona, seed) enrichment sidecar. The bundle itself
+// stays as the v2.1 envelope a real UAE core would serve over Open
+// Finance (the "raw" view); the enrichment sidecar is what a TPP's
+// enrichment engine produces after cleaning. Same shape pattern as a
+// production logo / categorisation provider (Brandfetch, Tink, Plaid,
+// SaltEdge): join by TransactionId.
+//
+// LFI-independent — computed before applyLfiProfile() so the sidecar
+// stays complete even under Sparse (which redacts MerchantDetails out
+// of the bundle's wire payload).
+export function loadEnrichment({ persona, seed } = {}) {
+  const info = manifest.personas[persona];
+  if (!info) throw new Error(\`unknown persona: \${persona}\`);
+  const useSeed = seed ?? info.default_seed;
+  const rel = info.enrichmentFile;
+  if (!rel) throw new Error(\`no enrichment sidecar published for \${persona}\`);
+  const data = JSON.parse(readFileSync(path.join(here, rel), 'utf8'));
+  if (data.seed !== useSeed) {
+    throw new Error(\`enrichment sidecar seed mismatch: file has \${data.seed}, requested \${useSeed}\`);
+  }
+  return data;
 }
 
 // Workstream C plug-point 2 — runtime generator for custom personas. TPPs
@@ -566,6 +616,22 @@ function loadSpec(opts) {
 function loadPersonaManifest(personaId) {
   return JSON.parse(fs.readFileSync(path.join(here, 'personas', personaId + '.json'), 'utf8'));
 }
+// Phase R1.5 — per-(persona, seed) enrichment sidecar. See index.mjs
+// for the longer comment; LFI-independent payload keyed by TransactionId.
+function loadEnrichment(opts) {
+  opts = opts || {};
+  const persona = opts.persona;
+  const info = manifest.personas[persona];
+  if (!info) throw new Error('unknown persona: ' + persona);
+  const useSeed = opts.seed != null ? opts.seed : info.default_seed;
+  const rel = info.enrichmentFile;
+  if (!rel) throw new Error('no enrichment sidecar published for ' + persona);
+  const data = JSON.parse(fs.readFileSync(path.join(here, rel), 'utf8'));
+  if (data.seed !== useSeed) {
+    throw new Error('enrichment sidecar seed mismatch: file has ' + data.seed + ', requested ' + useSeed);
+  }
+  return data;
+}
 let _poolsCache = null;
 function getPools() {
   if (_poolsCache) return _poolsCache;
@@ -588,7 +654,7 @@ async function getEngine() {
 module.exports = {
   manifest, listPersonas, getPersonaInfo, listEndpoints, loadFixture,
   listRoleBundles,
-  loadJourney, loadSpec, loadPersonaManifest, getPools, getEngine,
+  loadJourney, loadSpec, loadPersonaManifest, loadEnrichment, getPools, getEngine,
 };
 `;
 fs.writeFileSync(path.join(OUT, 'index.cjs'), indexCjs);
@@ -663,6 +729,26 @@ export function loadJourney(opts: {
 }): Journey;
 export function loadSpec(opts?: { domain?: Domain }): unknown;
 export function loadPersonaManifest(personaId: string): unknown;
+
+// Phase R1.5 — per-(persona, seed) enrichment sidecar. The bundle stays as
+// the v2.1 envelope a real UAE core would serve over Open Finance (the
+// "raw" view); the enrichment payload is what a TPP's enrichment engine
+// would produce after cleaning. Join by TransactionId.
+export interface EnrichmentRecord {
+  merchant: string | null;
+  mcc: string | null;
+  category: string;
+  subcategory: string;
+  logoSlug: string | null;
+}
+export interface EnrichmentSidecar {
+  schema: string;
+  personaId: string;
+  seed: number;
+  generatedAt: string;
+  records: Record<string, EnrichmentRecord>;
+}
+export function loadEnrichment(opts: { persona: string; seed?: number }): EnrichmentSidecar;
 
 // Workstream C plug-point 2 — runtime engine for custom personas.
 export interface IndexedPools {

@@ -46,6 +46,7 @@
     "pools.json",
     "bundles/",
     "personas/",
+    "enrichment/",
     "lib/",
     "README.md"
   ],

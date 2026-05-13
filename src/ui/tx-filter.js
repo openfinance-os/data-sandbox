@@ -5,7 +5,7 @@
 // emptyTxFilter factory as deps so it can live outside src/app.js.
 
 export function createTxFilter(deps) {
-  const { state, el, renderPayload, emptyTxFilter } = deps;
+  const { state, el, renderPayload, emptyTxFilter, updateUrl } = deps;
 
   function renderTxFilterBar(_allRows) {
     const f = state.txFilter;
@@ -57,6 +57,23 @@ export function createTxFilter(deps) {
     humanLabel.appendChild(humanCheckbox);
     humanLabel.appendChild(document.createTextNode(' Humanise dates'));
     bar.appendChild(humanLabel);
+
+    // Phase R1.5 — "Show enriched" toggle. OFF (default) renders the raw
+    // v2.1 wire envelope as a UAE core would serve it. ON joins the
+    // enrichment sidecar by TransactionId and overlays a clean merchant
+    // name + Category + Subcategory columns. Pure render-time toggle;
+    // generator output is unchanged. Persists in URL via updateUrl.
+    const enrichLabel = el('label', { class: 'filter-toggle', attrs: { title: 'Overlay enrichment-engine output: clean merchant, category, subcategory. Raw mode (off) is what a UAE core actually emits over Open Finance.' } });
+    const enrichCheckbox = el('input', { attrs: { type: 'checkbox' } });
+    enrichCheckbox.checked = !!state.enriched;
+    enrichCheckbox.addEventListener('change', (e) => {
+      state.enriched = e.target.checked;
+      if (typeof updateUrl === 'function') updateUrl();
+      renderPayload();
+    });
+    enrichLabel.appendChild(enrichCheckbox);
+    enrichLabel.appendChild(document.createTextNode(' Show enriched'));
+    bar.appendChild(enrichLabel);
 
     const clear = el('button', {
       class: 'filter-clear',

@@ -68,6 +68,26 @@ export function loadJourney(opts: {
 export function loadSpec(opts?: { domain?: Domain }): unknown;
 export function loadPersonaManifest(personaId: string): unknown;
 
+// Phase R1.5 — per-(persona, seed) enrichment sidecar. The bundle stays as
+// the v2.1 envelope a real UAE core would serve over Open Finance (the
+// "raw" view); the enrichment payload is what a TPP's enrichment engine
+// would produce after cleaning. Join by TransactionId.
+export interface EnrichmentRecord {
+  merchant: string | null;
+  mcc: string | null;
+  category: string;
+  subcategory: string;
+  logoSlug: string | null;
+}
+export interface EnrichmentSidecar {
+  schema: string;
+  personaId: string;
+  seed: number;
+  generatedAt: string;
+  records: Record<string, EnrichmentRecord>;
+}
+export function loadEnrichment(opts: { persona: string; seed?: number }): EnrichmentSidecar;
+
 // Workstream C plug-point 2 — runtime engine for custom personas.
 export interface IndexedPools {
   namesByPoolId: Record<string, unknown>;

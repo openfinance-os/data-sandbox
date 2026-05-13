@@ -128,6 +128,22 @@ function loadSpec(opts) {
 function loadPersonaManifest(personaId) {
   return JSON.parse(fs.readFileSync(path.join(here, 'personas', personaId + '.json'), 'utf8'));
 }
+// Phase R1.5 — per-(persona, seed) enrichment sidecar. See index.mjs
+// for the longer comment; LFI-independent payload keyed by TransactionId.
+function loadEnrichment(opts) {
+  opts = opts || {};
+  const persona = opts.persona;
+  const info = manifest.personas[persona];
+  if (!info) throw new Error('unknown persona: ' + persona);
+  const useSeed = opts.seed != null ? opts.seed : info.default_seed;
+  const rel = info.enrichmentFile;
+  if (!rel) throw new Error('no enrichment sidecar published for ' + persona);
+  const data = JSON.parse(fs.readFileSync(path.join(here, rel), 'utf8'));
+  if (data.seed !== useSeed) {
+    throw new Error('enrichment sidecar seed mismatch: file has ' + data.seed + ', requested ' + useSeed);
+  }
+  return data;
+}
 let _poolsCache = null;
 function getPools() {
   if (_poolsCache) return _poolsCache;
@@ -150,5 +166,5 @@ async function getEngine() {
 module.exports = {
   manifest, listPersonas, getPersonaInfo, listEndpoints, loadFixture,
   listRoleBundles,
-  loadJourney, loadSpec, loadPersonaManifest, getPools, getEngine,
+  loadJourney, loadSpec, loadPersonaManifest, loadEnrichment, getPools, getEngine,
 };

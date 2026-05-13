@@ -27,6 +27,7 @@ import { generateStatements } from './statements.js';
 import { generateProducts } from './product.js';
 import { applyLfiProfile } from './banking/lfi-profile.js';
 import { buildInsuranceBundle } from './insurance/index.js';
+import { buildEnrichment } from './enrichment.js';
 
 const DEFAULT_NOW = new Date(Date.UTC(2026, 3, 1, 0, 0, 0));
 
@@ -267,6 +268,15 @@ function buildBankingBundle({ persona, lfi, seed, pools, now = DEFAULT_NOW }) {
   const partyResult = generateParties({ persona: enrichedPersona, accounts, identity, rng, now });
   const statements = generateStatements({ accounts, transactions, rng, now });
 
+  // Phase R1.5 — transaction enrichment sidecar. Computed BEFORE
+  // applyLfiProfile() so the sidecar is LFI-independent and stays
+  // complete even when Sparse redacts MerchantDetails out of the wire
+  // payload. The bundle carries it as the underscore-prefixed key
+  // `_enrichment` — strips on export per the standard convention in
+  // src/ui/export.js, and the fixture-package builder + stage-site
+  // pipe it through to a separate per-(persona, seed) sidecar URL.
+  const enrichment = buildEnrichment(transactions);
+
   const bundle = {
     persona: persona.persona_id,
     name: persona.name,
@@ -282,6 +292,7 @@ function buildBankingBundle({ persona, lfi, seed, pools, now = DEFAULT_NOW }) {
     callingUserParty: partyResult.callingUser,
     statements,
     product: productRecords,
+    _enrichment: enrichment,
   };
 
   return applyLfiProfile({ bundle, personaId: persona.persona_id, lfi, seed });

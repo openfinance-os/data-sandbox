@@ -119,6 +119,29 @@ export function loadPersonaManifest(personaId) {
   return JSON.parse(readFileSync(path.join(here, 'personas', `${personaId}.json`), 'utf8'));
 }
 
+// Phase R1.5 — per-(persona, seed) enrichment sidecar. The bundle itself
+// stays as the v2.1 envelope a real UAE core would serve over Open
+// Finance (the "raw" view); the enrichment sidecar is what a TPP's
+// enrichment engine produces after cleaning. Same shape pattern as a
+// production logo / categorisation provider (Brandfetch, Tink, Plaid,
+// SaltEdge): join by TransactionId.
+//
+// LFI-independent — computed before applyLfiProfile() so the sidecar
+// stays complete even under Sparse (which redacts MerchantDetails out
+// of the bundle's wire payload).
+export function loadEnrichment({ persona, seed } = {}) {
+  const info = manifest.personas[persona];
+  if (!info) throw new Error(`unknown persona: ${persona}`);
+  const useSeed = seed ?? info.default_seed;
+  const rel = info.enrichmentFile;
+  if (!rel) throw new Error(`no enrichment sidecar published for ${persona}`);
+  const data = JSON.parse(readFileSync(path.join(here, rel), 'utf8'));
+  if (data.seed !== useSeed) {
+    throw new Error(`enrichment sidecar seed mismatch: file has ${data.seed}, requested ${useSeed}`);
+  }
+  return data;
+}
+
 // Workstream C plug-point 2 — runtime generator for custom personas. TPPs
 // installing this package can compose a recipe and run buildBundle inside
 // their own app, getting the same v2.1-shaped envelopes as the static
