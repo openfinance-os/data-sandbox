@@ -217,11 +217,19 @@ Files to add:
 
 A short list of high-value edge cases worth seeding:
 
-- **Refund linking** — emit refund/reversal transactions whose
-  narrative shares the original merchant cue but uses a `RFD/` or
-  `REV/` prefix. Set `SubTransactionType` to `Refund` or `Reversal`
-  (both already in the `AESubTransactionType` enum at spec line 4655).
-  Enrichment should pair them by merchant + amount + temporal proximity.
+- **Refund linking — SHIPPED (slice R5.1).** `src/generator/refunds.js`
+  emits paired refund/reversal credits as a post-pass over an account's
+  generated transactions, with side-channel PRNG seeded on the original
+  `TransactionId` so the EXP-05 side-channel invariant holds. Opt-in
+  per persona via `enable_refunds: true` (default off). Default rate
+  3%; ~30% emit as `Reversal` (within 36h, full amount), ~70% as
+  `Refund` (2–14 days later, 25–100% of original). Narrative carries
+  the `REV/` or `RFD/` prefix; `MerchantDetails` is inherited verbatim
+  so the merchant token survives narrative-dirtying and reaches the
+  enrichment sidecar. The sidecar surfaces `refundOf` + `refundKind`
+  on the credit half so a TPP can score its pairing heuristic against
+  ground truth (or just read it through). `sme-ecommerce-marketplace`
+  opts in as the canonical case.
 - **Recurring subscriptions** — same merchant + same amount + monthly
   cadence. Enrichment should classify as recurring vs one-off. Already
   half-modelled by standing orders; extend to card-recurring (Netflix-

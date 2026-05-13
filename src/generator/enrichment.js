@@ -218,6 +218,14 @@ function enrichOne(tx) {
     mccRaw: tx._mccMisrouted ? rawMcc : null,
     mccMisrouted: Boolean(tx._mccMisrouted),
     mccMisroutingReason: tx._mccMisroutingReason ?? null,
+    // Phase R5 — refund / reversal pairing. Populated only on the
+    // credit half: `refundOf` carries the original purchase's
+    // TransactionId, and `refundKind` discriminates Refund vs Reversal.
+    // A TPP's enrichment engine can score its own pairing heuristic
+    // (merchant + amount + temporal proximity) against this ground
+    // truth, or simply read it through. Null on every non-refund row.
+    refundOf: tx._refundOf ?? null,
+    refundKind: tx._refundKind ?? null,
   };
 }
 

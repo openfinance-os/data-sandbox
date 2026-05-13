@@ -28,6 +28,7 @@ import {
 import { vatTreatmentForPool, computeVatBreakdown } from './vat.js';
 import { EXTENDED_SPEND_CATEGORIES, defaultCountBand } from './banking/spend-profiles.js';
 import { maybeMisrouteMcc } from './mcc-noise.js';
+import { buildRefunds } from './refunds.js';
 
 // Trailing history window for transaction generation. Phase R1 of the
 // enrichment-realism plan bumped this from 12 → 24 months so downstream
@@ -341,6 +342,19 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
         }));
         runningBalance.balance -= feeAmount;
       }
+    }
+  }
+
+  // Phase R5 — refund / reversal pairs. Opt-in per persona via
+  // `enable_refunds: true`. Each refund uses a side-channel PRNG keyed
+  // on the original TransactionId, so toggling the flag only adds new
+  // records (no shift to downstream main-rng draws). The credit half
+  // re-credits runningBalance so balances + statements remain coherent.
+  if (persona.enable_refunds) {
+    const refunds = buildRefunds({ transactions: out, account, now });
+    for (const r of refunds) {
+      out.push(r);
+      runningBalance.balance += Number(r.Amount.Amount);
     }
   }
 

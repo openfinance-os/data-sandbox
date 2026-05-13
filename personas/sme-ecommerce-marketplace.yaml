@@ -79,6 +79,12 @@ spend_profile:
 fx_activity: true
 cash_deposit_activity: false
 
+# Phase R5 — opt in to refund / reversal pairs on POS / ECommerce
+# purchases. A marketplace seller is the canonical case: returned-goods
+# refund cycles are part of normal operations, and an enrichment engine
+# pairing the credit back to its purchase is high-signal here.
+enable_refunds: true
+
 distress_signals:
   nsf_events_per_year_band: [0, 1]
 
