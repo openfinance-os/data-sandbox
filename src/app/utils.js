@@ -31,6 +31,21 @@ export function el(tag, opts = {}, ...children) {
 }
 
 /**
+ * Parse a build-time SVG string and return the live <svg> element. The
+ * source SVGs come from tools/build-avatars.mjs — a closed allow-list of
+ * generator output, no user data interpolated — so DOMParser is used to
+ * avoid touching innerHTML while still producing a real DOM node the
+ * caller can append. Returns null if the input cannot be parsed.
+ */
+export function svgFromString(s) {
+  if (!s) return null;
+  const doc = new DOMParser().parseFromString(s, 'image/svg+xml');
+  const root = doc.documentElement;
+  if (!root || root.nodeName !== 'svg') return null;
+  return document.importNode(root, true);
+}
+
+/**
  * True if a v2.1 field name conventionally carries an ISO date / datetime.
  * Used to drive the date-humanise toggle on /transactions.
  */

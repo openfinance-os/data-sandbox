@@ -8,7 +8,7 @@ import { buildBundle } from '../generator/index.js';
 import { leafFields, statusBadge } from '../shared/spec-helpers.js';
 
 export function createCompareView(deps) {
-  const { state, el, stripInternal } = deps;
+  const { state, el, stripInternal, personaAvatarEl } = deps;
 
   function renderCompareView(body) {
     const persona = state.data.personas[state.personaId];
@@ -24,6 +24,15 @@ export function createCompareView(deps) {
     const leftRows = compareRowsFor(leftBundle);
     const rightRows = compareRowsFor(rightBundle);
     const stats = compareStats(leftRows, rightRows);
+    if (personaAvatarEl) {
+      body.appendChild(el('div', { class: 'compare-persona' },
+        personaAvatarEl(state.personaId, persona, 'md'),
+        el('div', { class: 'compare-persona-text' },
+          el('div', { class: 'compare-persona-name', text: persona.name }),
+          el('div', { class: 'compare-persona-lfis', text: `${leftLfi} vs ${rightLfi}` }),
+        ),
+      ));
+    }
     body.appendChild(el('div', {
       class: 'compare-summary',
       text: `${stats.totalCellsLeft} populated cells on ${leftLfi} · ${stats.totalCellsRight} on ${rightLfi} · ${stats.diffCount} fields differ across ${Math.max(leftRows.length, rightRows.length)} rows. Cells highlighted: green = present only on this side, amber = changed, red = missing.`,

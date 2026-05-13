@@ -59,10 +59,14 @@ function discoverAssets() {
   const assets = new Set([INDEX_HTML]);
 
   // <link rel="stylesheet">, <link rel="preload">, <link rel="modulepreload">
-  // — every href contributes to first-paint network cost.
+  // — every href contributes to first-paint network cost. Data URIs are
+  // inlined in the HTML weight already, so skip them as separate assets.
   const linkRe = /<link\s+[^>]*?href="([^"]+)"[^>]*>/g;
   let m;
-  while ((m = linkRe.exec(html))) assets.add(resolveHref(m[1]));
+  while ((m = linkRe.exec(html))) {
+    if (m[1].startsWith('data:')) continue;
+    assets.add(resolveHref(m[1]));
+  }
 
   // Entry-script discovery — and from there, transitive static imports.
   const scriptRe = /<script\s+[^>]*?src="([^"]+)"[^>]*>/g;
