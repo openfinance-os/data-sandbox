@@ -119,7 +119,7 @@ function directDebitHint(tx) {
 
 /**
  * Normalise a merchant name into a stable URL-safe slug. Used as the join
- * key against the future brand-registry sidecar (R4).
+ * key against the brand-registry sidecar (R4).
  */
 function slugify(name) {
   if (!name) return null;
@@ -127,6 +127,47 @@ function slugify(name) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '');
+}
+
+/**
+ * Phase R4 — deterministic brand-mark URL for a given slug. Matches
+ * the path the brand-registry builder writes the placeholder SVG at,
+ * so the enrichment record can resolve directly to a logo without a
+ * registry lookup. Same value for the same slug across every persona
+ * × LFI × seed combination.
+ */
+function logoUrlFor(slug) {
+  if (!slug) return null;
+  return `/fixtures/v1/brands/${slug}.svg`;
+}
+
+/**
+ * Phase R4 — deterministic FNV-1a hash → HSL → hex. Mirrors the
+ * algorithm in tools/build-brand-registry.mjs so the colour an
+ * enrichment record carries matches the colour painted on the SVG.
+ * Drift between the two would make a TPP rendering "primaryColor on
+ * a card next to the SVG" look like a bug.
+ */
+function brandColorFor(slug) {
+  if (!slug) return null;
+  let h = 2166136261;
+  for (let i = 0; i < slug.length; i++) {
+    h ^= slug.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  const hue = ((h >>> 0) % 360);
+  return hslToHex(hue, 55, 45);
+}
+
+function hslToHex(h, s, l) {
+  const a = s * Math.min(l, 100 - l) / 10000;
+  const f = (n) => {
+    const k = (n + h / 30) % 12;
+    const v = (l / 100) - a * Math.max(-1, Math.min(k - 3, Math.min(9 - k, 1)));
+    const x = Math.round(v * 255);
+    return x.toString(16).padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
 }
 
 /**
@@ -155,12 +196,18 @@ function enrichOne(tx) {
   // the enriched-view consumer can show "Marketmark Hypermarket (FHG)"
   // or run group-level rollups. Null when the merchant has no declared
   // parent or for non-merchant tx shapes (salary, transfers, NSFs).
+  const slug = slugify(merchantName);
   return {
     merchant: merchantName,
     mcc: correctMcc,
     category: taxonomy.category,
     subcategory: taxonomy.subcategory,
-    logoSlug: slugify(merchantName),
+    logoSlug: slug,
+    // Phase R4 — direct logo resolution. Same path the brand-registry
+    // builder writes the placeholder SVG at, so a TPP can render the
+    // logo straight off the enrichment record without a second fetch.
+    logoUrl: logoUrlFor(slug),
+    primaryColor: brandColorFor(slug),
     parentGroup: tx._parentGroup ?? null,
     parentGroupAcronym: tx._parentGroupAcronym ?? null,
     // Phase R3 — populated only when the wire-level MCC was misrouted.

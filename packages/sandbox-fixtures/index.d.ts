@@ -101,6 +101,31 @@ export interface EnrichmentSidecar {
 }
 export function loadEnrichment(opts: { persona: string; seed?: number }): EnrichmentSidecar;
 
+// Phase R4 — brand registry. Slug-keyed map (the logoSlug field on an
+// EnrichmentRecord joins here). Same shape a Brandfetch / Clearbit
+// integration would return. Logos are algorithmically-generated
+// placeholders (initials in a coloured circle, OF-OS visual style) —
+// no real brand marks are reproduced.
+export interface BrandRegistryEntry {
+  merchantName: string;
+  logoUrl: string;
+  primaryColor: string;
+  website: string;
+  parentGroup: string | null;
+  parentGroupAcronym: string | null;
+  displayVariants: string[];
+  displayVariantsAr: string[];
+  mcc: string | null;
+  initials: string;
+}
+export interface BrandRegistry {
+  schema: string;
+  generatedAt: string;
+  merchantCount: number;
+  records: Record<string, BrandRegistryEntry>;
+}
+export function loadBrandRegistry(): BrandRegistry;
+
 // Workstream C plug-point 2 — runtime engine for custom personas.
 export interface IndexedPools {
   namesByPoolId: Record<string, unknown>;

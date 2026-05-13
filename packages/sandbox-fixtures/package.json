@@ -47,6 +47,8 @@
     "bundles/",
     "personas/",
     "enrichment/",
+    "brands/",
+    "brand-registry.json",
     "lib/",
     "README.md"
   ],

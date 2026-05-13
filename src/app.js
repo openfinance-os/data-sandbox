@@ -175,6 +175,14 @@ function applyEnrichmentOverlay(row, rec) {
   const out = { ...row };
   if (rec.category) out.Category = rec.category;
   if (rec.subcategory) out.Subcategory = rec.subcategory;
+  // Phase R4 — Logo column. Marker tokens that the row-rendering loop
+  // picks up to swap in an <img> from the brand-registry path. Stays
+  // a string in the row object so the generic cell-render path stays
+  // unchanged; the renderPayload loop replaces the cell content when
+  // the column key === 'Logo'.
+  if (rec.logoUrl) {
+    out.Logo = rec.logoUrl;
+  }
   if (rec.merchant) {
     out.MerchantDetails = {
       ...(row.MerchantDetails ?? {}),
@@ -1390,6 +1398,26 @@ function renderPayloadUnsafe() {
       const v = stripped[k];
       const isEmpty = v == null;
       const f = fieldsByName.get(k);
+      // Phase R4 — Logo column (only present under the enriched-view
+      // overlay). Render as an inline <img> rather than the literal URL
+      // string. Tiny size so it sits neatly alongside the MerchantName
+      // cell at the typical statement-table density. SVG content is
+      // local to the staged origin so no cross-origin / CSP fuss.
+      if (k === 'Logo' && typeof v === 'string') {
+        const td = el('td', { class: 'tx-logo-cell' });
+        const img = el('img', {
+          attrs: {
+            src: v,
+            alt: 'Merchant logo placeholder',
+            width: '24',
+            height: '24',
+            loading: 'lazy',
+          },
+        });
+        td.appendChild(img);
+        tr.appendChild(td);
+        continue;
+      }
       let text;
       if (isEmpty) {
         text = '—';

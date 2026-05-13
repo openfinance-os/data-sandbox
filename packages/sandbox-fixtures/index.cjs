@@ -130,6 +130,14 @@ function loadPersonaManifest(personaId) {
 }
 // Phase R1.5 — per-(persona, seed) enrichment sidecar. See index.mjs
 // for the longer comment; LFI-independent payload keyed by TransactionId.
+// Phase R4 — slug-keyed brand registry. See index.mjs for the long comment.
+let _brandRegistryCache = null;
+function loadBrandRegistry() {
+  if (_brandRegistryCache) return _brandRegistryCache;
+  _brandRegistryCache = JSON.parse(fs.readFileSync(path.join(here, 'brand-registry.json'), 'utf8'));
+  return _brandRegistryCache;
+}
+
 function loadEnrichment(opts) {
   opts = opts || {};
   const persona = opts.persona;
@@ -166,5 +174,5 @@ async function getEngine() {
 module.exports = {
   manifest, listPersonas, getPersonaInfo, listEndpoints, loadFixture,
   listRoleBundles,
-  loadJourney, loadSpec, loadPersonaManifest, loadEnrichment, getPools, getEngine,
+  loadJourney, loadSpec, loadPersonaManifest, loadEnrichment, loadBrandRegistry, getPools, getEngine,
 };
