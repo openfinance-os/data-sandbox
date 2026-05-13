@@ -121,15 +121,22 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
       // spend_profile overrides win. Pools missing from the resolved set
       // are skipped silently — keeps the dispatch additive and lets a
       // partial pool deployment still build.
+      //
+      // Skip-on-zero short-circuit: when there's no persona override AND
+      // the archetype default is [0, 0], we `continue` BEFORE calling
+      // monthlyCountFromSpend. This avoids burning a no-op rngInt draw
+      // and — critically — keeps EXP-05 fingerprints stable when a new
+      // category is added to EXTENDED_SPEND_CATEGORIES (or its pool is
+      // wired up) without simultaneous archetype defaults.
       for (const cat of EXTENDED_SPEND_CATEGORIES) {
         const pool = pools[cat.poolKey];
         if (!pool) continue;
+        const countBand = persona.spend_profile?.[cat.countBandKey];
+        const aedBand = persona.spend_profile?.[cat.aedBandKey];
+        const archetypeBand = defaultCountBand(persona.archetype, cat.id);
+        if (!countBand && !aedBand && archetypeBand[0] === 0 && archetypeBand[1] === 0) continue;
         const count = monthlyCountFromSpend({
-          rng,
-          countBand: persona.spend_profile?.[cat.countBandKey],
-          aedBand: persona.spend_profile?.[cat.aedBandKey],
-          pool,
-          defaultBand: defaultCountBand(persona.archetype, cat.id),
+          rng, countBand, aedBand, pool, defaultBand: archetypeBand,
         });
         for (let i = 0; i < count; i++) {
           const merchant = drawMerchant(rng, pool);
@@ -175,16 +182,30 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
       // dining-only loop above stays untouched so existing draw fingerprints
       // are stable; the extended categories layer on top with smaller
       // per-month counts and category-appropriate amount bands.
+      //
+      // Same control flow as the CurrentAccount path so persona
+      // `spend_profile` overrides apply on cards too (e.g. a persona that
+      // sets `ride_hailing_per_month_count_band: [0, 0]` correctly
+      // suppresses BOTH current-account and CC ride-hailing). When no
+      // override is set, the archetype default is halved — credit cards
+      // typically carry fewer extended-category draws than the operating
+      // current account. Skip-on-zero short-circuit avoids the same
+      // no-op rngInt burn the CurrentAccount loop avoids.
       for (const cat of EXTENDED_SPEND_CATEGORIES) {
         if (!CARDABLE_EXTENDED_CATEGORIES.has(cat.id)) continue;
         const pool = pools[cat.poolKey];
         if (!pool) continue;
-        const band = defaultCountBand(persona.archetype, cat.id);
-        if (band[0] === 0 && band[1] === 0) continue;
-        // On a credit card we typically see fewer extended draws per
-        // category than on a current account — halve the band, min 0.
-        const ccBand = [Math.floor(band[0] / 2), Math.max(0, Math.floor(band[1] / 2))];
-        const count = rngInt(rng, ccBand[0], ccBand[1] + 1);
+        const countBand = persona.spend_profile?.[cat.countBandKey];
+        const aedBand = persona.spend_profile?.[cat.aedBandKey];
+        const archetypeBand = defaultCountBand(persona.archetype, cat.id);
+        const ccArchetypeBand = [
+          Math.floor(archetypeBand[0] / 2),
+          Math.max(0, Math.floor(archetypeBand[1] / 2)),
+        ];
+        if (!countBand && !aedBand && ccArchetypeBand[0] === 0 && ccArchetypeBand[1] === 0) continue;
+        const count = monthlyCountFromSpend({
+          rng, countBand, aedBand, pool, defaultBand: ccArchetypeBand,
+        });
         for (let i = 0; i < count; i++) {
           const merchant = drawMerchant(rng, pool);
           const amount = rngInt(rng, merchant.typical_amount_aed_band[0], merchant.typical_amount_aed_band[1] + 1);

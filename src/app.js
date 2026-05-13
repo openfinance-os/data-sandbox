@@ -1182,7 +1182,7 @@ function renderPayloadUnsafe() {
         text: `${nsfCount} rejected debit${nsfCount === 1 ? '' : 's'} in the trailing 12 months — highlighted below.`,
       }));
     }
-    // Monthly summary — Sara's anchor JTBD ("12 months of transactions").
+    // Monthly summary — Sara's anchor JTBD ("two years of transactions").
     // Aggregates from the unfiltered set so the user sees the underlying
     // shape, regardless of any active row filter.
     body.appendChild(renderMonthlySummary(allRows));
