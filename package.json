@@ -15,7 +15,8 @@
   "scripts": {
     "build:spec": "node tools/parse-spec.mjs",
     "build:data": "node tools/build-data.mjs",
-    "build:site": "npm run build:spec && npm run build:data && node tools/build-fixture-package.mjs && node tools/build-fixture-package-py.mjs && node tools/stage-site.mjs",
+    "build:avatars": "node tools/build-avatars.mjs",
+    "build:site": "npm run build:spec && npm run build:data && npm run build:avatars && node tools/build-fixture-package.mjs && node tools/build-fixture-package-py.mjs && node tools/stage-site.mjs",
     "build:fixtures": "npm run build:spec && node tools/build-fixture-package.mjs && node tools/build-fixture-package-py.mjs",
     "test:mcp": "npm run build:fixtures --silent && npm test --workspace @openfinance-os/sandbox-mcp --silent",
     "verify:spec-shape": "node tools/verify-spec-shape.mjs",
@@ -32,7 +33,7 @@
     "test:e2e": "playwright test",
     "test:perf": "lhci autorun --config=lighthouserc.json",
     "serve": "python3 -m http.server 8000 --directory src",
-    "ci": "npm run verify:spec-shape && npm run build:spec && npm run build:data && npm run check:dist-clean && npm run lint && npm test && npm run test:mcp",
+    "ci": "npm run verify:spec-shape && npm run build:spec && npm run build:data && npm run build:avatars && npm run check:dist-clean && npm run lint && npm test && npm run test:mcp",
     "ci:full": "npm run ci && npm run build:site && npm run test:e2e && npm run test:perf"
   },
   "dependencies": {

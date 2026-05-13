@@ -855,10 +855,33 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   border-radius: 4px;
   background: var(--bg);
   cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  column-gap: 10px;
+  row-gap: 4px;
+  align-items: start;
 }
+.persona-card .persona-card-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.persona-card > .persona-stress { grid-column: 1 / -1; }
+.persona-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--bg-card);
+  flex: 0 0 auto;
+}
+.persona-avatar svg { display: block; width: 100%; height: 100%; }
+.persona-avatar-sm { width: 40px; height: 40px; margin-top: 2px; }
+.persona-avatar-lg { width: 96px; height: 96px; border-radius: 10px; }
+.persona-avatar-fallback {
+  background: var(--bg-soft);
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 14px;
+}
+.persona-avatar-lg.persona-avatar-fallback { font-size: 32px; }
 .persona-card:hover { border-color: var(--border-strong); }
 .persona-card.active {
   border-color: var(--accent);
@@ -1616,6 +1639,12 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   flex-direction: column;
   gap: 14px;
 }
+.persona-overview .po-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.persona-overview .po-header-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .persona-overview h2 {
   font-size: 18px;
   margin: 0;

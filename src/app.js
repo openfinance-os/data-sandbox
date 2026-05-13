@@ -45,6 +45,7 @@ import {
   humanArchetype,
   humanStressTerm,
   formatAmount,
+  svgFromString,
 } from './app/utils.js';
 import {
   UNDERWRITING_PSEUDO,
@@ -186,12 +187,14 @@ async function init() {
 
   // Slice 8: domain manifest drives which SPEC.json to lazy-load. Banking
   // remains the default; unknown domain values fall back to banking.
-  const [domainsRes, dataRes] = await Promise.all([
+  const [domainsRes, dataRes, avatarsRes] = await Promise.all([
     fetch('../dist/domains.json'),
     fetch('../dist/data.json'),
+    fetch('../dist/avatars.json'),
   ]);
   const domainsManifest = await domainsRes.json();
   state.data = await dataRes.json();
+  state.avatars = (await avatarsRes.json()).avatars ?? {};
   state.domains = Object.fromEntries(domainsManifest.domains.map((d) => [d.id, d]));
 
   let resolvedDomain = url.domain;
@@ -325,6 +328,29 @@ function bestForLine(persona) {
   return lines.join(' · ');
 }
 
+// Persona avatar — wraps the build-time SVG in an aria-labelled card.
+// `size` is a tag the CSS keys off: 'sm' for library list, 'lg' for the
+// persona-overview pane. The custom persona has no manifest avatar, so
+// it gets a neutral placeholder with the "C" initial.
+function personaAvatarEl(id, persona, size) {
+  const wrap = el('div', {
+    class: `persona-avatar persona-avatar-${size}`,
+    attrs: { role: 'img', 'aria-label': `Avatar for ${persona?.name ?? id}` },
+  });
+  const a = state.avatars?.[id];
+  const node = svgFromString(a?.svg);
+  if (node) {
+    wrap.appendChild(node);
+  } else {
+    // Fallback initials — covers the custom persona slug and any future
+    // persona that lands before its avatar is built.
+    const initials = (persona?.name ?? '?')[0]?.toUpperCase() ?? '?';
+    wrap.classList.add('persona-avatar-fallback');
+    wrap.appendChild(el('span', { class: 'persona-avatar-initials', text: initials }));
+  }
+  return wrap;
+}
+
 function buildJtbdRail() {
   const rail = document.getElementById('jtbd-rail');
   if (!rail) return;
@@ -389,6 +415,20 @@ function buildPersonaList() {
     visibleCount += 1;
 
     const isCustom = id === CUSTOM_PERSONA_SLUG;
+    const cardBody = el('div', { class: 'persona-card-body' },
+      el('div', { class: 'persona-name' },
+        document.createTextNode(p.name),
+        isCustom ? el('span', { class: 'custom-badge', text: 'Custom (not curated)' }) : null,
+      ),
+      el('div', { class: 'persona-archetype', text: humanArchetype(p.archetype) }),
+    );
+    const bestFor = bestForLine(p);
+    if (bestFor) {
+      cardBody.appendChild(el('div', { class: 'persona-best', text: bestFor }));
+    }
+    if (p.narrative) {
+      cardBody.appendChild(el('div', { class: 'persona-narrative', text: p.narrative.trim() }));
+    }
     const card = el(
       'div',
       {
@@ -405,19 +445,9 @@ function buildPersonaList() {
           rebuildAndRender();
         },
       },
-      el('div', { class: 'persona-name' },
-        document.createTextNode(p.name),
-        isCustom ? el('span', { class: 'custom-badge', text: 'Custom (not curated)' }) : null,
-      ),
-      el('div', { class: 'persona-archetype', text: humanArchetype(p.archetype) }),
+      personaAvatarEl(id, p, 'sm'),
+      cardBody,
     );
-    const bestFor = bestForLine(p);
-    if (bestFor) {
-      card.appendChild(el('div', { class: 'persona-best', text: bestFor }));
-    }
-    if (p.narrative) {
-      card.appendChild(el('div', { class: 'persona-narrative', text: p.narrative.trim() }));
-    }
     if (Array.isArray(p.stress_coverage) && p.stress_coverage.length > 0) {
       const chips = el('div', { class: 'persona-stress', attrs: { 'aria-label': 'Stress coverage' } });
       for (const term of p.stress_coverage) {
@@ -1493,8 +1523,14 @@ function renderPersonaOverview(body) {
   if (!persona) return;
 
   const wrap = el('div', { class: 'persona-overview' });
-  wrap.appendChild(el('div', { class: 'po-archetype', text: humanArchetype(persona.archetype) }));
-  wrap.appendChild(el('h2', { text: persona.name }));
+  const header = el('div', { class: 'po-header' },
+    personaAvatarEl(state.personaId, persona, 'lg'),
+    el('div', { class: 'po-header-text' },
+      el('div', { class: 'po-archetype', text: humanArchetype(persona.archetype) }),
+      el('h2', { text: persona.name }),
+    ),
+  );
+  wrap.appendChild(header);
   if (persona.narrative) {
     wrap.appendChild(el('div', { class: 'po-narrative', text: persona.narrative.trim() }));
   }
