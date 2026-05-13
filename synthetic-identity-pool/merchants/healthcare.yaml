@@ -1,0 +1,16 @@
+pool_id: merchants_healthcare
+description: Synthetic clinic / pharmacy / lab merchant names; all fictional.
+mcc: "8011"
+merchants:
+  - name: "Crescent Clinic"
+    typical_amount_aed_band: [150, 850]
+  - name: "Palm Pharmacy"
+    typical_amount_aed_band: [25, 280]
+  - name: "Oasis Diagnostic Lab"
+    typical_amount_aed_band: [180, 1200]
+  - name: "Dune Medical Centre"
+    typical_amount_aed_band: [200, 1500]
+  - name: "Saffron Dental"
+    typical_amount_aed_band: [220, 1800]
+  - name: "Marina Wellness Pharmacy"
+    typical_amount_aed_band: [35, 320]

@@ -1,0 +1,47 @@
+pool_id: family_groups_uae_synthetic
+description: |
+  Synthetic UAE family-conglomerate groups — all fictional. Mirrors a
+  load-bearing UAE retail-reality stressor for transaction enrichment:
+  most international brands here are operated under franchise by a
+  small set of large local conglomerates, and a real bank statement
+  shows the group's commercial entity in the narrative alongside the
+  brand (e.g. an Alshaya-franchised Starbucks tx in UAE may post as
+  'ALSHAYA STARBUCKS DXB' on the wire). Naïve enrichment that resolves
+  on the brand alone misses the ownership graph, so a TPP testing
+  receivables-clustering, loyalty inference, or concentration-risk
+  analysis needs synthetic data that carries the structural property.
+  Names + brand attributions are entirely synthetic — no real-group
+  data is reproduced (NG4 / NG5 / D-14 honoured).
+groups:
+  - id: falcon_holdings
+    name: "Falcon Holdings Group"
+    acronym: "FHG"
+    profile: "Diversified retail — supermarkets, cinemas, theme attractions."
+  - id: dune_trading
+    name: "Dune Trading Enterprises"
+    acronym: "DTE"
+    profile: "Apparel + lifestyle franchise operator."
+  - id: al_sahra_commercial
+    name: "Al-Sahra Commercial Group"
+    acronym: "ASC"
+    profile: "Quick-service food + hotel franchise."
+  - id: mirage_holdings
+    name: "Mirage Holdings"
+    acronym: "MRH"
+    profile: "Entertainment + media + subscription brands."
+  - id: palm_corp
+    name: "Palm Corporation"
+    acronym: "PMC"
+    profile: "Mid-market apparel + home goods + pharmacy franchise."
+  - id: oasis_group
+    name: "Oasis Group"
+    acronym: "OSG"
+    profile: "Travel + hospitality."
+  - id: crescent_trading
+    name: "Crescent Trading LLC"
+    acronym: "CTL"
+    profile: "Health + wellness + dental clinic franchise."
+  - id: saffron_holdings
+    name: "Saffron Holdings"
+    acronym: "SFH"
+    profile: "Independent dining + boutique grocery."

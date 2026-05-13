@@ -1,16 +1,28 @@
 pool_id: merchants_groceries
-description: Synthetic grocery / supermarket merchant names; all fictional.
+description: Synthetic grocery / supermarket merchant names; all fictional. Phase R2 adds display_variants[] (DBA drift) + parent_group (synthetic UAE family-conglomerate ownership).
 mcc: "5411"
 merchants:
   - name: "Marketmark Hypermarket"
     typical_amount_aed_band: [80, 350]
+    parent_group: falcon_holdings
+    display_variants: ["MARKETMARK HYP", "MMARK HYPRMKT", "MARKETMRK HYP", "MARKETMARK"]
   - name: "Greenfield Grocers"
     typical_amount_aed_band: [40, 180]
+    parent_group: falcon_holdings
+    display_variants: ["GREENFIELD GR", "GRNFLD GROCERS", "GREENFLD"]
   - name: "Cedar Valley Supermart"
     typical_amount_aed_band: [60, 250]
+    parent_group: palm_corp
+    display_variants: ["CEDAR VLY MART", "CEDARVALLEY SM", "CDR VALLEY"]
   - name: "Solstice Daily Mart"
     typical_amount_aed_band: [25, 90]
+    display_variants: ["SOLSTICE MART", "SOLSTICE DLY"]
   - name: "Harborway Foods"
     typical_amount_aed_band: [70, 300]
+    parent_group: dune_trading
+    display_variants: ["HARBORWAY FDS", "HRBRWY FOODS"]
   - name: "Saffron Market"
     typical_amount_aed_band: [45, 200]
+    parent_group: saffron_holdings
+    display_variants: ["SAFFRON MKT", "SAFRN MARKET"]
+    display_variants_ar: ["SOUQ ZAAFARAN"]

@@ -134,6 +134,25 @@ if (fs.existsSync(path.join(fixtureSrc, 'manifest.json'))) {
   fs.mkdirSync(fixtureDst, { recursive: true });
   cprf(path.join(fixtureSrc, 'bundles'), path.join(fixtureDst, 'bundles'));
   cprf(path.join(fixtureSrc, 'personas'), path.join(fixtureDst, 'personas'));
+  // Phase R1.5 — per-(persona, seed) enrichment sidecar dataset. Same
+  // CORS posture as bundles/ (declared in _site/_headers below); served
+  // at /fixtures/v1/enrichment/<persona>/seed-<n>.json.
+  if (fs.existsSync(path.join(fixtureSrc, 'enrichment'))) {
+    cprf(path.join(fixtureSrc, 'enrichment'), path.join(fixtureDst, 'enrichment'));
+  }
+  // Phase R4 — brand registry + placeholder SVG marks. Served at
+  // /fixtures/v1/brand-registry.json + /fixtures/v1/brands/<slug>.svg.
+  // Same CORS posture as bundles/ and enrichment/. The TPP-facing
+  // resolution path is: bundle → enrichment.logoUrl → fetch SVG.
+  if (fs.existsSync(path.join(fixtureSrc, 'brand-registry.json'))) {
+    fs.copyFileSync(
+      path.join(fixtureSrc, 'brand-registry.json'),
+      path.join(fixtureDst, 'brand-registry.json')
+    );
+  }
+  if (fs.existsSync(path.join(fixtureSrc, 'brands'))) {
+    cprf(path.join(fixtureSrc, 'brands'), path.join(fixtureDst, 'brands'));
+  }
   fs.copyFileSync(path.join(fixtureSrc, 'manifest.json'), path.join(fixtureDst, 'manifest.json'));
   fs.copyFileSync(path.join(fixtureSrc, 'spec.json'), path.join(fixtureDst, 'spec.json'));
 

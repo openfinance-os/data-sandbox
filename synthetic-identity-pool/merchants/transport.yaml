@@ -1,0 +1,14 @@
+pool_id: merchants_transport
+description: Synthetic public-transport / road-toll top-up merchant names. All fictional.
+mcc: "4111"
+merchants:
+  - name: "MetroPass Top-Up"
+    typical_amount_aed_band: [20, 200]
+  - name: "Crescent Tollway"
+    typical_amount_aed_band: [4, 60]
+  - name: "DuneTransit Card"
+    typical_amount_aed_band: [25, 250]
+  - name: "OasisLink Parking"
+    typical_amount_aed_band: [5, 80]
+  - name: "PalmRail Recharge"
+    typical_amount_aed_band: [30, 300]

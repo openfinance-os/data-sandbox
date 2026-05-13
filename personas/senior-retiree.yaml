@@ -36,9 +36,13 @@ spend_profile:
   # Senior persona is genuinely low-volume — designed so EXP-18's guard
   # (<50 tx OR <6 distinct months in the trailing 12) triggers under all
   # LFI profiles. Average ~4 tx/month across all categories incl. salary
-  # + utility = ~48 tx/year, just below the 50 floor.
+  # + utility = ~46 tx/year, just below the 50 floor. The groceries upper
+  # bound is one tx tighter than nominal to keep a safety margin against
+  # downstream RNG-sequence shifts (e.g. when new EXTENDED_SPEND
+  # categories are added to the dispatcher without senior_retiree
+  # archetype defaults).
   groceries_aed_per_month_band: [600, 1400]
-  groceries_per_month_count_band: [0, 2]
+  groceries_per_month_count_band: [0, 1]
   fuel_aed_per_month_band: [100, 300]
   fuel_per_month_count_band: [0, 1]
   dining_per_month_count_band: [0, 1]

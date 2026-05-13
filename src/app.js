@@ -111,6 +111,13 @@ const state = {
   // controls under PDPL"). When true, the rendered table hides every
   // column whose field is not in the curated PII allowlist.
   piiOnly: false,
+  // Phase R1.5 — "Show enriched" toggle. When OFF (default), /transactions
+  // renders the raw v2.1 envelope as a real UAE core would emit it. When
+  // ON, the rendered table joins the enrichment sidecar by TransactionId
+  // and overlays a clean merchant name + Category + Subcategory columns.
+  // Persists in the URL as `?enriched=1`. Pure render-time toggle —
+  // bundle data is unchanged.
+  enriched: false,
   // Cold-landing welcome cards — first-load orientation for visitors arriving
   // from the Commons feed. Per EXP-22 the app does not write to local /
   // sessionStorage, so the dismissal lives only in JS state (a refresh re-shows
@@ -144,7 +151,7 @@ const { renderCompareView } = createCompareView({
   state, el, stripInternal,
 });
 const { renderTxFilterBar, applyFilter, applySort, toggleSort } = createTxFilter({
-  state, el, renderPayload, emptyTxFilter,
+  state, el, renderPayload, emptyTxFilter, updateUrl: pushPermalink,
 });
 const { renderMonthlySummary } = createMonthlySummary({ el, formatAmount });
 const { renderInsuranceBundle } = createInsurance({
@@ -153,6 +160,38 @@ const { renderInsuranceBundle } = createInsurance({
 const { renderUnderwritingStrip, renderUnderwritingPanel } = createUnderwriting({
   state, el, formatAmount, renderNavigator, renderPayload, UNDERWRITING_PSEUDO,
 });
+
+// Phase R1.5 — merge a single enrichment record onto a /transactions row.
+// Returns a NEW row object so the underlying bundle stays untouched.
+// Adds two top-level keys (Category, Subcategory) that the table-render
+// loop picks up as new columns. When the sidecar carries a merchant name
+// and the row has none (Sparse stripped MerchantDetails), the overlay
+// recovers it under a synthetic MerchantDetails block so the column
+// still renders. Field-card lookup tolerates unknown column names —
+// Category/Subcategory aren't v2.1 fields, which is correct (they're
+// enrichment-engine output, not bank-side wire data).
+function applyEnrichmentOverlay(row, rec) {
+  if (!rec) return row;
+  const out = { ...row };
+  if (rec.category) out.Category = rec.category;
+  if (rec.subcategory) out.Subcategory = rec.subcategory;
+  // Phase R4 — Logo column. Marker tokens that the row-rendering loop
+  // picks up to swap in an <img> from the brand-registry path. Stays
+  // a string in the row object so the generic cell-render path stays
+  // unchanged; the renderPayload loop replaces the cell content when
+  // the column key === 'Logo'.
+  if (rec.logoUrl) {
+    out.Logo = rec.logoUrl;
+  }
+  if (rec.merchant) {
+    out.MerchantDetails = {
+      ...(row.MerchantDetails ?? {}),
+      MerchantName: rec.merchant,
+      ...(rec.mcc ? { MerchantCategoryCode: rec.mcc } : {}),
+    };
+  }
+  return out;
+}
 
 function emptyTxFilter() {
   return {
@@ -183,6 +222,7 @@ async function init() {
 
   const url = decodeFromUrl(window.location.href);
   state.preview = url.preview;
+  state.enriched = Boolean(url.enriched);
 
   // Slice 8: domain manifest drives which SPEC.json to lazy-load. Banking
   // remains the default; unknown domain values fall back to banking.
@@ -892,6 +932,9 @@ function pushPermalink() {
   if (state.personaId === CUSTOM_PERSONA_SLUG && state.recipe) {
     params.set('recipe', encodeRecipe(state.recipe));
   }
+  // Phase R1.5 — enriched view toggle. Emit only when ON so existing
+  // shareable raw-view permalinks stay byte-identical.
+  if (state.enriched) params.set('enriched', '1');
   const next = `${window.location.pathname}?${params.toString()}`;
   window.history.replaceState({}, '', next);
 }
@@ -1182,7 +1225,7 @@ function renderPayloadUnsafe() {
         text: `${nsfCount} rejected debit${nsfCount === 1 ? '' : 's'} in the trailing 12 months — highlighted below.`,
       }));
     }
-    // Monthly summary — Sara's anchor JTBD ("12 months of transactions").
+    // Monthly summary — Sara's anchor JTBD ("two years of transactions").
     // Aggregates from the unfiltered set so the user sees the underlying
     // shape, regardless of any active row filter.
     body.appendChild(renderMonthlySummary(allRows));
@@ -1208,7 +1251,27 @@ function renderPayloadUnsafe() {
     return;
   }
 
-  const visible = rows.slice(0, 100);
+  // Phase R1.5 — enrichment overlay. When state.enriched is on and we're
+  // looking at /transactions, fold every row's matching sidecar record
+  // into a derived view that adds two top-level columns (Category,
+  // Subcategory) and replaces a missing/redacted MerchantName with the
+  // sidecar's clean value. Bundle data is untouched; only the rendered
+  // rows change. The headline win is under Sparse, where the LFI profile
+  // strips MerchantDetails out of the wire payload but the sidecar still
+  // carries the canonical merchant name.
+  if (isTransactions && state.enriched) {
+    const reg = state.bundle?._enrichment ?? {};
+    rows = rows.map((r) => applyEnrichmentOverlay(r, reg[r.TransactionId]));
+  }
+
+  // Row-render cap. Unfiltered /transactions hits 2,400+ rows on HNW
+  // under the 24-month history window; we cap at 250 to keep first-paint
+  // snappy while staying above the natural row-count of any single
+  // moderate-volume filter result (e.g. HNW InternationalTransfer ≈ 100
+  // tx, ATM ≈ 85, LocalBankTransfer ≈ 50 — all visible in full when the
+  // user narrows). 250 is a uniform cap across filtered/unfiltered so
+  // the UI semantics stay simple: a filter always narrows monotonically.
+  const visible = rows.slice(0, 250);
   const allKeys = new Set();
   for (const r of visible) for (const k of Object.keys(stripInternal(r))) allKeys.add(k);
 
@@ -1335,6 +1398,26 @@ function renderPayloadUnsafe() {
       const v = stripped[k];
       const isEmpty = v == null;
       const f = fieldsByName.get(k);
+      // Phase R4 — Logo column (only present under the enriched-view
+      // overlay). Render as an inline <img> rather than the literal URL
+      // string. Tiny size so it sits neatly alongside the MerchantName
+      // cell at the typical statement-table density. SVG content is
+      // local to the staged origin so no cross-origin / CSP fuss.
+      if (k === 'Logo' && typeof v === 'string') {
+        const td = el('td', { class: 'tx-logo-cell' });
+        const img = el('img', {
+          attrs: {
+            src: v,
+            alt: 'Merchant logo placeholder',
+            width: '24',
+            height: '24',
+            loading: 'lazy',
+          },
+        });
+        td.appendChild(img);
+        tr.appendChild(td);
+        continue;
+      }
       let text;
       if (isEmpty) {
         text = '—';

@@ -5,13 +5,19 @@
 
 import { rngInt } from '../prng.js';
 
+// Statement window — kept in lock-step with HISTORY_MONTHS in transactions.js.
+// Bumped from 12 → 24 in Phase R1 so a TPP can pull a comparable two-year
+// statement history alongside the deeper transaction stream.
+const STATEMENT_HISTORY_MONTHS = 24;
+
 export function generateStatements({ accounts, transactions, rng, now }) {
   const out = [];
   for (const acc of accounts) {
     const accTx = transactions.filter((t) => t._accountId === acc.AccountId);
     let opening = acc._meta.openingBalance;
-    // Walk backward 12 calendar months, emitting one statement per month.
-    for (let m = 11; m >= 0; m--) {
+    // Walk backward STATEMENT_HISTORY_MONTHS calendar months, emitting one
+    // statement per month.
+    for (let m = STATEMENT_HISTORY_MONTHS - 1; m >= 0; m--) {
       const monthStart = new Date(now.getTime());
       monthStart.setMonth(monthStart.getMonth() - m);
       monthStart.setDate(1);

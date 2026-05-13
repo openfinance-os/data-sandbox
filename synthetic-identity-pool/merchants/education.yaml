@@ -1,0 +1,14 @@
+pool_id: merchants_education
+description: Synthetic education / tutoring merchant names; all fictional.
+mcc: "8220"
+merchants:
+  - name: "Oasis Academy"
+    typical_amount_aed_band: [800, 6500]
+  - name: "GulfTutors"
+    typical_amount_aed_band: [180, 950]
+  - name: "Crescent International School"
+    typical_amount_aed_band: [1500, 14000]
+  - name: "Palm Learning Centre"
+    typical_amount_aed_band: [320, 1600]
+  - name: "Saffron Music School"
+    typical_amount_aed_band: [220, 1100]

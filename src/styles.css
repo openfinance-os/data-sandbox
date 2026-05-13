@@ -2569,3 +2569,17 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   color: var(--text-muted);
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
 }
+
+/* Phase R4 — Logo column. Present only when the enriched-view toggle is
+   on; the table-render loop swaps in an <img> for cells whose column
+   key is `Logo`. The cell keeps the column width compact so adjacent
+   columns aren't pushed off-screen at typical statement-table density. */
+.tx-logo-cell {
+  width: 32px;
+  padding: 4px;
+  vertical-align: middle;
+}
+.tx-logo-cell img {
+  display: block;
+  border-radius: 4px;
+}

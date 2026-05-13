@@ -14,6 +14,16 @@ export function indexPools(rawPools) {
   const ibansByCategory = {};
   const organisationsByPoolId = {};
   const counterpartiesByPoolId = {};
+  // Phase R2 — synthetic UAE family-conglomerate registry. Discriminator
+  // is the top-level `groups` array. Indexed as a flat { groupId →
+  // groupRecord } map so the narrative-grammar helpers can resolve a
+  // merchant's `parent_group` in O(1).
+  const familyGroupsById = {};
+  // Phase R3 — MCC confusion table. Discriminator is the top-level
+  // `confusion` array. Indexed { correctMcc → [{ wrong, reason }] }
+  // so the noise applier in mcc-noise.js can look up plausible
+  // misrouting targets for a transaction's true MCC in O(1).
+  let mccConfusion = null;
 
   for (const p of rawPools) {
     if (!p || typeof p.pool_id !== 'string') continue;
@@ -31,6 +41,25 @@ export function indexPools(rawPools) {
       organisationsByPoolId[p.pool_id] = p;
     } else if (Array.isArray(p.counterparties)) {
       counterpartiesByPoolId[p.pool_id] = p;
+    } else if (Array.isArray(p.groups)) {
+      for (const g of p.groups) {
+        if (g && typeof g.id === 'string') familyGroupsById[g.id] = g;
+      }
+    } else if (Array.isArray(p.confusion)) {
+      // Folded so duplicate confusion files (defensive — should be one)
+      // merge their entries rather than the second clobbering the first.
+      mccConfusion = mccConfusion ?? {};
+      for (const e of p.confusion) {
+        if (!e?.correct) continue;
+        const arr = Array.isArray(e.wrong) ? e.wrong : [];
+        const records = arr.map((w) =>
+          typeof w === 'string'
+            ? { wrong: w, reason: e.reason ?? '' }
+            : { wrong: w?.wrong ?? null, reason: w?.reason ?? e.reason ?? '' }
+        ).filter((r) => r.wrong);
+        if (records.length === 0) continue;
+        mccConfusion[e.correct] = [...(mccConfusion[e.correct] ?? []), ...records];
+      }
     }
   }
   return {
@@ -41,5 +70,7 @@ export function indexPools(rawPools) {
     ibansByCategory,
     organisationsByPoolId,
     counterpartiesByPoolId,
+    familyGroupsById,
+    mccConfusion,
   };
 }

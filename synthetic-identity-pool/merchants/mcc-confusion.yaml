@@ -1,0 +1,56 @@
+pool_id: mcc_confusion_table
+description: |
+  Synthetic ISO 18245 MCC confusion table — models real card-scheme
+  misrouting patterns. The bank-side raw transaction may emit a wrong-but-
+  plausible MCC (mirroring real-world acquirer behaviour); the enrichment
+  sidecar carries the corrected ground-truth so a TPP testing
+  MCC-correction logic can score the engine end-to-end.
+
+  Each entry: `correct` is the canonical MCC the merchant pool declares;
+  `wrong` is the list of plausible misrouted codes the scheme actually
+  emits in production; `reason` documents the misrouting mechanism (kept
+  alongside the data so reviewers can spot a pattern that's stopped
+  matching reality).
+
+  Misrouting rate is calibrated in src/generator/mcc-noise.js — default
+  is 5% per applicable transaction. Side-channel PRNG keyed on
+  TransactionId, so adding/tuning this table doesn't shift the main
+  RNG state (EXP-05 fingerprints stay byte-stable for any tx that
+  doesn't actually flip).
+confusion:
+  - correct: "5541"
+    wrong: ["5411", "5499"]
+    reason: "Petrol-station convenience aisle ringing as grocery / misc food."
+  - correct: "5812"
+    wrong: ["5814"]
+    reason: "Sit-down cafe ringing as fast-food / quick-service."
+  - correct: "5912"
+    wrong: ["5411"]
+    reason: "Pharmacy counter inside a supermarket; merchant gets the umbrella MCC."
+  - correct: "5411"
+    wrong: ["5499"]
+    reason: "Small / specialty grocer flagged as misc food store."
+  - correct: "4121"
+    wrong: ["4111"]
+    reason: "Ride-hailing app routing via a transit-MCC acquirer."
+  - correct: "5399"
+    wrong: ["5961"]
+    reason: "Generic e-commerce ringing as direct marketing / catalog."
+  - correct: "8011"
+    wrong: ["5912", "8099"]
+    reason: "Clinic with attached pharmacy or unspecified medical services."
+  - correct: "5815"
+    wrong: ["4899", "5817"]
+    reason: "Streaming subscription routed via telecom or digital-goods acquirer."
+  - correct: "7011"
+    wrong: ["7012"]
+    reason: "Boutique hotel ringing as a motel under the same MCC family."
+  - correct: "4511"
+    wrong: ["4582"]
+    reason: "Airline ticket purchased at-airport ringing as airport-services."
+  - correct: "7832"
+    wrong: ["7922", "7991"]
+    reason: "Cinema flagged as theatrical-production or tourist-attractions."
+  - correct: "8220"
+    wrong: ["8299"]
+    reason: "Tuition payments routed as miscellaneous educational services."

@@ -68,6 +68,73 @@ export function loadJourney(opts: {
 export function loadSpec(opts?: { domain?: Domain }): unknown;
 export function loadPersonaManifest(personaId: string): unknown;
 
+// Phase R1.5 — per-(persona, seed) enrichment sidecar. The bundle stays as
+// the v2.1 envelope a real UAE core would serve over Open Finance (the
+// "raw" view); the enrichment payload is what a TPP's enrichment engine
+// would produce after cleaning. Join by TransactionId.
+export interface EnrichmentRecord {
+  merchant: string | null;
+  /** Corrected ISO 18245 MCC (the trustworthy taxonomy key). Sidecar
+   *  carries this even when the wire-level MCC is misrouted. */
+  mcc: string | null;
+  category: string;
+  subcategory: string;
+  logoSlug: string | null;
+  /** Phase R4 — direct logo URL matching the brand-registry path. The
+   *  sidecar emits this deterministically from the slug so a TPP can
+   *  render the logo straight off the enrichment record without a
+   *  registry lookup. Same value the brand-registry entry carries. */
+  logoUrl: string | null;
+  /** Phase R4 — deterministic FNV-1a → HSL → hex brand colour. Matches
+   *  the colour painted on the merchant's placeholder SVG (algorithmic
+   *  parity is test-enforced). */
+  primaryColor: string | null;
+  /** Phase R2 — synthetic UAE family-conglomerate parent group id. */
+  parentGroup: string | null;
+  /** Phase R2 — short acronym used as a narrative prefix on the raw side. */
+  parentGroupAcronym: string | null;
+  /** Phase R3 — the wrong-but-plausible MCC the card scheme emitted on
+   *  the wire, populated only when misrouting occurred. */
+  mccRaw: string | null;
+  /** Phase R3 — true when the wire MCC was misrouted. */
+  mccMisrouted: boolean;
+  /** Phase R3 — human-readable reason from the confusion table. */
+  mccMisroutingReason: string | null;
+}
+export interface EnrichmentSidecar {
+  schema: string;
+  personaId: string;
+  seed: number;
+  generatedAt: string;
+  records: Record<string, EnrichmentRecord>;
+}
+export function loadEnrichment(opts: { persona: string; seed?: number }): EnrichmentSidecar;
+
+// Phase R4 — brand registry. Slug-keyed map (the logoSlug field on an
+// EnrichmentRecord joins here). Same shape a Brandfetch / Clearbit
+// integration would return. Logos are algorithmically-generated
+// placeholders (initials in a coloured circle, OF-OS visual style) —
+// no real brand marks are reproduced.
+export interface BrandRegistryEntry {
+  merchantName: string;
+  logoUrl: string;
+  primaryColor: string;
+  website: string;
+  parentGroup: string | null;
+  parentGroupAcronym: string | null;
+  displayVariants: string[];
+  displayVariantsAr: string[];
+  mcc: string | null;
+  initials: string;
+}
+export interface BrandRegistry {
+  schema: string;
+  generatedAt: string;
+  merchantCount: number;
+  records: Record<string, BrandRegistryEntry>;
+}
+export function loadBrandRegistry(): BrandRegistry;
+
 // Workstream C plug-point 2 — runtime engine for custom personas.
 export interface IndexedPools {
   namesByPoolId: Record<string, unknown>;

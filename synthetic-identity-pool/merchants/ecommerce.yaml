@@ -1,0 +1,16 @@
+pool_id: merchants_ecommerce
+description: Synthetic e-commerce merchant names; all fictional. UAE-plausible.
+mcc: "5399"
+merchants:
+  - name: "DuneDirect"
+    typical_amount_aed_band: [55, 480]
+  - name: "GulfShop"
+    typical_amount_aed_band: [40, 350]
+  - name: "SandboxBazaar"
+    typical_amount_aed_band: [30, 260]
+  - name: "MirageCart"
+    typical_amount_aed_band: [70, 600]
+  - name: "OasisOrders"
+    typical_amount_aed_band: [45, 320]
+  - name: "PalmPalette Apparel"
+    typical_amount_aed_band: [90, 540]

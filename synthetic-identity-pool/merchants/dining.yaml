@@ -4,13 +4,25 @@ mcc: "5812"
 merchants:
   - name: "Olive & Almond Kitchen"
     typical_amount_aed_band: [60, 300]
+    parent_group: al_sahra_commercial
+    display_variants: ["OLIVE ALMOND", "OLIVE  ALMOND KT", "OLV ALMOND"]
   - name: "Marina Bistro"
     typical_amount_aed_band: [80, 400]
+    parent_group: oasis_group
+    display_variants: ["MARINA BISTRO", "MRNA BISTRO"]
   - name: "Saffron Lane"
     typical_amount_aed_band: [50, 220]
+    parent_group: saffron_holdings
+    display_variants: ["SAFFRON LANE", "SAFRN LANE"]
+    display_variants_ar: ["MAQHA ZAAFARAN"]
   - name: "Cedar Plate"
     typical_amount_aed_band: [70, 280]
+    parent_group: al_sahra_commercial
+    display_variants: ["CEDAR PLATE", "CDR PLATE"]
   - name: "Brasserie Eight"
     typical_amount_aed_band: [120, 500]
+    display_variants: ["BRASSERIE 8", "BRSRIE EIGHT"]
   - name: "Spice Route Cafe"
     typical_amount_aed_band: [40, 150]
+    parent_group: saffron_holdings
+    display_variants: ["SPICE ROUTE", "SPICERTE CAFE"]

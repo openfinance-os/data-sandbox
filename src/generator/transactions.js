@@ -19,10 +19,22 @@ import {
   valueDateOffset,
   referenceNumber,
   pendingForRecent,
+  buildDirtyPosNarrative,
+  emirateCode,
+  aggregatorPrefix,
+  terminalSuffix,
+  fxClutter,
 } from './realism.js';
 import { vatTreatmentForPool, computeVatBreakdown } from './vat.js';
+import { EXTENDED_SPEND_CATEGORIES, defaultCountBand } from './banking/spend-profiles.js';
+import { maybeMisrouteMcc } from './mcc-noise.js';
 
-const TWELVE_MONTHS = 12;
+// Trailing history window for transaction generation. Phase R1 of the
+// enrichment-realism plan bumped this from 12 → 24 months so downstream
+// analytics (year-on-year category mix, multi-cycle credit-card behaviour,
+// seasonal patterns) have data to chew on. Statements + multi-LFI ledger
+// follow the same window.
+const HISTORY_MONTHS = 24;
 
 // Per-category knobs for the merchant-spend loop. The PRNG draw order across
 // categories is load-bearing for EXP-05 (deterministic-replay), so this list
@@ -32,6 +44,13 @@ const TWELVE_MONTHS = 12;
 //   amount → rngInt day → weekdayBias internal draws → optional pending mark.
 // `weekdayBiasFactor` and `defaultCountBand` reproduce the per-loop literals
 // from the pre-extraction version.
+// Extended categories that can plausibly hit a credit card. ATM and
+// government bill payments don't ride on cards.
+const CARDABLE_EXTENDED_CATEGORIES = new Set([
+  'ride_hailing', 'ecommerce', 'healthcare', 'entertainment',
+  'subscriptions', 'travel_air', 'travel_hotel', 'telecom',
+]);
+
 const SPEND_CATEGORIES = [
   { id: 'groceries', mccCategory: 'GRC',  weekdayBiasFactor: 0.4, defaultCountBand: [4, 9],
     countBandKey: 'groceries_per_month_count_band', aedBandKey: 'groceries_aed_per_month_band' },
@@ -46,7 +65,7 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
   const today = new Date(now.getTime());
   today.setHours(0, 0, 0, 0);
 
-  for (let m = TWELVE_MONTHS - 1; m >= 0; m--) {
+  for (let m = HISTORY_MONTHS - 1; m >= 0; m--) {
     const monthStart = new Date(today);
     monthStart.setDate(1);
     monthStart.setMonth(monthStart.getMonth() - m);
@@ -96,8 +115,62 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
           out.push(makePosTransaction({
             rng, account, date: weekdayBias(dateForDay(monthStart, day), rng, cat.weekdayBiasFactor),
             amount, merchant, mcc: pool.mcc, txState, now, mccCategory: cat.mccCategory,
+            familyGroups: pools.familyGroups,
+            mccConfusion: pools.mccConfusion,
           }));
           runningBalance.balance -= amount;
+        }
+      }
+
+      // Phase R1 — extended-spend categories (ride-hailing, e-commerce,
+      // healthcare, transport, government, entertainment, subscriptions,
+      // travel-air, travel-hotel, education, telecom, ATM). Per-archetype
+      // default count bands live in spend-profiles.js; per-persona
+      // spend_profile overrides win. Pools missing from the resolved set
+      // are skipped silently — keeps the dispatch additive and lets a
+      // partial pool deployment still build.
+      //
+      // Skip-on-zero short-circuit: when there's no persona override AND
+      // the archetype default is [0, 0], we `continue` BEFORE calling
+      // monthlyCountFromSpend. This avoids burning a no-op rngInt draw
+      // and — critically — keeps EXP-05 fingerprints stable when a new
+      // category is added to EXTENDED_SPEND_CATEGORIES (or its pool is
+      // wired up) without simultaneous archetype defaults.
+      for (const cat of EXTENDED_SPEND_CATEGORIES) {
+        const pool = pools[cat.poolKey];
+        if (!pool) continue;
+        const countBand = persona.spend_profile?.[cat.countBandKey];
+        const aedBand = persona.spend_profile?.[cat.aedBandKey];
+        const archetypeBand = defaultCountBand(persona.archetype, cat.id);
+        if (!countBand && !aedBand && archetypeBand[0] === 0 && archetypeBand[1] === 0) continue;
+        const count = monthlyCountFromSpend({
+          rng, countBand, aedBand, pool, defaultBand: archetypeBand,
+        });
+        for (let i = 0; i < count; i++) {
+          const merchant = drawMerchant(rng, pool);
+          const amount = rngInt(rng, merchant.typical_amount_aed_band[0], merchant.typical_amount_aed_band[1] + 1);
+          const day = rngInt(rng, 1, 28);
+          const date = weekdayBias(dateForDay(monthStart, day), rng, cat.weekdayBiasFactor);
+          if (cat.transactionType === 'ATM') {
+            out.push(makeAtmWithdrawal({
+              rng, account, date, amount, merchant, mcc: pool.mcc, txState, now,
+            }));
+            runningBalance.balance -= amount;
+          } else if (cat.transactionType === 'BillPayments') {
+            out.push(makeGovBillPayment({
+              rng, account, date, amount, merchant, mcc: pool.mcc, txState, now,
+            }));
+            runningBalance.balance -= amount;
+          } else {
+            out.push(makePosTransaction({
+              rng, account, date, amount, merchant, mcc: pool.mcc, txState, now,
+              mccCategory: cat.mccCategory,
+              transactionType: cat.isEcommerce ? 'ECommerce' : 'POS',
+              familyGroups: pools.familyGroups,
+              mccConfusion: pools.mccConfusion,
+            }));
+            runningBalance.balance -= amount;
+          }
         }
       }
     }
@@ -111,8 +184,49 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
         out.push(makePosTransaction({
           rng, account, date: weekdayBias(dateForDay(monthStart, day), rng, 0.3),
           amount, merchant, mcc: pools.dining.mcc, txState, now, mccCategory: 'DIN',
-          isCreditCard: true,
+          isCreditCard: true, familyGroups: pools.familyGroups, mccConfusion: pools.mccConfusion,
         }));
+      }
+
+      // Phase R1 — extended cardable spend on credit cards. The legacy
+      // dining-only loop above stays untouched so existing draw fingerprints
+      // are stable; the extended categories layer on top with smaller
+      // per-month counts and category-appropriate amount bands.
+      //
+      // Same control flow as the CurrentAccount path so persona
+      // `spend_profile` overrides apply on cards too (e.g. a persona that
+      // sets `ride_hailing_per_month_count_band: [0, 0]` correctly
+      // suppresses BOTH current-account and CC ride-hailing). When no
+      // override is set, the archetype default is halved — credit cards
+      // typically carry fewer extended-category draws than the operating
+      // current account. Skip-on-zero short-circuit avoids the same
+      // no-op rngInt burn the CurrentAccount loop avoids.
+      for (const cat of EXTENDED_SPEND_CATEGORIES) {
+        if (!CARDABLE_EXTENDED_CATEGORIES.has(cat.id)) continue;
+        const pool = pools[cat.poolKey];
+        if (!pool) continue;
+        const countBand = persona.spend_profile?.[cat.countBandKey];
+        const aedBand = persona.spend_profile?.[cat.aedBandKey];
+        const archetypeBand = defaultCountBand(persona.archetype, cat.id);
+        const ccArchetypeBand = [
+          Math.floor(archetypeBand[0] / 2),
+          Math.max(0, Math.floor(archetypeBand[1] / 2)),
+        ];
+        if (!countBand && !aedBand && ccArchetypeBand[0] === 0 && ccArchetypeBand[1] === 0) continue;
+        const count = monthlyCountFromSpend({
+          rng, countBand, aedBand, pool, defaultBand: ccArchetypeBand,
+        });
+        for (let i = 0; i < count; i++) {
+          const merchant = drawMerchant(rng, pool);
+          const amount = rngInt(rng, merchant.typical_amount_aed_band[0], merchant.typical_amount_aed_band[1] + 1);
+          const day = rngInt(rng, 1, 28);
+          out.push(makePosTransaction({
+            rng, account, date: weekdayBias(dateForDay(monthStart, day), rng, cat.weekdayBiasFactor),
+            amount, merchant, mcc: pool.mcc, txState, now, mccCategory: cat.mccCategory,
+            transactionType: cat.isEcommerce ? 'ECommerce' : 'POS',
+            isCreditCard: true, familyGroups: pools.familyGroups, mccConfusion: pools.mccConfusion,
+          }));
+        }
       }
     }
 
@@ -280,7 +394,13 @@ function makeFxTransaction({ rng, account, date, aedAmount, fxAmount, fxCurrency
     BookingDateTime: isoOf(posted),
     TransactionDateTime: isoOf(posted),
     ValueDateTime: valueDateOf(posted, 'InternationalTransfer', rng),
-    TransactionInformation: bankishNarrative('FX', [`${account.Currency}-${fxCurrency}`, 'IBT']),
+    TransactionInformation: bankishNarrative('FX', [
+      `${account.Currency}-${fxCurrency}`,
+      'IBT',
+      // Phase R2 — add the source-currency + amount + country tail
+      // a real card scheme appends on cross-border transactions.
+      fxClutter(fxCurrency, fxAmount, rng, 0.9),
+    ].filter(Boolean)),
     Amount: { Amount: aedAmount.toFixed(2), Currency: account.Currency },
     TransactionType: 'InternationalTransfer',
     SubTransactionType: 'MoneyTransfer',
@@ -431,29 +551,107 @@ function makeFixedCommitment({ rng, account, date, amount, purpose, kind, txStat
   };
 }
 
-function makePosTransaction({ rng, account, date, amount, merchant, mcc, isCreditCard = false, txState, now, mccCategory = 'POS' }) {
+function makePosTransaction({ rng, account, date, amount, merchant, mcc, isCreditCard = false, txState, now, mccCategory = 'POS', transactionType = 'POS', familyGroups, mccConfusion }) {
   const posted = applyPostingTime(date, rng);
   // Real POS amounts carry fils precision — typical retail pricing patterns.
   const amt = fractionalAmount(rng, amount);
-  // Bank narratives often cap at ~22 chars and cram merchant + city. Synthetic
-  // pool merchants are 2-3 words; truncate aggressively.
-  const merchantToken = merchant.name.toUpperCase().replace(/[^A-Z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+  // Phase R2 dirty narrative — composer in realism.js folds in
+  // aggregator-prefix / parent-group / DBA-drift / terminal-id /
+  // emirate-code / Arabic-Latin descriptor with probability gates.
+  // The merchant token (drifted form) stays a substring so existing
+  // cross-link/search substring-match logic (app.js:1791-1811) is
+  // unaffected. MerchantName stays the canonical pool value so the
+  // enrichment sidecar can always recover the clean form for the
+  // "Show enriched" toggle. Spec ceiling is 500 chars; the helper
+  // caps at 80 — comfortably under.
+  const narrativeTag = transactionType === 'ECommerce' ? 'ECM' : 'POS';
+  const channel = transactionType === 'ECommerce' ? 'ecommerce' : 'pos';
+  const txId = nextTxId(account, posted, txState);
+  // Phase R3 — MCC noise. Side-channel rng keyed on TransactionId, so
+  // adding/tuning noise doesn't shift any other downstream rng draw.
+  // The emitted MerchantCategoryCode is what a real card scheme would
+  // place on the wire (possibly misrouted); the sidecar's `mcc` field
+  // continues to carry the corrected ground-truth (via _trueMcc).
+  const noise = maybeMisrouteMcc({ correctMcc: mcc, transactionId: txId, confusionTable: mccConfusion });
   return {
     _accountId: account.AccountId,
-    TransactionId: nextTxId(account, posted, txState),
-    TransactionReference: referenceNumber(rng, 'POS', posted),
+    TransactionId: txId,
+    TransactionReference: referenceNumber(rng, transactionType, posted),
     CreditDebitIndicator: 'Debit',
     Status: maybePending(posted, now, rng),
     BookingDateTime: isoOf(posted),
     TransactionDateTime: isoOf(posted),
     ValueDateTime: isoOf(posted),
-    TransactionInformation: bankishNarrative('POS', [merchantToken, 'DXB']),
+    TransactionInformation: buildDirtyPosNarrative({
+      rng, channel, prefix: narrativeTag, merchant, registry: familyGroups,
+    }),
     Amount: { Amount: amt.toFixed(2), Currency: account.Currency },
-    TransactionType: 'POS',
+    TransactionType: transactionType,
     SubTransactionType: 'Purchase',
-    MerchantDetails: { MerchantName: merchant.name, MerchantCategoryCode: mcc },
+    MerchantDetails: { MerchantName: merchant.name, MerchantCategoryCode: noise.mcc },
     _isCreditCard: isCreditCard,
     _mccCategory: mccCategory,
+    // Phase R2 — internal back-reference so the enrichment sidecar can
+    // surface parent-group ownership without re-loading the merchant
+    // pool. The `_` prefix strips on export per the standard convention.
+    _parentGroup: merchant.parent_group ?? null,
+    _parentGroupAcronym: merchant.parent_group ? (familyGroups?.[merchant.parent_group]?.acronym ?? null) : null,
+    // Phase R3 — ground-truth MCC (only populated when the wire field
+    // was misrouted). Enrichment reads this with a fallback so any tx
+    // that wasn't flipped looks the same as today.
+    _trueMcc: noise.misrouted ? mcc : null,
+    _mccMisrouted: noise.misrouted,
+    _mccMisroutingReason: noise.misrouted ? noise.reason : null,
+  };
+}
+
+function makeAtmWithdrawal({ rng, account, date, amount, merchant, mcc, txState, now }) {
+  const posted = applyPostingTime(date, rng);
+  const networkToken = merchant.name.toUpperCase().replace(/[^A-Z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const terminal = terminalSuffix(rng, 0.8); // ATM terminals near-always carry an id
+  const branch = `BR${String(rngInt(rng, 100, 999))}`;
+  const emirate = emirateCode(rng);
+  const parts = terminal ? [networkToken, branch, terminal, emirate] : [networkToken, branch, emirate];
+  return {
+    _accountId: account.AccountId,
+    TransactionId: nextTxId(account, posted, txState),
+    TransactionReference: referenceNumber(rng, 'ATM', posted),
+    CreditDebitIndicator: 'Debit',
+    Status: maybePending(posted, now, rng),
+    BookingDateTime: isoOf(posted),
+    TransactionDateTime: isoOf(posted),
+    ValueDateTime: isoOf(posted),
+    TransactionInformation: bankishNarrative('ATM', parts),
+    Amount: { Amount: amount.toFixed(2), Currency: account.Currency },
+    TransactionType: 'ATM',
+    SubTransactionType: 'Withdrawal',
+    MerchantDetails: { MerchantName: merchant.name, MerchantCategoryCode: mcc },
+    _mccCategory: 'ATM',
+  };
+}
+
+function makeGovBillPayment({ rng, account, date, amount, merchant, mcc, txState, now }) {
+  const posted = applyPostingTime(date, rng);
+  const billerToken = merchant.name.toUpperCase().replace(/[^A-Z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+  // Government bill payments often carry a reference number + emirate
+  // code on the statement. Aggregator prefixes don't apply (this rail
+  // doesn't route via TST*/SQ*/PYPL*).
+  const ref = String(rngInt(rng, 1000, 9999));
+  return {
+    _accountId: account.AccountId,
+    TransactionId: nextTxId(account, posted, txState),
+    TransactionReference: referenceNumber(rng, 'BillPayments', posted, 'GOV'),
+    CreditDebitIndicator: 'Debit',
+    Status: maybePending(posted, now, rng),
+    BookingDateTime: isoOf(posted),
+    TransactionDateTime: isoOf(posted),
+    ValueDateTime: valueDateOf(posted, 'BillPayments', rng),
+    TransactionInformation: bankishNarrative('GOV', [billerToken, ref, emirateCode(rng)]),
+    Amount: { Amount: amount.toFixed(2), Currency: account.Currency },
+    TransactionType: 'BillPayments',
+    SubTransactionType: 'Repayments',
+    MerchantDetails: { MerchantName: merchant.name, MerchantCategoryCode: mcc },
+    _mccCategory: 'GOV',
   };
 }
 
