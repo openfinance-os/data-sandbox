@@ -377,7 +377,15 @@ function personaAvatarEl(id, persona, size) {
   } else {
     // Fallback initials — covers any future persona that lands before its
     // avatar is built. Never reached for the curated 27 + custom slug.
-    const initials = name[0]?.toUpperCase() ?? '?';
+    // Mirrors tools/build-avatars.mjs initials(): first+last word, or the
+    // first two chars when only one word is available.
+    const head = (name ?? '').split(/\s+[—–-]\s+/)[0].trim();
+    const words = head.split(/\s+/).filter(Boolean);
+    const initials = words.length >= 2
+      ? (words[0][0] + words[words.length - 1][0]).toUpperCase()
+      : words[0]
+        ? words[0].slice(0, 2).toUpperCase()
+        : '?';
     wrap.classList.add('persona-avatar-fallback');
     wrap.appendChild(el('span', { class: 'persona-avatar-initials', text: initials }));
   }
