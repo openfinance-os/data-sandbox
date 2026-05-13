@@ -161,6 +161,33 @@ function getPools() {
 // CJS re-export of the runtime engine. Uses dynamic import so the CJS
 // loader can pull in the ESM lib modules without requiring callers to
 // install a transpiler.
+async function loadFixturePage(opts) {
+  const o = opts || {};
+  const offset = o.offset != null ? o.offset : 0;
+  const limit = o.limit != null ? o.limit : 25;
+  const requestUrl = o.requestUrl;
+  const loadOpts = { persona: o.persona, lfi: o.lfi, seed: o.seed, endpoint: o.endpoint, lfi_role: o.lfi_role };
+  const envelope = loadFixture(loadOpts);
+  const { paginateEnvelope } = await import('./lib/shared/pagination.js');
+  return paginateEnvelope(envelope, {
+    offset, limit, requested: true,
+    requestUrl: requestUrl || sandboxUrl(loadOpts),
+  });
+}
+
+function sandboxUrl(opts) {
+  const persona = opts.persona;
+  const lfi = opts.lfi || 'median';
+  const info = manifest.personas[persona];
+  const seed = opts.seed != null ? opts.seed : (info && info.default_seed) || 0;
+  const safe = String(opts.endpoint || '').replace(/^\//, '').replace(/\//g, '__').replace(/[{}]/g, '');
+  return 'sandbox:/fixtures/v1/bundles/' + persona + '/' + lfi + '/seed-' + seed + '/' + safe + '.json';
+}
+
+async function getPagination() {
+  return import('./lib/shared/pagination.js');
+}
+
 async function getEngine() {
   const gen = await import('./lib/generator/index.js');
   const exp = await import('./lib/persona-builder/expand.js');
@@ -173,6 +200,7 @@ async function getEngine() {
 }
 module.exports = {
   manifest, listPersonas, getPersonaInfo, listEndpoints, loadFixture,
-  listRoleBundles,
-  loadJourney, loadSpec, loadPersonaManifest, loadEnrichment, loadBrandRegistry, getPools, getEngine,
+  listRoleBundles, loadFixturePage,
+  loadJourney, loadSpec, loadPersonaManifest, loadEnrichment, loadBrandRegistry,
+  getPools, getEngine, getPagination,
 };

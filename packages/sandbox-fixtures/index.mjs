@@ -2,6 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { paginateEnvelope } from './lib/shared/pagination.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const manifest = JSON.parse(readFileSync(path.join(here, 'manifest.json'), 'utf8'));
@@ -27,6 +28,34 @@ export function listEndpoints(personaId, lfi = 'median') {
   if (!fx) throw new Error(`unknown fixture key: ${fixtureKey}`);
   return Object.keys(fx.endpoints);
 }
+// Pagination — Open Finance v2.1 Links/Meta envelope. `loadFixturePage`
+// is the package-level entry point for TPPs that want to simulate paging
+// through a listing endpoint (transactions, standing orders, etc.) the
+// way they would against a real LFI. Internally it loads the full fixture
+// envelope and slices its Data array — the same engine the Service Worker
+// uses for the staged `/fixtures/v1/bundles/.../*.json?offset=&limit=` URL.
+//
+// `requestUrl` is optional; supply it to make Links.{Self,First,Next,Last}
+// point at the URL the consumer would hit. When omitted, the helper synth-
+// esises a sandbox:// URL so the Links structure stays well-formed.
+export function loadFixturePage(opts) {
+  const { offset = 0, limit = 25, requestUrl, ...loadOpts } = opts || {};
+  const envelope = loadFixture(loadOpts);
+  return paginateEnvelope(envelope, {
+    offset,
+    limit,
+    requested: true,
+    requestUrl: requestUrl ?? sandboxUrl(loadOpts),
+  });
+}
+
+function sandboxUrl({ persona, lfi = 'median', seed, endpoint }) {
+  const info = manifest.personas[persona];
+  const useSeed = seed ?? info?.default_seed ?? 0;
+  const safe = String(endpoint || '').replace(/^\//, '').replace(/\//g, '__').replace(/[{}]/g, '');
+  return `sandbox:/fixtures/v1/bundles/${persona}/${lfi}/seed-${useSeed}/${safe}.json`;
+}
+
 export function loadFixture({ persona, lfi = 'median', seed, endpoint, lfi_role }) {
   const info = manifest.personas[persona];
   if (!info) throw new Error(`unknown persona: ${persona}`);
@@ -185,5 +214,16 @@ export {
 // Counterpart to buildBundle for any consumer that doesn't read the static
 // fixture files — e.g. the MCP build_persona path.
 export { envelopesFromBundle } from './lib/ui/export.js';
+
+// Pagination helpers — pure functions that operate on already-loaded
+// envelopes. Useful for TPPs that prefer to load the full envelope once
+// and slice client-side (e.g. when prototyping a paging UI).
+export { paginateEnvelope };
+export {
+  parsePaginationParams,
+  isPaginatableEnvelope,
+  findListKey,
+  PAGINATION_DEFAULTS,
+} from './lib/shared/pagination.js';
 
 export { manifest };
