@@ -105,13 +105,13 @@ export function loadFixturePage(
     seed?: number;
     lfi_role?: 'primary' | 'secondary' | 'tertiary';
   } & PaginationOptions
-): PaginatedEnvelope;
+): PaginatedEnvelope & { _pagination?: PaginationSidecar };
 
 /** Pure pagination over an already-loaded envelope. */
 export function paginateEnvelope(
   envelope: unknown,
   opts: { offset: number; limit: number; requested: boolean; requestUrl?: string }
-): unknown;
+): PaginatedEnvelope & { _pagination?: PaginationSidecar };
 export function parsePaginationParams(
   searchParams: URLSearchParams,
   opts?: { defaultLimit?: number; maxLimit?: number }
