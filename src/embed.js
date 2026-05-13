@@ -22,7 +22,14 @@ async function init() {
   ]);
   const domainsManifest = await domainsRes.json();
   const data = await dataRes.json();
-  const avatars = avatarsRes && avatarsRes.ok ? (await avatarsRes.json()).avatars ?? {} : {};
+  let avatars = {};
+  if (avatarsRes && avatarsRes.ok) {
+    try {
+      avatars = (await avatarsRes.json()).avatars ?? {};
+    } catch {
+      // Malformed avatars.json — fall through; avatar slot stays empty.
+    }
+  }
   const domains = Object.fromEntries(domainsManifest.domains.map((d) => [d.id, d]));
   const domain = domains[url.domain] ? url.domain : 'banking';
   const domainEntry = domains[domain];
