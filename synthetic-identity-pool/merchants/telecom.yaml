@@ -1,0 +1,12 @@
+pool_id: merchants_telecom
+description: Synthetic telco / mobile top-up merchant names; all fictional. Sits alongside the utilities pool (which already carries the DD telco line item) and is used for ad-hoc card top-ups, not the recurring monthly direct debit.
+mcc: "4814"
+merchants:
+  - name: "Solstice Telecom Prepaid"
+    typical_amount_aed_band: [25, 200]
+  - name: "Beacon Mobile Top-Up"
+    typical_amount_aed_band: [25, 200]
+  - name: "DuneFiber Add-Ons"
+    typical_amount_aed_band: [30, 300]
+  - name: "OasisConnect Data"
+    typical_amount_aed_band: [50, 500]

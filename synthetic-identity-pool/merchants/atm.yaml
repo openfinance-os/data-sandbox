@@ -1,0 +1,12 @@
+pool_id: merchants_atm
+description: Synthetic ATM-withdrawal location/network labels; all fictional. Pool acts as a "merchant" surface to keep the generator dispatch uniform — the consuming code emits TransactionType=ATM and SubTransactionType=Withdrawal regardless of the label drawn.
+mcc: "6011"
+merchants:
+  - name: "DesertNet ATM"
+    typical_amount_aed_band: [200, 2500]
+  - name: "OasisLink ATM"
+    typical_amount_aed_band: [200, 2500]
+  - name: "PalmCash ATM Network"
+    typical_amount_aed_band: [200, 2500]
+  - name: "Crescent24 ATM"
+    typical_amount_aed_band: [200, 2500]

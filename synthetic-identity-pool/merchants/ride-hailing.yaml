@@ -1,0 +1,14 @@
+pool_id: merchants_ride_hailing
+description: Synthetic ride-hailing app merchant names; all fictional. UAE-plausible.
+mcc: "4121"
+merchants:
+  - name: "DesertRide"
+    typical_amount_aed_band: [18, 90]
+  - name: "OasisGo"
+    typical_amount_aed_band: [20, 110]
+  - name: "MarinaCab"
+    typical_amount_aed_band: [25, 140]
+  - name: "DuneShare"
+    typical_amount_aed_band: [22, 120]
+  - name: "PalmFare"
+    typical_amount_aed_band: [15, 70]

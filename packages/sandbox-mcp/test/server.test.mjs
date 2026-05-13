@@ -335,12 +335,20 @@ describe('sandbox-mcp server', () => {
 
   it('get_transactions with explicit limit truncates to that count and slices the most recent items', async () => {
     await client.callTool({ name: 'set_session', arguments: { persona: 'salaried_expat_mid' } });
+    // Use summary=true to get the true total (Salaried Expat carries
+    // ~1k tx in the 24-month history window — well over the 500 hard cap).
+    const summary = await client.callTool({
+      name: 'get_transactions',
+      arguments: { accountId: 'salaried-expat-mid-acct-01', summary: true },
+    });
+    const summaryEnv = parseEnvelope(textOf(summary));
+    const total = summaryEnv._summary.count;
+
     const all = await client.callTool({
       name: 'get_transactions',
       arguments: { accountId: 'salaried-expat-mid-acct-01', limit: 500 },
     });
     const allEnv = parseEnvelope(textOf(all));
-    const total = allEnv.Data.Transaction.length;
 
     const ten = await client.callTool({
       name: 'get_transactions',

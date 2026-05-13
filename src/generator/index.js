@@ -39,6 +39,25 @@ const DEFAULT_FUEL = 'merchants_fuel';
 const DEFAULT_DINING = 'merchants_dining';
 const DEFAULT_UTILITIES = 'merchants_utilities';
 
+// Extended-spend pools (Phase R1 of the enrichment-realism plan). Map of
+// transactions.js pool key → pool_id in synthetic-identity-pool/merchants/.
+// Resolved lazily — a pool missing from the indexed set is left undefined,
+// and the dispatcher in transactions.js skips it.
+const EXTENDED_POOL_IDS = {
+  ride_hailing: 'merchants_ride_hailing',
+  ecommerce: 'merchants_ecommerce',
+  healthcare: 'merchants_healthcare',
+  transport: 'merchants_transport',
+  government: 'merchants_government',
+  entertainment: 'merchants_entertainment',
+  subscriptions: 'merchants_subscriptions',
+  travel_air: 'merchants_travel_air',
+  travel_hotel: 'merchants_travel_hotel',
+  education: 'merchants_education',
+  telecom: 'merchants_telecom',
+  atm: 'merchants_atm',
+};
+
 function resolvePools(persona, indexedPools) {
   const namePool = indexedPools.namesByPoolId[persona.demographics.nationality_pool];
   if (!namePool) {
@@ -83,9 +102,18 @@ function resolvePools(persona, indexedPools) {
     fuel: indexedPools.merchantsByCategory[DEFAULT_FUEL],
     dining: indexedPools.merchantsByCategory[DEFAULT_DINING],
     utilities: indexedPools.merchantsByCategory[DEFAULT_UTILITIES],
+    ...extendedPools(indexedPools),
     counterpartyBanks: indexedPools.counterpartyBanksByCategory[DEFAULT_BANKS_POOL],
     ibans: indexedPools.ibansByCategory[DEFAULT_IBANS_POOL],
   };
+}
+
+function extendedPools(indexedPools) {
+  const out = {};
+  for (const [key, poolId] of Object.entries(EXTENDED_POOL_IDS)) {
+    out[key] = indexedPools.merchantsByCategory[poolId];
+  }
+  return out;
 }
 
 export function buildBundle(args) {
@@ -136,6 +164,21 @@ function buildBankingBundle({ persona, lfi, seed, pools, now = DEFAULT_NOW }) {
         dining: p.dining,
         utilities: p.utilities,
         employers: p.employers,
+        // Phase R1 — extended-spend pools. Missing keys are tolerated by
+        // the dispatcher (it skips the category), so a partial deployment
+        // still builds.
+        ride_hailing: p.ride_hailing,
+        ecommerce: p.ecommerce,
+        healthcare: p.healthcare,
+        transport: p.transport,
+        government: p.government,
+        entertainment: p.entertainment,
+        subscriptions: p.subscriptions,
+        travel_air: p.travel_air,
+        travel_hotel: p.travel_hotel,
+        education: p.education,
+        telecom: p.telecom,
+        atm: p.atm,
         // Slice 10: B2B inflows / outflows resolve cash_flow.*.counterparty_pool
         // against the indexed pools structure. Empty `{}` for personas
         // whose load fixtures don't include a counterparties index.
@@ -149,7 +192,7 @@ function buildBankingBundle({ persona, lfi, seed, pools, now = DEFAULT_NOW }) {
   }
 
   // Slice 7 (D-14): cross-LFI mirror ledger. For personas with
-  // `multi_lfi_footprint`, append 12 monthly self-sweep transactions
+  // `multi_lfi_footprint`, append monthly self-sweep transactions
   // per declared non-primary slot. The same pure-function ledger is
   // computed for primary AND role bundles — primary gets the outflow
   // half (CreditDebitIndicator='Debit'), role bundles get the inflow

@@ -1,0 +1,14 @@
+pool_id: merchants_government
+description: Synthetic government-fee biller names (vehicle, visa, civil). All fictional.
+mcc: "9399"
+merchants:
+  - name: "Synthetic Roads & Transport Authority"
+    typical_amount_aed_band: [50, 1200]
+  - name: "Synthetic Civil Services Portal"
+    typical_amount_aed_band: [100, 1500]
+  - name: "Synthetic Health Authority Fees"
+    typical_amount_aed_band: [80, 700]
+  - name: "Synthetic Visa Services Bureau"
+    typical_amount_aed_band: [250, 2400]
+  - name: "Synthetic Police Traffic Fines"
+    typical_amount_aed_band: [200, 1800]

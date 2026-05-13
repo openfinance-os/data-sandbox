@@ -21,8 +21,14 @@ import {
   pendingForRecent,
 } from './realism.js';
 import { vatTreatmentForPool, computeVatBreakdown } from './vat.js';
+import { EXTENDED_SPEND_CATEGORIES, defaultCountBand } from './banking/spend-profiles.js';
 
-const TWELVE_MONTHS = 12;
+// Trailing history window for transaction generation. Phase R1 of the
+// enrichment-realism plan bumped this from 12 → 24 months so downstream
+// analytics (year-on-year category mix, multi-cycle credit-card behaviour,
+// seasonal patterns) have data to chew on. Statements + multi-LFI ledger
+// follow the same window.
+const HISTORY_MONTHS = 24;
 
 // Per-category knobs for the merchant-spend loop. The PRNG draw order across
 // categories is load-bearing for EXP-05 (deterministic-replay), so this list
@@ -32,6 +38,13 @@ const TWELVE_MONTHS = 12;
 //   amount → rngInt day → weekdayBias internal draws → optional pending mark.
 // `weekdayBiasFactor` and `defaultCountBand` reproduce the per-loop literals
 // from the pre-extraction version.
+// Extended categories that can plausibly hit a credit card. ATM and
+// government bill payments don't ride on cards.
+const CARDABLE_EXTENDED_CATEGORIES = new Set([
+  'ride_hailing', 'ecommerce', 'healthcare', 'entertainment',
+  'subscriptions', 'travel_air', 'travel_hotel', 'telecom',
+]);
+
 const SPEND_CATEGORIES = [
   { id: 'groceries', mccCategory: 'GRC',  weekdayBiasFactor: 0.4, defaultCountBand: [4, 9],
     countBandKey: 'groceries_per_month_count_band', aedBandKey: 'groceries_aed_per_month_band' },
@@ -46,7 +59,7 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
   const today = new Date(now.getTime());
   today.setHours(0, 0, 0, 0);
 
-  for (let m = TWELVE_MONTHS - 1; m >= 0; m--) {
+  for (let m = HISTORY_MONTHS - 1; m >= 0; m--) {
     const monthStart = new Date(today);
     monthStart.setDate(1);
     monthStart.setMonth(monthStart.getMonth() - m);
@@ -100,6 +113,49 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
           runningBalance.balance -= amount;
         }
       }
+
+      // Phase R1 — extended-spend categories (ride-hailing, e-commerce,
+      // healthcare, transport, government, entertainment, subscriptions,
+      // travel-air, travel-hotel, education, telecom, ATM). Per-archetype
+      // default count bands live in spend-profiles.js; per-persona
+      // spend_profile overrides win. Pools missing from the resolved set
+      // are skipped silently — keeps the dispatch additive and lets a
+      // partial pool deployment still build.
+      for (const cat of EXTENDED_SPEND_CATEGORIES) {
+        const pool = pools[cat.poolKey];
+        if (!pool) continue;
+        const count = monthlyCountFromSpend({
+          rng,
+          countBand: persona.spend_profile?.[cat.countBandKey],
+          aedBand: persona.spend_profile?.[cat.aedBandKey],
+          pool,
+          defaultBand: defaultCountBand(persona.archetype, cat.id),
+        });
+        for (let i = 0; i < count; i++) {
+          const merchant = drawMerchant(rng, pool);
+          const amount = rngInt(rng, merchant.typical_amount_aed_band[0], merchant.typical_amount_aed_band[1] + 1);
+          const day = rngInt(rng, 1, 28);
+          const date = weekdayBias(dateForDay(monthStart, day), rng, cat.weekdayBiasFactor);
+          if (cat.transactionType === 'ATM') {
+            out.push(makeAtmWithdrawal({
+              rng, account, date, amount, merchant, mcc: pool.mcc, txState, now,
+            }));
+            runningBalance.balance -= amount;
+          } else if (cat.transactionType === 'BillPayments') {
+            out.push(makeGovBillPayment({
+              rng, account, date, amount, merchant, mcc: pool.mcc, txState, now,
+            }));
+            runningBalance.balance -= amount;
+          } else {
+            out.push(makePosTransaction({
+              rng, account, date, amount, merchant, mcc: pool.mcc, txState, now,
+              mccCategory: cat.mccCategory,
+              transactionType: cat.isEcommerce ? 'ECommerce' : 'POS',
+            }));
+            runningBalance.balance -= amount;
+          }
+        }
+      }
     }
 
     if (account._meta.kind === 'CreditCard') {
@@ -113,6 +169,33 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
           amount, merchant, mcc: pools.dining.mcc, txState, now, mccCategory: 'DIN',
           isCreditCard: true,
         }));
+      }
+
+      // Phase R1 — extended cardable spend on credit cards. The legacy
+      // dining-only loop above stays untouched so existing draw fingerprints
+      // are stable; the extended categories layer on top with smaller
+      // per-month counts and category-appropriate amount bands.
+      for (const cat of EXTENDED_SPEND_CATEGORIES) {
+        if (!CARDABLE_EXTENDED_CATEGORIES.has(cat.id)) continue;
+        const pool = pools[cat.poolKey];
+        if (!pool) continue;
+        const band = defaultCountBand(persona.archetype, cat.id);
+        if (band[0] === 0 && band[1] === 0) continue;
+        // On a credit card we typically see fewer extended draws per
+        // category than on a current account — halve the band, min 0.
+        const ccBand = [Math.floor(band[0] / 2), Math.max(0, Math.floor(band[1] / 2))];
+        const count = rngInt(rng, ccBand[0], ccBand[1] + 1);
+        for (let i = 0; i < count; i++) {
+          const merchant = drawMerchant(rng, pool);
+          const amount = rngInt(rng, merchant.typical_amount_aed_band[0], merchant.typical_amount_aed_band[1] + 1);
+          const day = rngInt(rng, 1, 28);
+          out.push(makePosTransaction({
+            rng, account, date: weekdayBias(dateForDay(monthStart, day), rng, cat.weekdayBiasFactor),
+            amount, merchant, mcc: pool.mcc, txState, now, mccCategory: cat.mccCategory,
+            transactionType: cat.isEcommerce ? 'ECommerce' : 'POS',
+            isCreditCard: true,
+          }));
+        }
       }
     }
 
@@ -431,29 +514,72 @@ function makeFixedCommitment({ rng, account, date, amount, purpose, kind, txStat
   };
 }
 
-function makePosTransaction({ rng, account, date, amount, merchant, mcc, isCreditCard = false, txState, now, mccCategory = 'POS' }) {
+function makePosTransaction({ rng, account, date, amount, merchant, mcc, isCreditCard = false, txState, now, mccCategory = 'POS', transactionType = 'POS' }) {
   const posted = applyPostingTime(date, rng);
   // Real POS amounts carry fils precision — typical retail pricing patterns.
   const amt = fractionalAmount(rng, amount);
   // Bank narratives often cap at ~22 chars and cram merchant + city. Synthetic
   // pool merchants are 2-3 words; truncate aggressively.
   const merchantToken = merchant.name.toUpperCase().replace(/[^A-Z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const narrativeTag = transactionType === 'ECommerce' ? 'ECM' : 'POS';
   return {
     _accountId: account.AccountId,
     TransactionId: nextTxId(account, posted, txState),
-    TransactionReference: referenceNumber(rng, 'POS', posted),
+    TransactionReference: referenceNumber(rng, transactionType, posted),
     CreditDebitIndicator: 'Debit',
     Status: maybePending(posted, now, rng),
     BookingDateTime: isoOf(posted),
     TransactionDateTime: isoOf(posted),
     ValueDateTime: isoOf(posted),
-    TransactionInformation: bankishNarrative('POS', [merchantToken, 'DXB']),
+    TransactionInformation: bankishNarrative(narrativeTag, [merchantToken, 'DXB']),
     Amount: { Amount: amt.toFixed(2), Currency: account.Currency },
-    TransactionType: 'POS',
+    TransactionType: transactionType,
     SubTransactionType: 'Purchase',
     MerchantDetails: { MerchantName: merchant.name, MerchantCategoryCode: mcc },
     _isCreditCard: isCreditCard,
     _mccCategory: mccCategory,
+  };
+}
+
+function makeAtmWithdrawal({ rng, account, date, amount, merchant, mcc, txState, now }) {
+  const posted = applyPostingTime(date, rng);
+  const networkToken = merchant.name.toUpperCase().replace(/[^A-Z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+  return {
+    _accountId: account.AccountId,
+    TransactionId: nextTxId(account, posted, txState),
+    TransactionReference: referenceNumber(rng, 'ATM', posted),
+    CreditDebitIndicator: 'Debit',
+    Status: maybePending(posted, now, rng),
+    BookingDateTime: isoOf(posted),
+    TransactionDateTime: isoOf(posted),
+    ValueDateTime: isoOf(posted),
+    TransactionInformation: bankishNarrative('ATM', [networkToken, `BR${String(rngInt(rng, 100, 999))}`]),
+    Amount: { Amount: amount.toFixed(2), Currency: account.Currency },
+    TransactionType: 'ATM',
+    SubTransactionType: 'Withdrawal',
+    MerchantDetails: { MerchantName: merchant.name, MerchantCategoryCode: mcc },
+    _mccCategory: 'ATM',
+  };
+}
+
+function makeGovBillPayment({ rng, account, date, amount, merchant, mcc, txState, now }) {
+  const posted = applyPostingTime(date, rng);
+  const billerToken = merchant.name.toUpperCase().replace(/[^A-Z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+  return {
+    _accountId: account.AccountId,
+    TransactionId: nextTxId(account, posted, txState),
+    TransactionReference: referenceNumber(rng, 'BillPayments', posted, 'GOV'),
+    CreditDebitIndicator: 'Debit',
+    Status: maybePending(posted, now, rng),
+    BookingDateTime: isoOf(posted),
+    TransactionDateTime: isoOf(posted),
+    ValueDateTime: valueDateOf(posted, 'BillPayments', rng),
+    TransactionInformation: bankishNarrative('GOV', [billerToken, String(rngInt(rng, 1000, 9999))]),
+    Amount: { Amount: amount.toFixed(2), Currency: account.Currency },
+    TransactionType: 'BillPayments',
+    SubTransactionType: 'Repayments',
+    MerchantDetails: { MerchantName: merchant.name, MerchantCategoryCode: mcc },
+    _mccCategory: 'GOV',
   };
 }
 

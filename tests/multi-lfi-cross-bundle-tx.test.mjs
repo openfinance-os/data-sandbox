@@ -1,13 +1,13 @@
 // Slice 7 — cross-LFI mirror ledger. For personas with multi_lfi_footprint,
-// the primary bundle's transaction stream now carries 12 monthly self-sweep
-// outflows per declared non-primary slot, byte-mirrored as inflows in the
-// corresponding role bundle. This test asserts:
+// the primary bundle's transaction stream now carries CROSS_LFI_HISTORY_MONTHS
+// monthly self-sweep outflows per declared non-primary slot, byte-mirrored as
+// inflows in the corresponding role bundle. This test asserts:
 //
 //   1. computeCrossLfiLedger is pure: same persona+pool → same ledger.
 //   2. For every (persona, lfi, seed) with multi_lfi_footprint, the primary
-//      bundle's /accounts/{id}/transactions includes 12 XLFI-prefixed outflows
-//      per declared role slot.
-//   3. The role bundle's transactions list has the matching 12 inflows.
+//      bundle's /accounts/{id}/transactions includes CROSS_LFI_HISTORY_MONTHS
+//      XLFI-prefixed outflows per declared role slot.
+//   3. The role bundle's transactions list has the matching N inflows.
 //   4. Each (primary outflow, role inflow) pair shares
 //      TransactionDateTime, Amount, Currency, TransactionReference, AND
 //      cross-pointers (CreditorAccount.Identification on primary ==
@@ -45,13 +45,15 @@ describe('Slice 7 — computeCrossLfiLedger purity', () => {
   const primaryAccountId = 'sme-fnb-multi-outlet-acct-01';
   const primaryIban = derivePrimaryAccountIban('sme_fnb_multi_outlet', 0);
 
-  it('returns 12 monthly entries per declared non-primary slot, no entries for primary slot itself', () => {
+  it('returns CROSS_LFI_HISTORY_MONTHS monthly entries per declared non-primary slot, no entries for primary slot itself', () => {
     const a = computeCrossLfiLedger({
       persona: fakePersona, primaryAccountId, primaryIban, counterpartyBanksPool: POOL, now,
     });
-    expect(a.primary.length).toBe(24); // 12 secondary + 12 tertiary
-    expect(a.secondary.length).toBe(12);
-    expect(a.tertiary.length).toBe(12);
+    // 24 secondary + 24 tertiary = 48 (CROSS_LFI_HISTORY_MONTHS bumped from
+    // 12 → 24 alongside the transaction-stream HISTORY_MONTHS bump).
+    expect(a.primary.length).toBe(48);
+    expect(a.secondary.length).toBe(24);
+    expect(a.tertiary.length).toBe(24);
   });
 
   it('two calls with identical inputs return byte-identical ledgers (EXP-05 across-bundle)', () => {
@@ -75,7 +77,7 @@ describe('Slice 7 — computeCrossLfiLedger purity', () => {
       const side = t.CreditDebitIndicator === 'Debit' ? 'out' : 'in';
       byPair.get(t._crossLfiPairId)[side] = t;
     }
-    expect(byPair.size).toBeGreaterThanOrEqual(12);
+    expect(byPair.size).toBeGreaterThanOrEqual(24);
     for (const [pid, sides] of byPair.entries()) {
       expect(sides.out, `${pid} missing out`).toBeDefined();
       expect(sides.in, `${pid} missing in`).toBeDefined();
@@ -109,13 +111,13 @@ if (!FIXTURES_BUILT) {
     const primary = manifest.fixtures[primaryKey];
     const primaryAccountId = primary.accountIds[0];
 
-    it(`${rkey} — primary bundle has 12 XLFI outflows targeting this slot (TransactionId-keyed; field-redaction-stable)`, () => {
+    it(`${rkey} — primary bundle has 24 XLFI outflows targeting this slot (TransactionId-keyed; field-redaction-stable)`, () => {
       const primaryTx = readEnv(primary.endpoints[`/accounts/${primaryAccountId}/transactions`]);
       const slotTag = rfx.slot === 'secondary' ? 's2' : 's3';
       const xlfiToSlot = (primaryTx.Data.Transaction ?? []).filter(
         (t) => isXlfi(t) && t.TransactionId.includes(`-xlfi-${slotTag}-`) && t.TransactionId.endsWith('-out'),
       );
-      expect(xlfiToSlot.length).toBe(12);
+      expect(xlfiToSlot.length).toBe(24);
       for (const t of xlfiToSlot) {
         expect(t.CreditDebitIndicator).toBe('Debit');
         expect(t.TransactionType).toBe('LocalBankTransfer');
@@ -123,13 +125,13 @@ if (!FIXTURES_BUILT) {
       }
     });
 
-    it(`${rkey} — role bundle has 12 XLFI inflows`, () => {
+    it(`${rkey} — role bundle has 24 XLFI inflows`, () => {
       const roleAccountId = rfx.accountIds[0];
       const roleTx = readEnv(rfx.endpoints[`/accounts/${roleAccountId}/transactions`]);
       const xlfiIn = (roleTx.Data.Transaction ?? []).filter(
         (t) => isXlfi(t) && t.TransactionId.endsWith('-in'),
       );
-      expect(xlfiIn.length).toBe(12);
+      expect(xlfiIn.length).toBe(24);
       for (const t of xlfiIn) {
         expect(t.CreditDebitIndicator).toBe('Credit');
         expect(t.TransactionType).toBe('LocalBankTransfer');
