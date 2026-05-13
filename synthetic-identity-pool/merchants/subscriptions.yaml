@@ -1,0 +1,16 @@
+pool_id: merchants_subscriptions
+description: Synthetic recurring digital-subscription merchant names. All fictional.
+mcc: "5815"
+merchants:
+  - name: "DesertStream"
+    typical_amount_aed_band: [29, 89]
+  - name: "OasisMusic"
+    typical_amount_aed_band: [19, 65]
+  - name: "SandboxNews Daily"
+    typical_amount_aed_band: [25, 75]
+  - name: "MirageBox Video"
+    typical_amount_aed_band: [35, 110]
+  - name: "PalmCloud Storage"
+    typical_amount_aed_band: [15, 95]
+  - name: "Crescent Fitness Plus"
+    typical_amount_aed_band: [49, 199]

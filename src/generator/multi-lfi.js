@@ -16,7 +16,8 @@
 //    IBAN byte-exactly, so the cross-bundle reference loop closes.
 //
 // 3. `computeCrossLfiLedger` + `derivePrimaryAccountIban` — Slice 7 cross-
-//    LFI mirror ledger: 12 monthly self-sweep outflows on the primary
+//    LFI mirror ledger: monthly self-sweep outflows on the primary across
+//    the cross-LFI history window
 //    bundle's transactions, byte-mirrored as inflows in the corresponding
 //    role bundle. Ledger is a pure function of (persona, pool, now) — no
 //    dependency on the bundle's `seed` — so the same economic event
@@ -310,8 +311,9 @@ export function derivePrimaryAccountIban(personaId, accountIndex) {
  *
  * Returns deterministic paired transactions for personas with
  * `multi_lfi_footprint`. For each declared non-primary slot, emits
- * 12 monthly self-sweep events (one per month in the trailing 12-month
- * window). Each event has a primary-side outflow and a role-side
+ * one monthly self-sweep event per month in the trailing
+ * CROSS_LFI_HISTORY_MONTHS window. Each event has a primary-side
+ * outflow and a role-side
  * inflow with byte-matching:
  *   - Amount.Amount + Amount.Currency
  *   - TransactionDateTime + BookingDateTime + ValueDateTime
@@ -334,6 +336,10 @@ export function derivePrimaryAccountIban(personaId, accountIndex) {
  * Pure function — no rng dependency on bundle seed; same persona +
  * footprint → byte-identical ledger. EXP-05 across bundles is preserved.
  */
+// Cross-LFI ledger history depth — kept in lock-step with HISTORY_MONTHS
+// in transactions.js. Bumped from 12 → 24 in Phase R1.
+const CROSS_LFI_HISTORY_MONTHS = 24;
+
 const ROLE_AMOUNT_BANDS_AED = {
   operating: [3000, 8000],          // unused for primary→primary; here for completeness
   islamic_deposit: [4000, 12000],   // monthly term-deposit top-up
@@ -357,7 +363,7 @@ export function computeCrossLfiLedger({ persona, primaryAccountId, primaryIban, 
     const band = ROLE_AMOUNT_BANDS_AED[slot.role] ?? [3000, 9000];
     const ccy = slot.role === 'trade_finance' ? 'USD' : 'AED';
 
-    for (let m = 0; m < 12; m++) {
+    for (let m = 0; m < CROSS_LFI_HISTORY_MONTHS; m++) {
       // Deterministic per (persona, slot, month). NOT seeded on the
       // bundle's `seed` — the cross-LFI ledger is a property of the
       // persona, not of one (lfi, seed) tuple. EXP-05 holds.
@@ -365,7 +371,7 @@ export function computeCrossLfiLedger({ persona, primaryAccountId, primaryIban, 
       const amount = rngInt(rng, band[0], band[1] + 1);
       const monthAnchor = new Date(now.getTime());
       monthAnchor.setUTCDate(1);
-      monthAnchor.setUTCMonth(monthAnchor.getUTCMonth() - (11 - m));
+      monthAnchor.setUTCMonth(monthAnchor.getUTCMonth() - (CROSS_LFI_HISTORY_MONTHS - 1 - m));
       // 28th at 11:00 UTC — mirrors the standing-order convention.
       monthAnchor.setUTCDate(28);
       monthAnchor.setUTCHours(11, 0, 0, 0);

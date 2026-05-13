@@ -108,8 +108,12 @@ export function decodeFromUrl(url) {
   const domain = VALID_DOMAINS.has(domainRaw) ? domainRaw : DEFAULTS.domain;
   const preview = params.get('preview') === '1';
   const recipe = personaId === CUSTOM_PERSONA_SLUG ? params.get('recipe') : null;
+  // Phase R1.5 — enriched-view toggle. Default OFF; URL opt-in keeps the
+  // raw-bundle view as the cold-landing experience (which is what a TPP
+  // would see from a real UAE core over Open Finance).
+  const enriched = params.get('enriched') === '1';
 
-  return { personaId, lfi, seed, endpoint, height, domain, preview, recipe };
+  return { personaId, lfi, seed, endpoint, height, domain, preview, recipe, enriched };
 }
 
 // Update window.location without full reload. Browser-only; safely no-ops in tests.

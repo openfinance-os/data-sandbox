@@ -27,6 +27,7 @@ import { generateStatements } from './statements.js';
 import { generateProducts } from './product.js';
 import { applyLfiProfile } from './banking/lfi-profile.js';
 import { buildInsuranceBundle } from './insurance/index.js';
+import { buildEnrichment } from './enrichment.js';
 
 const DEFAULT_NOW = new Date(Date.UTC(2026, 3, 1, 0, 0, 0));
 
@@ -38,6 +39,25 @@ const DEFAULT_GROCERIES = 'merchants_groceries';
 const DEFAULT_FUEL = 'merchants_fuel';
 const DEFAULT_DINING = 'merchants_dining';
 const DEFAULT_UTILITIES = 'merchants_utilities';
+
+// Extended-spend pools (Phase R1 of the enrichment-realism plan). Map of
+// transactions.js pool key → pool_id in synthetic-identity-pool/merchants/.
+// Resolved lazily — a pool missing from the indexed set is left undefined,
+// and the dispatcher in transactions.js skips it.
+const EXTENDED_POOL_IDS = {
+  ride_hailing: 'merchants_ride_hailing',
+  ecommerce: 'merchants_ecommerce',
+  healthcare: 'merchants_healthcare',
+  transport: 'merchants_transport',
+  government: 'merchants_government',
+  entertainment: 'merchants_entertainment',
+  subscriptions: 'merchants_subscriptions',
+  travel_air: 'merchants_travel_air',
+  travel_hotel: 'merchants_travel_hotel',
+  education: 'merchants_education',
+  telecom: 'merchants_telecom',
+  atm: 'merchants_atm',
+};
 
 function resolvePools(persona, indexedPools) {
   const namePool = indexedPools.namesByPoolId[persona.demographics.nationality_pool];
@@ -83,9 +103,27 @@ function resolvePools(persona, indexedPools) {
     fuel: indexedPools.merchantsByCategory[DEFAULT_FUEL],
     dining: indexedPools.merchantsByCategory[DEFAULT_DINING],
     utilities: indexedPools.merchantsByCategory[DEFAULT_UTILITIES],
+    ...extendedPools(indexedPools),
     counterpartyBanks: indexedPools.counterpartyBanksByCategory[DEFAULT_BANKS_POOL],
     ibans: indexedPools.ibansByCategory[DEFAULT_IBANS_POOL],
+    // Phase R2 — flat family-groups registry, resolved by id from the
+    // synthetic UAE-conglomerate pool. The narrative-grammar helpers in
+    // realism.js look up a merchant's `parent_group` here to get the
+    // group's acronym for the narrative prefix.
+    familyGroups: indexedPools.familyGroupsById ?? {},
+    // Phase R3 — MCC confusion table. Indexed { correctMcc → [{wrong,
+    // reason}] }. The noise applier in mcc-noise.js consults this on
+    // every POS / ECommerce tx; absent → no noise (passes through).
+    mccConfusion: indexedPools.mccConfusion ?? null,
   };
+}
+
+function extendedPools(indexedPools) {
+  const out = {};
+  for (const [key, poolId] of Object.entries(EXTENDED_POOL_IDS)) {
+    out[key] = indexedPools.merchantsByCategory[poolId];
+  }
+  return out;
 }
 
 export function buildBundle(args) {
@@ -136,6 +174,26 @@ function buildBankingBundle({ persona, lfi, seed, pools, now = DEFAULT_NOW }) {
         dining: p.dining,
         utilities: p.utilities,
         employers: p.employers,
+        // Phase R1 — extended-spend pools. Missing keys are tolerated by
+        // the dispatcher (it skips the category), so a partial deployment
+        // still builds.
+        ride_hailing: p.ride_hailing,
+        ecommerce: p.ecommerce,
+        healthcare: p.healthcare,
+        transport: p.transport,
+        government: p.government,
+        entertainment: p.entertainment,
+        subscriptions: p.subscriptions,
+        travel_air: p.travel_air,
+        travel_hotel: p.travel_hotel,
+        education: p.education,
+        telecom: p.telecom,
+        atm: p.atm,
+        // Phase R2 — narrative dirtying needs the family-group registry
+        // so parentGroupPrefix can resolve a merchant's owner.
+        familyGroups: p.familyGroups,
+        // Phase R3 — MCC misrouting noise table.
+        mccConfusion: p.mccConfusion,
         // Slice 10: B2B inflows / outflows resolve cash_flow.*.counterparty_pool
         // against the indexed pools structure. Empty `{}` for personas
         // whose load fixtures don't include a counterparties index.
@@ -149,7 +207,7 @@ function buildBankingBundle({ persona, lfi, seed, pools, now = DEFAULT_NOW }) {
   }
 
   // Slice 7 (D-14): cross-LFI mirror ledger. For personas with
-  // `multi_lfi_footprint`, append 12 monthly self-sweep transactions
+  // `multi_lfi_footprint`, append monthly self-sweep transactions
   // per declared non-primary slot. The same pure-function ledger is
   // computed for primary AND role bundles — primary gets the outflow
   // half (CreditDebitIndicator='Debit'), role bundles get the inflow
@@ -224,6 +282,15 @@ function buildBankingBundle({ persona, lfi, seed, pools, now = DEFAULT_NOW }) {
   const partyResult = generateParties({ persona: enrichedPersona, accounts, identity, rng, now });
   const statements = generateStatements({ accounts, transactions, rng, now });
 
+  // Phase R1.5 — transaction enrichment sidecar. Computed BEFORE
+  // applyLfiProfile() so the sidecar is LFI-independent and stays
+  // complete even when Sparse redacts MerchantDetails out of the wire
+  // payload. The bundle carries it as the underscore-prefixed key
+  // `_enrichment` — strips on export per the standard convention in
+  // src/ui/export.js, and the fixture-package builder + stage-site
+  // pipe it through to a separate per-(persona, seed) sidecar URL.
+  const enrichment = buildEnrichment(transactions);
+
   const bundle = {
     persona: persona.persona_id,
     name: persona.name,
@@ -239,6 +306,7 @@ function buildBankingBundle({ persona, lfi, seed, pools, now = DEFAULT_NOW }) {
     callingUserParty: partyResult.callingUser,
     statements,
     product: productRecords,
+    _enrichment: enrichment,
   };
 
   return applyLfiProfile({ bundle, personaId: persona.persona_id, lfi, seed });

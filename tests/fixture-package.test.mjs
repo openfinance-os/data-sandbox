@@ -86,10 +86,50 @@ if (!FIXTURES_BUILT) {
     expect(text).toContain('module.exports');
     expect(text).toContain('loadFixture');
     expect(text).toContain('loadJourney');
+    expect(text).toContain('loadEnrichment');
     expect(text).toContain('listPersonas');
     expect(text).toContain('loadSpec');
     expect(text).toContain('getPools');
     expect(text).toContain('getEngine');
+  });
+
+  // Phase R1.5 — enrichment sidecar exported via loadEnrichment.
+  // The sidecar mirrors the bundle's TransactionId set 1:1 and the
+  // payload is what a TPP's enrichment engine would produce after
+  // cleaning the raw v2.1 envelope.
+  it('loadEnrichment returns a complete sidecar for every banking persona', async () => {
+    const m = await import(path.join(PKG_DIR, 'index.mjs'));
+    const bankingIds = m.listPersonas({ domain: 'banking' });
+    expect(bankingIds.length).toBe(18);
+    for (const personaId of bankingIds) {
+      const sidecar = m.loadEnrichment({ persona: personaId });
+      expect(sidecar.schema).toBe('openfinance-os/data-sandbox/enrichment/v1');
+      expect(sidecar.personaId).toBe(personaId);
+      expect(typeof sidecar.records).toBe('object');
+      // Every persona has at least the salary/income credits + commitments —
+      // a few dozen records minimum even for the thin Senior persona.
+      expect(Object.keys(sidecar.records).length).toBeGreaterThan(20);
+      // Spot-check shape of one record.
+      const first = Object.values(sidecar.records)[0];
+      expect(first.category).toBeTruthy();
+      expect(first.subcategory).toBeTruthy();
+      expect(first).toHaveProperty('merchant');
+      expect(first).toHaveProperty('mcc');
+      expect(first).toHaveProperty('logoSlug');
+    }
+  });
+
+  it('loadEnrichment payload size matches the bundle transaction count', async () => {
+    const m = await import(path.join(PKG_DIR, 'index.mjs'));
+    const j = m.loadJourney({ persona: 'salaried_expat_mid', lfi: 'median' });
+    const txEnvelope = j.endpoints[
+      `/accounts/${j.accountIds[0]}/transactions`
+    ];
+    const txCount = (txEnvelope?.Data?.Transaction ?? []).length;
+    const sidecar = m.loadEnrichment({ persona: 'salaried_expat_mid' });
+    // The sidecar covers ALL accounts' transactions, not just the first
+    // account — so the count is ≥ the single-account envelope count.
+    expect(Object.keys(sidecar.records).length).toBeGreaterThanOrEqual(txCount);
   });
 
   // EXP-28 / Workstream C plug-point 2 — TPPs install the package, compose

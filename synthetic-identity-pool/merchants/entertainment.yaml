@@ -1,0 +1,14 @@
+pool_id: merchants_entertainment
+description: Synthetic cinema / theme-park / events merchant names. All fictional.
+mcc: "7832"
+merchants:
+  - name: "Mirage Cinemas"
+    typical_amount_aed_band: [40, 220]
+  - name: "Oasis Arena"
+    typical_amount_aed_band: [150, 850]
+  - name: "DesertSky Events"
+    typical_amount_aed_band: [120, 750]
+  - name: "Palm Park Tickets"
+    typical_amount_aed_band: [80, 480]
+  - name: "Saffron Theatre"
+    typical_amount_aed_band: [90, 420]

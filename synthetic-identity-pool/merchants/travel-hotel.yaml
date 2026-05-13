@@ -1,0 +1,14 @@
+pool_id: merchants_travel_hotel
+description: Synthetic hotel / resort merchant names; all fictional.
+mcc: "7011"
+merchants:
+  - name: "OasisStay Hotels"
+    typical_amount_aed_band: [380, 2400]
+  - name: "Crescent Boutique Hotel"
+    typical_amount_aed_band: [550, 3200]
+  - name: "Marina Resorts"
+    typical_amount_aed_band: [700, 4800]
+  - name: "Saffron Suites"
+    typical_amount_aed_band: [320, 1800]
+  - name: "DuneRetreat Lodge"
+    typical_amount_aed_band: [450, 2700]

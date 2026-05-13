@@ -14,6 +14,7 @@ import { decodeRecipe, recipeHash } from './recipe.js';
 import { expandRecipe } from './expand.js';
 import { buildBundle } from '../generator/index.js';
 import { envelopesFromBundle } from '../ui/export.js';
+import { paginateEnvelope, parsePaginationParams } from '../shared/pagination.js';
 
 const PATH_RE =
   /\/fixtures\/v1\/bundles\/custom\/([a-z0-9]+)\/(rich|median|sparse)\/seed-(-?\d+)\/(.+)\.json$/i;
@@ -104,10 +105,18 @@ export function handleCustomFixtureRequest(rawUrl, { pools, now } = {}) {
   const env = envelopes[endpoint];
   if (!env) return error(404, `endpoint ${endpoint} not generated`);
 
+  const pagination = parsePaginationParams(parsed.searchParams);
+  const paged = paginateEnvelope(env, {
+    offset: pagination.offset,
+    limit: pagination.limit,
+    requested: pagination.requested,
+    requestUrl: parsed.toString(),
+  });
+
   return {
     status: 200,
     headers: { ...CORS_HEADERS },
-    body: JSON.stringify(env),
+    body: JSON.stringify(paged),
   };
 }
 

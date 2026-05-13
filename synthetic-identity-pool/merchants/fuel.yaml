@@ -4,9 +4,14 @@ mcc: "5541"
 merchants:
   - name: "Beacon Fuel Co."
     typical_amount_aed_band: [80, 220]
+    display_variants: ["BEACON FUEL", "BCN FUEL", "BEACONFUEL"]
+    display_variants_ar: ["MAHATTA WAQOOD"]
   - name: "Crestline Petroleum"
     typical_amount_aed_band: [80, 220]
+    display_variants: ["CRESTLINE PETRO", "CRSTLN PETROL", "CRESTLINE"]
   - name: "Northstar Energy Stations"
     typical_amount_aed_band: [80, 220]
+    display_variants: ["NORTHSTAR ENRG", "NRTHSTR FUEL", "NORTHSTAR"]
   - name: "Ridgepoint Fuel"
     typical_amount_aed_band: [80, 220]
+    display_variants: ["RIDGEPOINT FUEL", "RDGPT FUEL", "RIDGEPOINT"]

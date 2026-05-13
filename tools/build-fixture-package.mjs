@@ -29,6 +29,7 @@ const SHA = readSpecSha();
 if (fs.existsSync(OUT)) fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(path.join(OUT, 'bundles'), { recursive: true });
 fs.mkdirSync(path.join(OUT, 'personas'), { recursive: true });
+fs.mkdirSync(path.join(OUT, 'enrichment'), { recursive: true });
 
 // Banking + insurance: both domains are now bundled. Fixture file layout
 // stays `bundles/<persona>/<lfi>/seed-<n>/<endpoint>.json` because persona
@@ -92,6 +93,40 @@ async function emitPersona(personaId, persona, domain) {
     const envelopes = envelopesFromBundle(bundle, ctx);
     const dir = path.join(OUT, 'bundles', personaId, lfi, `seed-${seed}`);
     fs.mkdirSync(dir, { recursive: true });
+
+    // Phase R1.5 — emit the per-(persona, seed) enrichment sidecar on the
+    // first LFI pass only. The sidecar is computed pre-LFI inside the
+    // generator so it's byte-identical under rich/median/sparse — writing
+    // once is correct. URL: /enrichment/<persona>/seed-<n>.json.
+    //
+    // Manifest carries `enrichmentFiles` as a seed-keyed map (not a
+    // single `enrichmentFile`) so a future persona declaring
+    // `additional_seeds` doesn't have its earlier-seed paths
+    // overwritten by the last iteration. loadEnrichment() resolves the
+    // path by seed lookup.
+    if (lfi === 'rich' && bundle._enrichment) {
+      const enrichDir = path.join(OUT, 'enrichment', personaId);
+      fs.mkdirSync(enrichDir, { recursive: true });
+      const enrichFp = path.join(enrichDir, `seed-${seed}.json`);
+      const enrichText = JSON.stringify({
+        schema: 'openfinance-os/data-sandbox/enrichment/v1',
+        personaId,
+        seed,
+        generatedAt: new Date(NOW_ANCHOR).toISOString(),
+        records: bundle._enrichment,
+      }, null, 2);
+      fs.writeFileSync(enrichFp, enrichText);
+      const relEnrich = path.relative(OUT, enrichFp).split(path.sep).join('/');
+      const prevEntry = manifest.personas[personaId] ?? {};
+      const prevFiles = prevEntry.enrichmentFiles ?? {};
+      manifest.personas[personaId] = {
+        ...prevEntry,
+        enrichmentFiles: { ...prevFiles, [String(seed)]: relEnrich },
+        enrichmentRecordCount: Object.keys(bundle._enrichment).length,
+      };
+      fileCount += 1;
+      totalBytes += enrichText.length;
+    }
 
     const endpointFiles = {};
     for (const [endpoint, env] of Object.entries(envelopes)) {
@@ -279,7 +314,7 @@ const pkgJson = {
     './personas/*': './personas/*',
     './lib/*': './lib/*',
   },
-  files: ['index.mjs', 'index.cjs', 'index.d.ts', 'manifest.json', 'spec.json', 'spec.insurance.json', 'pools.json', 'bundles/', 'personas/', 'lib/', 'README.md'],
+  files: ['index.mjs', 'index.cjs', 'index.d.ts', 'manifest.json', 'spec.json', 'spec.insurance.json', 'pools.json', 'bundles/', 'personas/', 'enrichment/', 'brands/', 'brand-registry.json', 'lib/', 'README.md'],
   publishConfig: { access: 'public' },
 };
 fs.writeFileSync(path.join(OUT, 'package.json'), JSON.stringify(pkgJson, null, 2));
@@ -289,6 +324,7 @@ const indexMjs = `// @openfinance-os/sandbox-fixtures — ESM loader.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { paginateEnvelope } from './lib/shared/pagination.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const manifest = JSON.parse(readFileSync(path.join(here, 'manifest.json'), 'utf8'));
@@ -314,6 +350,34 @@ export function listEndpoints(personaId, lfi = 'median') {
   if (!fx) throw new Error(\`unknown fixture key: \${fixtureKey}\`);
   return Object.keys(fx.endpoints);
 }
+// Pagination — Open Finance v2.1 Links/Meta envelope. \`loadFixturePage\`
+// is the package-level entry point for TPPs that want to simulate paging
+// through a listing endpoint (transactions, standing orders, etc.) the
+// way they would against a real LFI. Internally it loads the full fixture
+// envelope and slices its Data array — the same engine the Service Worker
+// uses for the staged \`/fixtures/v1/bundles/.../*.json?offset=&limit=\` URL.
+//
+// \`requestUrl\` is optional; supply it to make Links.{Self,First,Next,Last}
+// point at the URL the consumer would hit. When omitted, the helper synth-
+// esises a sandbox:// URL so the Links structure stays well-formed.
+export function loadFixturePage(opts) {
+  const { offset = 0, limit = 25, requestUrl, ...loadOpts } = opts || {};
+  const envelope = loadFixture(loadOpts);
+  return paginateEnvelope(envelope, {
+    offset,
+    limit,
+    requested: true,
+    requestUrl: requestUrl ?? sandboxUrl(loadOpts),
+  });
+}
+
+function sandboxUrl({ persona, lfi = 'median', seed, endpoint }) {
+  const info = manifest.personas[persona];
+  const useSeed = seed ?? info?.default_seed ?? 0;
+  const safe = String(endpoint || '').replace(/^\\//, '').replace(/\\//g, '__').replace(/[{}]/g, '');
+  return \`sandbox:/fixtures/v1/bundles/\${persona}/\${lfi}/seed-\${useSeed}/\${safe}.json\`;
+}
+
 export function loadFixture({ persona, lfi = 'median', seed, endpoint, lfi_role }) {
   const info = manifest.personas[persona];
   if (!info) throw new Error(\`unknown persona: \${persona}\`);
@@ -406,6 +470,48 @@ export function loadPersonaManifest(personaId) {
   return JSON.parse(readFileSync(path.join(here, 'personas', \`\${personaId}.json\`), 'utf8'));
 }
 
+// Phase R1.5 — per-(persona, seed) enrichment sidecar. The bundle itself
+// stays as the v2.1 envelope a real UAE core would serve over Open
+// Finance (the "raw" view); the enrichment sidecar is what a TPP's
+// enrichment engine produces after cleaning. Same shape pattern as a
+// production logo / categorisation provider (Brandfetch, Tink, Plaid,
+// SaltEdge): join by TransactionId.
+//
+// LFI-independent — computed before applyLfiProfile() so the sidecar
+// stays complete even under Sparse (which redacts MerchantDetails out
+// of the bundle's wire payload).
+// Phase R4 — brand registry. Slug-keyed map of merchant → logo URL,
+// primary colour, website, parent-group, display variants. The
+// enrichment sidecar's logoSlug field is the join key. Same shape
+// pattern as a production logo provider (Brandfetch / Clearbit). The
+// registry file is generated by tools/build-brand-registry.mjs from
+// the merchant pools — see lint-brand-registry-coverage for the
+// 1:1 invariant. Throws if the registry hasn't been built (run
+// 'npm run build:fixtures' to regenerate).
+let _brandRegistryCache = null;
+export function loadBrandRegistry() {
+  if (_brandRegistryCache) return _brandRegistryCache;
+  const fp = path.join(here, 'brand-registry.json');
+  _brandRegistryCache = JSON.parse(readFileSync(fp, 'utf8'));
+  return _brandRegistryCache;
+}
+
+export function loadEnrichment({ persona, seed } = {}) {
+  const info = manifest.personas[persona];
+  if (!info) throw new Error(\`unknown persona: \${persona}\`);
+  const useSeed = seed ?? info.default_seed;
+  // Seed-keyed map (set since R3 fix); legacy single-string
+  // 'enrichmentFile' kept as a fallback for the transitional window
+  // where a previously-built manifest is still around.
+  const rel = info.enrichmentFiles?.[String(useSeed)] ?? info.enrichmentFile;
+  if (!rel) throw new Error(\`no enrichment sidecar published for \${persona} seed=\${useSeed}\`);
+  const data = JSON.parse(readFileSync(path.join(here, rel), 'utf8'));
+  if (data.seed !== useSeed) {
+    throw new Error(\`enrichment sidecar seed mismatch: file has \${data.seed}, requested \${useSeed}\`);
+  }
+  return data;
+}
+
 // Workstream C plug-point 2 — runtime generator for custom personas. TPPs
 // installing this package can compose a recipe and run buildBundle inside
 // their own app, getting the same v2.1-shaped envelopes as the static
@@ -430,6 +536,17 @@ export {
 // Counterpart to buildBundle for any consumer that doesn't read the static
 // fixture files — e.g. the MCP build_persona path.
 export { envelopesFromBundle } from './lib/ui/export.js';
+
+// Pagination helpers — pure functions that operate on already-loaded
+// envelopes. Useful for TPPs that prefer to load the full envelope once
+// and slice client-side (e.g. when prototyping a paging UI).
+export { paginateEnvelope };
+export {
+  parsePaginationParams,
+  isPaginatableEnvelope,
+  findListKey,
+  PAGINATION_DEFAULTS,
+} from './lib/shared/pagination.js';
 
 export { manifest };
 `;
@@ -566,6 +683,30 @@ function loadSpec(opts) {
 function loadPersonaManifest(personaId) {
   return JSON.parse(fs.readFileSync(path.join(here, 'personas', personaId + '.json'), 'utf8'));
 }
+// Phase R1.5 — per-(persona, seed) enrichment sidecar. See index.mjs
+// for the longer comment; LFI-independent payload keyed by TransactionId.
+// Phase R4 — slug-keyed brand registry. See index.mjs for the long comment.
+let _brandRegistryCache = null;
+function loadBrandRegistry() {
+  if (_brandRegistryCache) return _brandRegistryCache;
+  _brandRegistryCache = JSON.parse(fs.readFileSync(path.join(here, 'brand-registry.json'), 'utf8'));
+  return _brandRegistryCache;
+}
+
+function loadEnrichment(opts) {
+  opts = opts || {};
+  const persona = opts.persona;
+  const info = manifest.personas[persona];
+  if (!info) throw new Error('unknown persona: ' + persona);
+  const useSeed = opts.seed != null ? opts.seed : info.default_seed;
+  const rel = (info.enrichmentFiles && info.enrichmentFiles[String(useSeed)]) || info.enrichmentFile;
+  if (!rel) throw new Error('no enrichment sidecar published for ' + persona + ' seed=' + useSeed);
+  const data = JSON.parse(fs.readFileSync(path.join(here, rel), 'utf8'));
+  if (data.seed !== useSeed) {
+    throw new Error('enrichment sidecar seed mismatch: file has ' + data.seed + ', requested ' + useSeed);
+  }
+  return data;
+}
 let _poolsCache = null;
 function getPools() {
   if (_poolsCache) return _poolsCache;
@@ -575,6 +716,33 @@ function getPools() {
 // CJS re-export of the runtime engine. Uses dynamic import so the CJS
 // loader can pull in the ESM lib modules without requiring callers to
 // install a transpiler.
+async function loadFixturePage(opts) {
+  const o = opts || {};
+  const offset = o.offset != null ? o.offset : 0;
+  const limit = o.limit != null ? o.limit : 25;
+  const requestUrl = o.requestUrl;
+  const loadOpts = { persona: o.persona, lfi: o.lfi, seed: o.seed, endpoint: o.endpoint, lfi_role: o.lfi_role };
+  const envelope = loadFixture(loadOpts);
+  const { paginateEnvelope } = await import('./lib/shared/pagination.js');
+  return paginateEnvelope(envelope, {
+    offset, limit, requested: true,
+    requestUrl: requestUrl || sandboxUrl(loadOpts),
+  });
+}
+
+function sandboxUrl(opts) {
+  const persona = opts.persona;
+  const lfi = opts.lfi || 'median';
+  const info = manifest.personas[persona];
+  const seed = opts.seed != null ? opts.seed : (info && info.default_seed) || 0;
+  const safe = String(opts.endpoint || '').replace(/^\\//, '').replace(/\\//g, '__').replace(/[{}]/g, '');
+  return 'sandbox:/fixtures/v1/bundles/' + persona + '/' + lfi + '/seed-' + seed + '/' + safe + '.json';
+}
+
+async function getPagination() {
+  return import('./lib/shared/pagination.js');
+}
+
 async function getEngine() {
   const gen = await import('./lib/generator/index.js');
   const exp = await import('./lib/persona-builder/expand.js');
@@ -587,8 +755,9 @@ async function getEngine() {
 }
 module.exports = {
   manifest, listPersonas, getPersonaInfo, listEndpoints, loadFixture,
-  listRoleBundles,
-  loadJourney, loadSpec, loadPersonaManifest, getPools, getEngine,
+  listRoleBundles, loadFixturePage,
+  loadJourney, loadSpec, loadPersonaManifest, loadEnrichment, loadBrandRegistry,
+  getPools, getEngine, getPagination,
 };
 `;
 fs.writeFileSync(path.join(OUT, 'index.cjs'), indexCjs);
@@ -652,6 +821,70 @@ export function loadFixture(opts: {
   lfi_role?: 'primary' | 'secondary' | 'tertiary';
 }): unknown;
 export function listRoleBundles(personaId: string): Array<'secondary' | 'tertiary'>;
+
+// Pagination — Open Finance v2.1 Links/Meta envelope. \`loadFixturePage\`
+// loads the full fixture for the requested endpoint and returns a paginated
+// view: the array under \`Data\` is sliced to \`[offset, offset+limit)\`, and
+// Links.{Self,First,Last} + (when applicable) Links.{Next,Prev} +
+// Meta.TotalPages are populated. A \`_pagination\` sidecar object exposes
+// the resolved offset/limit/total-records/page-number to client code.
+export interface PaginationOptions {
+  offset?: number;
+  limit?: number;
+  /** Override the URL emitted in Links.*. Defaults to a synthetic
+   *  sandbox:/fixtures/v1/... URL matching the persona/lfi/seed/endpoint. */
+  requestUrl?: string;
+}
+export interface PaginatedMeta {
+  TotalPages: number;
+  [k: string]: unknown;
+}
+export interface PaginatedLinks {
+  Self: string;
+  First: string;
+  Last: string;
+  Next?: string;
+  Prev?: string;
+}
+export interface PaginationSidecar {
+  offset: number;
+  limit: number;
+  totalRecords: number;
+  totalPages: number;
+  pageNumber: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+}
+export interface PaginatedEnvelope {
+  Data: unknown;
+  Links: PaginatedLinks;
+  Meta: PaginatedMeta;
+  _pagination: PaginationSidecar;
+  [k: string]: unknown;
+}
+export function loadFixturePage(
+  opts: {
+    persona: string;
+    endpoint: string;
+    lfi?: 'rich' | 'median' | 'sparse';
+    seed?: number;
+    lfi_role?: 'primary' | 'secondary' | 'tertiary';
+  } & PaginationOptions
+): PaginatedEnvelope;
+
+/** Pure pagination over an already-loaded envelope. */
+export function paginateEnvelope(
+  envelope: unknown,
+  opts: { offset: number; limit: number; requested: boolean; requestUrl?: string }
+): unknown;
+export function parsePaginationParams(
+  searchParams: URLSearchParams,
+  opts?: { defaultLimit?: number; maxLimit?: number }
+): { offset: number; limit: number; requested: boolean };
+export function isPaginatableEnvelope(envelope: unknown): boolean;
+export function findListKey(envelope: unknown): string | null;
+export const PAGINATION_DEFAULTS: { readonly defaultLimit: number; readonly maxLimit: number };
+
 export function loadJourney(opts: {
   persona: string;
   lfi?: 'rich' | 'median' | 'sparse';
@@ -663,6 +896,73 @@ export function loadJourney(opts: {
 }): Journey;
 export function loadSpec(opts?: { domain?: Domain }): unknown;
 export function loadPersonaManifest(personaId: string): unknown;
+
+// Phase R1.5 — per-(persona, seed) enrichment sidecar. The bundle stays as
+// the v2.1 envelope a real UAE core would serve over Open Finance (the
+// "raw" view); the enrichment payload is what a TPP's enrichment engine
+// would produce after cleaning. Join by TransactionId.
+export interface EnrichmentRecord {
+  merchant: string | null;
+  /** Corrected ISO 18245 MCC (the trustworthy taxonomy key). Sidecar
+   *  carries this even when the wire-level MCC is misrouted. */
+  mcc: string | null;
+  category: string;
+  subcategory: string;
+  logoSlug: string | null;
+  /** Phase R4 — direct logo URL matching the brand-registry path. The
+   *  sidecar emits this deterministically from the slug so a TPP can
+   *  render the logo straight off the enrichment record without a
+   *  registry lookup. Same value the brand-registry entry carries. */
+  logoUrl: string | null;
+  /** Phase R4 — deterministic FNV-1a → HSL → hex brand colour. Matches
+   *  the colour painted on the merchant's placeholder SVG (algorithmic
+   *  parity is test-enforced). */
+  primaryColor: string | null;
+  /** Phase R2 — synthetic UAE family-conglomerate parent group id. */
+  parentGroup: string | null;
+  /** Phase R2 — short acronym used as a narrative prefix on the raw side. */
+  parentGroupAcronym: string | null;
+  /** Phase R3 — the wrong-but-plausible MCC the card scheme emitted on
+   *  the wire, populated only when misrouting occurred. */
+  mccRaw: string | null;
+  /** Phase R3 — true when the wire MCC was misrouted. */
+  mccMisrouted: boolean;
+  /** Phase R3 — human-readable reason from the confusion table. */
+  mccMisroutingReason: string | null;
+}
+export interface EnrichmentSidecar {
+  schema: string;
+  personaId: string;
+  seed: number;
+  generatedAt: string;
+  records: Record<string, EnrichmentRecord>;
+}
+export function loadEnrichment(opts: { persona: string; seed?: number }): EnrichmentSidecar;
+
+// Phase R4 — brand registry. Slug-keyed map (the logoSlug field on an
+// EnrichmentRecord joins here). Same shape a Brandfetch / Clearbit
+// integration would return. Logos are algorithmically-generated
+// placeholders (initials in a coloured circle, OF-OS visual style) —
+// no real brand marks are reproduced.
+export interface BrandRegistryEntry {
+  merchantName: string;
+  logoUrl: string;
+  primaryColor: string;
+  website: string;
+  parentGroup: string | null;
+  parentGroupAcronym: string | null;
+  displayVariants: string[];
+  displayVariantsAr: string[];
+  mcc: string | null;
+  initials: string;
+}
+export interface BrandRegistry {
+  schema: string;
+  generatedAt: string;
+  merchantCount: number;
+  records: Record<string, BrandRegistryEntry>;
+}
+export function loadBrandRegistry(): BrandRegistry;
 
 // Workstream C plug-point 2 — runtime engine for custom personas.
 export interface IndexedPools {

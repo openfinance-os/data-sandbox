@@ -211,15 +211,18 @@ test('Stress-chip filter narrows the persona library', async ({ page }) => {
   expect(await page.locator('.persona-card').count()).toBe(fullCount);
 });
 
-test('Monthly summary shows 12-row roll-up on /transactions', async ({ page }) => {
+test('Monthly summary roll-up renders one row per month of activity on /transactions', async ({ page }) => {
   await loadPersona(page, { endpoint: '/transactions' });
   const rolled = page.locator('.tx-monthly');
   await expect(rolled).toBeVisible();
   await expect(rolled.locator('summary')).toContainText('Monthly summary');
-  // 12 month-rows (the persona generates 12 months of activity).
+  // One row per month in the persona's activity window. Phase R1 of the
+  // enrichment-realism plan bumped HISTORY_MONTHS from 12 → 24, so the
+  // bound is ~24 (allow ±1 for month-boundary jitter against the build
+  // anchor).
   const rowCount = await rolled.locator('tbody tr').count();
-  expect(rowCount).toBeGreaterThanOrEqual(11);
-  expect(rowCount).toBeLessThanOrEqual(13);
+  expect(rowCount).toBeGreaterThanOrEqual(23);
+  expect(rowCount).toBeLessThanOrEqual(25);
 });
 
 test('Underwriting panel renders 4 signals — EXP-18', async ({ page }) => {

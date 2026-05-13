@@ -30,6 +30,37 @@ async function getJSON(url) {
   return r.json();
 }
 
+// Paginated fetch — same shape a TPP would write against a real LFI's Open
+// Finance v2.1 endpoint. Walks Links.Next until it is absent, concatenating
+// the listable array under Data. `dataKey` names the array (Transaction,
+// StandingOrder, …) since v2.1 puts the list under a per-resource key.
+async function getJSONPaged(url, dataKey, { pageSize = 25, maxPages = 50 } = {}) {
+  // Engage pagination by setting ?offset=&limit= — the sandbox falls back
+  // to single-page mode without these params, matching the on-disk file.
+  const first = new URL(url, window.location.origin);
+  first.searchParams.set('offset', '0');
+  first.searchParams.set('limit', String(pageSize));
+  let next = first.toString();
+  const out = [];
+  let pages = 0;
+  let envelope = null;
+  while (next && pages < maxPages) {
+    const env = await getJSON(next);
+    envelope = env;
+    const chunk = env?.Data?.[dataKey] ?? [];
+    out.push(...chunk);
+    next = env?.Links?.Next ?? null;
+    pages += 1;
+  }
+  // Splice the accumulated array back into the last envelope so callers get
+  // a normal-looking Data section plus the original Links/Meta of the last
+  // page (preserving spec shape).
+  if (envelope && envelope.Data && typeof envelope.Data === 'object') {
+    return { ...envelope, Data: { ...envelope.Data, [dataKey]: out } };
+  }
+  return envelope;
+}
+
 let manifest;
 
 async function init() {
@@ -92,8 +123,10 @@ async function render() {
   const perAccount = await Promise.all(ids.map(async (id) => {
     const [bal, tx, so] = await Promise.all([
       getJSON(`${base}/accounts__${id}__balances.json`).catch(() => null),
-      getJSON(`${base}/accounts__${id}__transactions.json`).catch(() => null),
-      getJSON(`${base}/accounts__${id}__standing-orders.json`).catch(() => null),
+      // Transactions and standing-orders are paginated the same way a real
+      // LFI would serve them — walk Links.Next until it is absent.
+      getJSONPaged(`${base}/accounts__${id}__transactions.json`, 'Transaction').catch(() => null),
+      getJSONPaged(`${base}/accounts__${id}__standing-orders.json`, 'StandingOrder').catch(() => null),
     ]);
     return { id, account: accountList.find((a) => a.AccountId === id), bal, tx, so };
   }));

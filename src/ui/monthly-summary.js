@@ -1,7 +1,7 @@
-// Monthly summary roll-up rendered above the /transactions table — 12 rows
-// (one per month of the persona's transaction window) with credit / debit
-// counts, sums, net, and an NSF count. Pure UI module; takes el and the
-// shared formatAmount helper as deps.
+// Monthly summary roll-up rendered above the /transactions table — one row
+// per month of the persona's transaction window (24 since Phase R1) with
+// credit / debit counts, sums, net, and an NSF count. Pure UI module; takes
+// el and the shared formatAmount helper as deps.
 
 const MONTH_FORMATTER = new Intl.DateTimeFormat('en-GB', {
   month: 'short', year: 'numeric', timeZone: 'Asia/Dubai',

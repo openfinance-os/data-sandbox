@@ -128,6 +128,30 @@ function loadSpec(opts) {
 function loadPersonaManifest(personaId) {
   return JSON.parse(fs.readFileSync(path.join(here, 'personas', personaId + '.json'), 'utf8'));
 }
+// Phase R1.5 — per-(persona, seed) enrichment sidecar. See index.mjs
+// for the longer comment; LFI-independent payload keyed by TransactionId.
+// Phase R4 — slug-keyed brand registry. See index.mjs for the long comment.
+let _brandRegistryCache = null;
+function loadBrandRegistry() {
+  if (_brandRegistryCache) return _brandRegistryCache;
+  _brandRegistryCache = JSON.parse(fs.readFileSync(path.join(here, 'brand-registry.json'), 'utf8'));
+  return _brandRegistryCache;
+}
+
+function loadEnrichment(opts) {
+  opts = opts || {};
+  const persona = opts.persona;
+  const info = manifest.personas[persona];
+  if (!info) throw new Error('unknown persona: ' + persona);
+  const useSeed = opts.seed != null ? opts.seed : info.default_seed;
+  const rel = (info.enrichmentFiles && info.enrichmentFiles[String(useSeed)]) || info.enrichmentFile;
+  if (!rel) throw new Error('no enrichment sidecar published for ' + persona + ' seed=' + useSeed);
+  const data = JSON.parse(fs.readFileSync(path.join(here, rel), 'utf8'));
+  if (data.seed !== useSeed) {
+    throw new Error('enrichment sidecar seed mismatch: file has ' + data.seed + ', requested ' + useSeed);
+  }
+  return data;
+}
 let _poolsCache = null;
 function getPools() {
   if (_poolsCache) return _poolsCache;
@@ -137,6 +161,33 @@ function getPools() {
 // CJS re-export of the runtime engine. Uses dynamic import so the CJS
 // loader can pull in the ESM lib modules without requiring callers to
 // install a transpiler.
+async function loadFixturePage(opts) {
+  const o = opts || {};
+  const offset = o.offset != null ? o.offset : 0;
+  const limit = o.limit != null ? o.limit : 25;
+  const requestUrl = o.requestUrl;
+  const loadOpts = { persona: o.persona, lfi: o.lfi, seed: o.seed, endpoint: o.endpoint, lfi_role: o.lfi_role };
+  const envelope = loadFixture(loadOpts);
+  const { paginateEnvelope } = await import('./lib/shared/pagination.js');
+  return paginateEnvelope(envelope, {
+    offset, limit, requested: true,
+    requestUrl: requestUrl || sandboxUrl(loadOpts),
+  });
+}
+
+function sandboxUrl(opts) {
+  const persona = opts.persona;
+  const lfi = opts.lfi || 'median';
+  const info = manifest.personas[persona];
+  const seed = opts.seed != null ? opts.seed : (info && info.default_seed) || 0;
+  const safe = String(opts.endpoint || '').replace(/^\//, '').replace(/\//g, '__').replace(/[{}]/g, '');
+  return 'sandbox:/fixtures/v1/bundles/' + persona + '/' + lfi + '/seed-' + seed + '/' + safe + '.json';
+}
+
+async function getPagination() {
+  return import('./lib/shared/pagination.js');
+}
+
 async function getEngine() {
   const gen = await import('./lib/generator/index.js');
   const exp = await import('./lib/persona-builder/expand.js');
@@ -149,6 +200,7 @@ async function getEngine() {
 }
 module.exports = {
   manifest, listPersonas, getPersonaInfo, listEndpoints, loadFixture,
-  listRoleBundles,
-  loadJourney, loadSpec, loadPersonaManifest, getPools, getEngine,
+  listRoleBundles, loadFixturePage,
+  loadJourney, loadSpec, loadPersonaManifest, loadEnrichment, loadBrandRegistry,
+  getPools, getEngine, getPagination,
 };
