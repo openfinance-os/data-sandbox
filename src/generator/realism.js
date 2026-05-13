@@ -220,8 +220,17 @@ export function emirateCode(rng) {
  * "Show enriched" toggle is the visible payoff.
  */
 export function dbaDrift(merchant, rng, fallback, prob = 0.3) {
+  // Prob-gate draw runs unconditionally so the rng-consumption count
+  // doesn't depend on whether the merchant happens to declare
+  // `display_variants[]`. Without this ordering, adding variants to a
+  // bare merchant in a future pool edit silently shifts every
+  // downstream rng draw for that merchant — breaking EXP-05
+  // fingerprint stability across pool revisions. The variant pick
+  // (rngPick) is still conditional on the prob-gate firing AND the
+  // pool declaring variants — that's the variant-bias-tunable part.
+  if (rng() >= prob) return fallback;
   const variants = Array.isArray(merchant?.display_variants) ? merchant.display_variants : [];
-  if (variants.length === 0 || rng() >= prob) return fallback;
+  if (variants.length === 0) return fallback;
   return String(rngPick(rng, variants)).toUpperCase().replace(/[^A-Z0-9 ]+/g, '').replace(/\s+/g, ' ').trim();
 }
 
@@ -266,8 +275,11 @@ export function fxClutter(currency, foreignAmount, rng, prob = 0.7) {
  * to opt in.
  */
 export function arabicDescriptor(merchant, rng, prob = 0.1) {
+  // Prob-gate runs unconditionally — see dbaDrift's note for the
+  // pool-stability reasoning.
+  if (rng() >= prob) return '';
   const variants = Array.isArray(merchant?.display_variants_ar) ? merchant.display_variants_ar : [];
-  if (variants.length === 0 || rng() >= prob) return '';
+  if (variants.length === 0) return '';
   return String(rngPick(rng, variants)).toUpperCase().replace(/[^A-Z0-9 ]+/g, '').replace(/\s+/g, ' ').trim();
 }
 
@@ -287,8 +299,17 @@ export function arabicDescriptor(merchant, rng, prob = 0.1) {
  */
 export function buildDirtyPosNarrative({ rng, channel, prefix, merchant, registry, fx }) {
   const canonical = String(merchant?.name ?? '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+  // Both helpers are invoked unconditionally so each consumes its
+  // prob-gate rng draw regardless of which one's output wins the
+  // `||` precedence below. Without this, the rng-draw count per
+  // transaction would depend on whether `arabicDescriptor` fired
+  // (and thus whether `dbaDrift` got short-circuited away) — fine for
+  // EXP-05 (deterministic on (persona, seed, merchant)) but unstable
+  // across pool edits that toggle which merchants carry
+  // `display_variants_ar`.
   const ar = arabicDescriptor(merchant, rng);
-  const merchantToken = ar || dbaDrift(merchant, rng, canonical);
+  const drifted = dbaDrift(merchant, rng, canonical);
+  const merchantToken = ar || drifted;
   const group = parentGroupPrefix(merchant, registry, rng);
   const agg = aggregatorPrefix(rng, channel);
   const terminal = terminalSuffix(rng);

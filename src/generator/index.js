@@ -111,6 +111,10 @@ function resolvePools(persona, indexedPools) {
     // realism.js look up a merchant's `parent_group` here to get the
     // group's acronym for the narrative prefix.
     familyGroups: indexedPools.familyGroupsById ?? {},
+    // Phase R3 — MCC confusion table. Indexed { correctMcc → [{wrong,
+    // reason}] }. The noise applier in mcc-noise.js consults this on
+    // every POS / ECommerce tx; absent → no noise (passes through).
+    mccConfusion: indexedPools.mccConfusion ?? null,
   };
 }
 
@@ -188,6 +192,8 @@ function buildBankingBundle({ persona, lfi, seed, pools, now = DEFAULT_NOW }) {
         // Phase R2 — narrative dirtying needs the family-group registry
         // so parentGroupPrefix can resolve a merchant's owner.
         familyGroups: p.familyGroups,
+        // Phase R3 — MCC misrouting noise table.
+        mccConfusion: p.mccConfusion,
         // Slice 10: B2B inflows / outflows resolve cash_flow.*.counterparty_pool
         // against the indexed pools structure. Empty `{}` for personas
         // whose load fixtures don't include a counterparties index.

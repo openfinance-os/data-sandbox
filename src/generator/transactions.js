@@ -27,6 +27,7 @@ import {
 } from './realism.js';
 import { vatTreatmentForPool, computeVatBreakdown } from './vat.js';
 import { EXTENDED_SPEND_CATEGORIES, defaultCountBand } from './banking/spend-profiles.js';
+import { maybeMisrouteMcc } from './mcc-noise.js';
 
 // Trailing history window for transaction generation. Phase R1 of the
 // enrichment-realism plan bumped this from 12 → 24 months so downstream
@@ -115,6 +116,7 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
             rng, account, date: weekdayBias(dateForDay(monthStart, day), rng, cat.weekdayBiasFactor),
             amount, merchant, mcc: pool.mcc, txState, now, mccCategory: cat.mccCategory,
             familyGroups: pools.familyGroups,
+            mccConfusion: pools.mccConfusion,
           }));
           runningBalance.balance -= amount;
         }
@@ -165,6 +167,7 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
               mccCategory: cat.mccCategory,
               transactionType: cat.isEcommerce ? 'ECommerce' : 'POS',
               familyGroups: pools.familyGroups,
+              mccConfusion: pools.mccConfusion,
             }));
             runningBalance.balance -= amount;
           }
@@ -181,7 +184,7 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
         out.push(makePosTransaction({
           rng, account, date: weekdayBias(dateForDay(monthStart, day), rng, 0.3),
           amount, merchant, mcc: pools.dining.mcc, txState, now, mccCategory: 'DIN',
-          isCreditCard: true, familyGroups: pools.familyGroups,
+          isCreditCard: true, familyGroups: pools.familyGroups, mccConfusion: pools.mccConfusion,
         }));
       }
 
@@ -221,7 +224,7 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
             rng, account, date: weekdayBias(dateForDay(monthStart, day), rng, cat.weekdayBiasFactor),
             amount, merchant, mcc: pool.mcc, txState, now, mccCategory: cat.mccCategory,
             transactionType: cat.isEcommerce ? 'ECommerce' : 'POS',
-            isCreditCard: true, familyGroups: pools.familyGroups,
+            isCreditCard: true, familyGroups: pools.familyGroups, mccConfusion: pools.mccConfusion,
           }));
         }
       }
@@ -548,7 +551,7 @@ function makeFixedCommitment({ rng, account, date, amount, purpose, kind, txStat
   };
 }
 
-function makePosTransaction({ rng, account, date, amount, merchant, mcc, isCreditCard = false, txState, now, mccCategory = 'POS', transactionType = 'POS', familyGroups }) {
+function makePosTransaction({ rng, account, date, amount, merchant, mcc, isCreditCard = false, txState, now, mccCategory = 'POS', transactionType = 'POS', familyGroups, mccConfusion }) {
   const posted = applyPostingTime(date, rng);
   // Real POS amounts carry fils precision — typical retail pricing patterns.
   const amt = fractionalAmount(rng, amount);
@@ -563,9 +566,16 @@ function makePosTransaction({ rng, account, date, amount, merchant, mcc, isCredi
   // caps at 80 — comfortably under.
   const narrativeTag = transactionType === 'ECommerce' ? 'ECM' : 'POS';
   const channel = transactionType === 'ECommerce' ? 'ecommerce' : 'pos';
+  const txId = nextTxId(account, posted, txState);
+  // Phase R3 — MCC noise. Side-channel rng keyed on TransactionId, so
+  // adding/tuning noise doesn't shift any other downstream rng draw.
+  // The emitted MerchantCategoryCode is what a real card scheme would
+  // place on the wire (possibly misrouted); the sidecar's `mcc` field
+  // continues to carry the corrected ground-truth (via _trueMcc).
+  const noise = maybeMisrouteMcc({ correctMcc: mcc, transactionId: txId, confusionTable: mccConfusion });
   return {
     _accountId: account.AccountId,
-    TransactionId: nextTxId(account, posted, txState),
+    TransactionId: txId,
     TransactionReference: referenceNumber(rng, transactionType, posted),
     CreditDebitIndicator: 'Debit',
     Status: maybePending(posted, now, rng),
@@ -578,7 +588,7 @@ function makePosTransaction({ rng, account, date, amount, merchant, mcc, isCredi
     Amount: { Amount: amt.toFixed(2), Currency: account.Currency },
     TransactionType: transactionType,
     SubTransactionType: 'Purchase',
-    MerchantDetails: { MerchantName: merchant.name, MerchantCategoryCode: mcc },
+    MerchantDetails: { MerchantName: merchant.name, MerchantCategoryCode: noise.mcc },
     _isCreditCard: isCreditCard,
     _mccCategory: mccCategory,
     // Phase R2 — internal back-reference so the enrichment sidecar can
@@ -586,6 +596,12 @@ function makePosTransaction({ rng, account, date, amount, merchant, mcc, isCredi
     // pool. The `_` prefix strips on export per the standard convention.
     _parentGroup: merchant.parent_group ?? null,
     _parentGroupAcronym: merchant.parent_group ? (familyGroups?.[merchant.parent_group]?.acronym ?? null) : null,
+    // Phase R3 — ground-truth MCC (only populated when the wire field
+    // was misrouted). Enrichment reads this with a fallback so any tx
+    // that wasn't flipped looks the same as today.
+    _trueMcc: noise.misrouted ? mcc : null,
+    _mccMisrouted: noise.misrouted,
+    _mccMisroutingReason: noise.misrouted ? noise.reason : null,
   };
 }
 

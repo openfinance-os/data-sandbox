@@ -74,6 +74,8 @@ export function loadPersonaManifest(personaId: string): unknown;
 // would produce after cleaning. Join by TransactionId.
 export interface EnrichmentRecord {
   merchant: string | null;
+  /** Corrected ISO 18245 MCC (the trustworthy taxonomy key). Sidecar
+   *  carries this even when the wire-level MCC is misrouted. */
   mcc: string | null;
   category: string;
   subcategory: string;
@@ -82,6 +84,13 @@ export interface EnrichmentRecord {
   parentGroup: string | null;
   /** Phase R2 — short acronym used as a narrative prefix on the raw side. */
   parentGroupAcronym: string | null;
+  /** Phase R3 — the wrong-but-plausible MCC the card scheme emitted on
+   *  the wire, populated only when misrouting occurred. */
+  mccRaw: string | null;
+  /** Phase R3 — true when the wire MCC was misrouted. */
+  mccMisrouted: boolean;
+  /** Phase R3 — human-readable reason from the confusion table. */
+  mccMisroutingReason: string | null;
 }
 export interface EnrichmentSidecar {
   schema: string;

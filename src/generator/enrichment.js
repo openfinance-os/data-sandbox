@@ -138,8 +138,17 @@ function slugify(name) {
 function enrichOne(tx) {
   if (!tx || typeof tx.TransactionId !== 'string') return null;
   const merchantName = tx.MerchantDetails?.MerchantName ?? null;
-  const mcc = tx.MerchantDetails?.MerchantCategoryCode ?? null;
-  const taxonomy = (mcc && MCC_TAXONOMY[mcc]) || fallbackForShape(tx);
+  // Phase R3 — MCC noise. The wire-level `MerchantCategoryCode` may
+  // carry a misrouted code (mirroring real card-scheme behaviour).
+  // The generator stashes the canonical MCC on `_trueMcc` whenever it
+  // flips the wire value; we read the corrected ground-truth from
+  // there with a fallback to the wire value (no noise → fallback is
+  // already the canonical). Taxonomy lookup uses the corrected value
+  // so a misrouted POS at petrol-station never gets categorised as a
+  // grocery purchase in the enriched view.
+  const rawMcc = tx.MerchantDetails?.MerchantCategoryCode ?? null;
+  const correctMcc = tx._trueMcc ?? rawMcc;
+  const taxonomy = (correctMcc && MCC_TAXONOMY[correctMcc]) || fallbackForShape(tx);
   // Phase R2 — parent-group ownership graph. The makePosTransaction
   // helper tags every POS / ECommerce tx with `_parentGroup` +
   // `_parentGroupAcronym` (strips on export). We surface those here so
@@ -148,12 +157,20 @@ function enrichOne(tx) {
   // parent or for non-merchant tx shapes (salary, transfers, NSFs).
   return {
     merchant: merchantName,
-    mcc,
+    mcc: correctMcc,
     category: taxonomy.category,
     subcategory: taxonomy.subcategory,
     logoSlug: slugify(merchantName),
     parentGroup: tx._parentGroup ?? null,
     parentGroupAcronym: tx._parentGroupAcronym ?? null,
+    // Phase R3 — populated only when the wire-level MCC was misrouted.
+    // `mccRaw` is the (wrong) code the bank emitted; `mccMisrouted` is
+    // the boolean flag; `mccMisroutingReason` is the per-confusion-
+    // entry human reason. A TPP's MCC-correction logic can score
+    // against `mccRaw → mcc` as the corrected-vs-raw pair.
+    mccRaw: tx._mccMisrouted ? rawMcc : null,
+    mccMisrouted: Boolean(tx._mccMisrouted),
+    mccMisroutingReason: tx._mccMisroutingReason ?? null,
   };
 }
 

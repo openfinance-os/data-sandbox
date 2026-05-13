@@ -133,8 +133,11 @@ export function loadEnrichment({ persona, seed } = {}) {
   const info = manifest.personas[persona];
   if (!info) throw new Error(`unknown persona: ${persona}`);
   const useSeed = seed ?? info.default_seed;
-  const rel = info.enrichmentFile;
-  if (!rel) throw new Error(`no enrichment sidecar published for ${persona}`);
+  // Seed-keyed map (set since R3 fix); legacy single-string
+  // 'enrichmentFile' kept as a fallback for the transitional window
+  // where a previously-built manifest is still around.
+  const rel = info.enrichmentFiles?.[String(useSeed)] ?? info.enrichmentFile;
+  if (!rel) throw new Error(`no enrichment sidecar published for ${persona} seed=${useSeed}`);
   const data = JSON.parse(readFileSync(path.join(here, rel), 'utf8'));
   if (data.seed !== useSeed) {
     throw new Error(`enrichment sidecar seed mismatch: file has ${data.seed}, requested ${useSeed}`);

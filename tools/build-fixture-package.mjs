@@ -98,6 +98,12 @@ async function emitPersona(personaId, persona, domain) {
     // first LFI pass only. The sidecar is computed pre-LFI inside the
     // generator so it's byte-identical under rich/median/sparse — writing
     // once is correct. URL: /enrichment/<persona>/seed-<n>.json.
+    //
+    // Manifest carries `enrichmentFiles` as a seed-keyed map (not a
+    // single `enrichmentFile`) so a future persona declaring
+    // `additional_seeds` doesn't have its earlier-seed paths
+    // overwritten by the last iteration. loadEnrichment() resolves the
+    // path by seed lookup.
     if (lfi === 'rich' && bundle._enrichment) {
       const enrichDir = path.join(OUT, 'enrichment', personaId);
       fs.mkdirSync(enrichDir, { recursive: true });
@@ -111,9 +117,11 @@ async function emitPersona(personaId, persona, domain) {
       }, null, 2);
       fs.writeFileSync(enrichFp, enrichText);
       const relEnrich = path.relative(OUT, enrichFp).split(path.sep).join('/');
+      const prevEntry = manifest.personas[personaId] ?? {};
+      const prevFiles = prevEntry.enrichmentFiles ?? {};
       manifest.personas[personaId] = {
-        ...(manifest.personas[personaId] ?? {}),
-        enrichmentFile: relEnrich,
+        ...prevEntry,
+        enrichmentFiles: { ...prevFiles, [String(seed)]: relEnrich },
         enrichmentRecordCount: Object.keys(bundle._enrichment).length,
       };
       fileCount += 1;
@@ -447,8 +455,11 @@ export function loadEnrichment({ persona, seed } = {}) {
   const info = manifest.personas[persona];
   if (!info) throw new Error(\`unknown persona: \${persona}\`);
   const useSeed = seed ?? info.default_seed;
-  const rel = info.enrichmentFile;
-  if (!rel) throw new Error(\`no enrichment sidecar published for \${persona}\`);
+  // Seed-keyed map (set since R3 fix); legacy single-string
+  // 'enrichmentFile' kept as a fallback for the transitional window
+  // where a previously-built manifest is still around.
+  const rel = info.enrichmentFiles?.[String(useSeed)] ?? info.enrichmentFile;
+  if (!rel) throw new Error(\`no enrichment sidecar published for \${persona} seed=\${useSeed}\`);
   const data = JSON.parse(readFileSync(path.join(here, rel), 'utf8'));
   if (data.seed !== useSeed) {
     throw new Error(\`enrichment sidecar seed mismatch: file has \${data.seed}, requested \${useSeed}\`);
@@ -624,8 +635,8 @@ function loadEnrichment(opts) {
   const info = manifest.personas[persona];
   if (!info) throw new Error('unknown persona: ' + persona);
   const useSeed = opts.seed != null ? opts.seed : info.default_seed;
-  const rel = info.enrichmentFile;
-  if (!rel) throw new Error('no enrichment sidecar published for ' + persona);
+  const rel = (info.enrichmentFiles && info.enrichmentFiles[String(useSeed)]) || info.enrichmentFile;
+  if (!rel) throw new Error('no enrichment sidecar published for ' + persona + ' seed=' + useSeed);
   const data = JSON.parse(fs.readFileSync(path.join(here, rel), 'utf8'));
   if (data.seed !== useSeed) {
     throw new Error('enrichment sidecar seed mismatch: file has ' + data.seed + ', requested ' + useSeed);
@@ -736,6 +747,8 @@ export function loadPersonaManifest(personaId: string): unknown;
 // would produce after cleaning. Join by TransactionId.
 export interface EnrichmentRecord {
   merchant: string | null;
+  /** Corrected ISO 18245 MCC (the trustworthy taxonomy key). Sidecar
+   *  carries this even when the wire-level MCC is misrouted. */
   mcc: string | null;
   category: string;
   subcategory: string;
@@ -744,6 +757,13 @@ export interface EnrichmentRecord {
   parentGroup: string | null;
   /** Phase R2 — short acronym used as a narrative prefix on the raw side. */
   parentGroupAcronym: string | null;
+  /** Phase R3 — the wrong-but-plausible MCC the card scheme emitted on
+   *  the wire, populated only when misrouting occurred. */
+  mccRaw: string | null;
+  /** Phase R3 — true when the wire MCC was misrouted. */
+  mccMisrouted: boolean;
+  /** Phase R3 — human-readable reason from the confusion table. */
+  mccMisroutingReason: string | null;
 }
 export interface EnrichmentSidecar {
   schema: string;

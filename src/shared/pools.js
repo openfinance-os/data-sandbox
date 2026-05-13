@@ -19,6 +19,11 @@ export function indexPools(rawPools) {
   // groupRecord } map so the narrative-grammar helpers can resolve a
   // merchant's `parent_group` in O(1).
   const familyGroupsById = {};
+  // Phase R3 — MCC confusion table. Discriminator is the top-level
+  // `confusion` array. Indexed { correctMcc → [{ wrong, reason }] }
+  // so the noise applier in mcc-noise.js can look up plausible
+  // misrouting targets for a transaction's true MCC in O(1).
+  let mccConfusion = null;
 
   for (const p of rawPools) {
     if (!p || typeof p.pool_id !== 'string') continue;
@@ -40,6 +45,21 @@ export function indexPools(rawPools) {
       for (const g of p.groups) {
         if (g && typeof g.id === 'string') familyGroupsById[g.id] = g;
       }
+    } else if (Array.isArray(p.confusion)) {
+      // Folded so duplicate confusion files (defensive — should be one)
+      // merge their entries rather than the second clobbering the first.
+      mccConfusion = mccConfusion ?? {};
+      for (const e of p.confusion) {
+        if (!e?.correct) continue;
+        const arr = Array.isArray(e.wrong) ? e.wrong : [];
+        const records = arr.map((w) =>
+          typeof w === 'string'
+            ? { wrong: w, reason: e.reason ?? '' }
+            : { wrong: w?.wrong ?? null, reason: w?.reason ?? e.reason ?? '' }
+        ).filter((r) => r.wrong);
+        if (records.length === 0) continue;
+        mccConfusion[e.correct] = [...(mccConfusion[e.correct] ?? []), ...records];
+      }
     }
   }
   return {
@@ -51,5 +71,6 @@ export function indexPools(rawPools) {
     organisationsByPoolId,
     counterpartiesByPoolId,
     familyGroupsById,
+    mccConfusion,
   };
 }

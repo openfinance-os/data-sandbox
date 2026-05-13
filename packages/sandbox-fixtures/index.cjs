@@ -136,8 +136,8 @@ function loadEnrichment(opts) {
   const info = manifest.personas[persona];
   if (!info) throw new Error('unknown persona: ' + persona);
   const useSeed = opts.seed != null ? opts.seed : info.default_seed;
-  const rel = info.enrichmentFile;
-  if (!rel) throw new Error('no enrichment sidecar published for ' + persona);
+  const rel = (info.enrichmentFiles && info.enrichmentFiles[String(useSeed)]) || info.enrichmentFile;
+  if (!rel) throw new Error('no enrichment sidecar published for ' + persona + ' seed=' + useSeed);
   const data = JSON.parse(fs.readFileSync(path.join(here, rel), 'utf8'));
   if (data.seed !== useSeed) {
     throw new Error('enrichment sidecar seed mismatch: file has ' + data.seed + ', requested ' + useSeed);
