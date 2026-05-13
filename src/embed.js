@@ -9,15 +9,20 @@ import { leafFields, statusBadge } from './shared/spec-helpers.js';
 import { decodeFromUrl, CUSTOM_PERSONA_SLUG } from './url.js';
 import { expandRecipe } from './persona-builder/expand.js';
 import { decodeRecipe } from './persona-builder/recipe.js';
+import { svgFromString } from './app/utils.js';
 
 async function init() {
   const url = decodeFromUrl(window.location.href);
-  const [domainsRes, dataRes] = await Promise.all([
+  // Avatars are a presentation-only enhancement — if the fetch fails or
+  // the build predates avatars.json, the strip still renders without it.
+  const [domainsRes, dataRes, avatarsRes] = await Promise.all([
     fetch('../dist/domains.json'),
     fetch('../dist/data.json'),
+    fetch('../dist/avatars.json').catch(() => null),
   ]);
   const domainsManifest = await domainsRes.json();
   const data = await dataRes.json();
+  const avatars = avatarsRes && avatarsRes.ok ? (await avatarsRes.json()).avatars ?? {} : {};
   const domains = Object.fromEntries(domainsManifest.domains.map((d) => [d.id, d]));
   const domain = domains[url.domain] ? url.domain : 'banking';
   const domainEntry = domains[domain];
@@ -57,6 +62,19 @@ async function init() {
 
   document.getElementById('embed-label').textContent =
     `${persona.name} · LFI ${lfi} · seed ${seed} · ${endpoint}`;
+
+  // Avatar — slot before the strip label so the iframe carries a small
+  // persona identity cue even with chrome stripped. Insertion is safe
+  // when avatars.json is missing (the slot just stays empty).
+  const avatarSlot = document.getElementById('embed-avatar');
+  if (avatarSlot) {
+    const node = svgFromString(avatars[personaId]?.svg);
+    if (node) {
+      avatarSlot.appendChild(node);
+      avatarSlot.setAttribute('role', 'img');
+      avatarSlot.setAttribute('aria-label', `Synthetic illustration for ${persona.name}`);
+    }
+  }
 
   const fullPath = window.location.pathname.replace(/embed\.html$/, 'index.html');
   const linkParams = new URLSearchParams({ persona: personaId, lfi, seed: String(seed) });

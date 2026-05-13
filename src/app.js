@@ -142,7 +142,7 @@ const { startTour } = createTour({
   renderNavigator, renderPayload, renderCoverage,
 });
 const { renderCompareView } = createCompareView({
-  state, el, stripInternal,
+  state, el, stripInternal, personaAvatarEl,
 });
 const { renderTxFilterBar, applyFilter, applySort, toggleSort } = createTxFilter({
   state, el, renderPayload, emptyTxFilter,
@@ -329,22 +329,44 @@ function bestForLine(persona) {
 }
 
 // Persona avatar — wraps the build-time SVG in an aria-labelled card.
-// `size` is a tag the CSS keys off: 'sm' for library list, 'lg' for the
-// persona-overview pane. The custom persona has no manifest avatar, so
-// it gets a neutral placeholder with the "C" initial.
+// `size` is a tag the CSS keys off: 'sm' for library list, 'md' for the
+// compare-LFIs header, 'lg' for the persona-overview pane. The custom
+// persona has no build-time manifest (it's expanded at runtime from a
+// recipe), so it gets a sparkle glyph indicating "composed on the fly".
+const CUSTOM_AVATAR_SVG =
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" preserveAspectRatio="xMidYMid meet" aria-hidden="true">' +
+  '<rect width="120" height="120" fill="#E6DDEC"/>' +
+  // Big sparkle (four-point star) centred
+  '<path d="M60 26 L66 52 L92 60 L66 68 L60 94 L54 68 L28 60 L54 52 Z" fill="#6E548F"/>' +
+  // Small sparkles for "compose / variation" feel
+  '<path d="M30 30 L33 38 L41 41 L33 44 L30 52 L27 44 L19 41 L27 38 Z" fill="#6E548F" opacity="0.55"/>' +
+  '<path d="M92 78 L94.5 84 L100 86.5 L94.5 89 L92 95 L89.5 89 L84 86.5 L89.5 84 Z" fill="#6E548F" opacity="0.55"/>' +
+  '</svg>';
+
 function personaAvatarEl(id, persona, size) {
+  const name = persona?.name ?? id;
   const wrap = el('div', {
     class: `persona-avatar persona-avatar-${size}`,
-    attrs: { role: 'img', 'aria-label': `Avatar for ${persona?.name ?? id}` },
+    attrs: {
+      role: 'img',
+      // "Synthetic illustration" makes the watermark contract explicit to
+      // screen readers — these are clearly not photos of real customers.
+      'aria-label': `Synthetic illustration for ${name}`,
+    },
   });
   const a = state.avatars?.[id];
-  const node = svgFromString(a?.svg);
+  let svgSource = a?.svg;
+  if (!svgSource && id === CUSTOM_PERSONA_SLUG) {
+    svgSource = CUSTOM_AVATAR_SVG;
+    wrap.classList.add('persona-avatar-custom');
+  }
+  const node = svgFromString(svgSource);
   if (node) {
     wrap.appendChild(node);
   } else {
-    // Fallback initials — covers the custom persona slug and any future
-    // persona that lands before its avatar is built.
-    const initials = (persona?.name ?? '?')[0]?.toUpperCase() ?? '?';
+    // Fallback initials — covers any future persona that lands before its
+    // avatar is built. Never reached for the curated 27 + custom slug.
+    const initials = name[0]?.toUpperCase() ?? '?';
     wrap.classList.add('persona-avatar-fallback');
     wrap.appendChild(el('span', { class: 'persona-avatar-initials', text: initials }));
   }

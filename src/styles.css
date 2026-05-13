@@ -874,6 +874,7 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
 }
 .persona-avatar svg { display: block; width: 100%; height: 100%; }
 .persona-avatar-sm { width: 40px; height: 40px; margin-top: 2px; }
+.persona-avatar-md { width: 56px; height: 56px; border-radius: 8px; }
 .persona-avatar-lg { width: 96px; height: 96px; border-radius: 10px; }
 .persona-avatar-fallback {
   background: var(--bg-soft);
@@ -1467,6 +1468,23 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   cursor: pointer;
 }
 .compare-bar .swap:hover { background: var(--accent-soft); }
+.compare-persona {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.compare-persona-name { font-weight: 600; font-size: 14px; line-height: 1.2; }
+.compare-persona-lfis {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 3px;
+}
+
 .compare-summary {
   padding: 4px 12px;
   font-size: 11px;
