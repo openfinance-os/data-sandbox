@@ -324,6 +324,7 @@ const indexMjs = `// @openfinance-os/sandbox-fixtures — ESM loader.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { paginateEnvelope } from './lib/shared/pagination.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const manifest = JSON.parse(readFileSync(path.join(here, 'manifest.json'), 'utf8'));
@@ -349,6 +350,34 @@ export function listEndpoints(personaId, lfi = 'median') {
   if (!fx) throw new Error(\`unknown fixture key: \${fixtureKey}\`);
   return Object.keys(fx.endpoints);
 }
+// Pagination — Open Finance v2.1 Links/Meta envelope. \`loadFixturePage\`
+// is the package-level entry point for TPPs that want to simulate paging
+// through a listing endpoint (transactions, standing orders, etc.) the
+// way they would against a real LFI. Internally it loads the full fixture
+// envelope and slices its Data array — the same engine the Service Worker
+// uses for the staged \`/fixtures/v1/bundles/.../*.json?offset=&limit=\` URL.
+//
+// \`requestUrl\` is optional; supply it to make Links.{Self,First,Next,Last}
+// point at the URL the consumer would hit. When omitted, the helper synth-
+// esises a sandbox:// URL so the Links structure stays well-formed.
+export function loadFixturePage(opts) {
+  const { offset = 0, limit = 25, requestUrl, ...loadOpts } = opts || {};
+  const envelope = loadFixture(loadOpts);
+  return paginateEnvelope(envelope, {
+    offset,
+    limit,
+    requested: true,
+    requestUrl: requestUrl ?? sandboxUrl(loadOpts),
+  });
+}
+
+function sandboxUrl({ persona, lfi = 'median', seed, endpoint }) {
+  const info = manifest.personas[persona];
+  const useSeed = seed ?? info?.default_seed ?? 0;
+  const safe = String(endpoint || '').replace(/^\\//, '').replace(/\\//g, '__').replace(/[{}]/g, '');
+  return \`sandbox:/fixtures/v1/bundles/\${persona}/\${lfi}/seed-\${useSeed}/\${safe}.json\`;
+}
+
 export function loadFixture({ persona, lfi = 'median', seed, endpoint, lfi_role }) {
   const info = manifest.personas[persona];
   if (!info) throw new Error(\`unknown persona: \${persona}\`);
@@ -507,6 +536,17 @@ export {
 // Counterpart to buildBundle for any consumer that doesn't read the static
 // fixture files — e.g. the MCP build_persona path.
 export { envelopesFromBundle } from './lib/ui/export.js';
+
+// Pagination helpers — pure functions that operate on already-loaded
+// envelopes. Useful for TPPs that prefer to load the full envelope once
+// and slice client-side (e.g. when prototyping a paging UI).
+export { paginateEnvelope };
+export {
+  parsePaginationParams,
+  isPaginatableEnvelope,
+  findListKey,
+  PAGINATION_DEFAULTS,
+} from './lib/shared/pagination.js';
 
 export { manifest };
 `;
@@ -676,6 +716,33 @@ function getPools() {
 // CJS re-export of the runtime engine. Uses dynamic import so the CJS
 // loader can pull in the ESM lib modules without requiring callers to
 // install a transpiler.
+async function loadFixturePage(opts) {
+  const o = opts || {};
+  const offset = o.offset != null ? o.offset : 0;
+  const limit = o.limit != null ? o.limit : 25;
+  const requestUrl = o.requestUrl;
+  const loadOpts = { persona: o.persona, lfi: o.lfi, seed: o.seed, endpoint: o.endpoint, lfi_role: o.lfi_role };
+  const envelope = loadFixture(loadOpts);
+  const { paginateEnvelope } = await import('./lib/shared/pagination.js');
+  return paginateEnvelope(envelope, {
+    offset, limit, requested: true,
+    requestUrl: requestUrl || sandboxUrl(loadOpts),
+  });
+}
+
+function sandboxUrl(opts) {
+  const persona = opts.persona;
+  const lfi = opts.lfi || 'median';
+  const info = manifest.personas[persona];
+  const seed = opts.seed != null ? opts.seed : (info && info.default_seed) || 0;
+  const safe = String(opts.endpoint || '').replace(/^\\//, '').replace(/\\//g, '__').replace(/[{}]/g, '');
+  return 'sandbox:/fixtures/v1/bundles/' + persona + '/' + lfi + '/seed-' + seed + '/' + safe + '.json';
+}
+
+async function getPagination() {
+  return import('./lib/shared/pagination.js');
+}
+
 async function getEngine() {
   const gen = await import('./lib/generator/index.js');
   const exp = await import('./lib/persona-builder/expand.js');
@@ -688,8 +755,9 @@ async function getEngine() {
 }
 module.exports = {
   manifest, listPersonas, getPersonaInfo, listEndpoints, loadFixture,
-  listRoleBundles,
-  loadJourney, loadSpec, loadPersonaManifest, loadEnrichment, loadBrandRegistry, getPools, getEngine,
+  listRoleBundles, loadFixturePage,
+  loadJourney, loadSpec, loadPersonaManifest, loadEnrichment, loadBrandRegistry,
+  getPools, getEngine, getPagination,
 };
 `;
 fs.writeFileSync(path.join(OUT, 'index.cjs'), indexCjs);
@@ -753,6 +821,70 @@ export function loadFixture(opts: {
   lfi_role?: 'primary' | 'secondary' | 'tertiary';
 }): unknown;
 export function listRoleBundles(personaId: string): Array<'secondary' | 'tertiary'>;
+
+// Pagination — Open Finance v2.1 Links/Meta envelope. \`loadFixturePage\`
+// loads the full fixture for the requested endpoint and returns a paginated
+// view: the array under \`Data\` is sliced to \`[offset, offset+limit)\`, and
+// Links.{Self,First,Last} + (when applicable) Links.{Next,Prev} +
+// Meta.TotalPages are populated. A \`_pagination\` sidecar object exposes
+// the resolved offset/limit/total-records/page-number to client code.
+export interface PaginationOptions {
+  offset?: number;
+  limit?: number;
+  /** Override the URL emitted in Links.*. Defaults to a synthetic
+   *  sandbox:/fixtures/v1/... URL matching the persona/lfi/seed/endpoint. */
+  requestUrl?: string;
+}
+export interface PaginatedMeta {
+  TotalPages: number;
+  [k: string]: unknown;
+}
+export interface PaginatedLinks {
+  Self: string;
+  First: string;
+  Last: string;
+  Next?: string;
+  Prev?: string;
+}
+export interface PaginationSidecar {
+  offset: number;
+  limit: number;
+  totalRecords: number;
+  totalPages: number;
+  pageNumber: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+}
+export interface PaginatedEnvelope {
+  Data: unknown;
+  Links: PaginatedLinks;
+  Meta: PaginatedMeta;
+  _pagination: PaginationSidecar;
+  [k: string]: unknown;
+}
+export function loadFixturePage(
+  opts: {
+    persona: string;
+    endpoint: string;
+    lfi?: 'rich' | 'median' | 'sparse';
+    seed?: number;
+    lfi_role?: 'primary' | 'secondary' | 'tertiary';
+  } & PaginationOptions
+): PaginatedEnvelope;
+
+/** Pure pagination over an already-loaded envelope. */
+export function paginateEnvelope(
+  envelope: unknown,
+  opts: { offset: number; limit: number; requested: boolean; requestUrl?: string }
+): unknown;
+export function parsePaginationParams(
+  searchParams: URLSearchParams,
+  opts?: { defaultLimit?: number; maxLimit?: number }
+): { offset: number; limit: number; requested: boolean };
+export function isPaginatableEnvelope(envelope: unknown): boolean;
+export function findListKey(envelope: unknown): string | null;
+export const PAGINATION_DEFAULTS: { readonly defaultLimit: number; readonly maxLimit: number };
+
 export function loadJourney(opts: {
   persona: string;
   lfi?: 'rich' | 'median' | 'sparse';

@@ -56,6 +56,70 @@ export function loadFixture(opts: {
   lfi_role?: 'primary' | 'secondary' | 'tertiary';
 }): unknown;
 export function listRoleBundles(personaId: string): Array<'secondary' | 'tertiary'>;
+
+// Pagination — Open Finance v2.1 Links/Meta envelope. `loadFixturePage`
+// loads the full fixture for the requested endpoint and returns a paginated
+// view: the array under `Data` is sliced to `[offset, offset+limit)`, and
+// Links.{Self,First,Last} + (when applicable) Links.{Next,Prev} +
+// Meta.TotalPages are populated. A `_pagination` sidecar object exposes
+// the resolved offset/limit/total-records/page-number to client code.
+export interface PaginationOptions {
+  offset?: number;
+  limit?: number;
+  /** Override the URL emitted in Links.*. Defaults to a synthetic
+   *  sandbox:/fixtures/v1/... URL matching the persona/lfi/seed/endpoint. */
+  requestUrl?: string;
+}
+export interface PaginatedMeta {
+  TotalPages: number;
+  [k: string]: unknown;
+}
+export interface PaginatedLinks {
+  Self: string;
+  First: string;
+  Last: string;
+  Next?: string;
+  Prev?: string;
+}
+export interface PaginationSidecar {
+  offset: number;
+  limit: number;
+  totalRecords: number;
+  totalPages: number;
+  pageNumber: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+}
+export interface PaginatedEnvelope {
+  Data: unknown;
+  Links: PaginatedLinks;
+  Meta: PaginatedMeta;
+  _pagination: PaginationSidecar;
+  [k: string]: unknown;
+}
+export function loadFixturePage(
+  opts: {
+    persona: string;
+    endpoint: string;
+    lfi?: 'rich' | 'median' | 'sparse';
+    seed?: number;
+    lfi_role?: 'primary' | 'secondary' | 'tertiary';
+  } & PaginationOptions
+): PaginatedEnvelope;
+
+/** Pure pagination over an already-loaded envelope. */
+export function paginateEnvelope(
+  envelope: unknown,
+  opts: { offset: number; limit: number; requested: boolean; requestUrl?: string }
+): unknown;
+export function parsePaginationParams(
+  searchParams: URLSearchParams,
+  opts?: { defaultLimit?: number; maxLimit?: number }
+): { offset: number; limit: number; requested: boolean };
+export function isPaginatableEnvelope(envelope: unknown): boolean;
+export function findListKey(envelope: unknown): string | null;
+export const PAGINATION_DEFAULTS: { readonly defaultLimit: number; readonly maxLimit: number };
+
 export function loadJourney(opts: {
   persona: string;
   lfi?: 'rich' | 'median' | 'sparse';
