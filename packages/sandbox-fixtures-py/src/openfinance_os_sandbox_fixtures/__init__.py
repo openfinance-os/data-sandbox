@@ -247,7 +247,7 @@ def paginate_envelope(
 
     arr = envelope["Data"] if key == _ROOT_ARRAY_SENTINEL else envelope["Data"][key]
     total = len(arr)
-    off = 0 if total == 0 else min(max(0, offset), max(0, total - 1))
+    off = 0 if total == 0 else max(0, offset)
     lim = max(1, min(PAGINATION_MAX_LIMIT, limit))
     slice_ = arr[off:off + lim]
     if key == _ROOT_ARRAY_SENTINEL:

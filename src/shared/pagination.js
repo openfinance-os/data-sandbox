@@ -90,7 +90,7 @@ export function paginateEnvelope(envelope, { offset, limit, requested, requestUr
   }
   const arr = key === ROOT_ARRAY_SENTINEL ? envelope.Data : envelope.Data[key];
   const total = arr.length;
-  const off = total === 0 ? 0 : Math.min(offset, Math.max(0, total - 1));
+  const off = total === 0 ? 0 : Math.max(0, offset);
   const lim = Math.max(1, limit);
   const slice = arr.slice(off, off + lim);
   const newData = key === ROOT_ARRAY_SENTINEL ? slice : { ...envelope.Data, [key]: slice };
