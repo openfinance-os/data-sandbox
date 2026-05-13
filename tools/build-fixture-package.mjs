@@ -777,6 +777,15 @@ export interface EnrichmentRecord {
   category: string;
   subcategory: string;
   logoSlug: string | null;
+  /** Phase R4 — direct logo URL matching the brand-registry path. The
+   *  sidecar emits this deterministically from the slug so a TPP can
+   *  render the logo straight off the enrichment record without a
+   *  registry lookup. Same value the brand-registry entry carries. */
+  logoUrl: string | null;
+  /** Phase R4 — deterministic FNV-1a → HSL → hex brand colour. Matches
+   *  the colour painted on the merchant's placeholder SVG (algorithmic
+   *  parity is test-enforced). */
+  primaryColor: string | null;
   /** Phase R2 — synthetic UAE family-conglomerate parent group id. */
   parentGroup: string | null;
   /** Phase R2 — short acronym used as a narrative prefix on the raw side. */
