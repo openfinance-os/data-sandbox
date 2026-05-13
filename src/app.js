@@ -154,17 +154,6 @@ const { renderUnderwritingStrip, renderUnderwritingPanel } = createUnderwriting(
   state, el, formatAmount, renderNavigator, renderPayload, UNDERWRITING_PSEUDO,
 });
 
-function hasActiveTxFilter(f) {
-  if (!f) return false;
-  // Every filter field on emptyTxFilter() initialises to '' — including
-  // the numeric amountFrom / amountTo (kept as strings so the input
-  // binding stays uniform). A truthy check therefore covers all fields.
-  return Boolean(
-    f.search || f.type || f.subType || f.debitCredit ||
-    f.dateFrom || f.dateTo || f.amountFrom || f.amountTo || f.mcc
-  );
-}
-
 function emptyTxFilter() {
   return {
     search: '',
@@ -1219,16 +1208,14 @@ function renderPayloadUnsafe() {
     return;
   }
 
-  // Row-render cap. Unfiltered /transactions hits 2,400+ rows on HNW under
-  // the 24-month history window, so we cap the raw-dump view at 100 to
-  // keep first-paint snappy. When the user has narrowed the set via the
-  // filter bar, raise the cap to 500 so the filter result is meaningful
-  // (a filter-to-InternationalTransfer on HNW returns ~100 rows, all of
-  // which the user expects to see). 500 is the hard ceiling even when
-  // filtered — keeps DOM bounded against a no-op filter.
-  const filterActive = isTransactions && hasActiveTxFilter(state.txFilter);
-  const visibleCap = filterActive ? 500 : 100;
-  const visible = rows.slice(0, visibleCap);
+  // Row-render cap. Unfiltered /transactions hits 2,400+ rows on HNW
+  // under the 24-month history window; we cap at 250 to keep first-paint
+  // snappy while staying above the natural row-count of any single
+  // moderate-volume filter result (e.g. HNW InternationalTransfer ≈ 100
+  // tx, ATM ≈ 85, LocalBankTransfer ≈ 50 — all visible in full when the
+  // user narrows). 250 is a uniform cap across filtered/unfiltered so
+  // the UI semantics stay simple: a filter always narrows monotonically.
+  const visible = rows.slice(0, 250);
   const allKeys = new Set();
   for (const r of visible) for (const k of Object.keys(stripInternal(r))) allKeys.add(k);
 
