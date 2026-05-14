@@ -244,6 +244,22 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   font-family: inherit;
 }
 .topbar-btn:hover { background: var(--accent-soft); }
+/* Demoted state for the Tour button after the user has seen the walkthrough
+   (PR #2). Same hover/focus affordances as .topbar-btn but compact, icon-only,
+   keyboard-restorable. */
+.topbar-btn.topbar-btn-icon {
+  font-size: 15px;
+  line-height: 1;
+  padding: 2px 6px;
+  min-width: 0;
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+.topbar-btn.topbar-btn-icon:hover { color: var(--text); }
+.topbar-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
 
 /* Phase 2.0 multi-domain selector. Banking is the default; preview-status
    domains (e.g. insurance) are tagged "(preview)" in the option label. */

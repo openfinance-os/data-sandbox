@@ -126,6 +126,10 @@ const state = {
   // by design) and the cards fire only when the URL has no query params.
   welcomeShown: false,
   welcomeDismissed: false,
+  // Tour state — cold landing auto-launches the 5-step walkthrough and the
+  // Tour button is demoted to a small ⓘ icon once seen. Same EXP-22
+  // constraint as welcomeShown: JS-only, refresh re-arms by design.
+  tourSeen: false,
 };
 
 // Mount the UI submodules. `state` is a const and the helpers below
@@ -148,7 +152,21 @@ const { openFind, closeFind } = createFindBox({
 const { startTour } = createTour({
   state, el, setPersona, emptyTxFilter,
   renderNavigator, renderPayload, renderCoverage,
+  onClose: () => demoteTourButton(),
 });
+
+// Demote the prominent "Tour" button to a small ⓘ icon once the user has
+// seen the walkthrough (finish/skip/click-outside all route through
+// closeTour). State is JS-only per EXP-22 — a refresh re-arms the prominent
+// label, and cold-landing visitors get auto-launched again next session.
+function demoteTourButton() {
+  const btn = document.getElementById('tour-btn');
+  if (!btn) return;
+  btn.classList.add('topbar-btn-icon');
+  btn.textContent = 'ⓘ';
+  btn.setAttribute('aria-label', 'Replay guided tour');
+  btn.setAttribute('title', 'Replay the 5-step guided tour');
+}
 const { renderCompareView } = createCompareView({
   state, el, stripInternal, personaAvatarEl,
 });
@@ -328,6 +346,18 @@ async function init() {
   // (plug-point 2) and the static-fixture zip download (plug-point 3).
   rebuildAndRender();
   emitPersonaLoad();
+
+  // Auto-launch the 5-step tour on cold landing (URL with no query params)
+  // — first-visit orientation. EXP-22 forbids storage-based "first visit"
+  // detection, so we reuse the same isColdLanding signal that drives the
+  // welcome cards. URL-with-params is treated as a returning visitor —
+  // the Tour button starts demoted to ⓘ and the tour does not auto-launch.
+  // After finish/skip on a cold landing, the button likewise demotes.
+  if (isColdLanding && !state.tourSeen) {
+    startTour();
+  } else {
+    demoteTourButton();
+  }
 }
 
 // EXP-21 helpers — kept thin and centralised so analytics call sites are

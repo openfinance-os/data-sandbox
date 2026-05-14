@@ -14,6 +14,7 @@ export function createTour(deps) {
     renderNavigator,
     renderPayload,
     renderCoverage,
+    onClose,
   } = deps;
 
   const TOUR_STEPS = [
@@ -111,6 +112,8 @@ export function createTour(deps) {
   function closeTour() {
     state.tourStep = null;
     document.getElementById('tour-overlay')?.remove();
+    state.tourSeen = true;
+    if (typeof onClose === 'function') onClose();
   }
 
   return { startTour };

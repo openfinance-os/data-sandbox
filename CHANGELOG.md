@@ -5,6 +5,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follo
 
 ## [Unreleased]
 
+### Added — v1 refinements (PR #2): tour auto-launch + button demotion
+
+- **Cold-landing auto-launch.** On a URL with no query params (the cold-landing signal already used by `state.welcomeShown` at `src/app.js:223`), the 5-step tour overlay opens automatically after the initial render settles. URL-with-params is treated as a returning visitor — no auto-launch, Tour button starts demoted. The spec'd `localStorage.ofs.seenTour` mechanism was substituted with the cold-landing signal to preserve **EXP-22** (the `tests/e2e/smoke.spec.mjs:113` invariant that asserts `Object.keys(localStorage).toEqual([])` after every load).
+- **Button demotion.** After the user clicks Finish / Skip / clicks outside the overlay, the prominent "Tour" topbar button shrinks to a small **ⓘ** icon (new `.topbar-btn-icon` modifier), with `aria-label="Replay guided tour"` and a `:focus-visible` outline. Refresh on a cold landing re-arms the auto-launch by design (no persistence per EXP-22).
+- **`src/ui/tour.js`** — `createTour` accepts an `onClose` callback wired from `app.js` to `demoteTourButton()`. `closeTour()` flips `state.tourSeen = true` and invokes the callback. No change to the 5 step copy / setups.
+- **`src/app.js`** — new `tourSeen` field on `state`; `demoteTourButton()` toggles the icon-only modifier class + text + aria-label; init() chooses between `startTour()` and `demoteTourButton()` based on the cold-landing signal.
+- **`tests/e2e/tour-autolaunch.spec.mjs`** — 5 cases: cold-landing auto-open, Skip-then-demote, Finish-then-demote, URL-with-params skips auto-launch and demotes by default, refresh re-arms on cold landing (with explicit EXP-22 storage-empty assertion).
+- Touches EXP-22 (no storage writes — verified by the new test's storage-empty assertion), EXP-23 (a11y — `aria-label` + `:focus-visible` on the icon-only button).
+
 ### Added — v1 refinements (PR #1): responsive panel collapse
 
 - **New constant `NARROW_PANE_BREAKPOINT_PX = 1280`** in `src/app/constants.js`. Below this viewport width the three-pane grid auto-collapses the field-detail pane on first load, and a JS mutex in `setPaneCollapsed` ensures expanding either side pane auto-collapses the opposite — the navigator never sits between two simultaneously-open side panes in the 1100–1279 band. Above 1280, manual two-open state is preserved. Existing breakpoints (1099 px overlay, 760 px stacked) are untouched. State remains JS-only per EXP-22.
