@@ -24,6 +24,18 @@ const showErr = (msg) => {
   el.hidden = false;
 };
 
+// Wipe the dashboard so a fetch failure doesn't leave the previous persona's
+// numbers next to the error banner.
+function clearDashboard() {
+  $('customer-name').textContent = '—';
+  $('customer-sub').textContent = '—';
+  $('total-balance').textContent = '—';
+  $('balance-sub').textContent = '—';
+  $('account-list').innerHTML = '';
+  $('so-list').innerHTML = '';
+  $('tx-timeline').innerHTML = '';
+}
+
 async function getJSON(url) {
   const r = await fetch(url, { headers: { Accept: 'application/json' } });
   if (!r.ok) throw new Error(`${r.status} ${r.statusText} — ${url}`);
@@ -72,7 +84,13 @@ async function init() {
   }
 
   const sel = $('persona');
-  for (const id of Object.keys(manifest.personas)) {
+  // Banking-only demo: the journey fetches /parties + /accounts + balances +
+  // transactions + standing-orders, which only exist for banking personas.
+  // Insurance personas live in the same manifest but have no banking bundle,
+  // so listing them would 404 the moment the user picked one.
+  const bankingPersonaIds = Object.keys(manifest.personas)
+    .filter((id) => (manifest.personas[id].domain ?? 'banking') === 'banking');
+  for (const id of bankingPersonaIds) {
     const opt = document.createElement('option');
     opt.value = id;
     opt.textContent = `${manifest.personas[id].name}`;
@@ -109,6 +127,7 @@ async function render() {
       getJSON(`${base}/accounts.json`),
     ]);
   } catch (err) {
+    clearDashboard();
     showErr(err.message);
     return;
   }
