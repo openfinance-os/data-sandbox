@@ -1590,6 +1590,27 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   line-height: 1.4;
   color: var(--text);
 }
+/* PR #5 — deep-pin button beneath every "Source fields (N)" disclosure
+   summary. Switches the active endpoint and opens the primary spec field
+   in the Field Detail pane. */
+.uw-pin-btn {
+  display: inline-block;
+  margin: 6px 0 4px;
+  padding: 3px 8px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  cursor: pointer;
+}
+.uw-pin-btn:hover { background: var(--accent); color: var(--mandatory-fg); }
+.uw-pin-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
 
 @media (max-width: 1099px) {
   .uw-grid { grid-template-columns: 1fr; }

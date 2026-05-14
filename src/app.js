@@ -78,7 +78,9 @@ const state = {
   personaId: null,
   lfi: 'median',
   seed: 4729,
-  endpoint: '/accounts',
+  // PR #5 — Underwriting Summary is the default landing for banking
+  // bundles. URL-pinned endpoints override this in init() per EXP-17.
+  endpoint: UNDERWRITING_PSEUDO,
   view: 'rendered',                     // 'rendered' | 'raw'  (orthogonal to compareMode)
   bundle: null,
   selectedAccountId: null,
@@ -181,6 +183,7 @@ const { renderInsuranceBundle } = createInsurance({
 });
 const { renderUnderwritingStrip, renderUnderwritingPanel } = createUnderwriting({
   state, el, formatAmount, renderNavigator, renderPayload, UNDERWRITING_PSEUDO,
+  openFieldCard,
 });
 
 // Phase R1.5 — merge a single enrichment record onto a /transactions row.
@@ -391,7 +394,11 @@ function attachBuilderHandlers() {
           state.activePersonas[CUSTOM_PERSONA_SLUG] = persona;
           state.recipe = recipe;
           state.personaId = CUSTOM_PERSONA_SLUG;
-          state.endpoint = OVERVIEW_PSEUDO;
+          // PR #5 — Banking bundles default to Underwriting Summary on a
+          // persona switch; it surfaces the four illustrative signals
+          // (income / commitments / DBR / NSF) up-front instead of routing
+          // through the bundle-level /accounts overview.
+          state.endpoint = UNDERWRITING_PSEUDO;
           state.selectedAccountId = null;
           buildPersonaList();
           rebuildAndRender();
@@ -634,9 +641,10 @@ function buildPersonaList() {
           // click only fires when the user clicks empty card chrome.
           if (e.target.closest('.stress-chip, .persona-jtbd-chip, .persona-more')) return;
           state.personaId = id;
-          // Persona-switch defaults the payload pane to the overview —
-          // story-level orientation before drilling into wire endpoints.
-          state.endpoint = OVERVIEW_PSEUDO;
+          // PR #5 — banking persona-switch now lands on the Underwriting
+          // Summary by default; insurance flow has its own per-domain
+          // default endpoint resolved in rebuildAndRender.
+          state.endpoint = UNDERWRITING_PSEUDO;
           state.selectedAccountId = null;
           rebuildAndRender();
         },
@@ -771,7 +779,9 @@ function wirePaneCollapse() {
 function attachEventHandlers() {
   document.getElementById('persona-select').addEventListener('change', (e) => {
     state.personaId = e.target.value;
-    state.endpoint = OVERVIEW_PSEUDO;
+    // PR #5 — Underwriting Summary is the default landing endpoint for
+    // banking persona switches.
+    state.endpoint = UNDERWRITING_PSEUDO;
     state.selectedAccountId = null;
     rebuildAndRender();
     emitPersonaLoad();

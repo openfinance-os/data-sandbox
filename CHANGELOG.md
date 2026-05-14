@@ -5,6 +5,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follo
 
 ## [Unreleased]
 
+### Changed — v1 refinements (PR #5): Underwriting Summary default + source-field deep-pin
+
+- **Underwriting Summary is now the default endpoint for banking bundles.** The four sites where banking flow defaulted to `OVERVIEW_PSEUDO` — initial state literal, persona-select change handler, persona-card click, custom-persona apply — now all default to `UNDERWRITING_PSEUDO`. Insurance flow is unaffected (it has its own per-domain default endpoint resolved in `rebuildAndRender`). URL-pinned endpoints (EXP-17) still override the default in `init()`.
+- **"Pin <field> →" deep-pin button** beneath each Underwriting card's `Source fields (N)` disclosure. Clicking it switches the active endpoint, restores the first account as selected, calls `renderNavigator` + `renderPayload`, then opens the primary spec field in the Field Detail pane:
+  - Income → `/accounts/{AccountId}/transactions` · `Flags`
+  - Fixed commitments → `/accounts/{AccountId}/standing-orders` · `NextPaymentAmount`
+  - NSF / distress → `/accounts/{AccountId}/transactions` · `Status`
+  - DBR is derived (commitments ÷ income) and has no single source field — no pin button rendered.
+- **`src/ui/underwriting.js`** — `createUnderwriting` accepts `openFieldCard` as a dep; new private `DEEP_PIN_MAP` + `deepPinSourceField(signalKey)`; each card carries a `signalKey` that drives the pin target lookup.
+- **`src/styles.css`** — `.uw-pin-btn` accent button with `:focus-visible` outline.
+- **`tests/e2e/smoke.spec.mjs`** — the first "renders Sara, switches endpoints" case now (a) dismisses the auto-launched tour overlay if present (PR #2 interaction), and (b) explicitly clicks `/accounts` in the navigator before asserting the spec table renders (PR #5 default-endpoint change). Other tests using `loadPersona` are unaffected — Underwriting tests already explicitly navigate to Underwriting summary.
+
 ### Changed — v1 refinements (PR #4): compressed persona-library cards
 
 - **JTBD chips are now the default visible row** on every persona card — one chip per scenario family the persona qualifies for (banking: Affordability / AML / Thin file / FX / NSF-distress / Sharia; insurance: High-claim / Multi-driver / Takaful / Third-party / Mortgage-linked / Family cover / ILOE). Clicking a card chip drives the same `state.jtbdFilter` as the toolbar rail and the hero chips.

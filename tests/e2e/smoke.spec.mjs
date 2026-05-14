@@ -11,6 +11,13 @@ import AxeBuilder from '@axe-core/playwright';
 test('renders Sara, switches endpoints, no console errors, axe-clean', async ({ page }) => {
   await page.goto('/src/index.html');
 
+  // PR #2 — tour auto-launches on cold landing; dismiss it so the rest
+  // of the test interacts with the navigator unobstructed.
+  if (await page.locator('#tour-overlay .tour-skip').count() > 0) {
+    await page.locator('#tour-overlay .tour-skip').click();
+    await expect(page.locator('#tour-overlay')).toHaveCount(0);
+  }
+
   // Persona list rendered.
   await expect(page.locator('.persona-card').first()).toBeVisible();
   await expect(page.locator('.persona-card.active')).toHaveCount(1);
@@ -18,8 +25,9 @@ test('renders Sara, switches endpoints, no console errors, axe-clean', async ({ 
   // Top bar pin shows the spec SHA.
   await expect(page.locator('#version-pin')).toContainText('v2.1 @');
 
-  // /accounts table renders. AccountId field-name is visible and the page has
-  // at least one Mandatory pill (the AccountId column header).
+  // PR #5 — banking cold landing now defaults to Underwriting Summary;
+  // navigate to /accounts explicitly to verify the spec table renders.
+  await page.locator('.nav-endpoint', { hasText: '/accounts' }).first().click();
   await expect(page.locator('.payload-rendered table')).toBeVisible();
   await expect(page.locator('.field-name', { hasText: 'AccountId' }).first()).toBeVisible();
   expect(await page.locator('.pill-solid').count()).toBeGreaterThan(0);
