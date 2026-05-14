@@ -32,6 +32,31 @@ const EXPECTED_TOOLS = [
   'get_motor_policy',
   'get_motor_payment_details',
   'get_motor_quote',
+  // Phase 2.1 non-motor lines — same 4-tool surface per line.
+  'get_home_policies',
+  'get_home_policy',
+  'get_home_payment_details',
+  'get_home_quote',
+  'get_health_policies',
+  'get_health_policy',
+  'get_health_payment_details',
+  'get_health_quote',
+  'get_life_policies',
+  'get_life_policy',
+  'get_life_payment_details',
+  'get_life_quote',
+  'get_travel_policies',
+  'get_travel_policy',
+  'get_travel_payment_details',
+  'get_travel_quote',
+  'get_renters_policies',
+  'get_renters_policy',
+  'get_renters_payment_details',
+  'get_renters_quote',
+  'get_employment_policies',
+  'get_employment_policy',
+  'get_employment_payment_details',
+  'get_employment_quote',
 ];
 
 const WATERMARK_RE = /SYNTHETIC — Open Finance Data Sandbox/;
@@ -267,6 +292,57 @@ describe('sandbox-mcp server', () => {
     expect(quoteEnv.Data?.QuoteStatus).toBe('PolicyIssued');
     expect(quoteEnv.Data?.ServiceRating).toBeDefined();
     expect(quoteEnv.Data?.PolicyIssuanceAllowed).toBeDefined();
+  });
+
+  // Phase 2.1 — each non-motor line gets the same 4-tool surface as motor.
+  // Personas are 1:1 with lines (one persona per non-motor line today), so
+  // this also covers the line-id resolution path.
+  const NON_MOTOR_LINES = [
+    { line: 'home',       persona: 'home_mortgage_villa' },
+    { line: 'health',     persona: 'health_family_comprehensive' },
+    { line: 'life',       persona: 'life_mortgage_protection' },
+    { line: 'travel',     persona: 'travel_annual_multitrip_expat' },
+    { line: 'renters',    persona: 'renters_apartment_tenant' },
+    { line: 'employment', persona: 'employment_iloe_private' },
+  ];
+
+  for (const { line, persona } of NON_MOTOR_LINES) {
+    it(`insurance ${line} flow — get_${line}_* round-trip with watermark + spec pin`, async () => {
+      await client.callTool({ name: 'set_session', arguments: { persona } });
+
+      const policies = await client.callTool({ name: `get_${line}_policies`, arguments: {} });
+      const policiesText = textOf(policies);
+      expect(policiesText).toMatch(WATERMARK_RE);
+      const policiesEnv = JSON.parse(policiesText.slice(policiesText.indexOf('{')));
+      expect(policiesEnv.Data?.Policies).toBeInstanceOf(Array);
+      expect(policiesEnv._domain).toBe('insurance');
+      expect(policiesEnv._specSha).toBe(manifest.specSha);
+
+      const detail = await client.callTool({ name: `get_${line}_policy`, arguments: {} });
+      const detailText = textOf(detail);
+      const detailEnv = JSON.parse(detailText.slice(detailText.indexOf('{')));
+      expect(detailEnv.Data?.InsurancePolicyId).toBeDefined();
+      expect(detailEnv.Data?.PolicyHolder).toBeDefined();
+      expect(detailEnv.Data?.Product?.Policy).toBeDefined();
+
+      const payment = await client.callTool({ name: `get_${line}_payment_details`, arguments: {} });
+      const paymentText = textOf(payment);
+      const paymentEnv = JSON.parse(paymentText.slice(paymentText.indexOf('{')));
+      expect(paymentEnv.Data?.Account?.SchemeName).toBe('IBAN');
+
+      const quote = await client.callTool({ name: `get_${line}_quote`, arguments: {} });
+      const quoteText = textOf(quote);
+      const quoteEnv = JSON.parse(quoteText.slice(quoteText.indexOf('{')));
+      expect(quoteEnv.Data?.QuoteStatus).toBe('PolicyIssued');
+    });
+  }
+
+  it('wrong-line insurance tool errors with a "switch persona to a <line>-line persona" hint', async () => {
+    await client.callTool({ name: 'set_session', arguments: { persona: 'motor_comprehensive_mid' } });
+    const wrongLine = await client.callTool({ name: 'get_home_policies', arguments: {} });
+    expect(wrongLine.isError).toBe(true);
+    expect(textOf(wrongLine)).toMatch(/requires an insurance session on the "home" line/);
+    expect(textOf(wrongLine)).toMatch(/line="motor"/);
   });
 
   it('cross-domain tools error with a helpful "switch personas" message', async () => {
