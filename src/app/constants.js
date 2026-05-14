@@ -45,6 +45,23 @@ export const JTBD_PRESETS = Object.freeze({
   sharia:        { label: 'Sharia',         terms: ['sharia_compliant_product'] },
 });
 
+// Insurance JTBD presets — Phase 2.1 stress terms grouped by the
+// scenario-tab families called out in the v1 refinement spec. Same shape
+// as JTBD_PRESETS so the rail renderer is domain-agnostic.
+export const INSURANCE_JTBD_PRESETS = Object.freeze({
+  highClaim:    { label: 'High-claim frequency', terms: ['high_claim_frequency'] },
+  multiDriver:  { label: 'Multi-driver',         terms: ['multi_driver_household', 'motor_comprehensive_financed'] },
+  takaful:      { label: 'Takaful',              terms: ['sharia_takaful_product'] },
+  thirdParty:   { label: 'Third-party',          terms: ['third_party_liability_only'] },
+  mortgageLinked: { label: 'Mortgage-linked',    terms: ['mortgage_linked_home_cover', 'life_mortgage_protection_term'] },
+  familyCover:  { label: 'Family cover',         terms: ['employer_sponsored_health_family', 'renters_furnished_apartment_lease'] },
+  iloe:         { label: 'ILOE',                 terms: ['iloe_private_category_b'] },
+});
+
+export function getJtbdPresets(domain) {
+  return domain === 'insurance' ? INSURANCE_JTBD_PRESETS : JTBD_PRESETS;
+}
+
 // "Best for" — per-stress-term human one-liner driving the persona-card
 // summary. Derived from PRD §3.2 JTBD wording so the library answers
 // "which persona answers my job?" without reading every narrative.

@@ -85,6 +85,80 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   background: var(--warn-border);
 }
 
+/* Persona Hero — PR #3. A compact horizontal strip above the toolbar
+   showing the active persona's avatar + name + tagline + JTBD chips.
+   Sits in body flow above the .topbar, never overlays anything. */
+.persona-hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px;
+  background: var(--bg-soft);
+  border-bottom: 1px solid var(--border);
+  flex: 0 0 auto;
+  min-height: 76px;
+}
+.persona-hero[hidden] { display: none; }
+.persona-hero-avatar { flex: 0 0 auto; }
+.persona-hero-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.persona-hero-name {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text);
+}
+.persona-hero-tagline {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--text-muted);
+  /* Tagline is a derived first-sentence summary — keep it to one line
+     when there's room, fall back to two lines on narrow viewports. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.persona-hero-jtbd {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.persona-hero-chip {
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-card);
+  color: var(--text);
+  cursor: pointer;
+}
+.persona-hero-chip:hover { border-color: var(--accent); color: var(--accent); }
+.persona-hero-chip.is-active {
+  background: var(--accent);
+  color: var(--mandatory-fg);
+  border-color: var(--accent);
+}
+.persona-hero-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+@media (max-width: 760px) {
+  .persona-hero { padding: 8px 12px; gap: 10px; min-height: 0; }
+  .persona-hero .persona-avatar-lg { width: 56px; height: 56px; }
+  .persona-hero-name { font-size: 14px; }
+}
+
 .topbar {
   display: flex;
   align-items: center;

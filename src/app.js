@@ -54,6 +54,8 @@ import {
   ACCOUNT_SCOPED_PATHS,
   BUNDLE_SCOPED_PATHS,
   JTBD_PRESETS,
+  INSURANCE_JTBD_PRESETS,
+  getJtbdPresets,
   STRESS_BEST_FOR,
   LFI_CAPTIONS,
   PANE_COLLAPSE_CLASS,
@@ -467,14 +469,21 @@ function buildJtbdRail() {
   const rail = document.getElementById('jtbd-rail');
   if (!rail) return;
   rail.replaceChildren();
-  for (const [key, preset] of Object.entries(JTBD_PRESETS)) {
+  const presets = getJtbdPresets(state.domain);
+  // If the active filter doesn't belong to the current domain's presets
+  // (e.g. user switched banking → insurance with 'affordability' selected),
+  // drop it so the rail and library stay coherent.
+  if (state.jtbdFilter && !presets[state.jtbdFilter]) state.jtbdFilter = null;
+  for (const [key, preset] of Object.entries(presets)) {
     const active = state.jtbdFilter === key;
     const chip = el('button', {
       class: 'jtbd-chip',
       attrs: {
         type: 'button',
+        role: 'tab',
+        'aria-selected': active ? 'true' : 'false',
         'aria-pressed': active ? 'true' : 'false',
-        title: `Show personas covering ${preset.label.toLowerCase()} JTBDs (${preset.terms.join(', ')})`,
+        title: `Show personas covering ${preset.label.toLowerCase()} scenarios (${preset.terms.join(', ')})`,
       },
       text: preset.label,
       onClick: () => {
@@ -494,7 +503,8 @@ function personaMatchesActiveFilter(persona) {
   const terms = persona.stress_coverage ?? [];
   if (state.stressFilter && !terms.includes(state.stressFilter)) return false;
   if (state.jtbdFilter) {
-    const allow = JTBD_PRESETS[state.jtbdFilter]?.terms ?? [];
+    const presets = getJtbdPresets(state.domain);
+    const allow = presets[state.jtbdFilter]?.terms ?? [];
     if (!terms.some((t) => allow.includes(t))) return false;
   }
   return true;
@@ -938,6 +948,7 @@ function rebuildAndRender() {
     // from the parsed insurance spec), replacing the bundle-wide JSON
     // inspector. Compare-LFIs / underwriting / banking-shaped coverage are
     // still banking-only — those are derived views with no insurance analogue.
+    renderPersonaHero();
     renderInsuranceBundle();
     pushPermalink();
     setTimeout(() => body?.classList.remove('is-fading'), 30);
@@ -950,12 +961,82 @@ function rebuildAndRender() {
   state.txHighlight = new Set();
   state.crossLink = null;
   syncControls();
+  renderPersonaHero();
   renderNavigator();
   renderPayload();
   renderCoverage();
   pushPermalink();
 
   setTimeout(() => body?.classList.remove('is-fading'), 30);
+}
+
+// PR #3 — Persona Hero strip above the topbar. Avatar + name + a one-line
+// tagline derived from the first sentence of the persona narrative, plus
+// the JTBD families this persona's stress_coverage qualifies for. State
+// changes (persona switch, custom-persona expand, domain switch) all flow
+// through renderPersonaHero() via rebuildAndRender / renderInsuranceBundle.
+function deriveTagline(persona, maxLen = 140) {
+  const narrative = (persona?.narrative ?? '').trim();
+  if (!narrative) return '';
+  // First sentence — break on ". " then strip trailing period. Falls back
+  // to the full narrative truncated when there's no sentence boundary.
+  const firstStop = narrative.indexOf('. ');
+  const first = firstStop > 0 ? narrative.slice(0, firstStop + 1) : narrative;
+  const collapsed = first.replace(/\s+/g, ' ').trim();
+  if (collapsed.length <= maxLen) return collapsed;
+  return `${collapsed.slice(0, maxLen - 1).trimEnd()}…`;
+}
+function jtbdFamiliesForPersona(persona) {
+  const terms = persona?.stress_coverage ?? [];
+  const presets = getJtbdPresets(state.domain);
+  const matched = [];
+  for (const [key, preset] of Object.entries(presets)) {
+    if (terms.some((t) => preset.terms.includes(t))) {
+      matched.push({ key, label: preset.label });
+    }
+  }
+  return matched;
+}
+function renderPersonaHero() {
+  const hero = document.getElementById('persona-hero');
+  if (!hero) return;
+  const persona = state.data.personas[state.personaId];
+  if (!persona) {
+    hero.hidden = true;
+    return;
+  }
+  hero.hidden = false;
+
+  const avatarSlot = document.getElementById('persona-hero-avatar');
+  avatarSlot.replaceChildren(personaAvatarEl(state.personaId, persona, 'lg'));
+
+  document.getElementById('persona-hero-name').textContent = persona.name ?? state.personaId;
+  document.getElementById('persona-hero-tagline').textContent = deriveTagline(persona);
+
+  const chipSlot = document.getElementById('persona-hero-jtbd');
+  chipSlot.replaceChildren();
+  const families = jtbdFamiliesForPersona(persona);
+  if (families.length === 0) return;
+  for (const fam of families) {
+    const active = state.jtbdFilter === fam.key;
+    const chip = el('button', {
+      class: `persona-hero-chip${active ? ' is-active' : ''}`,
+      attrs: {
+        type: 'button',
+        title: `Filter persona library by ${fam.label.toLowerCase()}`,
+        'aria-pressed': active ? 'true' : 'false',
+      },
+      text: fam.label,
+      onClick: () => {
+        state.jtbdFilter = state.jtbdFilter === fam.key ? null : fam.key;
+        if (state.jtbdFilter) state.stressFilter = null;
+        buildJtbdRail();
+        buildPersonaList();
+        renderPersonaHero();
+      },
+    });
+    chipSlot.appendChild(chip);
+  }
 }
 
 function renderBundleError(err, persona) {

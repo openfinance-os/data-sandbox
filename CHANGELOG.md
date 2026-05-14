@@ -5,6 +5,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follo
 
 ## [Unreleased]
 
+### Added — v1 refinements (PR #3): Persona Hero + domain-aware Scenario tabs
+
+- **Persona Hero strip** above the toolbar showing the active persona's avatar (large), name, a one-line tagline (first sentence of the manifest narrative, truncated to 140 chars), and JTBD chip families this persona qualifies for. Clicking a hero chip applies the same filter the existing scenario-tab rail provides. The hero re-renders on persona / domain switch via `renderPersonaHero()` wired into `rebuildAndRender()` and `renderInsuranceBundle()`. State stays JS-only per EXP-22.
+- **Domain-aware Scenario tabs.** The existing `#jtbd-rail` previously hard-coded the banking JTBD presets; it now switches by `state.domain` via the new `getJtbdPresets(domain)` helper. New `INSURANCE_JTBD_PRESETS` covers the 9 insurance personas across 7 lines: High-claim frequency · Multi-driver · Takaful · Third-party · Mortgage-linked · Family cover · ILOE. The rail chips gain `role="tab"` + `aria-selected` for the tab-bar semantics (touches EXP-23). A filter set on one domain auto-clears on domain switch to keep rail and library coherent.
+- **`src/_stories/index.html`** — new isolated demo page that loads real persona data from `dist/data.json` and renders the PersonaHero and ScenarioTabs in isolation, with controls to switch persona and domain. Same role as a Storybook story; fits the no-build-chain constraint (CLAUDE.md architecture).
+- **`src/index.html`** — new `<section class="persona-hero" id="persona-hero" hidden>` between `<header class="topbar">` and `<main class="three-pane">`. Hidden until the first render.
+- **`src/app.js`** — `deriveTagline()` (first-sentence + 140-char truncation), `jtbdFamiliesForPersona()`, `renderPersonaHero()`. `personaMatchesActiveFilter` now resolves the active JTBD preset by domain.
+- **`src/app/constants.js`** — `INSURANCE_JTBD_PRESETS` + `getJtbdPresets(domain)` export.
+- **`src/styles.css`** — `.persona-hero` + `.persona-hero-{avatar,body,name,tagline,jtbd,chip}` block. 760 px media query halves the avatar and tightens padding. `.persona-hero-chip:focus-visible` outline for keyboard users.
+- Touches EXP-23 (a11y — keyboard-focusable hero chips, role="tab" on scenario rail), preserves EXP-22.
+
 ### Added — v1 refinements (PR #2): tour auto-launch + button demotion
 
 - **Cold-landing auto-launch.** On a URL with no query params (the cold-landing signal already used by `state.welcomeShown` at `src/app.js:223`), the 5-step tour overlay opens automatically after the initial render settles. URL-with-params is treated as a returning visitor — no auto-launch, Tour button starts demoted. The spec'd `localStorage.ofs.seenTour` mechanism was substituted with the cold-landing signal to preserve **EXP-22** (the `tests/e2e/smoke.spec.mjs:113` invariant that asserts `Object.keys(localStorage).toEqual([])` after every load).
