@@ -1065,7 +1065,7 @@ export function createServer() {
     },
     async () => {
       const s = session.get();
-      requireDomain(s, 'insurance', 'get_motor_policies');
+      requireLine(s, 'motor', 'get_motor_policies');
       const env = getEndpointEnvelope(s, '/motor-insurance-policies');
       return envelope(s.persona, s.lfi, s.seed, '/motor-insurance-policies', env);
     },
@@ -1090,7 +1090,7 @@ export function createServer() {
     },
     async ({ policyId }) => {
       const s = session.get();
-      requireDomain(s, 'insurance', 'get_motor_policy');
+      requireLine(s, 'motor', 'get_motor_policy');
       const id = resolvePolicyId(s, policyId);
       if (!id) throw new Error('no motor policy in this session');
       const env = getEndpointEnvelope(s, `/motor-insurance-policies/${id}`);
@@ -1108,7 +1108,7 @@ export function createServer() {
     },
     async ({ policyId }) => {
       const s = session.get();
-      requireDomain(s, 'insurance', 'get_motor_payment_details');
+      requireLine(s, 'motor', 'get_motor_payment_details');
       const id = resolvePolicyId(s, policyId);
       if (!id) throw new Error('no motor policy in this session');
       const env = getEndpointEnvelope(s, `/motor-insurance-policies/${id}/payment-details`);
@@ -1131,7 +1131,7 @@ export function createServer() {
     },
     async ({ quoteId }) => {
       const s = session.get();
-      requireDomain(s, 'insurance', 'get_motor_quote');
+      requireLine(s, 'motor', 'get_motor_quote');
       const id = resolveQuoteId(s, quoteId);
       if (!id) throw new Error('no motor quote in this session');
       const env = getEndpointEnvelope(s, `/motor-insurance-quotes/${id}`);
@@ -1256,9 +1256,9 @@ export function createServer() {
         requireLine(s, line, `get_${line}_quote`);
         const fx = fixtureEntry(s);
         const onlyId = fx?.[quoteField] ?? null;
-        if (quoteId && onlyId && quoteId !== onlyId) {
+        if (quoteId != null && quoteId !== onlyId) {
           throw new Error(
-            `unknown ${line} quoteId: ${quoteId}. Available for this session: ${onlyId}`,
+            `unknown ${line} quoteId: ${quoteId}. Available for this session: ${onlyId ?? '(none)'}`,
           );
         }
         const id = quoteId ?? onlyId;

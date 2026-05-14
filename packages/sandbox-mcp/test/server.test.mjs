@@ -338,11 +338,19 @@ describe('sandbox-mcp server', () => {
   }
 
   it('wrong-line insurance tool errors with a "switch persona to a <line>-line persona" hint', async () => {
+    // motor → home (non-motor tool called against motor persona)
     await client.callTool({ name: 'set_session', arguments: { persona: 'motor_comprehensive_mid' } });
-    const wrongLine = await client.callTool({ name: 'get_home_policies', arguments: {} });
-    expect(wrongLine.isError).toBe(true);
-    expect(textOf(wrongLine)).toMatch(/requires an insurance session on the "home" line/);
-    expect(textOf(wrongLine)).toMatch(/line="motor"/);
+    const motorOnHome = await client.callTool({ name: 'get_home_policies', arguments: {} });
+    expect(motorOnHome.isError).toBe(true);
+    expect(textOf(motorOnHome)).toMatch(/requires an insurance session on the "home" line/);
+    expect(textOf(motorOnHome)).toMatch(/line="motor"/);
+
+    // home → motor (motor tool called against non-motor persona — symmetric guarantee)
+    await client.callTool({ name: 'set_session', arguments: { persona: 'home_mortgage_villa' } });
+    const homeOnMotor = await client.callTool({ name: 'get_motor_policies', arguments: {} });
+    expect(homeOnMotor.isError).toBe(true);
+    expect(textOf(homeOnMotor)).toMatch(/requires an insurance session on the "motor" line/);
+    expect(textOf(homeOnMotor)).toMatch(/line="home"/);
   });
 
   it('cross-domain tools error with a helpful "switch personas" message', async () => {
