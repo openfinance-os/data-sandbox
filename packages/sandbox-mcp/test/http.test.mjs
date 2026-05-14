@@ -36,8 +36,8 @@ describe('sandbox-mcp HTTP transport (D-13)', () => {
     expect(names).toContain('encode_recipe');
     expect(names).toContain('decode_recipe');
     expect(names).toContain('lfi_profiles');
-    // 16 banking + 4 motor-insurance + 6 discovery/spec helpers = 26.
-    expect(tools.length).toBe(26);
+    // 16 banking + 4 motor-insurance + 24 non-motor-insurance (4 each × 6 lines) + 6 discovery/spec helpers = 50.
+    expect(tools.length).toBe(50);
     await client.close();
   });
 

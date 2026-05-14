@@ -29,9 +29,8 @@ const PFM_INSTRUCTIONS = [
   'You are wired to a sandbox of synthetic UAE Open Finance v2.1 payloads across two domains:',
   '  • Bank Data Sharing (18 banking personas) — accounts, balances, transactions, parties, etc.',
   '  • Insurance Data Sharing (9 insurance personas across 7 lines: motor, home, health, life, travel,',
-  '    renters, employment). The MCP `get_motor_*` tools cover the 3 motor personas; non-motor',
-  '    insurance personas are introspectable via `persona://<id>` and `list_endpoints` but per-line',
-  '    `get_*` tools are not yet wired.',
+  '    renters, employment). Per-line MCP tools — `get_<line>_policies`, `get_<line>_policy`,',
+  '    `get_<line>_payment_details`, `get_<line>_quote` — cover every line.',
   'All data is fictional — no real customer, no real institution. Every response carries a `_watermark`',
   'field; preserve it in any user-visible summary, table, or export.',
   '',
@@ -44,9 +43,11 @@ const PFM_INSTRUCTIONS = [
   '  3. For a banking session: use `get_party`, `get_accounts`, `get_balances`, `get_transactions`,',
   '     `get_standing_orders`, `get_direct_debits`, `get_scheduled_payments`, `get_beneficiaries`,',
   '     `get_product`, `get_statements`. Use `load_journey` for a single dump of everything.',
-  '  4. For an insurance session: use `get_motor_policies`, `get_motor_policy`,',
-  '     `get_motor_payment_details`, `get_motor_quote`. Banking get_* tools error against an',
-  '     insurance session and vice versa — switch personas to switch domain.',
+  '  4. For an insurance session: use the per-line tools matching the persona\'s `line`',
+  '     (motor / home / health / life / travel / renters / employment) — e.g. for a `life` persona,',
+  '     call `get_life_policies`, `get_life_policy`, `get_life_payment_details`, `get_life_quote`.',
+  '     Banking get_* tools error against an insurance session and vice versa, and a tool for the',
+  '     wrong line errors with a "switch persona" hint — switch personas to switch line.',
   '',
   'Workflow — custom persona (banking only — recipe schema covers retail/SME/corporate banking):',
   '  1. Call `get_recipe_defaults` (or read the `recipe://schema` resource) to see the available knobs.',
@@ -119,6 +120,23 @@ function resolvePolicyId(session, requested) {
     );
   }
   return requested;
+}
+
+// Insurance personas are single-line — each fixture entry carries the
+// persona's `line` (set at build time). Tool-level line check gives the
+// caller a clear "wrong-line persona" message instead of an opaque
+// "no fixture for endpoint" miss when, say, `get_home_policies` is
+// called against a `motor` persona.
+function requireLine(session, expectedLine, toolName) {
+  requireDomain(session, 'insurance', toolName);
+  const fx = fixtureEntry(session);
+  const got = fx?.line ?? null;
+  if (got !== expectedLine) {
+    throw new Error(
+      `${toolName} requires an insurance session on the "${expectedLine}" line; this session is line="${got ?? 'unknown'}" (persona ${session.persona}). ` +
+      `Call list_personas({ domain: 'insurance' }) to find a ${expectedLine}-line persona, then set_session to switch.`,
+    );
+  }
 }
 
 function resolveQuoteId(session, requested) {
@@ -292,8 +310,11 @@ function getSpec(domain) {
   return _specCache.get(domain);
 }
 
+const INSURANCE_ENDPOINT_RE = /^\/(motor|home|health|life|travel|renters|employment)-insurance-/;
 function inferDomain(endpoint) {
-  if (typeof endpoint === 'string' && endpoint.startsWith('/motor-insurance-')) return 'insurance';
+  if (typeof endpoint !== 'string') return 'banking';
+  if (INSURANCE_ENDPOINT_RE.test(endpoint)) return 'insurance';
+  if (endpoint.startsWith('/insurance-consents')) return 'insurance';
   return 'banking';
 }
 
@@ -1044,7 +1065,7 @@ export function createServer() {
     },
     async () => {
       const s = session.get();
-      requireDomain(s, 'insurance', 'get_motor_policies');
+      requireLine(s, 'motor', 'get_motor_policies');
       const env = getEndpointEnvelope(s, '/motor-insurance-policies');
       return envelope(s.persona, s.lfi, s.seed, '/motor-insurance-policies', env);
     },
@@ -1069,7 +1090,7 @@ export function createServer() {
     },
     async ({ policyId }) => {
       const s = session.get();
-      requireDomain(s, 'insurance', 'get_motor_policy');
+      requireLine(s, 'motor', 'get_motor_policy');
       const id = resolvePolicyId(s, policyId);
       if (!id) throw new Error('no motor policy in this session');
       const env = getEndpointEnvelope(s, `/motor-insurance-policies/${id}`);
@@ -1087,7 +1108,7 @@ export function createServer() {
     },
     async ({ policyId }) => {
       const s = session.get();
-      requireDomain(s, 'insurance', 'get_motor_payment_details');
+      requireLine(s, 'motor', 'get_motor_payment_details');
       const id = resolvePolicyId(s, policyId);
       if (!id) throw new Error('no motor policy in this session');
       const env = getEndpointEnvelope(s, `/motor-insurance-policies/${id}/payment-details`);
@@ -1110,7 +1131,7 @@ export function createServer() {
     },
     async ({ quoteId }) => {
       const s = session.get();
-      requireDomain(s, 'insurance', 'get_motor_quote');
+      requireLine(s, 'motor', 'get_motor_quote');
       const id = resolveQuoteId(s, quoteId);
       if (!id) throw new Error('no motor quote in this session');
       const env = getEndpointEnvelope(s, `/motor-insurance-quotes/${id}`);
@@ -1118,12 +1139,142 @@ export function createServer() {
     },
   );
 
+  // ── Insurance non-motor lines (Phase 2.1 GA) ─────────────────────────────
+  // Each line gets the same 4-tool surface as motor: list policies, policy
+  // detail, payment-details, quote-read. The line registry below is the only
+  // place to touch when adding a new line.
+  const INSURANCE_LINES = [
+    {
+      line: 'home',
+      title: 'home insurance',
+      detailBlocks: 'PolicyHolder, Identity, Product (Property + Building/Contents/Mortgage), Claims, Premium',
+    },
+    {
+      line: 'health',
+      title: 'health insurance',
+      detailBlocks: 'PolicyHolder (with Employment), Identity, Product (Plan + Coverage), Claims, Premium',
+    },
+    {
+      line: 'life',
+      title: 'life insurance',
+      detailBlocks: 'PolicyHolder, Identity, Product (including FinanceAgainstPolicy when present), Claims, Premium',
+    },
+    {
+      line: 'travel',
+      title: 'travel insurance',
+      detailBlocks: 'PolicyHolder, Identity, Product (Trip + Coverage), Claims, Premium',
+    },
+    {
+      line: 'renters',
+      title: 'renters insurance',
+      detailBlocks: 'PolicyHolder, Identity, Product (Tenancy + Coverage), Claims, Premium',
+    },
+    {
+      line: 'employment',
+      title: 'employment insurance (ILOE)',
+      detailBlocks: 'PolicyHolder (with Employment + line-specific Address), Identity, Product, Claims, Premium',
+    },
+  ];
+
+  for (const lineCfg of INSURANCE_LINES) {
+    const { line, title, detailBlocks } = lineCfg;
+    const basePath = `/${line}-insurance-policies`;
+    const quotesPath = `/${line}-insurance-quotes`;
+    const quoteField = `${line}QuoteId`;
+    const lineIdSchema = {
+      policyId: z
+        .string()
+        .optional()
+        .describe(
+          `Insurance policy id from get_${line}_policies. Omit to use the persona's only policy (current ${line} personas have exactly one).`,
+        ),
+    };
+
+    server.registerTool(
+      `get_${line}_policies`,
+      {
+        title: `List ${title} policies`,
+        description: `Return the v2.1-errata1 ${basePath} envelope (list of policy summaries) for the active insurance persona on the ${line} line. Errors if the active session is a banking persona or an insurance persona on a different line.`,
+        inputSchema: {},
+      },
+      async () => {
+        const s = session.get();
+        requireLine(s, line, `get_${line}_policies`);
+        const env = getEndpointEnvelope(s, basePath);
+        return envelope(s.persona, s.lfi, s.seed, basePath, env);
+      },
+    );
+
+    server.registerTool(
+      `get_${line}_policy`,
+      {
+        title: `Get ${title} policy detail`,
+        description: `Return the v2.1-errata1 ${basePath}/{InsurancePolicyId} envelope — the full policy detail (${detailBlocks}). Errors against a banking session or a different-line insurance session.`,
+        inputSchema: lineIdSchema,
+      },
+      async ({ policyId }) => {
+        const s = session.get();
+        requireLine(s, line, `get_${line}_policy`);
+        const id = resolvePolicyId(s, policyId);
+        if (!id) throw new Error(`no ${line} policy in this session`);
+        const env = getEndpointEnvelope(s, `${basePath}/${id}`);
+        return envelope(s.persona, s.lfi, s.seed, `${basePath}/${id}`, env);
+      },
+    );
+
+    server.registerTool(
+      `get_${line}_payment_details`,
+      {
+        title: `Get ${title} payment details`,
+        description: `Return the v2.1-errata1 ${basePath}/{InsurancePolicyId}/payment-details envelope — IBAN-keyed payment account + bank for the policy's premium-payment instruction. Errors against a banking session or a different-line insurance session.`,
+        inputSchema: lineIdSchema,
+      },
+      async ({ policyId }) => {
+        const s = session.get();
+        requireLine(s, line, `get_${line}_payment_details`);
+        const id = resolvePolicyId(s, policyId);
+        if (!id) throw new Error(`no ${line} policy in this session`);
+        const env = getEndpointEnvelope(s, `${basePath}/${id}/payment-details`);
+        return envelope(s.persona, s.lfi, s.seed, `${basePath}/${id}/payment-details`, env);
+      },
+    );
+
+    server.registerTool(
+      `get_${line}_quote`,
+      {
+        title: `Get ${title} quote`,
+        description: `Return the v2.1-errata1 ${quotesPath}/{QuoteId} envelope — the quote-read response (QuoteStatus=PolicyIssued for personas who already have an issued policy). Errors against a banking session or a different-line insurance session.`,
+        inputSchema: {
+          quoteId: z
+            .string()
+            .optional()
+            .describe(`Quote id; omit to use the persona's only ${line} quote.`),
+        },
+      },
+      async ({ quoteId }) => {
+        const s = session.get();
+        requireLine(s, line, `get_${line}_quote`);
+        const fx = fixtureEntry(s);
+        const onlyId = fx?.[quoteField] ?? null;
+        if (quoteId != null && quoteId !== onlyId) {
+          throw new Error(
+            `unknown ${line} quoteId: ${quoteId}. Available for this session: ${onlyId ?? '(none)'}`,
+          );
+        }
+        const id = quoteId ?? onlyId;
+        if (!id) throw new Error(`no ${line} quote in this session`);
+        const env = getEndpointEnvelope(s, `${quotesPath}/${id}`);
+        return envelope(s.persona, s.lfi, s.seed, `${quotesPath}/${id}`, env);
+      },
+    );
+  }
+
   server.registerTool(
     'load_journey',
     {
       title: 'Load full journey',
       description:
-        'Return every in-scope endpoint for the active persona in one call. For a banking session: /parties + /accounts + per-account balances/transactions/standing-orders/direct-debits/beneficiaries/scheduled-payments/product/statements/parties. For an insurance session: /motor-insurance-policies + /motor-insurance-policies/{id} + /motor-insurance-policies/{id}/payment-details + /motor-insurance-quotes/{id}. Verbose — prefer the granular tools when answering targeted questions.',
+        'Return every in-scope endpoint for the active persona in one call. For a banking session: /parties + /accounts + per-account balances/transactions/standing-orders/direct-debits/beneficiaries/scheduled-payments/product/statements/parties. For an insurance session: the per-line policy list + policy detail + payment-details + quote-read for the persona\'s line (one of motor / home / health / life / travel / renters / employment). Verbose — prefer the granular tools when answering targeted questions.',
       inputSchema: {},
     },
     async () => {
@@ -1141,7 +1292,7 @@ export function createServer() {
     {
       title: 'List endpoints available to the active session',
       description:
-        'Return the v2.1 endpoint paths exposed by the active persona+LFI fixture. Banking sessions: /parties, /accounts, and per-account paths. Insurance sessions: the motor-line GETs. Cheap — prefer this over `load_journey` when you only need to know which endpoints exist for the current persona.',
+        'Return the v2.1 endpoint paths exposed by the active persona+LFI fixture. Banking sessions: /parties, /accounts, and per-account paths. Insurance sessions: the per-line GETs (policies list + policy detail + payment-details + quote) for the persona\'s line. Cheap — prefer this over `load_journey` when you only need to know which endpoints exist for the current persona.',
       inputSchema: {},
     },
     async () => {
@@ -1259,9 +1410,9 @@ export function createServer() {
     'spec-insurance',
     'spec://uae-insurance-v2.1',
     {
-      title: 'UAE Open Finance Insurance Data Sharing v2.1-errata1 (parsed, motor)',
+      title: 'UAE Open Finance Insurance Data Sharing v2.1-errata1 (parsed, all lines)',
       description:
-        'Parsed insurance OpenAPI spec from the pinned upstream commit, scoped to the four motor-line GET endpoints (policies list, policy detail, payment-details, read-quote). Use to ground field-level answers about the insurance domain ("is Takaful mandatory on a motor policy?").',
+        'Parsed insurance OpenAPI spec from the pinned upstream commit. Covers every read-only insurance GET across all 7 lines (motor + home + health + life + travel + renters + employment) plus Insurance Consents — list, detail, payment-details, and quote-read for each line. Use to ground field-level answers about the insurance domain ("is Takaful mandatory on a motor policy?", "what blocks live under Product on a home policy?").',
       mimeType: 'application/json',
     },
     async (uri) => {
