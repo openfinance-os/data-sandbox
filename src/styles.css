@@ -1006,16 +1006,71 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   font-size: 11px;
   color: var(--text);
   line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  margin-top: 4px;
+}
+/* PR #4 — JTBD chips on persona cards. Compact pill-shaped chips that
+   filter the library to the same scenario family the hero exposes. */
+.persona-jtbd {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
   margin-top: 2px;
 }
-.persona-card.active .persona-narrative {
-  -webkit-line-clamp: unset;   /* expand on the active card */
-  display: block;
+.persona-jtbd-chip {
+  font: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-card);
+  color: var(--text);
+  cursor: pointer;
+  line-height: 1.3;
 }
+.persona-jtbd-chip:hover { border-color: var(--accent); color: var(--accent); }
+.persona-jtbd-chip.is-active {
+  background: var(--accent);
+  color: var(--mandatory-fg);
+  border-color: var(--accent);
+}
+.persona-jtbd-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+/* "More about this persona" disclosure. Compresses the card default view
+   to avatar + name + segment + JTBD chips; the narrative + stress chips
+   live behind a click. Applies to every card uniformly per PR #4. */
+.persona-more {
+  margin-top: 4px;
+  font-size: 11px;
+}
+.persona-more > summary.persona-more-summary {
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 0;
+  list-style: none;
+}
+.persona-more > summary.persona-more-summary::-webkit-details-marker { display: none; }
+.persona-more > summary.persona-more-summary::before {
+  content: '▸ ';
+  display: inline-block;
+  transition: transform 120ms ease;
+  margin-right: 2px;
+}
+.persona-more[open] > summary.persona-more-summary::before { content: '▾ '; }
+.persona-more > summary.persona-more-summary:hover { color: var(--text); }
+.persona-more > summary.persona-more-summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.persona-more > .persona-best,
+.persona-more > .persona-narrative,
+.persona-more > .persona-stress { margin-top: 4px; }
 .persona-stress {
   display: flex;
   flex-wrap: wrap;

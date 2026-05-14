@@ -202,8 +202,12 @@ test('Compare-LFIs shows two side-by-side panels with diff classes — EXP-16', 
 test('Stress-chip filter narrows the persona library', async ({ page }) => {
   await loadPersona(page);
   const fullCount = await page.locator('.persona-card').count();
-  // Click the first stress chip on Khalid's card (high DBR)
-  await page.locator('.persona-card', { hasText: 'Khalid' }).locator('.stress-chip', { hasText: 'high DBR' }).first().click();
+  // PR #4 — stress chips live inside the "More about this persona"
+  // disclosure on every card. Open Khalid's card first, then click the
+  // chip.
+  const khalidCard = page.locator('.persona-card', { hasText: 'Khalid' });
+  await khalidCard.locator('summary.persona-more-summary').click();
+  await khalidCard.locator('.stress-chip', { hasText: 'high DBR' }).first().click();
   const filteredCount = await page.locator('.persona-card').count();
   expect(filteredCount).toBeLessThan(fullCount);
   expect(filteredCount).toBeGreaterThan(0);

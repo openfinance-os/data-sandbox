@@ -5,6 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follo
 
 ## [Unreleased]
 
+### Changed — v1 refinements (PR #4): compressed persona-library cards
+
+- **JTBD chips are now the default visible row** on every persona card — one chip per scenario family the persona qualifies for (banking: Affordability / AML / Thin file / FX / NSF-distress / Sharia; insurance: High-claim / Multi-driver / Takaful / Third-party / Mortgage-linked / Family cover / ILOE). Clicking a card chip drives the same `state.jtbdFilter` as the toolbar rail and the hero chips.
+- **The prose narrative, "Best for …" line, and per-term stress chips moved into a `<details class="persona-more">` disclosure** with the summary "▾ More about this persona" — collapsed by default, applies uniformly to every persona (not just the active one). The previous "expand on active card" CSS rule is removed because the disclosure model supersedes it.
+- **Card click target tightened.** The card-level click handler ignores events that originate inside `.stress-chip`, `.persona-jtbd-chip`, or `.persona-more`, so opening the disclosure / clicking a chip never accidentally swaps the active persona. Chips inside the disclosure stop event propagation explicitly.
+- **`tests/e2e/smoke.spec.mjs`** — the existing "Stress-chip filter narrows the persona library" case now opens Khalid's disclosure before clicking the chip. No new test file (PR #4 is a layout compression; the existing test still proves the filter behaviour end-to-end).
+- **`src/styles.css`** — `.persona-jtbd` + `.persona-jtbd-chip` block, plus `.persona-more` disclosure styling with rotating ▸/▾ marker, focus-visible outline, and uniform 4 px spacing on the disclosed rows. Removed the now-redundant `.persona-card.active .persona-narrative` line-clamp override.
+
 ### Added — v1 refinements (PR #3): Persona Hero + domain-aware Scenario tabs
 
 - **Persona Hero strip** above the toolbar showing the active persona's avatar (large), name, a one-line tagline (first sentence of the manifest narrative, truncated to 140 chars), and JTBD chip families this persona qualifies for. Clicking a hero chip applies the same filter the existing scenario-tab rail provides. The hero re-renders on persona / domain switch via `renderPersonaHero()` wired into `rebuildAndRender()` and `renderInsuranceBundle()`. State stays JS-only per EXP-22.

@@ -544,13 +544,85 @@ function buildPersonaList() {
       ),
       el('div', { class: 'persona-archetype', text: humanArchetype(p.archetype) }),
     );
+
+    // PR #4: JTBD chips are the visible default — one chip per scenario
+    // family this persona qualifies for. The richer stress-coverage chips
+    // + prose narrative move into the "▾ More about this persona"
+    // disclosure below, keeping the default card view compact.
+    const families = jtbdFamiliesForPersona(p);
+    if (families.length > 0) {
+      const jtbdRow = el('div', { class: 'persona-jtbd', attrs: { 'aria-label': 'Scenario families' } });
+      for (const fam of families) {
+        const active = state.jtbdFilter === fam.key;
+        const chip = el('button', {
+          class: `persona-jtbd-chip${active ? ' is-active' : ''}`,
+          text: fam.label,
+          attrs: {
+            type: 'button',
+            title: active
+              ? `Scenario filter active: ${fam.label} — click to clear`
+              : `Click to filter library by scenario: ${fam.label}`,
+            'aria-pressed': active ? 'true' : 'false',
+          },
+        });
+        chip.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          state.jtbdFilter = state.jtbdFilter === fam.key ? null : fam.key;
+          if (state.jtbdFilter) state.stressFilter = null;
+          buildJtbdRail();
+          buildPersonaList();
+          renderPersonaHero();
+        });
+        jtbdRow.appendChild(chip);
+      }
+      cardBody.appendChild(jtbdRow);
+    }
+
+    // "More about this persona" disclosure — prose narrative, best-for
+    // signal, and the fine-grained stress chips. Collapsed by default.
     const bestFor = bestForLine(p);
-    if (bestFor) {
-      cardBody.appendChild(el('div', { class: 'persona-best', text: bestFor }));
+    const hasMore = Boolean(p.narrative) || Boolean(bestFor) || (Array.isArray(p.stress_coverage) && p.stress_coverage.length > 0);
+    if (hasMore) {
+      const details = el('details', { class: 'persona-more' });
+      const summary = el('summary', { class: 'persona-more-summary' });
+      summary.appendChild(document.createTextNode('More about this persona'));
+      details.appendChild(summary);
+      if (bestFor) details.appendChild(el('div', { class: 'persona-best', text: bestFor }));
+      if (p.narrative) details.appendChild(el('div', { class: 'persona-narrative', text: p.narrative.trim() }));
+      if (Array.isArray(p.stress_coverage) && p.stress_coverage.length > 0) {
+        const chips = el('div', { class: 'persona-stress', attrs: { 'aria-label': 'Stress coverage' } });
+        for (const term of p.stress_coverage) {
+          const isActive = term === state.stressFilter;
+          const chip = el('span', {
+            class: `stress-chip${isActive ? ' stress-active' : ''}`,
+            text: humanStressTerm(term),
+            attrs: {
+              role: 'button',
+              tabindex: '0',
+              title: isActive
+                ? `Filter active: ${term} — click to clear`
+                : `Click to show only personas covering: ${term}`,
+            },
+          });
+          const onChipActivate = (ev) => {
+            ev.stopPropagation();
+            state.stressFilter = state.stressFilter === term ? null : term;
+            buildPersonaList();
+          };
+          chip.addEventListener('click', onChipActivate);
+          chip.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); onChipActivate(ev); }
+          });
+          chips.appendChild(chip);
+        }
+        details.appendChild(chips);
+      }
+      // Stop card-click activation when the user opens the disclosure
+      // or interacts with anything inside it.
+      details.addEventListener('click', (ev) => ev.stopPropagation());
+      cardBody.appendChild(details);
     }
-    if (p.narrative) {
-      cardBody.appendChild(el('div', { class: 'persona-narrative', text: p.narrative.trim() }));
-    }
+
     const card = el(
       'div',
       {
@@ -558,7 +630,9 @@ function buildPersonaList() {
         attrs: { role: 'listitem' },
         dataset: { personaId: id },
         onClick: (e) => {
-          if (e.target.classList.contains('stress-chip')) return; // chip handles its own click
+          // Chips and the disclosure handle their own clicks. The card-level
+          // click only fires when the user clicks empty card chrome.
+          if (e.target.closest('.stress-chip, .persona-jtbd-chip, .persona-more')) return;
           state.personaId = id;
           // Persona-switch defaults the payload pane to the overview —
           // story-level orientation before drilling into wire endpoints.
@@ -570,34 +644,6 @@ function buildPersonaList() {
       personaAvatarEl(id, p, 'sm'),
       cardBody,
     );
-    if (Array.isArray(p.stress_coverage) && p.stress_coverage.length > 0) {
-      const chips = el('div', { class: 'persona-stress', attrs: { 'aria-label': 'Stress coverage' } });
-      for (const term of p.stress_coverage) {
-        const isActive = term === state.stressFilter;
-        const chip = el('span', {
-          class: `stress-chip${isActive ? ' stress-active' : ''}`,
-          text: humanStressTerm(term),
-          attrs: {
-            role: 'button',
-            tabindex: '0',
-            title: isActive
-              ? `Filter active: ${term} — click to clear`
-              : `Click to show only personas covering: ${term}`,
-          },
-        });
-        const onChipActivate = (ev) => {
-          ev.stopPropagation();
-          state.stressFilter = state.stressFilter === term ? null : term;
-          buildPersonaList();
-        };
-        chip.addEventListener('click', onChipActivate);
-        chip.addEventListener('keydown', (ev) => {
-          if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); onChipActivate(ev); }
-        });
-        chips.appendChild(chip);
-      }
-      card.appendChild(chips);
-    }
     list.appendChild(card);
 
     const opt = el('option', { text: p.name, attrs: { value: id } });
