@@ -5,6 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follo
 
 ## [Unreleased]
 
+### Added — v1 refinements (PR #1): responsive panel collapse
+
+- **New constant `NARROW_PANE_BREAKPOINT_PX = 1280`** in `src/app/constants.js`. Below this viewport width the three-pane grid auto-collapses the field-detail pane on first load, and a JS mutex in `setPaneCollapsed` ensures expanding either side pane auto-collapses the opposite — the navigator never sits between two simultaneously-open side panes in the 1100–1279 band. Above 1280, manual two-open state is preserved. Existing breakpoints (1099 px overlay, 760 px stacked) are untouched. State remains JS-only per EXP-22.
+- **`src/styles.css`** — `.payload-rendered table` gains `min-width: 520px` as a safety floor so monospace field-name cells never break mid-word at narrow widths; `.payload-rendered .field-name` gets explicit `word-break: normal; overflow-wrap: normal` so identifiers like `MerchantCategoryCode` stay on one line.
+- **Pane-rail chevrons** (existing left/right-edge restoration affordance) remain the manual re-expand path — auto-collapse is always recoverable with one click.
+- **`tests/e2e/responsive.spec.mjs`** — 5 cases: first-load auto-collapse at 1200 px, manual-expand mutex, no auto-collapse at 1280 px, table min-width safety floor under squeeze, resize-into-narrow-band auto-collapse via matchMedia change.
+- Touches EXP-23 (a11y — keyboard-restorable side panes), preserves EXP-22 (no storage writes) and EXP-17 (URL-shareable state — pane state stays out of the URL by design).
+
 ### Added — Phase R5 (slice 1): refund / reversal transaction shapes
 
 - **`src/generator/refunds.js`** — new post-pass that walks an account's emitted transactions and selectively emits paired refund / reversal credits. Opt-in per persona via `enable_refunds: true`. Default rate 3% of eligible POS / ECommerce purchases; ~30% emit as full `Reversal` (≤36h after the original) and ~70% as `Refund` (2–14 days later, partial amount 25–100% of original). Both `Refund` and `Reversal` are spec-valid `AESubTransactionType` enum values (spec line 4655). No new envelope shapes, no new enum values.

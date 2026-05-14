@@ -57,6 +57,7 @@ import {
   STRESS_BEST_FOR,
   LFI_CAPTIONS,
   PANE_COLLAPSE_CLASS,
+  NARROW_PANE_BREAKPOINT_PX,
   MEDIAN_HINT,
 } from './app/constants.js';
 
@@ -607,6 +608,17 @@ function syncControls() {
 // lives in JS only (EXP-22 forbids storage), so a refresh restores both
 // panes. Field-card opens auto-expand the right pane (matches the existing
 // .field-detail.open overlay behavior used at ≤1099 px).
+//
+// Below NARROW_PANE_BREAKPOINT_PX (1280) the navigator gets squeezed when
+// both side panes are open, so expanding one auto-collapses the other.
+// At >= 1280 the manual two-open state is allowed.
+const OPPOSITE_PANE = Object.freeze({
+  'persona-pane': 'field-detail',
+  'field-detail': 'persona-pane',
+});
+function isNarrowViewport() {
+  return window.matchMedia(`(max-width: ${NARROW_PANE_BREAKPOINT_PX - 1}px)`).matches;
+}
 function setPaneCollapsed(target, collapsed) {
   const root = document.getElementById('three-pane');
   if (!root) return;
@@ -621,6 +633,36 @@ function setPaneCollapsed(target, collapsed) {
   for (const btn of document.querySelectorAll(`.pane-collapse[data-target="${target}"]`)) {
     btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
   }
+  // Narrow-viewport mutex: expanding one side pane collapses the opposite,
+  // so the middle navigator never sits between two simultaneously-open panes
+  // below 1280. Skip when at ≤1099 px (right pane is overlay, not a column,
+  // so the squeeze doesn't apply).
+  if (!collapsed && isNarrowViewport()) {
+    const overlayMode = window.matchMedia('(max-width: 1099px)').matches;
+    if (!overlayMode) {
+      const other = OPPOSITE_PANE[target];
+      const otherCls = PANE_COLLAPSE_CLASS[other];
+      if (other && otherCls && !root.classList.contains(otherCls)) {
+        // Recurse with collapse=true; the guard above means this branch
+        // can't loop indefinitely.
+        setPaneCollapsed(other, true);
+      }
+    }
+  }
+}
+function applyNarrowViewportDefault() {
+  // When the viewport drops below 1280 and both side panes are still open
+  // (typical fresh load between 1100–1279), auto-collapse the field-detail
+  // by default — the persona library is the entry point, field-detail
+  // re-expands on field click. At ≤1099 the existing overlay model takes
+  // over and this is a no-op.
+  const root = document.getElementById('three-pane');
+  if (!root) return;
+  if (!isNarrowViewport()) return;
+  if (window.matchMedia('(max-width: 1099px)').matches) return;
+  const leftOpen = !root.classList.contains('left-collapsed');
+  const rightOpen = !root.classList.contains('right-collapsed');
+  if (leftOpen && rightOpen) setPaneCollapsed('field-detail', true);
 }
 function wirePaneCollapse() {
   for (const btn of document.querySelectorAll('.pane-collapse')) {
@@ -629,6 +671,15 @@ function wirePaneCollapse() {
   for (const rail of document.querySelectorAll('.pane-rail')) {
     rail.addEventListener('click', () => setPaneCollapsed(rail.dataset.target, false));
   }
+  // Apply the narrow-viewport default once at boot and again whenever the
+  // viewport crosses the 1280 threshold (e.g. window resize / orientation
+  // change). Crossing back above 1280 leaves the user's current pane state
+  // alone — we only auto-collapse, never auto-expand.
+  applyNarrowViewportDefault();
+  const mql = window.matchMedia(`(max-width: ${NARROW_PANE_BREAKPOINT_PX - 1}px)`);
+  const onChange = (e) => { if (e.matches) applyNarrowViewportDefault(); };
+  if (mql.addEventListener) mql.addEventListener('change', onChange);
+  else if (mql.addListener) mql.addListener(onChange);
 }
 
 function attachEventHandlers() {

@@ -78,6 +78,18 @@ export const PANE_COLLAPSE_CLASS = Object.freeze({
   'field-detail': 'right-collapsed',
 });
 
+// Below this viewport width the navigator can't comfortably host both side
+// panes at once — keeping both expanded squeezes the rendered table below
+// readable column widths. JS listens on a matchMedia of (max-width: NARROW-1)
+// and, when both side panes are open, auto-collapses the opposite one
+// (the rail chevron stays visible to restore). Existing manual collapse via
+// the header chevrons keeps working at any width.
+//
+// 1099 / 760 remain the prior structural breakpoints (right-pane → overlay,
+// stacked single-column). 1280 sits above both, so the auto-collapse only
+// runs in the 1100–1279 band where the layout is still a three-column grid.
+export const NARROW_PANE_BREAKPOINT_PX = 1280;
+
 // Per-band Median populate-rate copy shown on field cards.
 export const MEDIAN_HINT = Object.freeze({
   Universal: 'Median expectation: every LFI populates.',

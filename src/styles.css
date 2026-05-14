@@ -1253,7 +1253,21 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   border-collapse: separate;
   border-spacing: 0;
   width: 100%;
+  /* Safety floor — never let the table render so narrow that a field-name
+     monospace cell breaks mid-word. The parent .payload-body has
+     overflow:auto, so a viewport narrower than this triggers horizontal
+     scroll inside the navigator rather than mangled cell text. JS already
+     auto-collapses one side pane below 1280 px so this rarely fires. */
+  min-width: 520px;
   font-size: 12px;
+}
+/* Field-name cells are monospace identifiers like `MerchantCategoryCode` —
+   they must never break mid-word. CamelCase / single-token names should
+   either fit on one line or trigger a horizontal scroll via the table
+   min-width above. */
+.payload-rendered .field-name {
+  word-break: normal;
+  overflow-wrap: normal;
 }
 .payload-rendered th, .payload-rendered td {
   text-align: left;
