@@ -21,7 +21,9 @@ import { decodeRecipe, encodeRecipe, RECIPE_DEFAULTS } from './persona-builder/r
 import { mountPersonaBuilder } from './ui/persona-builder-ui.js';
 import { createFindBox } from './ui/find-box.js';
 import { createTour } from './ui/tour.js';
-import { createExportPopover } from './ui/export-popover.js';
+// PR-12 perf — export popover is dynamic-imported on first ⌘E / button
+// click so it stays off the cold-load critical path (EXP-24 Lighthouse
+// budget). The factory itself isn't invoked until a user interaction.
 import { createCompareView } from './ui/compare-view.js';
 import { createTxFilter } from './ui/tx-filter.js';
 import { createMonthlySummary } from './ui/monthly-summary.js';
@@ -187,36 +189,57 @@ const { renderUnderwritingStrip, renderUnderwritingPanel } = createUnderwriting(
   openFieldCard,
 });
 
-// PR #6 — Export popover. The closures below pull snippet strings on
-// demand at popover-render time so they always reflect the live state.
-const exportPopover = createExportPopover({
-  state, el, track, copyToClipboard,
-  exportActiveJson:    () => exportActiveJson(),
-  exportActiveCsv:     () => exportActiveCsv(),
-  exportTarball:       () => exportTarball(),
-  embedIframeSnippet:  () => buildEmbedSnippet(),
-  activeFixtureUrl:    () => {
-    const origin = window.location.origin + window.location.pathname.replace(/\/index\.html$/, '').replace(/\/$/, '');
-    return encodeFixtureUrl({
-      origin, personaId: state.personaId, lfi: state.lfi, seed: state.seed,
-      endpoint: state.endpoint === OVERVIEW_PSEUDO || state.endpoint === UNDERWRITING_PSEUDO
-        ? '/accounts'
-        : state.endpoint,
-    });
-  },
-  activeJsonString: () => {
-    if (!state.bundle) return '';
-    const ctx = exportContext();
-    const envelopes = envelopesFromBundle(state.bundle, ctx);
-    const key = activeEnvelopeKey();
-    const env = envelopes[key] ?? envelopes[state.endpoint];
-    return env ? JSON.stringify(env, null, 2) : '';
-  },
-  activeCsvString: () => {
-    if (!state.bundle) return '';
-    return buildActiveCsvString();
-  },
-});
+// PR-12 perf — Export popover module is loaded on-demand on the first
+// ⌘E / button click. The wrapper exposes the same `{ open, close,
+// isOpen }` surface as the eagerly-instantiated factory used to, so
+// the keyboard / button handlers in attachEventHandlers don't change
+// shape. EXP-24 Lighthouse budget benefits because the popover code
+// is off the cold-load critical path.
+const exportPopover = (() => {
+  let inner = null;
+  let loading = null;
+  const deps = () => ({
+    state, el, track, copyToClipboard,
+    exportActiveJson:    () => exportActiveJson(),
+    exportActiveCsv:     () => exportActiveCsv(),
+    exportTarball:       () => exportTarball(),
+    embedIframeSnippet:  () => buildEmbedSnippet(),
+    activeFixtureUrl:    () => {
+      const origin = window.location.origin + window.location.pathname.replace(/\/index\.html$/, '').replace(/\/$/, '');
+      return encodeFixtureUrl({
+        origin, personaId: state.personaId, lfi: state.lfi, seed: state.seed,
+        endpoint: state.endpoint === OVERVIEW_PSEUDO || state.endpoint === UNDERWRITING_PSEUDO
+          ? '/accounts'
+          : state.endpoint,
+      });
+    },
+    activeJsonString: () => {
+      if (!state.bundle) return '';
+      const ctx = exportContext();
+      const envelopes = envelopesFromBundle(state.bundle, ctx);
+      const key = activeEnvelopeKey();
+      const env = envelopes[key] ?? envelopes[state.endpoint];
+      return env ? JSON.stringify(env, null, 2) : '';
+    },
+    activeCsvString: () => {
+      if (!state.bundle) return '';
+      return buildActiveCsvString();
+    },
+  });
+  async function ensure() {
+    if (inner) return inner;
+    if (!loading) {
+      loading = import('./ui/export-popover.js')
+        .then(({ createExportPopover }) => { inner = createExportPopover(deps()); return inner; });
+    }
+    return loading;
+  }
+  return {
+    async open() { (await ensure()).open(); },
+    close() { inner?.close(); },
+    get isOpen() { return inner ? inner.isOpen : false; },
+  };
+})();
 
 // Phase R1.5 — merge a single enrichment record onto a /transactions row.
 // Returns a NEW row object so the underlying bundle stays untouched.

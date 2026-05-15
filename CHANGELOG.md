@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follo
 
 ## [Unreleased]
 
+### Fixed — v1 refinements (PR-12): Lighthouse perf budget regression from PRs 1-11
+
+- **CI Lighthouse run on PR #50 hit 0.66 median on `/src/index.html`** (budget is `>= 0.70`). The bundle-weight gate (`tests/bundle-weight.test.mjs`, 250 KB gzipped) still passed — the regression was Lighthouse-simulate's penalty for serial ES-module fetches that production HTTP/2 multiplexes away (CLAUDE.md note on EXP-24). The new modules added in PRs 1-11 weren't in the cold-path `<link rel="modulepreload">` list, so the browser made serial fetches once `app.js` parsed their static imports.
+- **Lazy-loaded `src/ui/export-popover.js`** via `import('./ui/export-popover.js')` on first ⌘E / button click. The popover code is non-default UI — a user only pays the fetch cost if they actually open Export. The wrapper exposes the same `{ open, close, isOpen }` surface to the existing keyboard / button handlers so call sites don't change. The bundle-weight test continues to track only the cold-load critical path (dynamic imports are excluded by design — see the test's preamble comment).
+- **Added `<link rel="modulepreload">` hints** for the four UI modules that stay on the cold path: `shared/banner.js`, `ui/tour.js` (auto-launches on cold landing per PR #2), `ui/underwriting.js` (banking default endpoint per PR #5), `ui/field-card.js` (commonly opened on first click). These were already statically imported — the preload just parallelises their fetch with `app.js` parsing instead of waiting for it.
+- **Test impact** — `tests/e2e/export-popover.spec.mjs` cases that wait for `.export-overlay` already use Playwright's default 5 s timeout, which absorbs the dynamic-import latency without changes. No spec edits required.
+
 ### Changed — v1 refinements (PR-11): drop persona dropdown, merge persona showcase with LFI/Compare/Seed
 
 - **`<select id="persona-select">` deleted** from `src/index.html`. The persona library on the left pane is the canonical persona switcher (per PRD §6); every card click routes through the same `state.personaId = id; rebuildAndRender()` path the dropdown's change listener used. Reclaims ≈140 px of horizontal topbar space.
