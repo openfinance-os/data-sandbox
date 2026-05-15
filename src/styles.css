@@ -294,6 +294,11 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   background: var(--accent-soft);
   color: var(--accent);
 }
+/* PR #9 — visible focus on icon-only LFI compare buttons (a11y). */
+.lfi-compare-swap:focus-visible, .lfi-compare-close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
 .control-seed[hidden] { display: none; }
 
 .version-pin {
@@ -1904,6 +1909,31 @@ details.nav-account > summary.nav-account-header:focus-visible {
   font-size: 12px;
   line-height: 1.45;
   border-radius: 2px;
+}
+
+/* PR #9 — insurance early-calibration banner. Shown at the top of every
+   insurance-payload render so the calibration status is up-front. */
+.insurance-empty-banner {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--text);
+  font-size: 12.5px;
+  line-height: 1.5;
+  border-radius: 2px;
+}
+.insurance-empty-banner strong { margin-right: 6px; }
+.insurance-empty-link {
+  display: inline-block;
+  margin-left: 6px;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: underline;
+}
+.insurance-empty-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .payload-raw {

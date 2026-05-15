@@ -76,24 +76,25 @@
             <button type="button" role="radio" data-cmp-lfi="median" aria-checked="false">Median</button>
             <button type="button" role="radio" data-cmp-lfi="sparse" aria-checked="true">Sparse</button>
           </div>
-          <button type="button" id="compare-swap" class="lfi-compare-swap" title="Swap left and right LFIs">↔</button>
+          <button type="button" id="compare-swap" class="lfi-compare-swap" aria-label="Swap left and right LFIs" title="Swap left and right LFIs">↔</button>
           <button type="button" id="compare-close" class="lfi-compare-close" aria-label="Close compare mode" title="Close compare">×</button>
         </div>
       </div>
-      <details class="control-advanced" id="control-advanced">
-        <summary title="Show advanced controls — seed lever, etc. The seed reshuffles the deterministic RNG; structure stays, details re-roll. Most users never touch this.">Advanced</summary>
-        <label class="control-group control-seed">
-          <span class="control-label">Seed</span>
-          <input id="seed-input" type="number" value="4729" min="0" step="1" aria-label="Seed (reshuffles deterministic RNG; structure stays, details re-roll)" />
-        </label>
+      <!-- PR #9 — seed lever hoisted out of the Advanced details. Determinism
+           (persona, lfi, seed → byte-identical bundle, EXP-05) is a
+           first-class feature; the lever sits inline next to LFI.
+           PR-15 — info popover from main (PR #51) preserved alongside. -->
+      <label class="control-group control-seed">
+        <span class="control-label">Seed</span>
+        <input id="seed-input" type="number" value="4729" min="0" step="1" aria-label="Seed (reshuffles deterministic RNG; structure stays, details re-roll)" title="Seed reshuffles the deterministic RNG. Same (persona, lfi, seed) → byte-identical bundle (EXP-05)." />
         <button type="button" class="info-trigger" popovertarget="seed-help" aria-expanded="false" aria-label="What does Seed do?">ⓘ</button>
-        <button type="button" id="seed-reset" class="seed-reset" title="Reset to the persona's default seed.">Reset</button>
-        <div id="seed-help" popover="auto" class="info-popover" role="note">
-          <h3 class="info-popover-title">Seed</h3>
-          <p>The third lever in the deterministic <code>(persona, LFI, seed)</code> tuple. Reshuffles random details — merchant names, transaction amounts, optional-field choices — while keeping the persona's structure intact (account count, balance bands, mandatory fields).</p>
-          <p>The seed is encoded in the share URL (EXP-17), so the same tuple always reproduces byte-identical data. <strong>Reset</strong> restores the persona's default.</p>
-        </div>
-      </details>
+        <button type="button" id="seed-reset" class="seed-reset" aria-label="Reset seed to persona default" title="Reset to the persona's default seed.">Reset</button>
+      </label>
+      <div id="seed-help" popover="auto" class="info-popover" role="note">
+        <h3 class="info-popover-title">Seed</h3>
+        <p>The third lever in the deterministic <code>(persona, LFI, seed)</code> tuple. Reshuffles random details — merchant names, transaction amounts, optional-field choices — while keeping the persona's structure intact (account count, balance bands, mandatory fields).</p>
+        <p>The seed is encoded in the share URL (EXP-17), so the same tuple always reproduces byte-identical data. <strong>Reset</strong> restores the persona's default.</p>
+      </div>
     </div>
     <div class="controls-runstate" aria-label="Run state">
       <select class="domain-chip" id="domain-chip" hidden aria-label="Open Finance domain"></select>

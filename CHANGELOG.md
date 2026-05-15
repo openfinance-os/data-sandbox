@@ -5,6 +5,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follo
 
 ## [Unreleased]
 
+### Changed — v1 refinements (PR #9): polish pass
+
+- **Seed lever hoisted out of `<details class="control-advanced">`** in `src/index.html`. Determinism is a first-class feature (EXP-05 — same `(persona, lfi, seed)` always produces a byte-identical bundle), so the seed input + Reset button now sit inline with the LFI segmented control instead of behind an Advanced disclosure. The `#seed-reset` button gains an explicit `aria-label` for screen readers.
+- **`#compare-swap` (↔) gains `aria-label="Swap left and right LFIs"`** — it had a `title` only, which doesn't reach all screen-reader / keyboard pathways. Other icon-only buttons (`#compare-close ×`, panel chevrons `‹` / `›`, `.persona-hero-chip`, `.persona-jtbd-chip`, `.export-tab`, `.export-close ×`, `.uw-pin-btn`, `.persona-more-summary`, `.nav-endpoint`, `.nav-account-header`) already have `aria-label` or carry meaningful text — they were verified during the PR walk-through and now uniformly have `:focus-visible` outlines.
+- **`:focus-visible` outline added** to `.lfi-compare-swap` and `.lfi-compare-close` (the two icon-only LFI compare buttons that previously had no keyboard affordance).
+- **Insurance early-calibration banner** at the top of every insurance payload render: "Insurance is in early calibration. The 30 endpoints across 7 lines are spec-anchored and deterministic, but populate-rate bands are still maturing — treat the LFI Rich/Median/Sparse axis as indicative until v1.1." Includes a "Switch to Banking →" anchor that drops `domain`, `persona`, and `endpoint` from the URL so banking re-picks its defaults. New `.insurance-empty-banner` block in CSS with an accent-left treatment.
+- **Deferred from this PR (tracked for a follow-up):**
+  - **Methodology debt pill** — replacing the per-cell "Populate-rate band not yet curated" tooltips with a page-level pill would require walking every spec endpoint's leaf fields against `state.spec.bandOverrides` and aggregating. Sized as a separate slice; the per-cell tooltip is still informative in the meantime.
+  - **Stress Tag grouping in the builder modal** — the 22 Stress Tag checkboxes in `src/ui/persona-builder-ui.js` need to be regrouped under the same JTBD families surfaced in the library chips. Sized as a separate slice — the builder UI has its own rendering pass and is the right place to scope that work end-to-end.
+  - **axe-core green-on-cream audit** — the existing axe-core gate (`tests/e2e/smoke.spec.mjs:38–46`) already asserts zero WCAG 2.1 AA violations on a cold landing. If a future deeper audit surfaces new pairs, the primary green can be darkened ~8% via the `--accent` token in `:root` without touching the rest of the cascade.
+
 ### Changed — v1 refinements (PR #8): endpoint navigator polish
 
 - **Per-account endpoint group is now a collapsible `<details>`** with the account header as the toggle `<summary>`. Open by default; the account that owns the currently-selected endpoint stays open regardless of any prior toggle. Frees vertical space for multi-account personas (HNW, multi-currency) without re-introducing a hide/show button.
