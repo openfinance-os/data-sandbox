@@ -50,6 +50,9 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   outline-offset: 2px;
 }
 
+/* Legacy full-width banner — kept for auxiliary pages (about.html,
+   integrate.html) that aren't space-constrained. The main index.html
+   uses the slim .banner-stripe + .banner-chip pattern below. */
 .banner {
   background: var(--warn-bg);
   border-bottom: 1px solid var(--warn-border);
@@ -58,9 +61,7 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   flex: 0 0 auto;
   position: relative;
 }
-
 .banner[hidden] { display: none; }
-
 .banner-close {
   position: absolute;
   top: 50%;
@@ -80,83 +81,136 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   line-height: 1;
   cursor: pointer;
 }
-
-.banner-close:hover {
-  background: var(--warn-border);
-}
-
-/* Persona Hero — PR #3. A compact horizontal strip above the toolbar
-   showing the active persona's avatar + name + tagline + JTBD chips.
-   Sits in body flow above the .topbar, never overlays anything. */
-.persona-hero {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 10px 16px;
-  background: var(--bg-soft);
-  border-bottom: 1px solid var(--border);
-  flex: 0 0 auto;
-  min-height: 76px;
-}
-.persona-hero[hidden] { display: none; }
-.persona-hero-avatar { flex: 0 0 auto; }
-.persona-hero-body {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-  flex: 1 1 auto;
-}
-.persona-hero-name {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 1.2;
-  color: var(--text);
-}
-.persona-hero-tagline {
-  margin: 0;
-  font-size: 12.5px;
-  line-height: 1.35;
-  color: var(--text-muted);
-  /* Tagline is a derived first-sentence summary — keep it to one line
-     when there's room, fall back to two lines on narrow viewports. */
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.persona-hero-jtbd {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 4px;
-}
-.persona-hero-chip {
-  font: inherit;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 3px 9px;
-  border-radius: 999px;
-  border: 1px solid var(--border-strong);
-  background: var(--bg-card);
-  color: var(--text);
-  cursor: pointer;
-}
-.persona-hero-chip:hover { border-color: var(--accent); color: var(--accent); }
-.persona-hero-chip.is-active {
-  background: var(--accent);
-  color: var(--mandatory-fg);
-  border-color: var(--accent);
-}
-.persona-hero-chip:focus-visible {
+.banner-close:hover { background: var(--warn-border); }
+.banner-close:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
+
+/* PR-10 — slim synthetic-data stripe. A 4 px amber bar at the very top of
+   the page keeps the synthetic provenance loud at all times; the full
+   disclaimer lives in a popover anchored to the SYNTHETIC chip in the
+   topbar. State is JS-only per EXP-22 (no storage writes). */
+.banner-stripe {
+  height: 4px;
+  background: var(--warn-border);
+  flex: 0 0 auto;
+}
+.banner-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: inherit;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--warn-border);
+  background: var(--warn-bg);
+  color: var(--text);
+  cursor: pointer;
+}
+.banner-chip:hover { filter: brightness(0.98); }
+.banner-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.banner-chip-icon { font-size: 12px; line-height: 1; }
+.banner-popover {
+  position: absolute;
+  top: 48px;
+  right: 16px;
+  max-width: 440px;
+  padding: 10px 14px;
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-border);
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.5;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  z-index: 220;
+}
+.banner-popover[hidden] { display: none; }
+.banner-popover strong { margin-right: 4px; }
+
+/* PR-10 — Persona slot inside the topbar. Replaces the prior standalone
+   .persona-hero strip and the OF-OS wordmark block: the active persona
+   (avatar 36×36 + name + derived tagline) plus a small inline
+   attribution sits in the topbar's left edge. */
+.topbar-persona {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1 1 320px;
+  max-width: 460px;
+}
+.topbar-persona-avatar {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bg-soft);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.topbar-persona-avatar .persona-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+}
+.topbar-persona-avatar .persona-avatar-sm { margin-top: 0; }
+.topbar-persona-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 auto;
+  line-height: 1.25;
+}
+.topbar-persona-line {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+.topbar-persona-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.topbar-attribution {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 0 1 auto;
+}
+.topbar-persona.is-empty .topbar-persona-name { display: none; }
+.topbar-persona-tagline {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+@media (max-width: 1099px) {
+  .topbar-attribution { display: none; }
+  .topbar-persona { max-width: 320px; }
+}
 @media (max-width: 760px) {
-  .persona-hero { padding: 8px 12px; gap: 10px; min-height: 0; }
-  .persona-hero .persona-avatar-lg { width: 56px; height: 56px; }
-  .persona-hero-name { font-size: 14px; }
+  .topbar-persona { flex: 1 1 100%; max-width: none; }
+  .topbar-persona-tagline { white-space: normal; -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; }
 }
 
 .topbar {
@@ -169,15 +223,6 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   background: var(--bg-card);
   flex: 0 0 auto;
 }
-
-.brand {
-  display: flex;
-  flex-direction: column;
-  font-weight: 600;
-}
-
-.brand-title { font-size: 15px; }
-.brand-sub { font-size: 11px; color: var(--text-muted); font-weight: 400; }
 
 .controls {
   display: flex;

@@ -610,7 +610,7 @@ function buildPersonaList() {
           if (state.jtbdFilter) state.stressFilter = null;
           buildJtbdRail();
           buildPersonaList();
-          renderPersonaHero();
+          renderTopbarPersona();
         });
         jtbdRow.appendChild(chip);
       }
@@ -1029,7 +1029,7 @@ function rebuildAndRender() {
     // from the parsed insurance spec), replacing the bundle-wide JSON
     // inspector. Compare-LFIs / underwriting / banking-shaped coverage are
     // still banking-only — those are derived views with no insurance analogue.
-    renderPersonaHero();
+    renderTopbarPersona();
     renderInsuranceBundle();
     pushPermalink();
     setTimeout(() => body?.classList.remove('is-fading'), 30);
@@ -1042,7 +1042,7 @@ function rebuildAndRender() {
   state.txHighlight = new Set();
   state.crossLink = null;
   syncControls();
-  renderPersonaHero();
+  renderTopbarPersona();
   renderNavigator();
   renderPayload();
   renderCoverage();
@@ -1051,11 +1051,13 @@ function rebuildAndRender() {
   setTimeout(() => body?.classList.remove('is-fading'), 30);
 }
 
-// PR #3 — Persona Hero strip above the topbar. Avatar + name + a one-line
-// tagline derived from the first sentence of the persona narrative, plus
-// the JTBD families this persona's stress_coverage qualifies for. State
-// changes (persona switch, custom-persona expand, domain switch) all flow
-// through renderPersonaHero() via rebuildAndRender / renderInsuranceBundle.
+// PR-10 — persona slot inside the topbar (renamed from PR #3's standalone
+// hero). Avatar + name + a one-line tagline derived from the first
+// sentence of the persona narrative. JTBD chips are dropped from the
+// topbar slot — the left-pane scenario tabs (.jtbd-rail) are the
+// canonical scenario filter surface post-PR #3. State changes (persona
+// switch, custom-persona expand, domain switch) all flow through
+// renderTopbarPersona() via rebuildAndRender / renderInsuranceBundle.
 function deriveTagline(persona, maxLen = 140) {
   const narrative = (persona?.narrative ?? '').trim();
   if (!narrative) return '';
@@ -1078,46 +1080,28 @@ function jtbdFamiliesForPersona(persona) {
   }
   return matched;
 }
-function renderPersonaHero() {
-  const hero = document.getElementById('persona-hero');
-  if (!hero) return;
-  const persona = state.data.personas[state.personaId];
+function renderTopbarPersona() {
+  const slot = document.getElementById('topbar-persona');
+  if (!slot) return;
+  const persona = state.data?.personas?.[state.personaId];
   if (!persona) {
-    hero.hidden = true;
+    slot.classList.add('is-empty');
     return;
   }
-  hero.hidden = false;
+  slot.classList.remove('is-empty');
 
-  const avatarSlot = document.getElementById('persona-hero-avatar');
-  avatarSlot.replaceChildren(personaAvatarEl(state.personaId, persona, 'lg'));
+  const avatarSlot = document.getElementById('topbar-persona-avatar');
+  avatarSlot.replaceChildren(personaAvatarEl(state.personaId, persona, 'sm'));
 
-  document.getElementById('persona-hero-name').textContent = persona.name ?? state.personaId;
-  document.getElementById('persona-hero-tagline').textContent = deriveTagline(persona);
+  const nameEl = document.getElementById('topbar-persona-name');
+  nameEl.textContent = persona.name ?? state.personaId;
+  nameEl.setAttribute('title', persona.name ?? state.personaId);
 
-  const chipSlot = document.getElementById('persona-hero-jtbd');
-  chipSlot.replaceChildren();
-  const families = jtbdFamiliesForPersona(persona);
-  if (families.length === 0) return;
-  for (const fam of families) {
-    const active = state.jtbdFilter === fam.key;
-    const chip = el('button', {
-      class: `persona-hero-chip${active ? ' is-active' : ''}`,
-      attrs: {
-        type: 'button',
-        title: `Filter persona library by ${fam.label.toLowerCase()}`,
-        'aria-pressed': active ? 'true' : 'false',
-      },
-      text: fam.label,
-      onClick: () => {
-        state.jtbdFilter = state.jtbdFilter === fam.key ? null : fam.key;
-        if (state.jtbdFilter) state.stressFilter = null;
-        buildJtbdRail();
-        buildPersonaList();
-        renderPersonaHero();
-      },
-    });
-    chipSlot.appendChild(chip);
-  }
+  const tag = deriveTagline(persona);
+  const tagEl = document.getElementById('topbar-persona-tagline');
+  tagEl.textContent = tag;
+  // Full tagline in title so a truncated row stays inspectable on hover.
+  tagEl.setAttribute('title', tag);
 }
 
 // PR #7 — inline banner shown when Compare-with is on but the active

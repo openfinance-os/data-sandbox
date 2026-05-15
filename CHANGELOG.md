@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follo
 
 ## [Unreleased]
 
+### Changed — v1 refinements (PR-10): compressed top chrome
+
+- **Persona Hero strip merged into the topbar.** The standalone `<section class="persona-hero">` (PR #3) is deleted; the active persona's avatar (36×36) + name + derived tagline + a small inline OF-OS attribution now occupy the topbar's left edge as `.topbar-persona`. JTBD chips drop from this slot — the left-pane scenario tabs (`.jtbd-rail`) are the canonical scenario filter surface post-PR #3, so the duplicate hero chips were redundant. `renderPersonaHero` is renamed `renderTopbarPersona` at all 3 call sites; `deriveTagline` and `jtbdFamiliesForPersona` are kept as exports for `buildPersonaList`'s per-card JTBD chips (PR #4).
+- **Synthetic banner compressed.** The full-width 22 px `.banner` text strip is replaced by a 4 px amber top stripe (`.banner-stripe`) plus a `SYNTHETIC ⓘ` chip in the topbar's run-state area. Clicking / Enter opens a popover with the full disclaimer; Esc or click-outside closes. Always-visible stripe + one-click full text preserves the NG4 / EXP-07 disclosure contract without the chrome cost.
+- **EXP-22 fix in `src/shared/banner.js`.** The previous module persisted dismissal to `localStorage.of-sandbox.banner-dismissed.v1`, which violated EXP-22 (PR #2 already established that the smoke test's `Object.keys(localStorage).toEqual([])` covers the whole app). The new module keeps a module-scoped `let popoverOpen = false` and exposes session-only open/close handlers. About / Integrate pages keep the legacy `.banner[data-dismissible]` block; the new `wireLegacyBanner()` path re-attaches a session-only × close button on them with no storage write.
+- **Reclaimed pixel height (desktop, compare-on):** ~166 px → ~56 px (~110 px) — banner 22 → 4, hero 76 → 0, topbar wrap savings ~16. The work area gains that vertical real estate immediately.
+- **`src/_stories/index.html`** — the PersonaHero story is renamed TopbarPersona and re-renders the merged shape (`.topbar-persona` block) so the visual contract stays auditable.
+- **`tests/e2e/top-chrome.spec.mjs` (new)** — 6 cases: topbar-persona populated, persona refresh on switch, chip opens/closes popover with Esc, stripe is thin (≤6 px) and visible, EXP-22 storage-empty guard after chip open/close, attribution wordmark inline + no `.brand` block.
+- Removed orphaned `.brand` / `.brand-title` / `.brand-sub` CSS rules and the unused legacy `.persona-hero*` block.
+
 ### Changed — v1 refinements (PR #9): polish pass
 
 - **Seed lever hoisted out of `<details class="control-advanced">`** in `src/index.html`. Determinism is a first-class feature (EXP-05 — same `(persona, lfi, seed)` always produces a byte-identical bundle), so the seed input + Reset button now sit inline with the LFI segmented control instead of behind an Advanced disclosure. The `#seed-reset` button gains an explicit `aria-label` for screen readers.

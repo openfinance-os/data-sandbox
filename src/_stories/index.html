@@ -73,11 +73,11 @@
 
   <section class="story" id="story-persona-hero">
     <header class="story-head">
-      <span>PersonaHero (PR #3)</span>
-      <span class="story-meta">src/index.html · .persona-hero / renderPersonaHero()</span>
+      <span>TopbarPersona (PR-10 — replaces PR #3 PersonaHero)</span>
+      <span class="story-meta">src/index.html · .topbar-persona / renderTopbarPersona() · standalone .persona-hero removed</span>
     </header>
     <div class="story-body">
-      <div class="story-stage" id="stage-persona-hero"></div>
+      <div class="story-stage" id="stage-persona-hero" style="background:var(--bg-card);padding:8px 16px;"></div>
     </div>
     <div class="story-controls">
       <label>Persona:</label>
@@ -190,32 +190,29 @@
     return collapsed.length <= maxLen ? collapsed : `${collapsed.slice(0, maxLen - 1).trimEnd()}…`;
   }
 
-  function jtbdFamiliesForPersona(persona, presets) {
-    const terms = persona?.stress_coverage ?? [];
-    const matched = [];
-    for (const [key, preset] of Object.entries(presets)) {
-      if (terms.some((t) => preset.terms.includes(t))) matched.push({ key, label: preset.label });
-    }
-    return matched;
-  }
-
   function renderHero(stage, id) {
     const persona = data.personas[id];
     if (!persona) return;
-    const presets = getJtbdPresets(persona.domain);
     stage.replaceChildren();
-    const hero = el('section', { class: 'persona-hero', attrs: { 'aria-label': 'Active persona summary' } });
-    hero.appendChild(el('div', { class: 'persona-hero-avatar' }, avatarNode(id, persona)));
-    const body = el('div', { class: 'persona-hero-body' });
-    body.appendChild(el('h2', { class: 'persona-hero-name', text: persona.name ?? id }));
-    body.appendChild(el('p', { class: 'persona-hero-tagline', text: deriveTagline(persona) }));
-    const chips = el('div', { class: 'persona-hero-jtbd' });
-    for (const fam of jtbdFamiliesForPersona(persona, presets)) {
-      chips.appendChild(el('button', { class: 'persona-hero-chip', text: fam.label, attrs: { type: 'button' } }));
-    }
-    body.appendChild(chips);
-    hero.appendChild(body);
-    stage.appendChild(hero);
+    // PR-10 — the standalone .persona-hero is gone; the active persona
+    // is now a slot inside the topbar. This story renders the new shape
+    // directly so the visual contract stays auditable in isolation.
+    const slot = el('div', { class: 'topbar-persona', attrs: { 'aria-label': 'Active persona' } });
+    const avatarWrap = el('div', { class: 'topbar-persona-avatar', attrs: { 'aria-hidden': 'true' } });
+    // The story uses the persona-avatar-sm size (40 px). The topbar slot
+    // CSS overrides the dimensions to 36×36 in the live page.
+    const node = avatarNode(id, persona);
+    node.classList.add('persona-avatar-sm');
+    avatarWrap.appendChild(node);
+    slot.appendChild(avatarWrap);
+    const meta = el('div', { class: 'topbar-persona-meta' });
+    const line = el('div', { class: 'topbar-persona-line' });
+    line.appendChild(el('span', { class: 'topbar-persona-name', text: persona.name ?? id }));
+    line.appendChild(el('span', { class: 'topbar-attribution', text: 'Open Finance Data Sandbox · OF-OS Commons' }));
+    meta.appendChild(line);
+    meta.appendChild(el('span', { class: 'topbar-persona-tagline', text: deriveTagline(persona) }));
+    slot.appendChild(meta);
+    stage.appendChild(slot);
   }
 
   function renderTabs(stage, domain) {

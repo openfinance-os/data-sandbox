@@ -36,17 +36,19 @@
 <link rel="preload" href="../dist/domains.json" as="fetch" crossorigin="anonymous" />
 </head>
 <body>
-<div class="banner" role="status" aria-label="Synthetic data notice" data-dismissible>
-  <strong>SYNTHETIC.</strong>
-  Data is generated from the UAE Open Finance Standards v2.1 OpenAPI spec — not from any real bank.
-  Median populate-rate is a Commons-curated ecosystem assumption, not endorsed by Nebras or CBUAE.
-</div>
+<div class="banner-stripe" role="presentation" aria-hidden="true"></div>
 <script type="module" src="shared/banner.js"></script>
 
 <header class="topbar" role="banner">
-  <div class="brand">
-    <span class="brand-title">Open Finance Data Sandbox</span>
-    <span class="brand-sub">OpenFinance-OS Commons</span>
+  <div class="topbar-persona is-empty" id="topbar-persona" aria-label="Active persona">
+    <div class="topbar-persona-avatar" id="topbar-persona-avatar" aria-hidden="true"></div>
+    <div class="topbar-persona-meta">
+      <div class="topbar-persona-line">
+        <span class="topbar-persona-name" id="topbar-persona-name"></span>
+        <span class="topbar-attribution">Open Finance Data Sandbox · OF-OS Commons</span>
+      </div>
+      <span class="topbar-persona-tagline" id="topbar-persona-tagline"></span>
+    </div>
   </div>
   <nav class="controls" aria-label="Persona controls">
     <div class="controls-scenario" aria-label="Scenario">
@@ -102,6 +104,10 @@
       <button type="button" class="info-trigger" popovertarget="spec-help" aria-expanded="false" aria-label="What is the pinned spec SHA?">ⓘ</button>
       <button class="topbar-btn" id="find-btn" title="Search fields, enums, and persona narratives (⌘K)" aria-label="Open find box">Find</button>
       <button class="topbar-btn" id="tour-btn" title="Walk through Sara's bundle in 5 steps" aria-label="Start guided tour">Tour</button>
+      <button class="banner-chip" id="banner-chip" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="banner-popover" title="Show full synthetic-data disclaimer">
+        <span class="banner-chip-label">SYNTHETIC</span>
+        <span class="banner-chip-icon" aria-hidden="true">ⓘ</span>
+      </button>
       <details class="topbar-menu" id="topbar-more">
         <summary class="topbar-btn" aria-label="More" title="More — Integrate, About">More</summary>
         <div class="topbar-menu-content" role="menu">
@@ -128,14 +134,11 @@
   </div>
 </header>
 
-<section class="persona-hero" id="persona-hero" aria-label="Active persona summary" hidden>
-  <div class="persona-hero-avatar" id="persona-hero-avatar"></div>
-  <div class="persona-hero-body">
-    <h2 class="persona-hero-name" id="persona-hero-name"></h2>
-    <p class="persona-hero-tagline" id="persona-hero-tagline"></p>
-    <div class="persona-hero-jtbd" id="persona-hero-jtbd" aria-label="Jobs this persona answers"></div>
-  </div>
-</section>
+<div class="banner-popover" id="banner-popover" role="dialog" aria-labelledby="banner-popover-title" hidden>
+  <strong id="banner-popover-title">SYNTHETIC.</strong>
+  Data is generated from the UAE Open Finance Standards v2.1 OpenAPI spec — not from any real bank.
+  Median populate-rate is a Commons-curated ecosystem assumption, not endorsed by Nebras or CBUAE.
+</div>
 
 <main class="three-pane" id="three-pane">
   <section class="pane persona-pane" aria-label="Persona library">
