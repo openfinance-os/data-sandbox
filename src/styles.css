@@ -889,7 +889,6 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   background: var(--bg-card);
   border-color: var(--border);
   color: var(--text);
-  outline: none;
 }
 /* Rail is absolutely positioned inside the pane so it overlays — never stacks
    with — the header. Toggling .left-collapsed / .right-collapsed flips
@@ -926,7 +925,6 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
 .pane-rail:focus-visible {
   background: var(--bg-card);
   color: var(--text);
-  outline: none;
 }
 .pane-rail .pane-rail-chevron { font-size: 14px; line-height: 1; }
 .pane-rail .pane-rail-label {

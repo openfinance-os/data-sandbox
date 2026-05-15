@@ -67,7 +67,10 @@ test.describe('Export popover (PR #6)', () => {
   });
 
   test('Copy button copies the active snippet to the clipboard', async ({ page, browser }, testInfo) => {
-    test.skip(testInfo.project.name === 'webkit-desktop', 'WebKit clipboard read needs explicit user-gesture permission in test mode.');
+    // PR-14 — clipboard read in test mode requires permissions that not
+    // every Playwright project grants. Chromium-family projects support
+    // the permission grant below; WebKit and Firefox reject it.
+    test.skip(!testInfo.project.name.startsWith('chromium-') && !testInfo.project.name.startsWith('mobile-chrome'), 'navigator.clipboard.readText not available in this browser/test mode');
     const ctx = await browser.newContext({ permissions: ['clipboard-read', 'clipboard-write'] });
     const isolatedPage = await ctx.newPage();
     await loadPersona(isolatedPage);
@@ -82,6 +85,9 @@ test.describe('Export popover (PR #6)', () => {
   test('keyboard focus enters the popover and Tab moves between tabs', async ({ page }) => {
     await loadPersona(page);
     await page.keyboard.press('ControlOrMeta+E');
+    // PR-12 made the popover open() async (dynamic import). Wait for
+    // the overlay to land before reading document.activeElement.
+    await expect(page.locator('.export-overlay')).toBeVisible();
     // The popover focuses the active tab button on open.
     const focusedLabel = await page.evaluate(() => document.activeElement?.textContent ?? '');
     expect(focusedLabel).toContain('Permalink');

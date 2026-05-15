@@ -5,6 +5,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follo
 
 ## [Unreleased]
 
+### Fixed — v1 refinements (PR-14): revert tour lazy-load, fix e2e flakes, lazy-load find-box
+
+PR-13's lazy-load of `ui/tour.js` backfired — the dynamic import fires at init's tail on cold landing (inside the TBT measurement window), and the Lighthouse perf median dropped from 0.69 → 0.57. This commit reverts that change and replaces it with a safer cut.
+
+- **Revert tour lazy-load.** `createTour` is statically imported again; `<link rel="modulepreload" href="ui/tour.js">` restored. Modulepreload is the right shape for a module invoked inside the cold-load window.
+- **Lazy-load `ui/find-box.js`** instead. Find box opens only on ⌘K / Find-button click — both are user-triggered gestures outside the perf-measurement window, same as Export popover (which lazy-loaded cleanly in PR-12). The `openFind` / `closeFind` API is preserved via a small thunk wrapper.
+- **Export popover focus test** (`tests/e2e/export-popover.spec.mjs`): added `await expect(.export-overlay).toBeVisible()` before reading `document.activeElement`. The popover's `open()` is async since PR-12 (dynamic import); without the wait the test reads focus before the active tab is mounted.
+- **Export popover clipboard test**: extended the skip from `webkit-desktop` only to all non-Chromium-family projects (Firefox, WebKit, mobile-webkit). `navigator.clipboard.readText` is gated behind permissions only Chromium honours under Playwright test mode.
+- **Tour-autolaunch "refresh re-arms"** should pass after the tour static-import revert above — the failure mode was the dynamic-import latency racing the 5 s `toBeVisible` timeout on the second cold landing.
+- **`src/styles.css`**: dropped `outline: none` from `.pane-collapse:focus-visible` and `.pane-rail:focus-visible` so the default browser focus ring stays visible alongside the bg/color treatment (a11y).
+
 ### Fixed — v1 refinements (PR-13): Greptile review + axe-core + e2e + Lighthouse pass 2
 
 Addresses the four Greptile findings on PR #50 plus CI-discovered regressions:

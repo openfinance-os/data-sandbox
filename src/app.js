@@ -19,14 +19,18 @@ import { decodeFromUrl, encodeEmbed, encodeFixtureUrl, encodePermalink, CUSTOM_P
 import { expandRecipe } from './persona-builder/expand.js';
 import { decodeRecipe, encodeRecipe, RECIPE_DEFAULTS } from './persona-builder/recipe.js';
 import { mountPersonaBuilder } from './ui/persona-builder-ui.js';
-import { createFindBox } from './ui/find-box.js';
-// PR-13 perf — tour module is dynamic-imported on first auto-launch
-// trigger (cold landing) or Tour-button click. Off the cold-load
-// critical path; the tour appears a tick after init() resolves which
-// is identical to user-visible behaviour.
+// PR-14 perf — find-box module is dynamic-imported on first ⌘K /
+// button click. Like Export popover, the entry point is user-triggered
+// outside the cold-load measurement window, so the dynamic-import
+// latency is invisible.
+import { createTour } from './ui/tour.js';
 // PR-12 perf — export popover is dynamic-imported on first ⌘E / button
 // click so it stays off the cold-load critical path (EXP-24 Lighthouse
 // budget). The factory itself isn't invoked until a user interaction.
+// PR-14 — tour module was lazy-loaded in PR-13 (chasing 0.01 of perf
+// budget) but it backfired: the dynamic import fires at init's tail
+// on cold landing, inside the TBT measurement window, dropping the
+// median to 0.57. Static import + modulepreload is the right shape.
 import { createCompareView } from './ui/compare-view.js';
 import { createTxFilter } from './ui/tx-filter.js';
 import { createMonthlySummary } from './ui/monthly-summary.js';
@@ -160,32 +164,37 @@ const { attachHoverPreview } = createHoverPreview({
 const { copyEmbedSnippet, buildEmbedSnippet } = createEmbedSnippet({
   state, OVERVIEW_PSEUDO, UNDERWRITING_PSEUDO,
 });
-const { openFind, closeFind } = createFindBox({
-  state, el, humanArchetype, rebuildAndRender, clearTxState,
-  renderNavigator, renderPayload, openFieldCard,
-});
-// PR-13 perf — tour module is dynamic-imported on first invocation
-// (cold-landing auto-launch or button click). The wrapper exposes the
-// same startTour() shape so existing call sites don't change.
-const startTour = (() => {
+// PR-14 perf — find-box lazy wrapper. Dynamic-import on first
+// invocation; reuse the resolved instance thereafter. Keeps the
+// ~200-line find-box module off the cold-load JS payload.
+const findBox = (() => {
   let inner = null;
   let loading = null;
   async function ensure() {
     if (inner) return inner;
     if (!loading) {
-      loading = import('./ui/tour.js').then(({ createTour }) => {
-        inner = createTour({
-          state, el, setPersona, emptyTxFilter,
-          renderNavigator, renderPayload, renderCoverage,
-          onClose: () => demoteTourButton(),
-        }).startTour;
+      loading = import('./ui/find-box.js').then(({ createFindBox }) => {
+        inner = createFindBox({
+          state, el, humanArchetype, rebuildAndRender, clearTxState,
+          renderNavigator, renderPayload, openFieldCard,
+        });
         return inner;
       });
     }
     return loading;
   }
-  return async () => { (await ensure())(); };
+  return {
+    async open() { (await ensure()).openFind(); },
+    close() { inner?.closeFind(); },
+  };
 })();
+const openFind = () => findBox.open();
+const closeFind = () => findBox.close();
+const { startTour } = createTour({
+  state, el, setPersona, emptyTxFilter,
+  renderNavigator, renderPayload, renderCoverage,
+  onClose: () => demoteTourButton(),
+});
 
 // Demote the prominent "Tour" button to a small ⓘ icon once the user has
 // seen the walkthrough (finish/skip/click-outside all route through
