@@ -30,6 +30,7 @@
 <link rel="modulepreload" href="shared/spec-helpers.js" />
 <link rel="modulepreload" href="shared/watermark.js" />
 <link rel="modulepreload" href="ui/export.js" />
+<link rel="modulepreload" href="ui/info-popover.js" />
 <link rel="preload" href="../dist/SPEC.json" as="fetch" crossorigin="anonymous" />
 <link rel="preload" href="../dist/data.json" as="fetch" crossorigin="anonymous" />
 <link rel="preload" href="../dist/domains.json" as="fetch" crossorigin="anonymous" />
@@ -55,7 +56,7 @@
       </label>
       <div class="control-group lfi-control">
         <span class="control-label">LFI profile</span>
-        <button type="button" class="info-trigger" popovertarget="lfi-help" aria-label="What is an LFI profile?">ⓘ</button>
+        <button type="button" class="info-trigger" popovertarget="lfi-help" aria-expanded="false" aria-label="What is an LFI profile?">ⓘ</button>
         <div class="lfi-seg" id="lfi-seg" role="radiogroup" aria-label="LFI populate-rate profile">
           <button type="button" role="radio" data-lfi="rich"   aria-checked="false" title="Best case. Every populate-band optional field set. Probe what mature LFIs make available.">Rich</button>
           <button type="button" role="radio" data-lfi="median" aria-checked="true"  title="v1 calibration — Universal=1.0, Common=0.7, Variable=0.4, Rare=0.1. The Commons-curated ecosystem-wide assumption.">Median</button>
@@ -85,7 +86,7 @@
           <span class="control-label">Seed</span>
           <input id="seed-input" type="number" value="4729" min="0" step="1" aria-label="Seed (reshuffles deterministic RNG; structure stays, details re-roll)" />
         </label>
-        <button type="button" class="info-trigger" popovertarget="seed-help" aria-label="What does Seed do?">ⓘ</button>
+        <button type="button" class="info-trigger" popovertarget="seed-help" aria-expanded="false" aria-label="What does Seed do?">ⓘ</button>
         <button type="button" id="seed-reset" class="seed-reset" title="Reset to the persona's default seed.">Reset</button>
         <div id="seed-help" popover="auto" class="info-popover" role="note">
           <h3 class="info-popover-title">Seed</h3>
@@ -97,7 +98,7 @@
     <div class="controls-runstate" aria-label="Run state">
       <select class="domain-chip" id="domain-chip" hidden aria-label="Open Finance domain"></select>
       <span class="version-pin" id="version-pin" title="Pinned spec SHA — hover for retrieval date"></span>
-      <button type="button" class="info-trigger" popovertarget="spec-help" aria-label="What is the pinned spec SHA?">ⓘ</button>
+      <button type="button" class="info-trigger" popovertarget="spec-help" aria-expanded="false" aria-label="What is the pinned spec SHA?">ⓘ</button>
       <button class="topbar-btn" id="find-btn" title="Search fields, enums, and persona narratives (⌘K)" aria-label="Open find box">Find</button>
       <button class="topbar-btn" id="tour-btn" title="Walk through Sara's bundle in 5 steps" aria-label="Start guided tour">Tour</button>
       <button class="topbar-btn" id="share-btn" title="Copy permalink to clipboard — the URL bar already reflects the active persona, LFI, and seed (EXP-17)" aria-label="Copy permalink">Share</button>
@@ -255,5 +256,6 @@
 </footer>
 
 <script type="module" src="app.js"></script>
+<script type="module" src="ui/info-popover.js"></script>
 </body>
 </html>

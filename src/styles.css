@@ -2157,9 +2157,11 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
 .info-trigger:focus-visible {
   color: var(--accent);
   background: var(--accent-soft);
-  outline: none;
 }
 .info-popover {
+  position: fixed;
+  margin: 0;
+  inset: auto;
   max-width: 280px;
   padding: 12px 14px;
   border: 1px solid var(--border);
