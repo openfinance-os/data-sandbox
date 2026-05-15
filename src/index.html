@@ -40,22 +40,23 @@
 <script type="module" src="shared/banner.js"></script>
 
 <header class="topbar" role="banner">
-  <div class="topbar-persona is-empty" id="topbar-persona" aria-label="Active persona">
-    <div class="topbar-persona-avatar" id="topbar-persona-avatar" aria-hidden="true"></div>
-    <div class="topbar-persona-meta">
-      <div class="topbar-persona-line">
-        <span class="topbar-persona-name" id="topbar-persona-name"></span>
-        <span class="topbar-attribution">Open Finance Data Sandbox · OF-OS Commons</span>
-      </div>
-      <span class="topbar-persona-tagline" id="topbar-persona-tagline"></span>
-    </div>
-  </div>
   <nav class="controls" aria-label="Persona controls">
+    <!-- PR-11 — the persona dropdown is removed; the persona library on
+         the left pane is the canonical switcher. The persona showcase
+         (avatar + name + tagline + inline OF-OS attribution) now sits
+         inside the bordered .controls-scenario pill alongside LFI,
+         Compare-with, and Seed so the cluster reads as one unit. -->
     <div class="controls-scenario" aria-label="Scenario">
-      <label class="control-group">
-        <span class="control-label">Persona</span>
-        <select id="persona-select" aria-label="Persona"></select>
-      </label>
+      <div class="topbar-persona is-empty" id="topbar-persona" aria-label="Active persona">
+        <div class="topbar-persona-avatar" id="topbar-persona-avatar" aria-hidden="true"></div>
+        <div class="topbar-persona-meta">
+          <div class="topbar-persona-line">
+            <span class="topbar-persona-name" id="topbar-persona-name"></span>
+            <span class="topbar-attribution">Open Finance Data Sandbox · OF-OS Commons</span>
+          </div>
+          <span class="topbar-persona-tagline" id="topbar-persona-tagline"></span>
+        </div>
+      </div>
       <div class="control-group lfi-control">
         <span class="control-label">LFI profile</span>
         <button type="button" class="info-trigger" popovertarget="lfi-help" aria-expanded="false" aria-label="What is an LFI profile?">ⓘ</button>

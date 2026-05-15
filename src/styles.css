@@ -138,13 +138,27 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
    .persona-hero strip and the OF-OS wordmark block: the active persona
    (avatar 36×36 + name + derived tagline) plus a small inline
    attribution sits in the topbar's left edge. */
+/* PR-11 — .topbar-persona now sits inside .controls-scenario as its
+   first child. It claims a fixed share of the bordered pill, with a
+   subtle right-side separator so the persona showcase reads as the
+   left sub-cluster of the larger (persona + LFI + Seed) unit. */
 .topbar-persona {
   display: flex;
   align-items: center;
   gap: 10px;
   min-width: 0;
-  flex: 1 1 320px;
-  max-width: 460px;
+  flex: 0 1 280px;
+  padding-right: 10px;
+  border-right: 1px solid var(--border);
+}
+@media (max-width: 760px) {
+  .topbar-persona {
+    flex: 1 1 100%;
+    padding-right: 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+  }
 }
 .topbar-persona-avatar {
   flex: 0 0 auto;
@@ -206,10 +220,9 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
 }
 @media (max-width: 1099px) {
   .topbar-attribution { display: none; }
-  .topbar-persona { max-width: 320px; }
+  .topbar-persona { flex: 0 1 240px; }
 }
 @media (max-width: 760px) {
-  .topbar-persona { flex: 1 1 100%; max-width: none; }
   .topbar-persona-tagline { white-space: normal; -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; }
 }
 
@@ -243,11 +256,14 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   flex-wrap: wrap;
 }
 .controls-scenario {
-  padding: 2px 8px;
+  padding: 4px 10px;
   background: var(--bg-soft);
   border: 1px solid var(--border);
   border-radius: 4px;
 }
+/* PR-11 — slightly larger gap between sub-clusters (persona | LFI | Seed)
+   so the merged pill reads as three logical groups, not a dense row. */
+.controls-scenario { gap: 10px; }
 .controls-runstate { gap: 6px; }
 
 .control-group {

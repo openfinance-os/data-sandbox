@@ -5,6 +5,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follo
 
 ## [Unreleased]
 
+### Changed — v1 refinements (PR-11): drop persona dropdown, merge persona showcase with LFI/Compare/Seed
+
+- **`<select id="persona-select">` deleted** from `src/index.html`. The persona library on the left pane is the canonical persona switcher (per PRD §6); every card click routes through the same `state.personaId = id; rebuildAndRender()` path the dropdown's change listener used. Reclaims ≈140 px of horizontal topbar space.
+- **`.topbar-persona` moved inside `.controls-scenario`** as its first child. The existing bordered-pill styling now wraps persona showcase + LFI segmented + Compare-with sub-row + Seed lever as one cohesive cluster — reads as "what persona, viewed under what LFI, with what seed?". A subtle right-side `border-right` separator on `.topbar-persona` keeps the three sub-clusters distinct within the pill.
+- **`src/app.js`** — three `#persona-select` references stripped: the populate-loop in `buildPersonaList`, the value sync in `syncControls`, and the `change` listener in `attachEventHandlers`. The persona-card click handler now also calls `emitPersonaLoad()` so the EXP-21 `persona_load` event continues to fire on every persona switch (it previously fired only from the dropdown's change listener; without this, the analytics would have regressed).
+- **`src/styles.css`** — `.topbar-persona` reshaped for the in-pill context (`flex: 0 1 280px`, right-side separator); `.controls-scenario` gap and padding tightened so persona / LFI / Seed sub-clusters read as a unit. 760 px and 1099 px media queries updated to keep the persona block legible on narrow viewports (stacks vertically with a bottom border under 760 px).
+- **`tests/e2e/top-chrome.spec.mjs`** — the persona-switch case now uses a `.persona-card[data-persona-id="hnw_multicurrency"]` click instead of `selectOption('#persona-select', …)`. New "persona dropdown is removed (PR-11)" case locks the deletion in and asserts `#topbar-persona` still renders inside `.controls-scenario`.
+- Touches EXP-21 (persona_load event preserved on the card-click path), EXP-22 (no storage), and EXP-17 (URL state unaffected — persona id still round-trips via the card click → `pushPermalink`).
+
 ### Changed — v1 refinements (PR-10): compressed top chrome
 
 - **Persona Hero strip merged into the topbar.** The standalone `<section class="persona-hero">` (PR #3) is deleted; the active persona's avatar (36×36) + name + derived tagline + a small inline OF-OS attribution now occupy the topbar's left edge as `.topbar-persona`. JTBD chips drop from this slot — the left-pane scenario tabs (`.jtbd-rail`) are the canonical scenario filter surface post-PR #3, so the duplicate hero chips were redundant. `renderPersonaHero` is renamed `renderTopbarPersona` at all 3 call sites; `deriveTagline` and `jtbdFamiliesForPersona` are kept as exports for `buildPersonaList`'s per-card JTBD chips (PR #4).

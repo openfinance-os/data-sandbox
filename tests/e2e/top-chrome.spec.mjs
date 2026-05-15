@@ -24,12 +24,23 @@ test.describe('top chrome compression (PR-10)', () => {
     await expect(page.locator('.persona-hero')).toHaveCount(0);
   });
 
-  test('topbar persona refreshes on persona switch', async ({ page }) => {
+  test('topbar persona refreshes on persona-card click', async ({ page }) => {
     await loadPersona(page, { persona: 'salaried_expat_mid' });
     await expect(page.locator('#topbar-persona-name')).toContainText('Sara');
-    // Pick a different banking persona from the dropdown.
-    await page.selectOption('#persona-select', 'hnw_multicurrency');
+    // PR-11 — the dropdown is gone; persona switching is driven solely by
+    // clicking a card in the left-pane persona library.
+    await page
+      .locator('.persona-card[data-persona-id="hnw_multicurrency"]')
+      .click();
     await expect(page.locator('#topbar-persona-name')).toContainText('Layla');
+  });
+
+  test('persona dropdown is removed (PR-11)', async ({ page }) => {
+    await loadPersona(page);
+    await expect(page.locator('#persona-select')).toHaveCount(0);
+    // The persona showcase still renders inside .controls-scenario so the
+    // merged pill stays intact.
+    await expect(page.locator('.controls-scenario #topbar-persona')).toBeVisible();
   });
 
   test('SYNTHETIC chip opens and closes the disclaimer popover', async ({ page }) => {

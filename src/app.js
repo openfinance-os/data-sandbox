@@ -552,8 +552,6 @@ function personaMatchesActiveFilter(persona) {
 function buildPersonaList() {
   const list = document.getElementById('persona-list');
   list.replaceChildren();
-  const select = document.getElementById('persona-select');
-  select.replaceChildren();
 
   // Render stress-filter bar state.
   const filterBar = document.getElementById('stress-filter-bar');
@@ -679,15 +677,16 @@ function buildPersonaList() {
           state.endpoint = UNDERWRITING_PSEUDO;
           state.selectedAccountId = null;
           rebuildAndRender();
+          // PR-11 — emit EXP-21 persona_load on every card-click activation
+          // (previously this fired from the persona-select change listener;
+          // the dropdown is gone).
+          emitPersonaLoad();
         },
       },
       personaAvatarEl(id, p, 'sm'),
       cardBody,
     );
     list.appendChild(card);
-
-    const opt = el('option', { text: p.name, attrs: { value: id } });
-    select.appendChild(opt);
   }
 
   if (visibleCount === 0) {
@@ -703,9 +702,10 @@ function buildPersonaList() {
 }
 
 function syncControls() {
-  document.getElementById('persona-select').value = state.personaId;
-  // Hidden legacy <select> kept for any URL-encoded form handlers and as a
-  // single readable accessor; the visible control is the segmented buttons.
+  // PR-11 — the visible persona dropdown is gone; persona switching is
+  // driven by the left-pane persona library only. Hidden legacy LFI
+  // <select> is kept for any URL-encoded form handlers and as a single
+  // readable accessor; the visible control is the segmented buttons.
   const legacy = document.getElementById('lfi-select');
   if (legacy) legacy.value = state.lfi;
   for (const btn of document.querySelectorAll('#lfi-seg button[data-lfi]')) {
@@ -809,15 +809,10 @@ function wirePaneCollapse() {
 }
 
 function attachEventHandlers() {
-  document.getElementById('persona-select').addEventListener('change', (e) => {
-    state.personaId = e.target.value;
-    // PR #5 — Underwriting Summary is the default landing endpoint for
-    // banking persona switches.
-    state.endpoint = UNDERWRITING_PSEUDO;
-    state.selectedAccountId = null;
-    rebuildAndRender();
-    emitPersonaLoad();
-  });
+  // PR-11 — the persona dropdown change handler is removed. Persona
+  // switching now flows exclusively through .persona-card clicks in
+  // buildPersonaList (same setPersona / rebuildAndRender path,
+  // emitPersonaLoad still fires from rebuildAndRender's chain).
   // LFI segmented control — replaces the v1 dropdown with a visible lever.
   for (const btn of document.querySelectorAll('#lfi-seg button[data-lfi]')) {
     btn.addEventListener('click', () => {
