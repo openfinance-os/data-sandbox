@@ -5,6 +5,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follo
 
 ## [Unreleased]
 
+### Changed — v1 refinements (PR #8): endpoint navigator polish
+
+- **Per-account endpoint group is now a collapsible `<details>`** with the account header as the toggle `<summary>`. Open by default; the account that owns the currently-selected endpoint stays open regardless of any prior toggle. Frees vertical space for multi-account personas (HNW, multi-currency) without re-introducing a hide/show button.
+- **Per-resource icon prefix** on every per-account endpoint button (`.nav-endpoint-icon`): ☰ (account root) · ⚖ (balances) · ⇄ (transactions) · ↻ (standing-orders) · ⇊ (direct-debits) · ⌂ (beneficiaries) · ⏱ (scheduled-payments) · ⚑ (parties) · ◑ (product) · ▤ (statements). Icons are `aria-hidden="true"` and decorative — the label text remains the screen-reader source of truth.
+- **Submeter % converted to a tooltip.** The visible "50%" badge next to the sub-meter bar is removed; the bar itself remains as the at-a-glance affordance, and the tooltip + `aria-label` now surface "Optional-field coverage: X of Y populated (Z%)" so the underlying populated/total ratio is one keyboard-focusable hover away.
+- **Active row affordance.** The active endpoint button now carries a 3 px left accent bar (`border-left-color: var(--accent)`) plus `font-weight: 700` and an `--accent-soft` background. Inactive rows reserve the 3 px transparent border so the layout never shifts when activation switches.
+- **`:focus-visible` outlines** on `.nav-endpoint` and the new `<summary>.nav-account-header` so keyboard users get the same affordance for the new toggle that mouse users get for the chevron.
+- **`src/app.js`** — `ENDPOINT_ICONS` map + new render shape; navButton drops the visible `.nav-submeter-pct` span; per-account section is `<details>` with summary header and `open` default keyed on owning account.
+- **`src/styles.css`** — `.nav-endpoint-icon`, `details.nav-account > summary.nav-account-header` (with rotating ▸/▾ marker), updated `.nav-endpoint.active` (left bar + bold + soft accent background), `:focus-visible` rules.
+- **`src/_stories/index.html`** — new EndpointTree story with a mocked Bundle + CurrentAccount tree showing all 10 icons, varied submeter coverage bands, and the active-row treatment.
+
 ### Added — v1 refinements (PR #7): Compare mode v2 (N/A banner on pseudo-endpoints)
 
 - **Inline `.compare-na-banner`** rendered on the Underwriting Summary and Persona Overview pseudo-endpoints when Compare-with is on: "Comparison applies to field-level endpoints (e.g. /transactions, /accounts/{AccountId}/balances). <View> is a derived view — the populate-rate diff has no analogue here." The existing pseudo-panel still renders below the banner so the user keeps the underwriting / overview view they navigated to.

@@ -102,6 +102,19 @@
     </div>
   </section>
 
+  <section class="story" id="story-endpoint-tree">
+    <header class="story-head">
+      <span>EndpointTree (PR #8)</span>
+      <span class="story-meta">src/app.js · renderNavigator / navButton · #nav-tree</span>
+    </header>
+    <div class="story-body">
+      <div class="story-stage with-pad" id="stage-endpoint-tree" style="background:var(--bg-card); border-radius:4px; padding:8px 0;"></div>
+    </div>
+    <div class="story-controls">
+      <span style="color: var(--text-muted); font-size: 11px;">Collapsible per-account group, per-resource icons, submeter (tooltip only), left accent bar on the active row.</span>
+    </div>
+  </section>
+
   <section class="story" id="story-compare-split-pane">
     <header class="story-head">
       <span>CompareSplitPane (PR #7)</span>
@@ -297,6 +310,61 @@
     stage.appendChild(wrap);
   }
   renderCompareSwatches(document.getElementById('stage-compare-swatches'));
+
+  // Endpoint tree — static demo of the bundle + per-account structure.
+  function renderEndpointTreeDemo(stage) {
+    stage.replaceChildren();
+    const tree = el('div', { class: 'nav-tree', attrs: { style: 'padding: 8px 12px;' } });
+
+    const bundleSection = el('div', { class: 'nav-account is-bundle' });
+    bundleSection.appendChild(el('div', { class: 'nav-account-header', text: 'Bundle' }));
+    const bundleEndpoints = [
+      { ep: '/(overview)',          label: '◇ Persona overview',     icon: null },
+      { ep: '/accounts',            label: '/accounts',               icon: null },
+      { ep: '/parties',             label: '/parties',                icon: null },
+      { ep: '/(underwriting)',      label: '◇ Underwriting summary', icon: null, active: true },
+    ];
+    for (const b of bundleEndpoints) {
+      const btn = el('button', { class: `nav-endpoint${b.active ? ' active' : ''}${b.label.startsWith('◇') ? ' nav-virtual' : ''}` });
+      btn.appendChild(el('span', { class: 'nav-endpoint-label', text: b.label }));
+      bundleSection.appendChild(btn);
+    }
+    tree.appendChild(bundleSection);
+
+    const accDetails = el('details', { class: 'nav-account', attrs: { open: 'open' } });
+    accDetails.appendChild(el('summary', { class: 'nav-account-header', text: 'CurrentAccount · AE0212345678…' }));
+    const accountEndpoints = [
+      { ep: '/accounts/{AccountId}',                    icon: '☰' },
+      { ep: '/accounts/{AccountId}/balances',           icon: '⚖', pct: 67 },
+      { ep: '/accounts/{AccountId}/transactions',       icon: '⇄', pct: 82 },
+      { ep: '/accounts/{AccountId}/standing-orders',    icon: '↻', pct: 55 },
+      { ep: '/accounts/{AccountId}/direct-debits',      icon: '⇊', pct: 48 },
+      { ep: '/accounts/{AccountId}/beneficiaries',      icon: '⌂', pct: 40 },
+      { ep: '/accounts/{AccountId}/scheduled-payments', icon: '⏱', pct: 22 },
+      { ep: '/accounts/{AccountId}/parties',            icon: '⚑', pct: 60 },
+      { ep: '/accounts/{AccountId}/product',            icon: '◑', pct: 35 },
+      { ep: '/accounts/{AccountId}/statements',         icon: '▤', pct: 18 },
+    ];
+    for (const e of accountEndpoints) {
+      const btn = el('button', { class: 'nav-endpoint' });
+      btn.appendChild(el('span', { class: 'nav-endpoint-icon', text: e.icon, attrs: { 'aria-hidden': 'true' } }));
+      btn.appendChild(el('span', { class: 'nav-endpoint-label', text: e.ep }));
+      if (e.pct != null) {
+        const band = e.pct < 25 ? 'low' : e.pct < 66 ? 'medium' : 'high';
+        btn.dataset.coverageBand = band;
+        const tooltip = `Optional-field coverage: ${e.pct}% (mocked).`;
+        const meter = el('span', { class: 'nav-submeter', attrs: { title: tooltip, 'aria-label': tooltip } });
+        const fill = el('span', { class: 'nav-submeter-fill' });
+        fill.style.width = `${e.pct}%`;
+        meter.appendChild(fill);
+        btn.appendChild(meter);
+      }
+      accDetails.appendChild(btn);
+    }
+    tree.appendChild(accDetails);
+    stage.appendChild(tree);
+  }
+  renderEndpointTreeDemo(document.getElementById('stage-endpoint-tree'));
 </script>
 </body>
 </html>

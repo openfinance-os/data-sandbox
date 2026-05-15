@@ -1302,11 +1302,29 @@ function renderCoverage() {
   }
 }
 
+// PR #8 — per-resource icons on per-account endpoints. Decorative-only;
+// the readable label stays the source of truth and screen readers see
+// the label text (icons are aria-hidden).
+const ENDPOINT_ICONS = Object.freeze({
+  '/accounts/{AccountId}':                    '☰',
+  '/accounts/{AccountId}/balances':           '⚖',
+  '/accounts/{AccountId}/transactions':       '⇄',
+  '/accounts/{AccountId}/standing-orders':    '↻',
+  '/accounts/{AccountId}/direct-debits':      '⇊',
+  '/accounts/{AccountId}/beneficiaries':      '⌂',
+  '/accounts/{AccountId}/scheduled-payments': '⏱',
+  '/accounts/{AccountId}/parties':            '⚑',
+  '/accounts/{AccountId}/product':            '◑',
+  '/accounts/{AccountId}/statements':         '▤',
+});
+
 function renderNavigator() {
   const nav = document.getElementById('nav-tree');
   nav.replaceChildren();
 
   // Bundle-scoped endpoints get their own header section at the top.
+  // Stays a plain <div> — not collapsible since the bundle section is the
+  // user's entry point to derived views (overview / underwriting).
   const bundleSection = el('div', { class: 'nav-account is-bundle' });
   bundleSection.appendChild(el('div', { class: 'nav-account-header', text: 'Bundle' }));
   for (const ep of BUNDLE_SCOPED_PATHS) {
@@ -1329,15 +1347,23 @@ function renderNavigator() {
   }
   nav.appendChild(bundleSection);
 
-  // One section per account, listing the per-account endpoints.
+  // PR #8 — per-account endpoint group is now a collapsible <details>
+  // element. Open by default; the user can collapse to free vertical
+  // space when many accounts are present (HNW / multi-currency personas).
+  // The account that owns the currently-selected endpoint stays open
+  // regardless of any prior toggle state in the same session.
   for (const acc of state.bundle.accounts) {
-    const wrap = el('div', { class: 'nav-account' });
-    wrap.appendChild(
-      el('div', {
-        class: 'nav-account-header',
-        text: `${acc.AccountSubType} · ${acc.AccountIdentifiers?.[0]?.Identification?.slice(0, 12) ?? acc.AccountId}…`,
-      })
-    );
+    const isOwning = state.selectedAccountId === acc.AccountId;
+    const wrap = el('details', {
+      class: 'nav-account',
+      attrs: { 'data-account-id': acc.AccountId, open: 'open' },
+    });
+    if (isOwning) wrap.setAttribute('open', 'open');
+    const summary = el('summary', {
+      class: 'nav-account-header',
+      text: `${acc.AccountSubType} · ${acc.AccountIdentifiers?.[0]?.Identification?.slice(0, 12) ?? acc.AccountId}…`,
+    });
+    wrap.appendChild(summary);
     for (const ep of ACCOUNT_SCOPED_PATHS) {
       const isActive = state.endpoint === ep && state.selectedAccountId === acc.AccountId;
       wrap.appendChild(
@@ -1363,6 +1389,9 @@ function renderNavigator() {
 // Build a navigator button with an inline coverage sub-meter (EXP-15 second
 // half). For bundle-scoped endpoints the sub-meter is omitted; for per-account
 // endpoints it shows the populate-rate of optional fields under that scope.
+// PR #8 — the visible numeric "50%" badge is replaced by a tooltip that
+// surfaces the underlying populated/total ratio; the bar itself stays as
+// the at-a-glance affordance.
 function navButton({ endpoint, accountId, active, onSelect }) {
   const isVirtual = endpoint === UNDERWRITING_PSEUDO || endpoint === OVERVIEW_PSEUDO;
   const btn = el('button', {
@@ -1371,6 +1400,12 @@ function navButton({ endpoint, accountId, active, onSelect }) {
     dataset: { endpoint, accountId: accountId ?? '' },
     onClick: onSelect,
   });
+  // Per-resource icon prefix (PR #8). Decorative — aria-hidden so screen
+  // readers fall through to the label.
+  const icon = ENDPOINT_ICONS[endpoint];
+  if (icon) {
+    btn.appendChild(el('span', { class: 'nav-endpoint-icon', text: icon, attrs: { 'aria-hidden': 'true' } }));
+  }
   // Pseudo-endpoints (overview, underwriting summary) get friendlier labels
   // so they read clearly as derived views rather than spec wire endpoints.
   let label = endpoint;
@@ -1384,12 +1419,15 @@ function navButton({ endpoint, accountId, active, onSelect }) {
       // so a 30% sub-meter reads as warmer than a 90% one.
       const band = cov.pct < 25 ? 'low' : cov.pct < 66 ? 'medium' : 'high';
       btn.dataset.coverageBand = band;
-      const meter = el('span', { class: 'nav-submeter', attrs: { 'aria-label': `Coverage ${cov.pct}%` } });
+      const tooltip = `Optional-field coverage: ${cov.populated} of ${cov.total} populated (${cov.pct}%).`;
+      const meter = el('span', {
+        class: 'nav-submeter',
+        attrs: { 'aria-label': tooltip, title: tooltip },
+      });
       const fill = el('span', { class: 'nav-submeter-fill' });
       fill.style.width = `${cov.pct}%`;
       meter.appendChild(fill);
       btn.appendChild(meter);
-      btn.appendChild(el('span', { class: 'nav-submeter-pct', text: `${cov.pct}%` }));
     }
   }
   return btn;

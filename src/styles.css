@@ -1276,9 +1276,54 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   text-align: left;
   width: 100%;
   font-family: inherit;
+  /* Reserve room for the left accent bar so the active row doesn't shift. */
+  border-left: 3px solid transparent;
 }
 .nav-endpoint:hover { color: var(--accent); }
-.nav-endpoint.active { color: var(--accent); font-weight: 600; }
+/* PR #8 — active row is bold and carries a left accent bar. */
+.nav-endpoint.active {
+  color: var(--accent);
+  font-weight: 700;
+  border-left-color: var(--accent);
+  background: var(--accent-soft);
+}
+.nav-endpoint:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+/* Per-resource icon — decorative prefix, narrow column, monospace
+   so the labels align. */
+.nav-endpoint-icon {
+  flex: 0 0 14px;
+  display: inline-block;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--text-muted);
+}
+.nav-endpoint.active .nav-endpoint-icon { color: var(--accent); }
+/* PR #8 — collapsible per-account group. Summary acts as the toggle. */
+details.nav-account > summary.nav-account-header {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+}
+details.nav-account > summary.nav-account-header::-webkit-details-marker { display: none; }
+details.nav-account > summary.nav-account-header::before {
+  content: '▸';
+  display: inline-block;
+  font-size: 9px;
+  margin-right: 4px;
+  color: var(--text-muted);
+  transition: transform 120ms ease;
+}
+details.nav-account[open] > summary.nav-account-header::before { content: '▾'; }
+details.nav-account > summary.nav-account-header:hover { color: var(--text); }
+details.nav-account > summary.nav-account-header:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
 
 .nav-endpoint-label { flex: 1 1 auto; font-size: 12px; }
 
