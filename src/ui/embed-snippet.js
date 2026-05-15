@@ -9,7 +9,9 @@ import { copyToClipboard } from './clipboard.js';
 export function createEmbedSnippet(deps) {
   const { state, OVERVIEW_PSEUDO, UNDERWRITING_PSEUDO } = deps;
 
-  function copyEmbedSnippet() {
+  // Pure snippet builder — used by both the legacy clipboard helper and
+  // the unified export popover (PR #6).
+  function buildEmbedSnippet() {
     const slugBase = window.location.origin + window.location.pathname.replace(/\/index\.html$/, '');
     const url = slugBase.replace(/\/$/, '') + encodeEmbed({
       personaId: state.personaId,
@@ -20,9 +22,11 @@ export function createEmbedSnippet(deps) {
       seed: state.seed,
       height: 600,
     }).replace(/^\/embed/, '/embed.html');
-    const snippet = `<iframe src="${url}" width="100%" height="600" loading="lazy" title="Open Finance Data Sandbox · ${state.personaId} · ${state.lfi}" referrerpolicy="no-referrer" style="border:1px solid #d9d5cb;border-radius:4px"></iframe>`;
-    copyToClipboard(snippet, 'Embed snippet copied. Paste into your slide deck or article.');
+    return `<iframe src="${url}" width="100%" height="600" loading="lazy" title="Open Finance Data Sandbox · ${state.personaId} · ${state.lfi}" referrerpolicy="no-referrer" style="border:1px solid #d9d5cb;border-radius:4px"></iframe>`;
+  }
+  function copyEmbedSnippet() {
+    copyToClipboard(buildEmbedSnippet(), 'Embed snippet copied. Paste into your slide deck or article.');
   }
 
-  return { copyEmbedSnippet };
+  return { copyEmbedSnippet, buildEmbedSnippet };
 }

@@ -5,6 +5,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follo
 
 ## [Unreleased]
 
+### Changed — v1 refinements (PR #6): unified Export popover
+
+- **One Export ▾ button** in the payload toolbar replaces the four-button JSON / CSV / Tarball / Embed row and the toolbar Share button. Opens a tabbed popover with nine tabs: **Permalink · Embed iframe · JSON · CSV · Tarball · npm · Python · curl · MCP**. Each tab renders an actual code/URL snippet with a Copy button. JSON and CSV tabs additionally offer a "Download .json" / "Download .csv" secondary action — the existing download paths preserved.
+- **Keyboard contract.** ⌘E / Ctrl+E opens the popover; Esc closes; tab buttons are reachable via Tab and Shift+Tab; Copy button is the next focusable element after the active tab. Coexists with ⌘K / Ctrl+K (Find) and the Esc cascade (popover → find box → no-op).
+- **Analytics allowlist preserved.** Permalink copies emit `track('share', { kind: 'permalink' })`, Embed copies emit `track('share', { kind: 'embed' })`, everything else emits `track('export', { format: '<tabKey>' })`. No new event names or property keys — `tests/analytics-allowlist.test.mjs` still passes.
+- **`src/ui/export-popover.js`** (new) — `createExportPopover` factory with closure deps over `state`, copy + download helpers, and lazy snippet builders. Snippet text is recomputed each tab switch so it always reflects live state.
+- **`src/ui/embed-snippet.js`** — extracted `buildEmbedSnippet()` (pure) from `copyEmbedSnippet()` so both the legacy clipboard path and the popover can share the same iframe-snippet logic.
+- **`src/app.js`** — `buildActiveCsvString()` extracted from `exportActiveCsv()` for snippet display; new `RESOURCE_FOR_ENDPOINT` constant shared by both. ⌘E keyboard binding added next to the existing ⌘K binding. Removed the five individual button click handlers (`export-json`, `export-csv`, `export-tar`, `export-embed`, `share-btn`).
+- **`src/index.html`** — replaced the five buttons with one `#export-toggle`. Tour and Find buttons remain.
+- **`src/styles.css`** — `.export-overlay` / `.export-card` / `.export-tabs` / `.export-tab` / `.export-pre` / `.export-copy-btn` block, with `:focus-visible` outlines on every interactive element.
+- **`src/_stories/index.html`** — new story for ExportPopover with a button that opens the popover against mock state, including the 4 new tab targets (npm / Python / curl / MCP).
+- **`tests/e2e/export-popover.spec.mjs`** (new) — 7 cases: Cmd+E opens / Esc closes, 9 tabs render with the spec'd labels, tab swap updates the snippet text (npm / Python / curl / MCP), Tarball shows Download action instead of `<pre>`, Copy button writes the active snippet to clipboard, focus enters the popover on open, Share button has been removed in favour of Export ▾.
+
 ### Changed — v1 refinements (PR #5): Underwriting Summary default + source-field deep-pin
 
 - **Underwriting Summary is now the default endpoint for banking bundles.** The four sites where banking flow defaulted to `OVERVIEW_PSEUDO` — initial state literal, persona-select change handler, persona-card click, custom-persona apply — now all default to `UNDERWRITING_PSEUDO`. Insurance flow is unaffected (it has its own per-domain default endpoint resolved in `rebuildAndRender`). URL-pinned endpoints (EXP-17) still override the default in `init()`.

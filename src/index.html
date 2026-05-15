@@ -101,7 +101,6 @@
       <button type="button" class="info-trigger" popovertarget="spec-help" aria-expanded="false" aria-label="What is the pinned spec SHA?">ⓘ</button>
       <button class="topbar-btn" id="find-btn" title="Search fields, enums, and persona narratives (⌘K)" aria-label="Open find box">Find</button>
       <button class="topbar-btn" id="tour-btn" title="Walk through Sara's bundle in 5 steps" aria-label="Start guided tour">Tour</button>
-      <button class="topbar-btn" id="share-btn" title="Copy permalink to clipboard — the URL bar already reflects the active persona, LFI, and seed (EXP-17)" aria-label="Copy permalink">Share</button>
       <details class="topbar-menu" id="topbar-more">
         <summary class="topbar-btn" aria-label="More" title="More — Integrate, About">More</summary>
         <div class="topbar-menu-content" role="menu">
@@ -198,12 +197,7 @@
             <input type="checkbox" id="toggle-pii-only" />
             PII only
           </label>
-          <div class="export-group" aria-label="Export the active bundle">
-            <button class="toggle export-btn" id="export-json" title="Download active endpoint as v2.1-shaped JSON">JSON</button>
-            <button class="toggle export-btn" id="export-csv" title="Download active resource as flat CSV">CSV</button>
-            <button class="toggle export-btn" id="export-tar" title="Download all endpoints + CSVs as a single tarball">Tarball</button>
-            <button class="toggle export-btn" id="export-embed" title="Copy an iframe snippet pinned to the current persona+LFI+endpoint+seed — drop into a slide deck, blog post, or LMS module (EXP-27).">Embed</button>
-          </div>
+          <button class="toggle export-btn" id="export-toggle" type="button" aria-haspopup="dialog" aria-label="Open export popover (⌘E)" title="Export the active bundle — Permalink · Embed iframe · JSON · CSV · Tarball · npm · Python · curl · MCP. (⌘E)">Export ▾</button>
         </div>
       </div>
       <div class="payload-body" id="payload-body" tabindex="0"></div>

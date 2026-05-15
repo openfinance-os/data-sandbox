@@ -101,11 +101,26 @@
       </select>
     </div>
   </section>
+
+  <section class="story" id="story-export-popover">
+    <header class="story-head">
+      <span>ExportPopover (PR #6)</span>
+      <span class="story-meta">src/ui/export-popover.js · createExportPopover · 9 tabs</span>
+    </header>
+    <div class="story-body">
+      <div class="story-stage with-pad" id="stage-export-popover"></div>
+    </div>
+    <div class="story-controls">
+      <button id="story-export-open" type="button">Open Export popover</button>
+      <span style="color: var(--text-muted); font-size: 11px;">Tabs render with mock state. ⌘E shortcut isn't wired in the story.</span>
+    </div>
+  </section>
 </div>
 
 <script type="module">
   import { getJtbdPresets } from '../app/constants.js';
   import { svgFromString } from '../app/utils.js';
+  import { createExportPopover } from '../ui/export-popover.js';
 
   const dataRes = await fetch('../../dist/data.json');
   const data = await dataRes.json();
@@ -209,6 +224,31 @@
   const tabsStage = document.getElementById('stage-scenario-tabs');
   tabsSelect.addEventListener('change', () => renderTabs(tabsStage, tabsSelect.value));
   renderTabs(tabsStage, 'banking');
+
+  // Export popover — instantiates with mock state. Story doesn't wire Cmd+E.
+  const mockState = {
+    personaId: 'salaried_expat_mid',
+    lfi: 'median',
+    seed: 4729,
+    endpoint: '/accounts/{AccountId}/transactions',
+    bundle: { accounts: [{ AccountId: 'ACC-DEMO-001' }] },
+  };
+  function mockCopyToClipboard(text, msg) {
+    navigator.clipboard?.writeText?.(text).catch(() => {});
+    console.log('[story] copyToClipboard:', msg);
+  }
+  function mockTrack() { /* no-op in stories */ }
+  const exportPopover = createExportPopover({
+    state: mockState, el, track: mockTrack, copyToClipboard: mockCopyToClipboard,
+    exportActiveJson: () => console.log('[story] exportActiveJson()'),
+    exportActiveCsv: () => console.log('[story] exportActiveCsv()'),
+    exportTarball: () => console.log('[story] exportTarball()'),
+    embedIframeSnippet: () => `<iframe src="https://example.com/embed?persona=${mockState.personaId}" width="100%" height="600"></iframe>`,
+    activeFixtureUrl: () => `https://example.com/fixtures/v1/bundles/${mockState.personaId}/${mockState.lfi}/seed-${mockState.seed}/accounts.json`,
+    activeJsonString: () => JSON.stringify({ Data: { Account: [] }, Links: { Self: '...' }, Meta: { TotalPages: 1 } }, null, 2),
+    activeCsvString: () => 'AccountId,Currency,Type\nACC-DEMO-001,AED,CurrentAccount',
+  });
+  document.getElementById('story-export-open').addEventListener('click', () => exportPopover.open());
 </script>
 </body>
 </html>

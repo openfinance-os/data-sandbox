@@ -21,6 +21,7 @@ import { decodeRecipe, encodeRecipe, RECIPE_DEFAULTS } from './persona-builder/r
 import { mountPersonaBuilder } from './ui/persona-builder-ui.js';
 import { createFindBox } from './ui/find-box.js';
 import { createTour } from './ui/tour.js';
+import { createExportPopover } from './ui/export-popover.js';
 import { createCompareView } from './ui/compare-view.js';
 import { createTxFilter } from './ui/tx-filter.js';
 import { createMonthlySummary } from './ui/monthly-summary.js';
@@ -146,7 +147,7 @@ const { openFieldCard } = createFieldCard({
 const { attachHoverPreview } = createHoverPreview({
   state, el, endpointFieldsByName,
 });
-const { copyEmbedSnippet } = createEmbedSnippet({
+const { copyEmbedSnippet, buildEmbedSnippet } = createEmbedSnippet({
   state, OVERVIEW_PSEUDO, UNDERWRITING_PSEUDO,
 });
 const { openFind, closeFind } = createFindBox({
@@ -184,6 +185,37 @@ const { renderInsuranceBundle } = createInsurance({
 const { renderUnderwritingStrip, renderUnderwritingPanel } = createUnderwriting({
   state, el, formatAmount, renderNavigator, renderPayload, UNDERWRITING_PSEUDO,
   openFieldCard,
+});
+
+// PR #6 — Export popover. The closures below pull snippet strings on
+// demand at popover-render time so they always reflect the live state.
+const exportPopover = createExportPopover({
+  state, el, track, copyToClipboard,
+  exportActiveJson:    () => exportActiveJson(),
+  exportActiveCsv:     () => exportActiveCsv(),
+  exportTarball:       () => exportTarball(),
+  embedIframeSnippet:  () => buildEmbedSnippet(),
+  activeFixtureUrl:    () => {
+    const origin = window.location.origin + window.location.pathname.replace(/\/index\.html$/, '').replace(/\/$/, '');
+    return encodeFixtureUrl({
+      origin, personaId: state.personaId, lfi: state.lfi, seed: state.seed,
+      endpoint: state.endpoint === OVERVIEW_PSEUDO || state.endpoint === UNDERWRITING_PSEUDO
+        ? '/accounts'
+        : state.endpoint,
+    });
+  },
+  activeJsonString: () => {
+    if (!state.bundle) return '';
+    const ctx = exportContext();
+    const envelopes = envelopesFromBundle(state.bundle, ctx);
+    const key = activeEnvelopeKey();
+    const env = envelopes[key] ?? envelopes[state.endpoint];
+    return env ? JSON.stringify(env, null, 2) : '';
+  },
+  activeCsvString: () => {
+    if (!state.bundle) return '';
+    return buildActiveCsvString();
+  },
 });
 
 // Phase R1.5 — merge a single enrichment record onto a /transactions row.
@@ -863,36 +895,23 @@ function attachEventHandlers() {
     state.piiOnly = !!e.target.checked;
     renderPayload();
   });
-  document.getElementById('export-json').addEventListener('click', () => {
-    exportActiveJson();
-    track('export', { format: 'json' });
-  });
-  document.getElementById('export-csv').addEventListener('click', () => {
-    exportActiveCsv();
-    track('export', { format: 'csv' });
-  });
-  document.getElementById('export-tar').addEventListener('click', () => {
-    exportTarball();
-    track('export', { format: 'tarball' });
-  });
-  document.getElementById('export-embed')?.addEventListener('click', () => {
-    copyEmbedSnippet();
-    track('share', { kind: 'embed' });
+  // PR #6 — unified Export popover replaces the JSON / CSV / Tarball /
+  // Embed button row and the toolbar Share button.
+  document.getElementById('export-toggle')?.addEventListener('click', () => {
+    exportPopover.open();
   });
   document.getElementById('tour-btn').addEventListener('click', () => startTour());
   document.getElementById('find-btn').addEventListener('click', openFind);
-  // EXP-17 Share — pushPermalink keeps window.location.href canonical on every
-  // state change, so the live href is the right thing to put on the clipboard.
-  document.getElementById('share-btn').addEventListener('click', () => {
-    copyToClipboard(window.location.href, 'Permalink copied.');
-    track('share', { kind: 'permalink' });
-  });
-  // ⌘K / Ctrl+K opens the find box from anywhere in the app.
+  // ⌘K / Ctrl+K opens the find box; ⌘E / Ctrl+E opens the Export popover.
   window.addEventListener('keydown', (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
       e.preventDefault();
       openFind();
+    } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'e') {
+      e.preventDefault();
+      exportPopover.open();
     } else if (e.key === 'Escape') {
+      if (exportPopover.isOpen) { exportPopover.close(); return; }
       if (document.getElementById('find-overlay')) closeFind();
     }
   });
@@ -935,31 +954,37 @@ function exportActiveJson() {
   downloadJson(env, fname);
 }
 
-function exportActiveCsv() {
-  if (!state.bundle) return;
+// Picks the bundle key + filename suffix for the active endpoint's CSV.
+// Shared by exportActiveCsv (download) and buildActiveCsvString (popover).
+const RESOURCE_FOR_ENDPOINT = Object.freeze({
+  '/accounts': ['accounts', 'Account'],
+  '/accounts/{AccountId}': ['accounts', 'Account'],
+  '/accounts/{AccountId}/balances': ['balances', 'Balance'],
+  '/accounts/{AccountId}/transactions': ['transactions', 'Transaction'],
+  '/accounts/{AccountId}/standing-orders': ['standingOrders', 'StandingOrder'],
+  '/accounts/{AccountId}/direct-debits': ['directDebits', 'DirectDebit'],
+  '/accounts/{AccountId}/beneficiaries': ['beneficiaries', 'Beneficiary'],
+  '/accounts/{AccountId}/scheduled-payments': ['scheduledPayments', 'ScheduledPayment'],
+  '/accounts/{AccountId}/product': ['product', 'Product'],
+  '/accounts/{AccountId}/parties': ['parties', 'Party'],
+  '/parties': ['callingUserParty', 'Party'],
+  '/accounts/{AccountId}/statements': ['statements', 'Statements'],
+});
+function buildActiveCsvString() {
+  if (!state.bundle) return '';
   const ctx = exportContext();
-  // Pick the best-fit resource for the active endpoint.
-  const resourceForEndpoint = {
-    '/accounts': ['accounts', 'Account'],
-    '/accounts/{AccountId}': ['accounts', 'Account'],
-    '/accounts/{AccountId}/balances': ['balances', 'Balance'],
-    '/accounts/{AccountId}/transactions': ['transactions', 'Transaction'],
-    '/accounts/{AccountId}/standing-orders': ['standingOrders', 'StandingOrder'],
-    '/accounts/{AccountId}/direct-debits': ['directDebits', 'DirectDebit'],
-    '/accounts/{AccountId}/beneficiaries': ['beneficiaries', 'Beneficiary'],
-    '/accounts/{AccountId}/scheduled-payments': ['scheduledPayments', 'ScheduledPayment'],
-    '/accounts/{AccountId}/product': ['product', 'Product'],
-    '/accounts/{AccountId}/parties': ['parties', 'Party'],
-    '/parties': ['callingUserParty', 'Party'],
-    '/accounts/{AccountId}/statements': ['statements', 'Statements'],
-  };
-  const [bundleKey, resourceLabel] = resourceForEndpoint[state.endpoint] ?? ['accounts', 'Account'];
+  const [bundleKey] = RESOURCE_FOR_ENDPOINT[state.endpoint] ?? ['accounts', 'Account'];
   let rows = state.bundle[bundleKey] ?? [];
   if (state.selectedAccountId && Array.isArray(rows)) {
     rows = rows.filter((r) => !r._accountId || r._accountId === state.selectedAccountId);
   }
   if (!Array.isArray(rows)) rows = [rows];
-  const csv = csvForResource(rows, ctx);
+  return csvForResource(rows, ctx);
+}
+function exportActiveCsv() {
+  if (!state.bundle) return;
+  const [, resourceLabel] = RESOURCE_FOR_ENDPOINT[state.endpoint] ?? ['accounts', 'Account'];
+  const csv = buildActiveCsvString();
   const fname = `${state.personaId}-${state.lfi}-seed${state.seed}-${resourceLabel}.csv`;
   downloadCsv(csv, fname);
 }
