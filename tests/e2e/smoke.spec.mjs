@@ -276,6 +276,28 @@ test('Senior persona triggers low-volume guard — EXP-18', async ({ page }) => 
   await expect(dbrCard.locator('.uw-card-value')).toHaveText('—');
 });
 
+test('collapsed nav-account stays collapsed across endpoint navigation (PR-13 Greptile P1)', async ({ page }) => {
+  // hnw_multicurrency has multiple accounts, so collapse is meaningful.
+  await loadPersona(page, { persona: 'hnw_multicurrency' });
+  const accounts = page.locator('details.nav-account[data-account-id]');
+  const count = await accounts.count();
+  expect(count).toBeGreaterThanOrEqual(2);
+  // Pick a non-owning account (not the first — that one is the selected
+  // account and stays force-open).
+  const target = accounts.nth(1);
+  const targetId = await target.getAttribute('data-account-id');
+  // Initially all per-account groups are open by default.
+  await expect(target).toHaveJSProperty('open', true);
+  // Collapse via the summary toggle.
+  await target.locator('summary.nav-account-header').click();
+  await expect(target).toHaveJSProperty('open', false);
+  // Navigate to a different endpoint (re-renders the navigator).
+  await page.locator('.nav-endpoint', { hasText: '/transactions' }).first().click();
+  // The collapsed account stays collapsed.
+  const same = page.locator(`details.nav-account[data-account-id="${targetId}"]`);
+  await expect(same).toHaveJSProperty('open', false);
+});
+
 test('field card shows all 9 elements + Report-an-issue link', async ({ page }) => {
   await loadPersona(page, { endpoint: '/transactions' });
   await page.locator('.field-name', { hasText: 'TransactionId' }).first().click();

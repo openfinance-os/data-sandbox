@@ -61,13 +61,20 @@ test.describe('tour auto-launch (PR #2)', () => {
 
   test('refresh on cold landing re-arms the auto-launch (EXP-22)', async ({ page }) => {
     await page.goto('/src/index.html');
-    await expect(page.locator('#tour-overlay')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('#tour-overlay')).toBeVisible({ timeout: 8000 });
     await page.locator('#tour-overlay .tour-skip').click();
     await expect(page.locator('#tour-overlay')).toHaveCount(0);
     // Refresh — JS-only state resets, EXP-22 forbids storage persistence,
-    // and the URL is still empty, so cold landing re-fires.
-    await page.reload();
-    await expect(page.locator('#tour-overlay')).toBeVisible({ timeout: 5000 });
+    // and the URL is still empty, so cold landing re-fires. PR-13: wait
+    // for the second load to settle before asserting; on CI the
+    // post-reload init can race with Playwright's auto-wait.
+    await page.reload({ waitUntil: 'load' });
+    await page.waitForFunction(
+      () => document.getElementById('coverage-pct')?.textContent !== '—',
+      null,
+      { timeout: 10000 },
+    );
+    await expect(page.locator('#tour-overlay')).toBeVisible({ timeout: 8000 });
     // localStorage / sessionStorage must remain empty.
     const ls = await page.evaluate(() => Object.keys(window.localStorage));
     const ss = await page.evaluate(() => Object.keys(window.sessionStorage));

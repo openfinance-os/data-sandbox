@@ -20,7 +20,10 @@ import { expandRecipe } from './persona-builder/expand.js';
 import { decodeRecipe, encodeRecipe, RECIPE_DEFAULTS } from './persona-builder/recipe.js';
 import { mountPersonaBuilder } from './ui/persona-builder-ui.js';
 import { createFindBox } from './ui/find-box.js';
-import { createTour } from './ui/tour.js';
+// PR-13 perf — tour module is dynamic-imported on first auto-launch
+// trigger (cold landing) or Tour-button click. Off the cold-load
+// critical path; the tour appears a tick after init() resolves which
+// is identical to user-visible behaviour.
 // PR-12 perf — export popover is dynamic-imported on first ⌘E / button
 // click so it stays off the cold-load critical path (EXP-24 Lighthouse
 // budget). The factory itself isn't invoked until a user interaction.
@@ -137,6 +140,11 @@ const state = {
   // Tour button is demoted to a small ⓘ icon once seen. Same EXP-22
   // constraint as welcomeShown: JS-only, refresh re-arms by design.
   tourSeen: false,
+  // PR-13 (Greptile P1) — set of AccountIds the user has explicitly
+  // collapsed in the navigator. renderNavigator() reads this to honour
+  // the toggle across re-renders (which call replaceChildren()).
+  // JS-only per EXP-22; cleared on persona switch.
+  navAccountCollapsed: new Set(),
 };
 
 // Mount the UI submodules. `state` is a const and the helpers below
@@ -156,11 +164,28 @@ const { openFind, closeFind } = createFindBox({
   state, el, humanArchetype, rebuildAndRender, clearTxState,
   renderNavigator, renderPayload, openFieldCard,
 });
-const { startTour } = createTour({
-  state, el, setPersona, emptyTxFilter,
-  renderNavigator, renderPayload, renderCoverage,
-  onClose: () => demoteTourButton(),
-});
+// PR-13 perf — tour module is dynamic-imported on first invocation
+// (cold-landing auto-launch or button click). The wrapper exposes the
+// same startTour() shape so existing call sites don't change.
+const startTour = (() => {
+  let inner = null;
+  let loading = null;
+  async function ensure() {
+    if (inner) return inner;
+    if (!loading) {
+      loading = import('./ui/tour.js').then(({ createTour }) => {
+        inner = createTour({
+          state, el, setPersona, emptyTxFilter,
+          renderNavigator, renderPayload, renderCoverage,
+          onClose: () => demoteTourButton(),
+        }).startTour;
+        return inner;
+      });
+    }
+    return loading;
+  }
+  return async () => { (await ensure())(); };
+})();
 
 // Demote the prominent "Tour" button to a small ⓘ icon once the user has
 // seen the walkthrough (finish/skip/click-outside all route through
@@ -449,6 +474,7 @@ function attachBuilderHandlers() {
           state.activePersonas[CUSTOM_PERSONA_SLUG] = persona;
           state.recipe = recipe;
           state.personaId = CUSTOM_PERSONA_SLUG;
+          state.navAccountCollapsed.clear();
           // PR #5 — Banking bundles default to Underwriting Summary on a
           // persona switch; it surfaces the four illustrative signals
           // (income / commitments / DBR / NSF) up-front instead of routing
@@ -538,12 +564,14 @@ function buildJtbdRail() {
   if (state.jtbdFilter && !presets[state.jtbdFilter]) state.jtbdFilter = null;
   for (const [key, preset] of Object.entries(presets)) {
     const active = state.jtbdFilter === key;
+    // PR-13 — these are toggle filters (deselectable by clicking again),
+    // not exclusive tabs. role="tab" was added in PR #3 by analogy but
+    // mixed with aria-pressed (axe-core critical aria-allowed-attr).
+    // Drop role="tab" and rely on the implicit button role + aria-pressed.
     const chip = el('button', {
       class: 'jtbd-chip',
       attrs: {
         type: 'button',
-        role: 'tab',
-        'aria-selected': active ? 'true' : 'false',
         'aria-pressed': active ? 'true' : 'false',
         title: `Show personas covering ${preset.label.toLowerCase()} scenarios (${preset.terms.join(', ')})`,
       },
@@ -694,6 +722,7 @@ function buildPersonaList() {
           // click only fires when the user clicks empty card chrome.
           if (e.target.closest('.stress-chip, .persona-jtbd-chip, .persona-more')) return;
           state.personaId = id;
+          state.navAccountCollapsed.clear();
           // PR #5 — banking persona-switch now lands on the Underwriting
           // Summary by default; insurance flow has its own per-domain
           // default endpoint resolved in rebuildAndRender.
@@ -937,6 +966,7 @@ function attachEventHandlers() {
 
 function setPersona(personaId, lfi) {
   state.personaId = personaId;
+  state.navAccountCollapsed.clear();
   if (lfi) state.lfi = lfi;
   rebuildAndRender();
 }
@@ -1215,6 +1245,7 @@ async function switchDomain(newDomain) {
     Object.entries(state.data.personas).filter(([, p]) => p.domain === newDomain)
   );
   state.personaId = Object.keys(state.activePersonas)[0];
+  state.navAccountCollapsed.clear();
   state.endpoint = entry.defaultEndpoint || Object.keys(state.spec.endpoints)[0];
   // Refresh topbar metadata to reflect the active spec.
   const v = String(state.spec.specVersion || '');
@@ -1352,15 +1383,24 @@ function renderNavigator() {
   // PR #8 — per-account endpoint group is now a collapsible <details>
   // element. Open by default; the user can collapse to free vertical
   // space when many accounts are present (HNW / multi-currency personas).
-  // The account that owns the currently-selected endpoint stays open
-  // regardless of any prior toggle state in the same session.
+  // PR-13 (Greptile P1) — every renderNavigator() call rebuilds the list
+  // with replaceChildren(), so the previous code that unconditionally
+  // set open='open' silently re-opened any account the user had
+  // collapsed on every endpoint navigation. The owning account is
+  // force-open so the active endpoint stays visible; every other
+  // account respects state.navAccountCollapsed (a JS-only Set, EXP-22
+  // safe) so user toggles persist across re-renders within the session.
   for (const acc of state.bundle.accounts) {
     const isOwning = state.selectedAccountId === acc.AccountId;
-    const wrap = el('details', {
-      class: 'nav-account',
-      attrs: { 'data-account-id': acc.AccountId, open: 'open' },
+    const userCollapsed = state.navAccountCollapsed.has(acc.AccountId);
+    const shouldBeOpen = isOwning || !userCollapsed;
+    const attrs = { 'data-account-id': acc.AccountId };
+    if (shouldBeOpen) attrs.open = 'open';
+    const wrap = el('details', { class: 'nav-account', attrs });
+    wrap.addEventListener('toggle', () => {
+      if (wrap.open) state.navAccountCollapsed.delete(acc.AccountId);
+      else state.navAccountCollapsed.add(acc.AccountId);
     });
-    if (isOwning) wrap.setAttribute('open', 'open');
     const summary = el('summary', {
       class: 'nav-account-header',
       text: `${acc.AccountSubType} · ${acc.AccountIdentifiers?.[0]?.Identification?.slice(0, 12) ?? acc.AccountId}…`,

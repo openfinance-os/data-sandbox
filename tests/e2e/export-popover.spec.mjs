@@ -98,4 +98,43 @@ test.describe('Export popover (PR #6)', () => {
     await expect(page.locator('#share-btn')).toHaveCount(0);
     await expect(page.locator('#export-toggle')).toBeVisible();
   });
+
+  test('Esc returns focus to the trigger (PR-13 Greptile P2)', async ({ page }) => {
+    await loadPersona(page);
+    // Open via the button so the trigger is well-defined.
+    await page.locator('#export-toggle').focus();
+    await page.locator('#export-toggle').click();
+    await expect(page.locator('.export-overlay')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.export-overlay')).toHaveCount(0);
+    const focused = await page.evaluate(() => document.activeElement?.id ?? '');
+    expect(focused).toBe('export-toggle');
+  });
+
+  test('Arrow keys navigate between tabs (PR-13 ARIA tab pattern)', async ({ page }) => {
+    await loadPersona(page);
+    await page.keyboard.press('ControlOrMeta+E');
+    await expect(page.locator('.export-overlay')).toBeVisible();
+    // Active tab on open is Permalink.
+    await expect(page.locator('.export-tab.is-active')).toHaveText('Permalink');
+    // Arrow Right moves to Embed iframe.
+    await page.keyboard.press('ArrowRight');
+    await expect(page.locator('.export-tab.is-active')).toHaveText('Embed iframe');
+    // End jumps to MCP (last).
+    await page.keyboard.press('End');
+    await expect(page.locator('.export-tab.is-active')).toHaveText('MCP');
+    // Home jumps to Permalink (first).
+    await page.keyboard.press('Home');
+    await expect(page.locator('.export-tab.is-active')).toHaveText('Permalink');
+  });
+
+  test('export-body carries role="tabpanel" + aria-labelledby (PR-13)', async ({ page }) => {
+    await loadPersona(page);
+    await page.keyboard.press('ControlOrMeta+E');
+    const body = page.locator('#export-body');
+    await expect(body).toHaveAttribute('role', 'tabpanel');
+    await expect(body).toHaveAttribute('aria-labelledby', 'export-tab-permalink');
+    await page.locator('.export-tab', { hasText: 'npm' }).click();
+    await expect(body).toHaveAttribute('aria-labelledby', 'export-tab-npm');
+  });
 });

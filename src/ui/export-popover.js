@@ -7,12 +7,16 @@
 // Tarball, which is binary) with a Copy button.
 //
 // Keyboard contract:
-//   ⌘E / Ctrl+E       open the popover
-//   Esc               close
-//   Tab / Shift+Tab   move between focusable elements
-//   Cmd+Shift+C       copy active tab's snippet from inside the popover
-// State is JS-only per EXP-22. No analytics events are added beyond the
-// existing 'export' / 'share' allowlist entries.
+//   ⌘E / Ctrl+E              open the popover (handler lives in app.js)
+//   Esc                      close (also app.js — checks isOpen, calls close)
+//   Tab / Shift+Tab          move between focusable elements
+//   Arrow Left / Right       move between tab buttons within the tablist
+//   Home / End               first / last tab
+// On open the previously-focused trigger is captured and restored on
+// close so Tab resumes from the right place (EXP-23). ARIA tab pattern:
+// role="tablist" on the strip, role="tab" + aria-controls on each tab,
+// role="tabpanel" + aria-labelledby on the body. State is JS-only per
+// EXP-22. No analytics events beyond the 'export' / 'share' allowlist.
 
 export function createExportPopover(deps) {
   const {
@@ -31,6 +35,9 @@ export function createExportPopover(deps) {
 
   let overlay = null;
   let activeTabKey = 'permalink';
+  // PR-13 (Greptile P2) — capture the trigger element when the popover
+  // opens so focus can return to it on close (EXP-23 keyboard a11y).
+  let triggerElement = null;
 
   function snippetForTab(key) {
     const ctx = {
@@ -117,6 +124,10 @@ export function createExportPopover(deps) {
 
   function open() {
     if (overlay) { closeOverlay(); return; }
+    // PR-13 (Greptile P2) — remember who opened us so we can return
+    // focus on close. Falls back gracefully if document.activeElement
+    // is null or body (e.g. ⌘E from outside any focused element).
+    triggerElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     overlay = el('div', { class: 'export-overlay', attrs: { role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'export-title' } });
     const card = el('div', { class: 'export-card' });
 
@@ -133,22 +144,51 @@ export function createExportPopover(deps) {
 
     const tabStrip = el('div', { class: 'export-tabs', attrs: { role: 'tablist', 'aria-label': 'Export format' } });
     for (const t of TABS) {
+      // PR-13 (Greptile P2) — ARIA tab pattern: each tab has a stable
+      // id and aria-controls pointing at the panel; arrow-key
+      // navigation moves focus within the strip.
+      const tabId = `export-tab-${t.key}`;
       const btn = el('button', {
         class: `export-tab${activeTabKey === t.key ? ' is-active' : ''}`,
         text: t.label,
         attrs: {
           type: 'button',
           role: 'tab',
+          id: tabId,
           'aria-selected': activeTabKey === t.key ? 'true' : 'false',
+          'aria-controls': 'export-body',
           'data-tab-key': t.key,
+          // Roving tabindex — only the active tab is in the tab order.
+          tabindex: activeTabKey === t.key ? '0' : '-1',
         },
       });
       btn.addEventListener('click', () => { activeTabKey = t.key; renderActiveTab(); });
+      btn.addEventListener('keydown', (e) => {
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && e.key !== 'Home' && e.key !== 'End') return;
+        e.preventDefault();
+        const idx = TABS.findIndex((x) => x.key === activeTabKey);
+        let next;
+        if (e.key === 'Home') next = 0;
+        else if (e.key === 'End') next = TABS.length - 1;
+        else if (e.key === 'ArrowLeft') next = (idx - 1 + TABS.length) % TABS.length;
+        else next = (idx + 1) % TABS.length;
+        activeTabKey = TABS[next].key;
+        renderActiveTab();
+        overlay?.querySelector(`.export-tab[data-tab-key="${activeTabKey}"]`)?.focus();
+      });
       tabStrip.appendChild(btn);
     }
     card.appendChild(tabStrip);
 
-    const body = el('div', { class: 'export-body', attrs: { id: 'export-body' } });
+    const body = el('div', {
+      class: 'export-body',
+      attrs: {
+        id: 'export-body',
+        role: 'tabpanel',
+        'aria-labelledby': `export-tab-${activeTabKey}`,
+        tabindex: '0',
+      },
+    });
     card.appendChild(body);
     overlay.appendChild(card);
 
@@ -164,17 +204,27 @@ export function createExportPopover(deps) {
   function closeOverlay() {
     overlay?.remove();
     overlay = null;
+    // PR-13 (Greptile P2) — return focus to the trigger so Tab resumes
+    // from the right place. Skip if the trigger has since been
+    // removed from the DOM (e.g. persona switch tore down the topbar).
+    if (triggerElement && document.body.contains(triggerElement)) {
+      triggerElement.focus();
+    }
+    triggerElement = null;
   }
 
   function renderActiveTab() {
     if (!overlay) return;
     const body = overlay.querySelector('#export-body');
     body.replaceChildren();
-    // Reflect tab selection in the strip.
+    body.setAttribute('aria-labelledby', `export-tab-${activeTabKey}`);
+    // Reflect tab selection in the strip — class for styling, aria-selected
+    // for screen readers, roving tabindex for the ARIA tab pattern.
     for (const tab of overlay.querySelectorAll('.export-tab')) {
       const isActive = tab.dataset.tabKey === activeTabKey;
       tab.classList.toggle('is-active', isActive);
       tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      tab.setAttribute('tabindex', isActive ? '0' : '-1');
     }
     const snip = snippetForTab(activeTabKey);
     if (snip.isDownload) {
@@ -220,15 +270,8 @@ export function createExportPopover(deps) {
     body.appendChild(copyRow);
   }
 
-  function handleKey(e) {
-    if (!overlay) return false;
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      closeOverlay();
-      return true;
-    }
-    return false;
-  }
-
-  return { open, close: closeOverlay, handleKey, get isOpen() { return overlay !== null; } };
+  // Esc routing is owned by app.js's global keydown handler via
+  // exportPopover.isOpen + exportPopover.close() — see PR-13 (Greptile)
+  // for why this module no longer ships its own handleKey export.
+  return { open, close: closeOverlay, get isOpen() { return overlay !== null; } };
 }
