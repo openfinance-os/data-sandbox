@@ -1848,6 +1848,19 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   background: #fff5d6;
 }
 
+/* PR #7 — Compare-N/A banner. Inline note shown on Underwriting / Overview
+   pseudo-endpoints when Compare-with is on. */
+.compare-na-banner {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border-left: 3px solid var(--conditional-fg, #b67c00);
+  background: #fff5d6;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.45;
+  border-radius: 2px;
+}
+
 .payload-raw {
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-size: 11px;

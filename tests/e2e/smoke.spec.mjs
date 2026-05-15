@@ -207,6 +207,25 @@ test('Compare-LFIs shows two side-by-side panels with diff classes — EXP-16', 
   expect(await page.locator('.diff-missing').count()).toBeGreaterThan(0);
 });
 
+test('Compare-N/A banner appears on derived pseudo-endpoints — PR #7', async ({ page }) => {
+  // Underwriting summary is now the banking default landing (PR #5).
+  await loadPersona(page);
+  // Turn on compare-mode.
+  await page.locator('#compare-toggle').click();
+  // The compare-pane should NOT render on a derived view — the inline
+  // banner explains why instead.
+  await expect(page.locator('.compare-pane')).toHaveCount(0);
+  const banner = page.locator('.compare-na-banner');
+  await expect(banner).toBeVisible();
+  await expect(banner).toContainText('field-level endpoints');
+  await expect(banner).toContainText('Underwriting summary');
+
+  // Navigate to a real spec endpoint → banner disappears, compare-pane renders.
+  await page.locator('.nav-endpoint', { hasText: '/transactions' }).first().click();
+  await expect(page.locator('.compare-na-banner')).toHaveCount(0);
+  await expect(page.locator('.compare-pane')).toBeVisible();
+});
+
 test('Stress-chip filter narrows the persona library', async ({ page }) => {
   await loadPersona(page);
   const fullCount = await page.locator('.persona-card').count();

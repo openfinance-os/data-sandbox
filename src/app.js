@@ -1120,6 +1120,19 @@ function renderPersonaHero() {
   }
 }
 
+// PR #7 — inline banner shown when Compare-with is on but the active
+// endpoint is a derived view (Underwriting summary / Persona overview)
+// where the split-pane diff has no meaningful field-level analogue.
+function renderCompareNaBanner(viewName) {
+  return el('div', {
+    class: 'compare-na-banner',
+    attrs: { role: 'note' },
+    text:
+      `Comparison applies to field-level endpoints (e.g. /transactions, /accounts/{AccountId}/balances). ` +
+      `${viewName} is a derived view — the populate-rate diff has no analogue here.`,
+  });
+}
+
 function renderBundleError(err, persona) {
   const body = document.getElementById('payload-body');
   if (!body) return;
@@ -1478,11 +1491,15 @@ function renderPayloadUnsafe() {
 
   // EXP-18 Underwriting Scenario panel — a derived view, not a spec endpoint.
   if (state.endpoint === UNDERWRITING_PSEUDO) {
+    // PR #7 — Compare-with doesn't apply to derived views; show the inline
+    // banner so the user understands why the split pane isn't rendering.
+    if (state.compareMode) body.appendChild(renderCompareNaBanner('Underwriting summary'));
     renderUnderwritingPanel(body);
     return;
   }
   // Persona overview — the natural landing on persona-switch.
   if (state.endpoint === OVERVIEW_PSEUDO) {
+    if (state.compareMode) body.appendChild(renderCompareNaBanner('Persona overview'));
     renderPersonaOverview(body);
     return;
   }

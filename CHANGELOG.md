@@ -5,6 +5,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follo
 
 ## [Unreleased]
 
+### Added — v1 refinements (PR #7): Compare mode v2 (N/A banner on pseudo-endpoints)
+
+- **Inline `.compare-na-banner`** rendered on the Underwriting Summary and Persona Overview pseudo-endpoints when Compare-with is on: "Comparison applies to field-level endpoints (e.g. /transactions, /accounts/{AccountId}/balances). <View> is a derived view — the populate-rate diff has no analogue here." The existing pseudo-panel still renders below the banner so the user keeps the underwriting / overview view they navigated to.
+- **Per-field diff coloring already in place** (green/amber/red) via `.diff-only-here` / `.diff-changed` / `.diff-missing` on td cells — verified intact, not re-styled. The PRD §UX spec for compare-mode v2 maps to the existing EXP-16 implementation; this PR is the polish layer (N/A banner + visual contract documented in stories).
+- **`src/app.js`** — new `renderCompareNaBanner(viewName)` helper. `renderPayload` shows it before the Underwriting / Overview pseudo-panel when `state.compareMode` is true.
+- **`src/styles.css`** — `.compare-na-banner` styled as an amber accent-left note (matches the existing optional-pill amber border colour).
+- **`src/_stories/index.html`** — new `CompareSplitPane` story rendering a static 5-row swatch table illustrating the diff-class visual contract (`diff-only-here`, `diff-changed`, `diff-missing`, no-diff).
+- **`tests/e2e/smoke.spec.mjs`** — new "Compare-N/A banner appears on derived pseudo-endpoints" case: enables compare on the Underwriting default landing, asserts the banner + absence of `.compare-pane`, then navigates to `/transactions` and asserts the banner disappears and the split pane renders.
+
 ### Changed — v1 refinements (PR #6): unified Export popover
 
 - **One Export ▾ button** in the payload toolbar replaces the four-button JSON / CSV / Tarball / Embed row and the toolbar Share button. Opens a tabbed popover with nine tabs: **Permalink · Embed iframe · JSON · CSV · Tarball · npm · Python · curl · MCP**. Each tab renders an actual code/URL snippet with a Copy button. JSON and CSV tabs additionally offer a "Download .json" / "Download .csv" secondary action — the existing download paths preserved.

@@ -102,6 +102,19 @@
     </div>
   </section>
 
+  <section class="story" id="story-compare-split-pane">
+    <header class="story-head">
+      <span>CompareSplitPane (PR #7)</span>
+      <span class="story-meta">src/ui/compare-view.js · .compare-pane · .diff-* classes</span>
+    </header>
+    <div class="story-body">
+      <div class="story-stage with-pad" id="stage-compare-swatches"></div>
+    </div>
+    <div class="story-controls">
+      <span style="color: var(--text-muted); font-size: 11px;">Visual contract for the per-field diff classes — populated by the live compare-view at runtime.</span>
+    </div>
+  </section>
+
   <section class="story" id="story-export-popover">
     <header class="story-head">
       <span>ExportPopover (PR #6)</span>
@@ -249,6 +262,41 @@
     activeCsvString: () => 'AccountId,Currency,Type\nACC-DEMO-001,AED,CurrentAccount',
   });
   document.getElementById('story-export-open').addEventListener('click', () => exportPopover.open());
+
+  // Compare split pane — static visual contract for the .diff-* classes.
+  function renderCompareSwatches(stage) {
+    stage.replaceChildren();
+    const wrap = el('div', { class: 'payload-rendered' });
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    for (const k of ['Field', 'Median', 'Sparse', 'Diff class']) {
+      const th = document.createElement('th'); th.textContent = k; headRow.appendChild(th);
+    }
+    thead.appendChild(headRow); table.appendChild(thead);
+    const tbody = document.createElement('tbody');
+    const rows = [
+      { field: 'Flags',           median: 'Payroll',         sparse: '—',     cls: 'diff-only-here',  note: 'present only on this side · green' },
+      { field: 'MerchantDetails', median: 'Carrefour DXB',   sparse: '—',     cls: 'diff-only-here',  note: '' },
+      { field: 'Nickname',        median: 'Main',            sparse: 'Main',  cls: '',                note: 'no diff' },
+      { field: 'Status',          median: 'Booked',          sparse: 'Rejected', cls: 'diff-changed', note: 'changed · amber' },
+      { field: 'CurrencyExchange', median: '—',              sparse: '—',     cls: 'diff-missing',    note: 'missing here · red (Sparse only)' },
+    ];
+    for (const r of rows) {
+      const tr = document.createElement('tr');
+      const f = document.createElement('td'); f.textContent = r.field; tr.appendChild(f);
+      const m = document.createElement('td'); m.textContent = r.median; if (r.cls === 'diff-only-here') m.className = r.cls; tr.appendChild(m);
+      const s = document.createElement('td'); s.textContent = r.sparse;
+      if (r.cls === 'diff-missing' || r.cls === 'diff-changed') s.className = r.cls;
+      tr.appendChild(s);
+      const n = document.createElement('td'); n.textContent = r.note; n.style.color = 'var(--text-muted)'; n.style.fontSize = '10.5px'; tr.appendChild(n);
+      tbody.appendChild(tr);
+    }
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+    stage.appendChild(wrap);
+  }
+  renderCompareSwatches(document.getElementById('stage-compare-swatches'));
 </script>
 </body>
 </html>
