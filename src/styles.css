@@ -2139,6 +2139,63 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   color: var(--accent);
 }
 
+.info-trigger {
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  margin: 0 2px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 50%;
+}
+.info-trigger:hover,
+.info-trigger:focus-visible {
+  color: var(--accent);
+  background: var(--accent-soft);
+  outline: none;
+}
+.info-popover {
+  max-width: 280px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-card);
+  color: var(--text);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.info-popover-title {
+  margin: 0 0 6px 0;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+}
+.info-popover p {
+  margin: 0 0 6px 0;
+}
+.info-popover p:last-child {
+  margin-bottom: 0;
+}
+.info-popover code {
+  font-size: 11px;
+  padding: 1px 4px;
+  background: var(--bg-soft);
+  border-radius: 3px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .info-popover {
+    transition: opacity 120ms ease;
+  }
+}
+
 /* Cold-landing welcome cards — three-bucket router for new visitors.
    Lives at the top of the payload area on cold landings; dismissed in
    JS state once the user picks a bucket (or hits ×). */

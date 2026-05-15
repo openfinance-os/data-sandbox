@@ -84,7 +84,13 @@
           <span class="control-label">Seed</span>
           <input id="seed-input" type="number" value="4729" min="0" step="1" aria-label="Seed (reshuffles deterministic RNG; structure stays, details re-roll)" />
         </label>
+        <button type="button" class="info-trigger" popovertarget="seed-help" aria-label="What does Seed do?">ⓘ</button>
         <button type="button" id="seed-reset" class="seed-reset" title="Reset to the persona's default seed.">Reset</button>
+        <div id="seed-help" popover="auto" class="info-popover" role="note">
+          <h3 class="info-popover-title">Seed</h3>
+          <p>The third lever in the deterministic <code>(persona, LFI, seed)</code> tuple. Reshuffles random details — merchant names, transaction amounts, optional-field choices — while keeping the persona's structure intact (account count, balance bands, mandatory fields).</p>
+          <p>The seed is encoded in the share URL (EXP-17), so the same tuple always reproduces byte-identical data. <strong>Reset</strong> restores the persona's default.</p>
+        </div>
       </details>
     </div>
     <div class="controls-runstate" aria-label="Run state">
