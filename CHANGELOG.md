@@ -5,6 +5,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follo
 
 ## [Unreleased]
 
+### Fixed — v1 refinements (PR-15): rebase onto main + lazy-load insurance.js for perf
+
+- **Rebased onto current main.** PR #51 (info popovers for LFI / Seed / pinned spec SHA) merged after this branch was opened, conflicting on `src/index.html` in the seed-lever and `<link rel="modulepreload">` regions. Resolved by keeping the hoisted-seed structure from PR #9 plus the info-popover trigger + `<div id="seed-help" popover="auto">` body from main. Modulepreload list merges `ui/info-popover.js` with the four preloads from PR-12 (`shared/banner.js`, `ui/tour.js`, `ui/underwriting.js`, `ui/field-card.js`).
+- **Lazy-load `src/ui/insurance.js`.** The banking default landing (gated by `state.domain === 'banking'`) never calls `renderInsuranceBundle`, so the module shouldn't sit on the cold-load critical path. The wrapper dynamic-imports the factory on the first call and reuses the cached instance for subsequent renders. Insurance flow (`?domain=insurance`) still works — it just pays the dynamic-import latency once on its first render, which fires inside `rebuildAndRender` after the initial render settles. Lighthouse budget is gated only against the banking `/src/index.html` route, so this is a pure win for that score.
+
 ### Fixed — v1 refinements (PR-14): revert tour lazy-load, fix e2e flakes, lazy-load find-box
 
 PR-13's lazy-load of `ui/tour.js` backfired — the dynamic import fires at init's tail on cold landing (inside the TBT measurement window), and the Lighthouse perf median dropped from 0.69 → 0.57. This commit reverts that change and replaces it with a safer cut.

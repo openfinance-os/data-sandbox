@@ -34,7 +34,11 @@ import { createTour } from './ui/tour.js';
 import { createCompareView } from './ui/compare-view.js';
 import { createTxFilter } from './ui/tx-filter.js';
 import { createMonthlySummary } from './ui/monthly-summary.js';
-import { createInsurance } from './ui/insurance.js';
+// PR-15 perf — insurance module is dynamic-imported when the active
+// domain shifts to insurance. The banking default landing never needs
+// it, so keeping it off the cold-load path tightens the EXP-24
+// Lighthouse budget without affecting insurance-flow latency
+// (rebuildAndRender is already async work).
 import {
   envelopesFromBundle,
   csvForResource,
@@ -215,9 +219,26 @@ const { renderTxFilterBar, applyFilter, applySort, toggleSort } = createTxFilter
   state, el, renderPayload, emptyTxFilter, updateUrl: pushPermalink,
 });
 const { renderMonthlySummary } = createMonthlySummary({ el, formatAmount });
-const { renderInsuranceBundle } = createInsurance({
-  state, el, syncControls, pushPermalink,
-});
+// PR-15 — lazy insurance wrapper. The factory loads on the first
+// renderInsuranceBundle() call; subsequent calls reuse the cached
+// instance. Banking flow never triggers the import.
+const renderInsuranceBundle = (() => {
+  let inner = null;
+  let loading = null;
+  async function ensure() {
+    if (inner) return inner;
+    if (!loading) {
+      loading = import('./ui/insurance.js').then(({ createInsurance }) => {
+        inner = createInsurance({
+          state, el, syncControls, pushPermalink,
+        }).renderInsuranceBundle;
+        return inner;
+      });
+    }
+    return loading;
+  }
+  return async () => { (await ensure())(); };
+})();
 const { renderUnderwritingStrip, renderUnderwritingPanel } = createUnderwriting({
   state, el, formatAmount, renderNavigator, renderPayload, UNDERWRITING_PSEUDO,
   openFieldCard,
