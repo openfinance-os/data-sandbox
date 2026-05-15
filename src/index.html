@@ -55,6 +55,7 @@
       </label>
       <div class="control-group lfi-control">
         <span class="control-label">LFI profile</span>
+        <button type="button" class="info-trigger" popovertarget="lfi-help" aria-label="What is an LFI profile?">ⓘ</button>
         <div class="lfi-seg" id="lfi-seg" role="radiogroup" aria-label="LFI populate-rate profile">
           <button type="button" role="radio" data-lfi="rich"   aria-checked="false" title="Best case. Every populate-band optional field set. Probe what mature LFIs make available.">Rich</button>
           <button type="button" role="radio" data-lfi="median" aria-checked="true"  title="v1 calibration — Universal=1.0, Common=0.7, Variable=0.4, Rare=0.1. The Commons-curated ecosystem-wide assumption.">Median</button>
@@ -96,6 +97,7 @@
     <div class="controls-runstate" aria-label="Run state">
       <select class="domain-chip" id="domain-chip" hidden aria-label="Open Finance domain"></select>
       <span class="version-pin" id="version-pin" title="Pinned spec SHA — hover for retrieval date"></span>
+      <button type="button" class="info-trigger" popovertarget="spec-help" aria-label="What is the pinned spec SHA?">ⓘ</button>
       <button class="topbar-btn" id="find-btn" title="Search fields, enums, and persona narratives (⌘K)" aria-label="Open find box">Find</button>
       <button class="topbar-btn" id="tour-btn" title="Walk through Sara's bundle in 5 steps" aria-label="Start guided tour">Tour</button>
       <button class="topbar-btn" id="share-btn" title="Copy permalink to clipboard — the URL bar already reflects the active persona, LFI, and seed (EXP-17)" aria-label="Copy permalink">Share</button>
@@ -108,6 +110,21 @@
       </details>
     </div>
   </nav>
+  <div id="lfi-help" popover="auto" class="info-popover" role="note">
+    <h3 class="info-popover-title">LFI profile</h3>
+    <p>Each LFI (Licensed Financial Institution) populates optional fields at different rates. The profile picks which assumption you see.</p>
+    <ul class="info-popover-list">
+      <li><strong>Rich</strong> — best case. Every populate-band optional field set. Probe what mature LFIs make available.</li>
+      <li><strong>Median</strong> — v1 calibration: Universal=1.0, Common=0.7, Variable=0.4, Rare=0.1. The Commons-curated ecosystem-wide assumption.</li>
+      <li><strong>Sparse</strong> — worst case. Mandatory + Universal-band only — every other optional field dropped. Stress-test downstream UI and decisioning logic.</li>
+    </ul>
+    <p>Mandatory fields are never redacted (EXP-04). Use <strong>+ Compare</strong> to see two profiles side-by-side (EXP-16).</p>
+  </div>
+  <div id="spec-help" popover="auto" class="info-popover" role="note">
+    <h3 class="info-popover-title">Pinned spec SHA</h3>
+    <p>The short hash next to <code>v2.1</code> is the commit SHA of the UAE Open Finance OpenAPI spec this sandbox was built from. Pinning a single SHA per build (D-01) means every field badge, enum, and validation result is anchored to one exact upstream version.</p>
+    <p>Hover the pin for the upstream repo path and retrieval date. The same SHA appears in <code>dist/SPEC.json</code>, the About page, and every fixture-package manifest.</p>
+  </div>
 </header>
 
 <main class="three-pane" id="three-pane">

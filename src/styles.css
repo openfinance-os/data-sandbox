@@ -2184,6 +2184,16 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
 .info-popover p:last-child {
   margin-bottom: 0;
 }
+.info-popover-list {
+  margin: 0 0 6px 0;
+  padding-left: 16px;
+}
+.info-popover-list li {
+  margin-bottom: 4px;
+}
+.info-popover-list li:last-child {
+  margin-bottom: 0;
+}
 .info-popover code {
   font-size: 11px;
   padding: 1px 4px;
