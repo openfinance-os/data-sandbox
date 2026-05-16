@@ -129,12 +129,39 @@ function toPersonaList(map) {
     archetype: v.archetype,
     domain: v.domain,
     segment: v.segment || null,
+    default_seed: v.default_seed || null,
     stress_coverage: v.stress_coverage || [],
     multi_lfi_footprint: v.multi_lfi_footprint || null,
   })).sort((a, b) => {
     if (a.domain !== b.domain) return a.domain.localeCompare(b.domain);
     return a.name.localeCompare(b.name);
   });
+}
+
+// Pick the first selected bank profile (preferring median for non-SME)
+// to use as the LFI directory in the fixture path.
+function firstSelectedLfi() {
+  const order = ['median', 'rich', 'sparse'];
+  for (const k of order) if (state.selectedBankProfiles.has(k)) return k;
+  return [...state.selectedBankProfiles][0] || 'median';
+}
+
+// Build the relative fixture URL for the active persona/profile/endpoint.
+// The fixture layout is /fixtures/v1/bundles/<persona>/<lfi>/seed-<n>/<endpoint>.json.
+function fixtureUrl(persona, lfi, endpoint) {
+  if (!persona?.default_seed) return null;
+  const seed = persona.default_seed;
+  return `../fixtures/v1/bundles/${persona.id}/${lfi}/seed-${seed}/${endpoint}.json`;
+}
+
+// What top-level endpoint to fetch for a freshly-connected persona,
+// matching the suggested-first-prompt shape.
+function firstEndpointFor(persona) {
+  if (persona.domain === 'insurance') {
+    const line = inferInsuranceLine(persona) || 'motor';
+    return `${line}-insurance-policies`;
+  }
+  return 'accounts';
 }
 
 // ─── Rendering ─────────────────────────────────────────────────────
@@ -407,7 +434,9 @@ function renderConnected() {
   ]);
   body.appendChild(summary);
 
-  // Suggest a first prompt + tool chain based on persona domain.
+  // Suggest a first prompt + tool chain based on persona domain, with a
+  // "Fetch live data" CTA that actually pulls the real fixture envelope
+  // so the user sees the synthetic payload at the end of the journey.
   const prompts = nextPromptFor(persona);
   for (const p of prompts) {
     const next = el('div', { className: 'next-prompt' }, [
@@ -418,6 +447,26 @@ function renderConnected() {
     body.appendChild(next);
   }
 
+  const lfi = firstSelectedLfi();
+  const endpoint = firstEndpointFor(persona);
+  const url = fixtureUrl(persona, lfi, endpoint);
+  const fetchPanel = el('div', { className: 'fetch-panel' });
+  const fetchBtn = el('button', {
+    type: 'button',
+    className: 'btn primary',
+    onclick: () => runLiveFetch(persona, lfi, endpoint, fetchPanel),
+  }, `Fetch ${endpoint}.json from /fixtures/v1/ →`);
+  fetchPanel.appendChild(el('div', { className: 'label', style: 'margin-bottom:6px;' }, 'Close the loop — pull the real envelope'));
+  fetchPanel.appendChild(fetchBtn);
+  if (url) {
+    fetchPanel.appendChild(el('div', { className: 'tool-chain', style: 'margin-top:6px;' }, `GET ${url}`));
+  } else {
+    fetchPanel.appendChild(el('div', { className: 'tool-chain', style: 'margin-top:6px;color:var(--warn-border);' },
+      `No default_seed for this persona — run \`npm run build:fixtures\` first.`));
+    fetchBtn.disabled = true;
+  }
+  body.appendChild(fetchPanel);
+
   // CLI to re-run with the actual MCP.
   const reuse = el('div', { className: 'callout' });
   reuse.innerHTML =
@@ -425,6 +474,55 @@ function renderConnected() {
     `<code>npx -y @openfinance-os/sandbox-mcp --transport http --simulate-oauth</code>, ` +
     `then point a Claude.ai connector at <code>http://127.0.0.1:8787/mcp</code>.`;
   body.appendChild(reuse);
+}
+
+// Pull the real fixture envelope and render it inline. This is the
+// payload a TPP would actually receive after the journey above — same
+// shape as what `@openfinance-os/sandbox-mcp` returns from get_accounts /
+// get_motor_policies / etc. Watermark is rendered prominently so it
+// travels through any screenshot of the simulator (EXP-19).
+async function runLiveFetch(persona, lfi, endpoint, panel) {
+  // Replace existing result block (if a previous fetch ran).
+  const old = panel.querySelector('.fetch-result');
+  if (old) old.remove();
+
+  const result = el('div', { className: 'fetch-result' });
+  result.appendChild(el('div', { className: 'fetch-status' }, 'Fetching…'));
+  panel.appendChild(result);
+
+  const url = fixtureUrl(persona, lfi, endpoint);
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    const payload = await res.json();
+    result.innerHTML = '';
+
+    const watermark = payload._watermark || payload.Meta?._watermark || '';
+    if (watermark) {
+      result.appendChild(el('div', { className: 'watermark-banner', role: 'status' }, watermark));
+    }
+
+    const head = el('div', { className: 'fetch-head' }, [
+      el('div', {}, [
+        el('span', { className: 'tag domain-banking' }, `GET 200`),
+        el('span', { className: 'mono', style: 'margin-left:8px;' }, `${endpoint}.json`),
+      ]),
+      el('div', { className: 'mono', style: 'font-size:11px;color:var(--text-muted);' },
+        `persona:${persona.id} lfi:${lfi} seed:${persona.default_seed}`),
+    ]);
+    result.appendChild(head);
+
+    const pre = el('pre', { className: 'fetch-json' });
+    pre.textContent = JSON.stringify(payload, null, 2);
+    result.appendChild(pre);
+
+    result.appendChild(el('div', { className: 'fetch-footnote' },
+      `That envelope is byte-identical to what get_${endpoint.replace(/-/g, '_').replace('insurance_policies', 'policies')} would return from the MCP server for this (persona, lfi, seed) — EXP-05 determinism.`));
+  } catch (err) {
+    result.innerHTML = '';
+    result.appendChild(el('div', { className: 'fetch-status', style: 'color:#a13;' },
+      `Fetch failed: ${err.message}. Build fixtures with \`npm run build:fixtures\` and serve from \`npm run serve\`, or run against a staged \`_site/\`.`));
+  }
 }
 
 function nextPromptFor(persona) {

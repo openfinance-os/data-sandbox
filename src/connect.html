@@ -561,6 +561,59 @@
     margin-top: 6px;
   }
 
+  .fetch-panel {
+    margin-top: 12px;
+    padding: 14px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+  }
+  .fetch-panel .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); font-weight: 700; }
+  .fetch-panel .tool-chain { font-size: 11.5px; color: var(--text-muted); font-family: ui-monospace,"SF Mono",Menlo,monospace; word-break: break-all; }
+  .fetch-result { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+  .fetch-status { font-size: 13px; color: var(--text-muted); }
+  .watermark-banner {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11px;
+    background: var(--warn-bg);
+    border: 1px solid var(--warn-border);
+    border-radius: 3px;
+    padding: 6px 10px;
+    margin-bottom: 10px;
+    color: var(--text);
+    word-break: break-all;
+    line-height: 1.5;
+  }
+  .fetch-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .fetch-head .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; }
+  .fetch-json {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11.5px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    max-height: 380px;
+    overflow-y: auto;
+    line-height: 1.55;
+    color: var(--text);
+    margin: 0;
+  }
+  .fetch-footnote {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin-top: 8px;
+    font-style: italic;
+  }
+
   /* ─── Supporting content (post-wizard) ──────────────────────────── */
 
   .grid {
