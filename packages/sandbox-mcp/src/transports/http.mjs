@@ -22,6 +22,7 @@ import { randomUUID } from 'node:crypto';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { createServer } from '../server.mjs';
+import { createOAuthSimulation } from './oauth-simulation.mjs';
 
 const MCP_PATH = '/mcp';
 const HEALTH_PATH = '/health';
@@ -113,6 +114,7 @@ export function createHttpHandler({
   allowedHosts,
   allowedOrigins,
   enableDnsRebindingProtection = true,
+  oauthSimulation = null,
   log = defaultLogger,
 } = {}) {
   // sessionId → { transport, server, lastActivity }
@@ -180,9 +182,36 @@ export function createHttpHandler({
       return;
     }
 
+    // OAuth simulation endpoints (opt-in; off by default per PRD D-13).
+    // The simulation owns /.well-known/oauth-protected-resource,
+    // /.well-known/oauth-authorization-server, /authorize, and /token. It
+    // returns true if it handled the request.
+    if (oauthSimulation) {
+      const handled = await oauthSimulation.handle(req, res, url);
+      if (handled) return;
+    }
+
     if (path !== MCP_PATH) {
       sendJson(res, 404, { error: 'not found', tryEndpoint: MCP_PATH });
       return;
+    }
+
+    // Bearer gate — synthetic data is anonymous-by-default; the gate is
+    // only present when oauthSimulation is configured.
+    if (oauthSimulation && req.method !== 'OPTIONS') {
+      const authHeader = req.headers.authorization || '';
+      const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
+      const verified = oauthSimulation.verifyBearer(token);
+      if (!verified) {
+        res.statusCode = 401;
+        res.setHeader('WWW-Authenticate', oauthSimulation.challengeHeader(req));
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({
+          error: 'unauthorized',
+          error_description: 'bearer token required — start the OAuth flow at /authorize',
+        }));
+        return;
+      }
     }
 
     const sessionId = req.headers[SESSION_HEADER];
@@ -290,6 +319,7 @@ export async function startHttp({
   allowedHosts: extraAllowedHosts,
   allowedOrigins,
   enableDnsRebindingProtection = true,
+  simulateOauth = false,
   log,
 } = {}) {
   const earlyServer = http.createServer();
@@ -311,6 +341,16 @@ export async function startHttp({
     port: resolvedPort,
     extraAllowedHosts,
   });
+  const oauthSimulation = simulateOauth
+    ? createOAuthSimulation({
+        // Lock the issuer to the resolved listen address so discovery
+        // documents can never be poisoned by a forged Host header (PR-52
+        // Greptile P1). Defence-in-depth: the simulation also validates
+        // Host against `allowedHosts` independently of the /mcp guard.
+        issuer: `http://${resolvedHost}:${resolvedPort}`,
+        allowedHosts,
+      })
+    : null;
   const handler = createHttpHandler({
     idleTtlMs,
     maxSessions,
@@ -318,6 +358,7 @@ export async function startHttp({
     allowedHosts,
     allowedOrigins,
     enableDnsRebindingProtection,
+    oauthSimulation,
     log,
   });
   const server = earlyServer;
@@ -331,6 +372,7 @@ export async function startHttp({
     host: resolvedHost,
     url: `http://${resolvedHost}:${resolvedPort}${MCP_PATH}`,
     allowedHosts,
+    oauthSimulation,
     async close() {
       await handler.closeAll();
       await new Promise((resolve, reject) => {

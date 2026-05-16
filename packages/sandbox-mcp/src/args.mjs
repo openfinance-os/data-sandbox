@@ -15,6 +15,12 @@ export function parseEnvAllowedHosts(env) {
     .filter(Boolean);
 }
 
+export function parseEnvSimulateOauth(env) {
+  const raw = env?.MCP_SIMULATE_OAUTH;
+  if (!raw) return false;
+  return raw === '1' || raw.toLowerCase() === 'true' || raw.toLowerCase() === 'yes';
+}
+
 export function parseArgs(argv, env = process.env) {
   const out = {
     transport: 'stdio',
@@ -24,12 +30,15 @@ export function parseArgs(argv, env = process.env) {
     version: false,
     allowedHosts: parseEnvAllowedHosts(env),
     enableDnsRebindingProtection: true,
+    simulateOauth: parseEnvSimulateOauth(env),
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--help' || a === '-h') out.help = true;
     else if (a === '--version' || a === '-V') out.version = true;
     else if (a === '--no-dns-rebinding-protection') out.enableDnsRebindingProtection = false;
+    else if (a === '--simulate-oauth') out.simulateOauth = true;
+    else if (a === '--no-simulate-oauth') out.simulateOauth = false;
     else if (a === '--transport') out.transport = argv[++i];
     else if (a === '--port') out.port = Number(argv[++i]);
     else if (a === '--host') out.host = argv[++i];

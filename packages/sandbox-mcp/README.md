@@ -11,7 +11,8 @@ The intended use: run Claude as a **dynamic PFM** against a synthetic customer. 
 - **Two domains** — Bank Data Sharing v2.1 (all 12 Account-Information endpoints) and Insurance Data Sharing v2.1 GA (7 lines: motor, home, health, life, travel, renters, employment — each with the 4-endpoint MVP + cross-line Consents = 30 endpoints).
 - **27 curated personas (18 banking + 9 insurance) + a custom-persona builder** — pick from the curated list with `set_session`, or compose a recipe and call `build_persona` to generate a fresh deterministic persona at runtime.
 - **Read-only** — no writes, no Service Initiation.
-- **Anonymous** — no auth, no API keys, no OAuth. The data is synthetic so there is nothing real to protect.
+- **Anonymous by default** — no auth, no API keys, no OAuth. The data is synthetic so there is nothing real to protect. PRD D-13.
+- **Opt-in OAuth journey simulation** — `--simulate-oauth` / `MCP_SIMULATE_OAUTH=1` wires a UAE-Open-Finance-styled consent screen, RFC 9728 + RFC 8414 metadata, and a PKCE-validated `/authorize` + `/token` pair in front of `/mcp`, so a TPP can demo the customer-facing consent journey end-to-end. Off by default — the production deploy stays anonymous. See [`CLAUDE_FOR_OPEN_FINANCE.md`](../../CLAUDE_FOR_OPEN_FINANCE.md) at the repo root.
 - **Two transports** — stdio (default, for `npx` / Claude Desktop / Claude Code) and Streamable HTTP (for the Claude marketplace listing and any browser-side client). PRD decision D-13.
 
 ## Install
