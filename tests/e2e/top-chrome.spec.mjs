@@ -61,6 +61,24 @@ test.describe('top chrome compression (PR-10)', () => {
     await expect(chip).toHaveAttribute('aria-expanded', 'false');
   });
 
+  test('SYNTHETIC popover moves focus in on open + returns it on close (PR-16 Greptile P1)', async ({ page }) => {
+    await loadPersona(page);
+    await page.locator('#banner-chip').focus();
+    await page.locator('#banner-chip').click();
+    await expect(page.locator('#banner-popover')).toBeVisible();
+    // Focus is on the dialog node so screen readers announce its
+    // content; ARIA APG dialog pattern requirement.
+    const insideId = await page.evaluate(() => document.activeElement?.id ?? '');
+    expect(insideId).toBe('banner-popover');
+    // aria-modal is set so virtual-cursor navigation can't escape the dialog.
+    await expect(page.locator('#banner-popover')).toHaveAttribute('aria-modal', 'true');
+    // Esc closes and focus returns to the chip trigger.
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#banner-popover')).toBeHidden();
+    const focusedId = await page.evaluate(() => document.activeElement?.id ?? '');
+    expect(focusedId).toBe('banner-chip');
+  });
+
   test('thin synthetic stripe is at the page top, always visible', async ({ page }) => {
     await loadPersona(page);
     const stripe = page.locator('.banner-stripe');

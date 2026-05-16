@@ -44,14 +44,24 @@ function openPopover() {
   pop.hidden = false;
   chip.setAttribute('aria-expanded', 'true');
   popoverOpen = true;
+  // PR-16 (Greptile P1) — ARIA dialog pattern requires focus to enter
+  // the dialog on open so screen readers announce its content. The
+  // popover element carries tabindex="-1" in the HTML so it can
+  // receive programmatic focus without sitting in the tab order.
+  pop.focus();
 }
 
 function closePopover() {
   const pop = document.getElementById('banner-popover');
   const chip = document.getElementById('banner-chip');
+  const wasOpen = popoverOpen;
   if (pop) pop.hidden = true;
   if (chip) chip.setAttribute('aria-expanded', 'false');
   popoverOpen = false;
+  // PR-16 — return focus to the trigger so Tab resumes from the right
+  // place. The Esc keydown handler already does this; this path covers
+  // click-outside and the close button's onclick.
+  if (wasOpen && chip) chip.focus();
 }
 
 // Auxiliary pages (about.html, integrate.html) carry the legacy

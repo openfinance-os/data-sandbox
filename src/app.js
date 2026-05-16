@@ -174,7 +174,7 @@ const { copyEmbedSnippet, buildEmbedSnippet } = createEmbedSnippet({
 const findBox = (() => {
   let inner = null;
   let loading = null;
-  async function ensure() {
+  function ensure() {
     if (inner) return inner;
     if (!loading) {
       loading = import('./ui/find-box.js').then(({ createFindBox }) => {
@@ -187,8 +187,13 @@ const findBox = (() => {
     }
     return loading;
   }
+  // PR-16 (Greptile P1) — sync fast-path once the module has loaded so
+  // ⌘K spam can't race against itself.
   return {
-    async open() { (await ensure()).openFind(); },
+    open() {
+      if (inner) { inner.openFind(); return; }
+      ensure().then((p) => p.openFind());
+    },
     close() { inner?.closeFind(); },
   };
 })();
@@ -222,10 +227,12 @@ const { renderMonthlySummary } = createMonthlySummary({ el, formatAmount });
 // PR-15 — lazy insurance wrapper. The factory loads on the first
 // renderInsuranceBundle() call; subsequent calls reuse the cached
 // instance. Banking flow never triggers the import.
+// PR-16 (Greptile P1) — sync fast-path once `inner` is loaded so a
+// second call within the same tick can't race with the first.
 const renderInsuranceBundle = (() => {
   let inner = null;
   let loading = null;
-  async function ensure() {
+  function ensure() {
     if (inner) return inner;
     if (!loading) {
       loading = import('./ui/insurance.js').then(({ createInsurance }) => {
@@ -237,7 +244,10 @@ const renderInsuranceBundle = (() => {
     }
     return loading;
   }
-  return async () => { (await ensure())(); };
+  return () => {
+    if (inner) { inner(); return; }
+    ensure().then((fn) => fn());
+  };
 })();
 const { renderUnderwritingStrip, renderUnderwritingPanel } = createUnderwriting({
   state, el, formatAmount, renderNavigator, renderPayload, UNDERWRITING_PSEUDO,
@@ -281,7 +291,7 @@ const exportPopover = (() => {
       return buildActiveCsvString();
     },
   });
-  async function ensure() {
+  function ensure() {
     if (inner) return inner;
     if (!loading) {
       loading = import('./ui/export-popover.js')
@@ -289,8 +299,15 @@ const exportPopover = (() => {
     }
     return loading;
   }
+  // PR-16 — sync fast-path once the module has loaded so the common
+  // case (cache warm) doesn't pay a microtask yield. The inner open()
+  // at src/ui/export-popover.js:126 is itself a toggle, so a real
+  // dblclick still opens-then-closes by design.
   return {
-    async open() { (await ensure()).open(); },
+    open() {
+      if (inner) { inner.open(); return; }
+      ensure().then((p) => p.open());
+    },
     close() { inner?.close(); },
     get isOpen() { return inner ? inner.isOpen : false; },
   };
