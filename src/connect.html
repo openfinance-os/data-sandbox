@@ -10,7 +10,7 @@
   html, body { height: auto; overflow: auto; }
   body { display: block; background: var(--bg); }
   .connect-shell {
-    max-width: 880px;
+    max-width: 920px;
     margin: 0 auto;
     padding: 24px 18px 80px;
   }
@@ -85,37 +85,483 @@
   }
 
   .hero {
-    margin: 16px 0 28px;
-    padding: 28px 24px;
+    margin: 16px 0 24px;
+    padding: 24px 24px;
     background: linear-gradient(135deg, var(--accent-soft), var(--bg-card));
     border: 1px solid var(--border-strong);
     border-radius: 8px;
   }
-  .hero h1 { margin-top: 8px; }
-  .hero .lead { font-size: 17px; max-width: 680px; }
-  .hero .cta-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 18px;
+  .hero h1 { margin-top: 8px; font-size: 26px; }
+  .hero .lead { font-size: 15px; max-width: 680px; }
+
+  /* ─── Wizard ─────────────────────────────────────────────────────── */
+
+  .wizard {
+    margin: 16px 0 32px;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-card);
+    border-radius: 8px;
+    overflow: hidden;
   }
-  .cta-btn {
+  .wizard-steps {
+    display: flex;
+    align-items: stretch;
+    background: var(--bg-soft);
+    border-bottom: 1px solid var(--border);
+  }
+  .wizard-steps .step {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px;
+    font-size: 12px;
+    color: var(--text-muted);
+    border-right: 1px solid var(--border);
+    position: relative;
+  }
+  .wizard-steps .step:last-child { border-right: none; }
+  .wizard-steps .step .num {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--bg-card);
+    border: 1px solid var(--border-strong);
+    color: var(--text-muted);
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 9px 16px;
-    border-radius: 4px;
-    border: 1px solid var(--accent);
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex: 0 0 22px;
+  }
+  .wizard-steps .step.done .num,
+  .wizard-steps .step.active .num {
     background: var(--accent);
     color: #fff;
+    border-color: var(--accent);
+  }
+  .wizard-steps .step.done .label,
+  .wizard-steps .step.active .label {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .wizard-body {
+    padding: 22px 22px 18px;
+    min-height: 320px;
+  }
+  .wizard-body[hidden] { display: none !important; }
+  .wizard-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 22px;
+    background: var(--bg-soft);
+    border-top: 1px solid var(--border);
+  }
+  .wizard-actions .meta {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .wizard-actions .button-row {
+    display: flex;
+    gap: 8px;
+  }
+  .btn {
+    padding: 9px 16px;
+    border-radius: 4px;
+    border: 1px solid var(--border-strong);
+    background: transparent;
+    color: var(--text);
     font-weight: 600;
     font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
   }
-  .cta-btn:hover { text-decoration: none; opacity: 0.92; }
-  .cta-btn.secondary {
+  .btn:hover { background: var(--bg-card); }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .btn.primary:hover { background: var(--accent); opacity: 0.92; }
+  .btn.ghost { border-color: transparent; color: var(--text-muted); }
+
+  /* ─── Step 1: persona gallery ────────────────────────────────────── */
+
+  .wizard-body h3.step-title {
+    font-size: 13px;
+    margin: 0 0 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+  }
+  .wizard-body h2.step-h {
+    font-size: 20px;
+    margin: 0 0 6px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .wizard-body .step-sub {
+    font-size: 13.5px;
+    color: var(--text-muted);
+    margin: 0 0 18px;
+  }
+
+  .persona-filters {
+    display: inline-flex;
+    border: 1px solid var(--border-strong);
+    border-radius: 999px;
+    background: var(--bg-soft);
+    padding: 2px;
+    margin-bottom: 14px;
+    gap: 2px;
+  }
+  .persona-filters button {
+    padding: 5px 14px;
+    border: none;
     background: transparent;
-    color: var(--accent);
+    border-radius: 999px;
+    font-size: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-weight: 600;
+    font-family: inherit;
   }
+  .persona-filters button.active {
+    background: var(--bg-card);
+    color: var(--text);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+
+  .persona-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+  }
+  .persona-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 14px 14px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    transition: border-color 0.12s, box-shadow 0.12s;
+  }
+  .persona-card:hover {
+    border-color: var(--border-strong);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .persona-card.selected {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    box-shadow: 0 0 0 1px var(--accent) inset;
+  }
+  .persona-card .avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    margin-bottom: 8px;
+  }
+  .persona-card .pname {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.35;
+    margin-bottom: 4px;
+    color: var(--text);
+  }
+  .persona-card .pmeta {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .persona-card .ptags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 8px;
+  }
+  .persona-card .tag {
+    padding: 2px 7px;
+    border-radius: 3px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    font-size: 10.5px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+  .persona-card .tag.domain-banking { color: var(--accent); border-color: var(--accent-soft); background: var(--accent-soft); }
+  .persona-card .tag.domain-insurance { color: #6E548F; border-color: #e6ddee; background: #f3edf7; }
+  .persona-card .tag.segment-sme { color: #8b5d2e; border-color: #f0dec0; background: #fbf3e3; }
+
+  /* ─── Step 2: institutions ───────────────────────────────────────── */
+
+  .institutions-block { margin-top: 14px; }
+  .institutions-block h4 {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 18px 0 8px;
+    font-weight: 600;
+  }
+  .inst-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 10px;
+  }
+  .inst-card {
+    padding: 12px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .inst-card:hover { border-color: var(--border-strong); }
+  .inst-card.selected {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    box-shadow: 0 0 0 1px var(--accent) inset;
+  }
+  .inst-card .ihead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .inst-card .iname {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .inst-card .ibadge {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .inst-card .ibadge.rich { background: var(--accent-soft); color: var(--accent); border-color: var(--accent-soft); }
+  .inst-card .ibadge.median { background: var(--bg-soft); color: var(--text); border-color: var(--border-strong); }
+  .inst-card .ibadge.sparse { background: var(--warn-bg); color: #8b5d2e; border-color: var(--warn-border); }
+  .inst-card .ibody {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.45;
+  }
+  .inst-card .iendpoints {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  .footprint-advisory {
+    margin-top: 16px;
+    padding: 12px 14px;
+    background: var(--bg-soft);
+    border-left: 3px solid var(--warn-border);
+    border-radius: 3px;
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.55;
+  }
+  .footprint-advisory strong { display: block; margin-bottom: 4px; color: var(--text); }
+  .footprint-advisory .candidate-row {
+    margin-top: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .footprint-advisory .candidate-row .cand {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 2px 8px;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .footprint-advisory .candidate-role {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-top: 8px;
+  }
+
+  /* ─── Step 3: consent ────────────────────────────────────────────── */
+
+  .consent-mock {
+    border: 1px solid var(--border-strong);
+    background: var(--bg-card);
+    border-radius: 6px;
+    padding: 0;
+    margin: 4px 0 4px;
+    overflow: hidden;
+  }
+  .consent-mock .browser-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--bg-soft);
+    border-bottom: 1px solid var(--border);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11.5px;
+    color: var(--text-muted);
+  }
+  .consent-mock .browser-bar .dots {
+    display: inline-flex;
+    gap: 4px;
+  }
+  .consent-mock .browser-bar .dots span {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--border-strong);
+  }
+  .consent-mock .browser-bar .url {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .consent-mock .body {
+    padding: 20px 22px 18px;
+  }
+  .consent-mock .body h4 {
+    margin: 0 0 4px;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .consent-mock .body .sub {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+  }
+  .consent-mock .persona-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    margin: 10px 0 4px;
+  }
+  .consent-mock .persona-line .avatar {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 11px;
+    flex: 0 0 30px;
+  }
+  .consent-mock .persona-line .pn { font-size: 13px; font-weight: 600; }
+  .consent-mock .persona-line .pm { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .consent-mock .scope {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 0;
+    border-top: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .consent-mock .scope:first-of-type { border-top: none; }
+  .consent-mock .scope .tick {
+    width: 18px; height: 18px; flex: 0 0 18px;
+    border-radius: 3px;
+    background: var(--mandatory-bg);
+    color: var(--mandatory-fg);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700;
+  }
+  .consent-mock .scope.unchecked .tick {
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    color: var(--text-muted);
+  }
+  .consent-mock .scope strong { display: block; }
+  .consent-mock .scope .scope-body {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.45;
+  }
+  .consent-mock .selected-insts {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    line-height: 1.55;
+  }
+  .consent-mock .footnote {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border);
+  }
+
+  /* ─── Step 4: connected ─────────────────────────────────────────── */
+
+  .connected-summary {
+    padding: 14px 16px;
+    border: 1px solid var(--accent);
+    background: var(--accent-soft);
+    border-radius: 6px;
+    margin: 4px 0 14px;
+  }
+  .connected-summary .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); font-weight: 700; }
+  .connected-summary .summary-line { font-size: 13px; margin-top: 4px; }
+  .connected-summary .summary-line strong { font-weight: 600; }
+  .next-prompt {
+    margin-top: 12px;
+    padding: 14px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+  }
+  .next-prompt .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); font-weight: 700; }
+  .next-prompt .prompt-quote {
+    font-size: 14.5px;
+    line-height: 1.5;
+    margin: 8px 0 4px;
+    font-style: italic;
+    color: var(--text);
+  }
+  .next-prompt .tool-chain {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    margin-top: 6px;
+  }
+
+  /* ─── Supporting content (post-wizard) ──────────────────────────── */
 
   .grid {
     display: grid;
@@ -168,117 +614,10 @@
     font-weight: 700;
     text-align: center;
   }
-  .skill strong { display: inline; }
   .skill .skill-body {
     margin-top: 4px;
     color: var(--text-muted);
     font-size: 12px;
-  }
-
-  .consent-mock {
-    border: 1px solid var(--border-strong);
-    background: var(--bg-card);
-    border-radius: 6px;
-    padding: 0;
-    margin: 12px 0 4px;
-    overflow: hidden;
-  }
-  .consent-mock .browser-bar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    background: var(--bg-soft);
-    border-bottom: 1px solid var(--border);
-    font-family: ui-monospace, "SF Mono", Menlo, monospace;
-    font-size: 11.5px;
-    color: var(--text-muted);
-  }
-  .consent-mock .browser-bar .dots {
-    display: inline-flex;
-    gap: 4px;
-  }
-  .consent-mock .browser-bar .dots span {
-    display: inline-block;
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: var(--border-strong);
-  }
-  .consent-mock .browser-bar .url {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .consent-mock .body {
-    padding: 22px 22px 18px;
-  }
-  .consent-mock .body h4 {
-    margin: 0 0 4px;
-    font-size: 16px;
-    font-weight: 600;
-  }
-  .consent-mock .body .sub {
-    font-size: 12.5px;
-    color: var(--text-muted);
-    margin-bottom: 18px;
-  }
-  .consent-mock .scope {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 10px 0;
-    border-top: 1px solid var(--border);
-    font-size: 13px;
-  }
-  .consent-mock .scope:first-of-type { border-top: none; }
-  .consent-mock .scope .tick {
-    width: 18px; height: 18px; flex: 0 0 18px;
-    border-radius: 3px;
-    background: var(--mandatory-bg);
-    color: var(--mandatory-fg);
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 11px; font-weight: 700;
-  }
-  .consent-mock .scope.unchecked .tick {
-    background: transparent;
-    border: 1px solid var(--border-strong);
-    color: var(--text-muted);
-  }
-  .consent-mock .scope strong { display: block; }
-  .consent-mock .scope .scope-body {
-    font-size: 12px;
-    color: var(--text-muted);
-    line-height: 1.45;
-  }
-  .consent-mock .footnote {
-    font-size: 11.5px;
-    color: var(--text-muted);
-    margin-top: 14px;
-    padding-top: 12px;
-    border-top: 1px dashed var(--border);
-  }
-  .consent-mock .actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 14px;
-  }
-  .consent-mock .actions .deny,
-  .consent-mock .actions .approve {
-    padding: 9px 18px;
-    border-radius: 4px;
-    border: 1px solid var(--border-strong);
-    background: transparent;
-    color: var(--text);
-    font-weight: 600;
-    font-size: 13px;
-  }
-  .consent-mock .actions .approve {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #fff;
   }
 
   .fourD {
@@ -298,36 +637,6 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
     background: var(--bg-soft, var(--bg-card));
-  }
-
-  .workshop-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 8px;
-  }
-  .workshop-grid .workshop {
-    padding: 10px 12px;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    font-size: 12.5px;
-  }
-  .workshop-grid .workshop .date {
-    display: block;
-    font-size: 11px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    margin-bottom: 2px;
-  }
-  .workshop-grid .workshop .city {
-    font-weight: 600;
-  }
-  .workshop-grid .workshop .venue {
-    display: block;
-    color: var(--text-muted);
-    font-size: 11.5px;
-    margin-top: 2px;
   }
 
   .meta-grid {
@@ -358,6 +667,12 @@
     line-height: 1.55;
   }
   .callout strong { color: var(--text); }
+
+  .skeleton {
+    color: var(--text-muted);
+    font-style: italic;
+    font-size: 13px;
+  }
 </style>
 </head>
 <body>
@@ -381,121 +696,95 @@
       <em>added the connector</em> to <em>answered a customer's first PFM question</em>
       in under a minute.
     </p>
-    <p class="lead" style="font-size:14px;color:var(--text-muted);max-width:680px;">
+    <p class="lead" style="font-size:13.5px;color:var(--text-muted);max-width:680px;">
       Inspired by Anthropic's <a href="https://www.anthropic.com/news/claude-for-small-business" target="_blank" rel="noopener noreferrer">Claude for Small Business</a> launch.
-      Reprojected onto this repo's synthetic UAE Open Finance v2.1 sandbox. Nothing here is
-      endorsed by Anthropic, CBUAE, Nebras, or any UAE LFI.
+      Reprojected onto this repo's synthetic UAE Open Finance v2.1 sandbox. Walk the journey
+      below; nothing here is endorsed by Anthropic, CBUAE, Nebras, or any UAE LFI.
     </p>
-    <div class="cta-row">
-      <a class="cta-btn" href="#consent">See the toggle install ↓</a>
-      <a class="cta-btn secondary" href="#skills">15 ready-made skills ↓</a>
-      <a class="cta-btn secondary" href="integrate.html">TPP integration guide →</a>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- WIZARD                                                          -->
+  <!-- ============================================================== -->
+
+  <section class="wizard" id="wizard" aria-label="Connector onboarding journey simulator">
+    <ol class="wizard-steps" id="wizard-steps">
+      <li class="step active" data-step="1"><span class="num">1</span><span class="label">Pick persona</span></li>
+      <li class="step" data-step="2"><span class="num">2</span><span class="label">Choose institutions</span></li>
+      <li class="step" data-step="3"><span class="num">3</span><span class="label">Authorize</span></li>
+      <li class="step" data-step="4"><span class="num">4</span><span class="label">Connected</span></li>
+    </ol>
+
+    <!-- Step 1: persona gallery -->
+    <div class="wizard-body" id="step-1">
+      <h3 class="step-title">Step 1 of 4</h3>
+      <h2 class="step-h">Who are you, for this session?</h2>
+      <p class="step-sub">
+        Pick a synthetic UAE customer. Claude will answer every question in this session as if it
+        were sitting on that customer's accounts. All 27 personas are fictional; none derive
+        from any real customer.
+      </p>
+      <div class="persona-filters" role="tablist" aria-label="Filter personas by domain">
+        <button type="button" data-filter="all" class="active" role="tab" aria-selected="true">All · 27</button>
+        <button type="button" data-filter="banking" role="tab" aria-selected="false">Banking · 18</button>
+        <button type="button" data-filter="insurance" role="tab" aria-selected="false">Insurance · 9</button>
+        <button type="button" data-filter="sme" role="tab" aria-selected="false">SME · 6</button>
+      </div>
+      <div class="persona-grid" id="persona-grid" role="radiogroup" aria-label="Synthetic persona gallery">
+        <p class="skeleton">Loading personas…</p>
+      </div>
+    </div>
+
+    <!-- Step 2: institutions -->
+    <div class="wizard-body" id="step-2" hidden>
+      <h3 class="step-title">Step 2 of 4</h3>
+      <h2 class="step-h">Which institutions are you sharing from?</h2>
+      <p class="step-sub" id="step-2-sub">
+        A real customer would tick the LFIs and insurance carriers they actually hold a relationship
+        with. The sandbox exposes each bank as one of three anonymised <strong>populate-rate
+        profiles</strong> (Rich · Median · Sparse) per PRD <abbr title="Non-Goal 5">NG5</abbr> — never
+        as a named real bank.
+      </p>
+      <div id="institutions-body" class="institutions-block">
+        <p class="skeleton">Pick a persona to see their applicable institutions.</p>
+      </div>
+    </div>
+
+    <!-- Step 3: consent -->
+    <div class="wizard-body" id="step-3" hidden>
+      <h3 class="step-title">Step 3 of 4</h3>
+      <h2 class="step-h">Authorize Claude</h2>
+      <p class="step-sub">
+        The UAE Open Finance Authority consent screen Claude would surface in
+        <strong>Claude.ai → Settings → Connectors → Open Finance Sandbox</strong>.
+        One tap unlocks every selected institution for the session.
+      </p>
+      <div id="consent-body"></div>
+    </div>
+
+    <!-- Step 4: connected -->
+    <div class="wizard-body" id="step-4" hidden>
+      <h3 class="step-title">Step 4 of 4</h3>
+      <h2 class="step-h">Connected</h2>
+      <p class="step-sub">
+        Bearer token issued. Tools unlocked for this Claude session. Suggested first prompt:
+      </p>
+      <div id="connected-body"></div>
+    </div>
+
+    <div class="wizard-actions">
+      <span class="meta" id="wizard-status">Pick a persona to continue.</span>
+      <div class="button-row">
+        <button type="button" class="btn ghost" id="btn-restart" hidden>Start over</button>
+        <button type="button" class="btn" id="btn-back" disabled>← Back</button>
+        <button type="button" class="btn primary" id="btn-next" disabled>Next →</button>
+      </div>
     </div>
   </section>
 
-  <section>
-    <h2>The bundle — one toggle, many LFIs</h2>
-    <p>
-      Where Claude for Small Business toggles on QuickBooks + PayPal + HubSpot + Canva +
-      Docusign + Google Workspace + Microsoft 365 in a single switch,
-      <strong>Claude for Open Finance</strong> toggles on a single AISP consent that fans out
-      across the licensed UAE LFI estate — represented in this sandbox by anonymised
-      populate-rate profiles per PRD <abbr title="Non-Goal 5 — refined by D-14">NG5</abbr>.
-    </p>
-
-    <h3>Bank Data Sharing — 9 LFI profiles × 12 endpoints</h3>
-    <div class="grid">
-      <div class="card">
-        <span class="card-title">LFI · Rich</span>
-        <span class="card-meta">Populate rate</span>
-        <p class="card-body">Every optional field populated. Best-case parser test.</p>
-      </div>
-      <div class="card">
-        <span class="card-title">LFI · Median</span>
-        <span class="card-meta">Default · Commons-curated</span>
-        <p class="card-body">Typical UAE-market populate rate.</p>
-      </div>
-      <div class="card">
-        <span class="card-title">LFI · Sparse</span>
-        <span class="card-meta">Minimum-conformant</span>
-        <p class="card-body">Mandatory plus a few optionals. Resilience test.</p>
-      </div>
-    </div>
-
-    <h3>Insurance Data Sharing — 7 lines × 4 endpoints</h3>
-    <div class="grid">
-      <div class="card"><span class="card-title">Motor</span><span class="card-meta">3 personas</span><p class="card-body">Comprehensive · TPL · UBI</p></div>
-      <div class="card"><span class="card-title">Home</span><span class="card-meta">1 persona</span><p class="card-body">Mortgaged villa</p></div>
-      <div class="card"><span class="card-title">Health</span><span class="card-meta">1 persona</span><p class="card-body">Family comprehensive</p></div>
-      <div class="card"><span class="card-title">Life</span><span class="card-meta">1 persona</span><p class="card-body">Mortgage protection</p></div>
-      <div class="card"><span class="card-title">Travel</span><span class="card-meta">1 persona</span><p class="card-body">Annual multi-trip expat</p></div>
-      <div class="card"><span class="card-title">Renters</span><span class="card-meta">1 persona</span><p class="card-body">Apartment tenant</p></div>
-      <div class="card"><span class="card-title">Employment</span><span class="card-meta">1 persona</span><p class="card-body">ILOE — private sector</p></div>
-    </div>
-  </section>
-
-  <section id="consent">
-    <h2>The toggle install — one screen, not seven</h2>
-    <p>
-      The whole consent journey collapses into <strong>one</strong> UAE Open Finance Authority-styled
-      screen, the way SMB's connector toggle collapses multiple OAuths.
-      One tap unlocks every LFI profile and every insurance line for the active Claude session.
-    </p>
-
-    <div class="consent-mock" role="img" aria-label="Mock UAE Open Finance consent screen">
-      <div class="browser-bar">
-        <span class="dots"><span></span><span></span><span></span></span>
-        <span class="url">https://auth.openfinance-os.org/oauth2/authorize?client_id=cc-connector-9f3a&amp;…</span>
-      </div>
-      <div class="body">
-        <h4>Claude × UAE Open Finance Authority</h4>
-        <p class="sub">Claude is requesting access on behalf of <strong>"Claude for Open Finance"</strong> · TPP licence <code>SANDBOX-CC-9F3A</code></p>
-
-        <div class="scope">
-          <span class="tick" aria-hidden="true">✓</span>
-          <div>
-            <strong>Bank Data Sharing</strong>
-            <span class="scope-body">accounts · balances · transactions · standing orders · direct debits · beneficiaries · statements · products</span>
-          </div>
-        </div>
-
-        <div class="scope">
-          <span class="tick" aria-hidden="true">✓</span>
-          <div>
-            <strong>Insurance Data Sharing</strong>
-            <span class="scope-body">policies · payment details · quotes — read-only across 7 lines</span>
-          </div>
-        </div>
-
-        <div class="scope unchecked">
-          <span class="tick" aria-hidden="true"></span>
-          <div>
-            <strong>Service Initiation — payments</strong>
-            <span class="scope-body">Not requested · v1 read-only</span>
-          </div>
-        </div>
-
-        <p class="footnote">
-          Sharing window <strong>90 days</strong> · Revoke any time at <em>My Consents</em>.
-          Data is <strong>SYNTHETIC</strong>. No real customer. No real institution.
-        </p>
-
-        <div class="actions">
-          <button class="deny" type="button">Deny</button>
-          <button class="approve" type="button">Approve all (1 tap)</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="callout">
-      <strong>The journey under the hood.</strong>
-      MCP returns <code>401 WWW-Authenticate: Bearer realm="open-finance-sandbox"</code>; Claude calls
-      <code>authenticate</code>, surfaces the consent URL; the user approves; the browser lands on
-      <code>http://localhost:&lt;port&gt;/callback?code=…&amp;state=…</code>; Claude calls
-      <code>complete_authentication</code>; a bearer token is attached to every subsequent
-      <code>/mcp</code> POST. Wired as opt-in simulation behind <code>--simulate-oauth</code>.
-    </div>
-  </section>
+  <!-- ============================================================== -->
+  <!-- SUPPORTING CONTENT (post-wizard)                                -->
+  <!-- ============================================================== -->
 
   <section id="skills">
     <h2>15 ready-made skills</h2>
@@ -559,39 +848,23 @@
   </section>
 
   <section>
-    <h2>Workshop tour</h2>
+    <h2>Try the journey for real</h2>
     <p>
-      10 free dev-workshops across the GCC, mirroring Claude for Small Business's 10-city US tour.
+      The wizard above is a UI mock. To exercise the actual OAuth handshake — 401 challenge,
+      RFC 9728 + RFC 8414 metadata, PKCE-validated <code>/token</code> exchange, bearer-gated
+      <code>/mcp</code> — start the MCP server with the opt-in simulation flag:
     </p>
-    <div class="workshop-grid">
-      <div class="workshop"><span class="date">May 14</span><span class="city">Dubai</span><span class="venue">DIFC FinTech Hive</span></div>
-      <div class="workshop"><span class="date">May 21</span><span class="city">Abu Dhabi</span><span class="venue">ADGM Hub71</span></div>
-      <div class="workshop"><span class="date">May 28</span><span class="city">Sharjah</span><span class="venue">Sheraa</span></div>
-      <div class="workshop"><span class="date">Jun 4</span><span class="city">Riyadh</span><span class="venue">Fintech Saudi</span></div>
-      <div class="workshop"><span class="date">Jun 7</span><span class="city">Manama</span><span class="venue">Bahrain FinTech Bay</span></div>
-      <div class="workshop"><span class="date">Jun 11</span><span class="city">Doha</span><span class="venue">QFC</span></div>
-      <div class="workshop"><span class="date">Jun 14</span><span class="city">Kuwait City</span><span class="venue">KFAS</span></div>
-      <div class="workshop"><span class="date">Jun 18</span><span class="city">Muscat</span><span class="venue">OAB Innovation Lab</span></div>
-      <div class="workshop"><span class="date">Jun 22</span><span class="city">Cairo</span><span class="venue">AUC Venture Lab</span></div>
-      <div class="workshop"><span class="date">Jun 26</span><span class="city">Amman</span><span class="venue">Orange Hub</span></div>
-    </div>
-  </section>
-
-  <section>
-    <h2>Try the journey</h2>
-    <p>Two ways to experience the consent flow against this repo's MCP server:</p>
     <pre><code># Anonymous — the production default per PRD D-13
 npx -y @openfinance-os/sandbox-mcp --transport http --port 8787
 
-# Opt-in OAuth simulation — surfaces 401 + WWW-Authenticate, /authorize,
-# /token, and bearer-validation on every /mcp POST
+# Opt-in OAuth simulation
 npx -y @openfinance-os/sandbox-mcp --transport http --port 8787 --simulate-oauth
 # or:
 MCP_SIMULATE_OAUTH=1 npx -y @openfinance-os/sandbox-mcp --transport http</code></pre>
     <p>
       A markdown design memo for this page lives at
-      <a href="https://github.com/openfinance-os/data-sandbox/blob/main/CLAUDE_FOR_OPEN_FINANCE.md" target="_blank" rel="noopener noreferrer"><code>CLAUDE_FOR_OPEN_FINANCE.md</code></a>.
-      The OAuth simulation lives at
+      <a href="https://github.com/openfinance-os/data-sandbox/blob/main/CLAUDE_FOR_OPEN_FINANCE.md" target="_blank" rel="noopener noreferrer"><code>CLAUDE_FOR_OPEN_FINANCE.md</code></a>;
+      the OAuth simulation lives at
       <a href="https://github.com/openfinance-os/data-sandbox/blob/main/packages/sandbox-mcp/src/transports/oauth-simulation.mjs" target="_blank" rel="noopener noreferrer"><code>packages/sandbox-mcp/src/transports/oauth-simulation.mjs</code></a>.
     </p>
   </section>
@@ -603,13 +876,9 @@ MCP_SIMULATE_OAUTH=1 npx -y @openfinance-os/sandbox-mcp --transport http</code><
       invariants of the sandbox: spec-driven field metadata (EXP-01), no real customer data
       (NG4 / EXP-07), no institution-specific operational detail (NG5 / D-14), deterministic
       generation (EXP-05), Standards baseline v2.1 only (D-01), and no separate contributor
-      branding (NG6).
-    </p>
-    <p>
-      The OAuth simulation is opt-in and purely transport-side theatre — it gates the same
-      synthetic payloads behind a bearer token. There is nothing real to protect; the value is
-      letting a TPP demo a customer-facing consent journey end-to-end before they have to wire
-      a real Nebras-Open-Finance client.
+      branding (NG6). Real UAE bank names appear only in the SME advisory panel pulled from
+      each persona's <code>multi_lfi_footprint.plausible_lfi_candidates</code> — never bound
+      to a populate-rate profile.
     </p>
   </section>
 
