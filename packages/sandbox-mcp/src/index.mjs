@@ -40,8 +40,13 @@ if (args.help) {
       '                                                        Streamable HTTP',
       '              [--allowed-host mcp.example.org]          Add to Host allowlist',
       '              [--no-dns-rebinding-protection]           Disable Host validation',
+      '              [--simulate-oauth]                        Opt-in OAuth journey',
+      '                                                        simulation (off by default;',
+      '                                                        synthetic data is anonymous',
+      '                                                        per PRD D-13)',
       '',
       '  MCP_ALLOWED_HOSTS=a,b env var feeds the same allowlist as --allowed-host.',
+      '  MCP_SIMULATE_OAUTH=1 enables the OAuth simulation (same as --simulate-oauth).',
       '',
       'Wire into Claude Desktop (stdio) by adding to claude_desktop_config.json:',
       '  {',
@@ -66,12 +71,14 @@ if (args.transport === 'stdio') {
     host: args.host,
     allowedHosts: args.allowedHosts,
     enableDnsRebindingProtection: args.enableDnsRebindingProtection,
+    simulateOauth: args.simulateOauth,
   });
   process.stderr.write(
     [
       `${pkg.name} ${pkg.version} listening on ${handle.url}`,
       `allowed Host headers: ${handle.allowedHosts.join(', ')}`,
       `DNS rebinding protection: ${args.enableDnsRebindingProtection ? 'on' : 'off'}`,
+      `OAuth simulation: ${args.simulateOauth ? 'on (start the flow at /authorize)' : 'off (anonymous per PRD D-13)'}`,
       '',
     ].join('\n'),
   );

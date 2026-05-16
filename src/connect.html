@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Claude for Open Finance — Open Finance Data Sandbox</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Crect width=%2716%27 height=%2716%27 rx=%273%27 fill=%27%236E548F%27/%3E%3Ctext x=%278%27 y=%2712%27 font-family=%27system-ui,sans-serif%27 font-size=%2710%27 font-weight=%27700%27 text-anchor=%27middle%27 fill=%27%23fff%27%3E%C2%A4%3C/text%3E%3C/svg%3E" />
+<link rel="stylesheet" href="styles.css" />
+<style>
+  html, body { height: auto; overflow: auto; }
+  body { display: block; background: var(--bg); }
+  .connect-shell {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 24px 18px 80px;
+  }
+  .connect-shell .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin: 20px 0 6px;
+  }
+  .connect-shell h1 {
+    font-size: 30px;
+    line-height: 1.15;
+    margin: 0 0 12px;
+    letter-spacing: -0.01em;
+  }
+  .connect-shell .lead {
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--text);
+    margin: 0 0 8px;
+  }
+  .connect-shell h2 {
+    font-size: 18px;
+    margin: 36px 0 10px;
+  }
+  .connect-shell h3 {
+    font-size: 13px;
+    margin: 20px 0 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+  }
+  .connect-shell p, .connect-shell li { font-size: 14px; line-height: 1.6; }
+  .connect-shell li { margin-bottom: 4px; }
+  .connect-shell a { color: var(--accent); text-decoration: none; }
+  .connect-shell a:hover { text-decoration: underline; }
+  .connect-shell code {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12.5px;
+    background: var(--bg-card);
+    padding: 1px 5px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+  }
+  .connect-shell pre {
+    margin: 8px 0;
+    padding: 12px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12.5px;
+    line-height: 1.55;
+    overflow-x: auto;
+  }
+  .back-link { font-size: 12px; color: var(--text-muted); }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--warn-border);
+    background: var(--warn-bg);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .hero {
+    margin: 16px 0 28px;
+    padding: 28px 24px;
+    background: linear-gradient(135deg, var(--accent-soft), var(--bg-card));
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+  }
+  .hero h1 { margin-top: 8px; }
+  .hero .lead { font-size: 17px; max-width: 680px; }
+  .hero .cta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 18px;
+  }
+  .cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 16px;
+    border-radius: 4px;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    font-size: 13px;
+  }
+  .cta-btn:hover { text-decoration: none; opacity: 0.92; }
+  .cta-btn.secondary {
+    background: transparent;
+    color: var(--accent);
+  }
+
+  .grid {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    margin: 12px 0 8px;
+  }
+  .card {
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    border-radius: 5px;
+  }
+  .card .card-title {
+    display: block;
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+  .card .card-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .card .card-body { font-size: 12.5px; line-height: 1.5; margin-top: 4px; }
+
+  .skill-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 10px;
+  }
+  .skill {
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    border-radius: 5px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .skill .num {
+    display: inline-block;
+    min-width: 22px;
+    margin-right: 6px;
+    padding: 1px 6px;
+    font-size: 11px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-radius: 999px;
+    font-weight: 700;
+    text-align: center;
+  }
+  .skill strong { display: inline; }
+  .skill .skill-body {
+    margin-top: 4px;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .consent-mock {
+    border: 1px solid var(--border-strong);
+    background: var(--bg-card);
+    border-radius: 6px;
+    padding: 0;
+    margin: 12px 0 4px;
+    overflow: hidden;
+  }
+  .consent-mock .browser-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--bg-soft);
+    border-bottom: 1px solid var(--border);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11.5px;
+    color: var(--text-muted);
+  }
+  .consent-mock .browser-bar .dots {
+    display: inline-flex;
+    gap: 4px;
+  }
+  .consent-mock .browser-bar .dots span {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--border-strong);
+  }
+  .consent-mock .browser-bar .url {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .consent-mock .body {
+    padding: 22px 22px 18px;
+  }
+  .consent-mock .body h4 {
+    margin: 0 0 4px;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .consent-mock .body .sub {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    margin-bottom: 18px;
+  }
+  .consent-mock .scope {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 0;
+    border-top: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .consent-mock .scope:first-of-type { border-top: none; }
+  .consent-mock .scope .tick {
+    width: 18px; height: 18px; flex: 0 0 18px;
+    border-radius: 3px;
+    background: var(--mandatory-bg);
+    color: var(--mandatory-fg);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700;
+  }
+  .consent-mock .scope.unchecked .tick {
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    color: var(--text-muted);
+  }
+  .consent-mock .scope strong { display: block; }
+  .consent-mock .scope .scope-body {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.45;
+  }
+  .consent-mock .footnote {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border);
+  }
+  .consent-mock .actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .consent-mock .actions .deny,
+  .consent-mock .actions .approve {
+    padding: 9px 18px;
+    border-radius: 4px;
+    border: 1px solid var(--border-strong);
+    background: transparent;
+    color: var(--text);
+    font-weight: 600;
+    font-size: 13px;
+  }
+  .consent-mock .actions .approve {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  .fourD {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+    font-size: 13px;
+  }
+  .fourD th, .fourD td {
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    vertical-align: top;
+  }
+  .fourD th {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: var(--bg-soft, var(--bg-card));
+  }
+
+  .workshop-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 8px;
+  }
+  .workshop-grid .workshop {
+    padding: 10px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 12.5px;
+  }
+  .workshop-grid .workshop .date {
+    display: block;
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 2px;
+  }
+  .workshop-grid .workshop .city {
+    font-weight: 600;
+  }
+  .workshop-grid .workshop .venue {
+    display: block;
+    color: var(--text-muted);
+    font-size: 11.5px;
+    margin-top: 2px;
+  }
+
+  .meta-grid {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 4px 16px;
+    margin-top: 8px;
+  }
+  .meta-grid dt {
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+  }
+  .meta-grid dd {
+    margin: 0;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12px;
+  }
+
+  .callout {
+    margin: 16px 0 12px;
+    padding: 12px 14px;
+    background: var(--bg-card);
+    border-left: 3px solid var(--accent);
+    border-radius: 3px;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  .callout strong { color: var(--text); }
+</style>
+</head>
+<body>
+<div class="banner" role="status" aria-label="Synthetic data notice" data-dismissible>
+  <strong>SYNTHETIC.</strong>
+  Data is generated from the UAE Open Finance Standards v2.1 OpenAPI spec — not from any real bank.
+  Median populate-rate is a Commons-curated ecosystem assumption, not endorsed by Nebras or CBUAE.
+</div>
+<script type="module" src="shared/banner.js"></script>
+
+<main class="connect-shell">
+  <p class="back-link"><a href="index.html">← Back to the sandbox</a></p>
+
+  <section class="hero">
+    <span class="status-pill" aria-label="Simulation status">Design memo · Simulation only</span>
+    <p class="eyebrow">Introducing</p>
+    <h1>Claude for Open Finance</h1>
+    <p class="lead">
+      A toggle install that puts Claude inside the regulated rails UAE TPPs depend on —
+      and a bundle of ready-to-run workflows so you can go from
+      <em>added the connector</em> to <em>answered a customer's first PFM question</em>
+      in under a minute.
+    </p>
+    <p class="lead" style="font-size:14px;color:var(--text-muted);max-width:680px;">
+      Inspired by Anthropic's <a href="https://www.anthropic.com/news/claude-for-small-business" target="_blank" rel="noopener noreferrer">Claude for Small Business</a> launch.
+      Reprojected onto this repo's synthetic UAE Open Finance v2.1 sandbox. Nothing here is
+      endorsed by Anthropic, CBUAE, Nebras, or any UAE LFI.
+    </p>
+    <div class="cta-row">
+      <a class="cta-btn" href="#consent">See the toggle install ↓</a>
+      <a class="cta-btn secondary" href="#skills">15 ready-made skills ↓</a>
+      <a class="cta-btn secondary" href="integrate.html">TPP integration guide →</a>
+    </div>
+  </section>
+
+  <section>
+    <h2>The bundle — one toggle, many LFIs</h2>
+    <p>
+      Where Claude for Small Business toggles on QuickBooks + PayPal + HubSpot + Canva +
+      Docusign + Google Workspace + Microsoft 365 in a single switch,
+      <strong>Claude for Open Finance</strong> toggles on a single AISP consent that fans out
+      across the licensed UAE LFI estate — represented in this sandbox by anonymised
+      populate-rate profiles per PRD <abbr title="Non-Goal 5 — refined by D-14">NG5</abbr>.
+    </p>
+
+    <h3>Bank Data Sharing — 9 LFI profiles × 12 endpoints</h3>
+    <div class="grid">
+      <div class="card">
+        <span class="card-title">LFI · Rich</span>
+        <span class="card-meta">Populate rate</span>
+        <p class="card-body">Every optional field populated. Best-case parser test.</p>
+      </div>
+      <div class="card">
+        <span class="card-title">LFI · Median</span>
+        <span class="card-meta">Default · Commons-curated</span>
+        <p class="card-body">Typical UAE-market populate rate.</p>
+      </div>
+      <div class="card">
+        <span class="card-title">LFI · Sparse</span>
+        <span class="card-meta">Minimum-conformant</span>
+        <p class="card-body">Mandatory plus a few optionals. Resilience test.</p>
+      </div>
+    </div>
+
+    <h3>Insurance Data Sharing — 7 lines × 4 endpoints</h3>
+    <div class="grid">
+      <div class="card"><span class="card-title">Motor</span><span class="card-meta">3 personas</span><p class="card-body">Comprehensive · TPL · UBI</p></div>
+      <div class="card"><span class="card-title">Home</span><span class="card-meta">1 persona</span><p class="card-body">Mortgaged villa</p></div>
+      <div class="card"><span class="card-title">Health</span><span class="card-meta">1 persona</span><p class="card-body">Family comprehensive</p></div>
+      <div class="card"><span class="card-title">Life</span><span class="card-meta">1 persona</span><p class="card-body">Mortgage protection</p></div>
+      <div class="card"><span class="card-title">Travel</span><span class="card-meta">1 persona</span><p class="card-body">Annual multi-trip expat</p></div>
+      <div class="card"><span class="card-title">Renters</span><span class="card-meta">1 persona</span><p class="card-body">Apartment tenant</p></div>
+      <div class="card"><span class="card-title">Employment</span><span class="card-meta">1 persona</span><p class="card-body">ILOE — private sector</p></div>
+    </div>
+  </section>
+
+  <section id="consent">
+    <h2>The toggle install — one screen, not seven</h2>
+    <p>
+      The whole consent journey collapses into <strong>one</strong> UAE Open Finance Authority-styled
+      screen, the way SMB's connector toggle collapses multiple OAuths.
+      One tap unlocks every LFI profile and every insurance line for the active Claude session.
+    </p>
+
+    <div class="consent-mock" role="img" aria-label="Mock UAE Open Finance consent screen">
+      <div class="browser-bar">
+        <span class="dots"><span></span><span></span><span></span></span>
+        <span class="url">https://auth.openfinance-os.org/oauth2/authorize?client_id=cc-connector-9f3a&amp;…</span>
+      </div>
+      <div class="body">
+        <h4>Claude × UAE Open Finance Authority</h4>
+        <p class="sub">Claude is requesting access on behalf of <strong>"Claude for Open Finance"</strong> · TPP licence <code>SANDBOX-CC-9F3A</code></p>
+
+        <div class="scope">
+          <span class="tick" aria-hidden="true">✓</span>
+          <div>
+            <strong>Bank Data Sharing</strong>
+            <span class="scope-body">accounts · balances · transactions · standing orders · direct debits · beneficiaries · statements · products</span>
+          </div>
+        </div>
+
+        <div class="scope">
+          <span class="tick" aria-hidden="true">✓</span>
+          <div>
+            <strong>Insurance Data Sharing</strong>
+            <span class="scope-body">policies · payment details · quotes — read-only across 7 lines</span>
+          </div>
+        </div>
+
+        <div class="scope unchecked">
+          <span class="tick" aria-hidden="true"></span>
+          <div>
+            <strong>Service Initiation — payments</strong>
+            <span class="scope-body">Not requested · v1 read-only</span>
+          </div>
+        </div>
+
+        <p class="footnote">
+          Sharing window <strong>90 days</strong> · Revoke any time at <em>My Consents</em>.
+          Data is <strong>SYNTHETIC</strong>. No real customer. No real institution.
+        </p>
+
+        <div class="actions">
+          <button class="deny" type="button">Deny</button>
+          <button class="approve" type="button">Approve all (1 tap)</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>The journey under the hood.</strong>
+      MCP returns <code>401 WWW-Authenticate: Bearer realm="open-finance-sandbox"</code>; Claude calls
+      <code>authenticate</code>, surfaces the consent URL; the user approves; the browser lands on
+      <code>http://localhost:&lt;port&gt;/callback?code=…&amp;state=…</code>; Claude calls
+      <code>complete_authentication</code>; a bearer token is attached to every subsequent
+      <code>/mcp</code> POST. Wired as opt-in simulation behind <code>--simulate-oauth</code>.
+    </div>
+  </section>
+
+  <section id="skills">
+    <h2>15 ready-made skills</h2>
+    <p>
+      Same shape as Claude for Small Business's 15 ready-made workflows
+      (<em>"planning payroll, balancing the books, onboarding new employees"</em>), retargeted to a TPP.
+      Each skill is a prompt + tool sequence over the existing
+      <code>@openfinance-os/sandbox-mcp</code> tools — no new server tools required.
+    </p>
+    <ol class="skill-grid" style="list-style:none;padding:0;margin:12px 0;">
+      <li class="skill"><span class="num">1</span><strong>Monthly PFM summary</strong><div class="skill-body">accounts → balances → transactions → SOs → DDs, watermark preserved.</div></li>
+      <li class="skill"><span class="num">2</span><strong>Underwriting scenario</strong><div class="skill-body">EXP-18 DBR / affordability against pinned illustrative formulas.</div></li>
+      <li class="skill"><span class="num">3</span><strong>Cash-flow forecast</strong><div class="skill-body">Extrapolate 90 days from recurring SOs + DDs.</div></li>
+      <li class="skill"><span class="num">4</span><strong>Expense categorisation</strong><div class="skill-body">MCC-clustered with confidence.</div></li>
+      <li class="skill"><span class="num">5</span><strong>Salary detection</strong><div class="skill-body">Find the inflow that pays the rent.</div></li>
+      <li class="skill"><span class="num">6</span><strong>Subscription audit</strong><div class="skill-body">Recurring DDs/SOs &gt; 3 cycles.</div></li>
+      <li class="skill"><span class="num">7</span><strong>Beneficiary risk review</strong><div class="skill-body">Flag stale or unusual beneficiaries.</div></li>
+      <li class="skill"><span class="num">8</span><strong>Coverage gap check</strong><div class="skill-body">Cross-reference insurance policy vs. assets.</div></li>
+      <li class="skill"><span class="num">9</span><strong>Renewal calendar</strong><div class="skill-body">Motor / home / health policies coming due.</div></li>
+      <li class="skill"><span class="num">10</span><strong>KYC freshness check</strong><div class="skill-body"><code>get_party</code> vs. consent window.</div></li>
+      <li class="skill"><span class="num">11</span><strong>Affordability uplift</strong><div class="skill-body">DBR delta under a hypothetical loan.</div></li>
+      <li class="skill"><span class="num">12</span><strong>Multi-LFI footprint reconciliation</strong><div class="skill-body">SME personas with primary + secondary + tertiary roles.</div></li>
+      <li class="skill"><span class="num">13</span><strong>Statement narrative</strong><div class="skill-body">Natural-language month-end commentary.</div></li>
+      <li class="skill"><span class="num">14</span><strong>Sparse-profile resilience test</strong><div class="skill-body">Verify TPP UX degrades gracefully under minimum-conformant payloads.</div></li>
+      <li class="skill"><span class="num">15</span><strong>Spec drift sentinel</strong><div class="skill-body">Diff response vs. <code>field_status</code>; flag surprises.</div></li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>AI Fluency for Open Finance — the 4D framework</h2>
+    <p>
+      Free, self-paced. Same shape as Anthropic × PayPal's
+      <a href="https://www.anthropic.com/news/claude-for-small-business" target="_blank" rel="noopener noreferrer">AI Fluency for Small Business</a>,
+      retargeted to TPP devs.
+    </p>
+    <table class="fourD" aria-label="4D framework — Open Finance projection">
+      <thead><tr><th style="width:120px;">Pillar</th><th>SMB framing</th><th>Open Finance framing</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Delegation</strong></td>
+          <td>which tasks to hand to AI</td>
+          <td>PFM summarisation, categorisation, alerting — never automated credit decisions without human-in-loop</td>
+        </tr>
+        <tr>
+          <td><strong>Description</strong></td>
+          <td>prompt-writing best practices</td>
+          <td>how to prompt over v2.1 envelopes (<code>Data</code> / <code>Links</code> / <code>Meta</code>) without hallucinating fields</td>
+        </tr>
+        <tr>
+          <td><strong>Discernment</strong></td>
+          <td>QA mechanisms</td>
+          <td>preserve <code>_watermark</code>; reconcile field claims against <code>field_status</code>; never redact mandatory under Sparse</td>
+        </tr>
+        <tr>
+          <td><strong>Diligence</strong></td>
+          <td>governance framework</td>
+          <td>synthetic-only guardrails; pinned <code>_specSha</code>; deterministic <code>(persona, lfi, seed)</code> replay for every customer answer</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Workshop tour</h2>
+    <p>
+      10 free dev-workshops across the GCC, mirroring Claude for Small Business's 10-city US tour.
+    </p>
+    <div class="workshop-grid">
+      <div class="workshop"><span class="date">May 14</span><span class="city">Dubai</span><span class="venue">DIFC FinTech Hive</span></div>
+      <div class="workshop"><span class="date">May 21</span><span class="city">Abu Dhabi</span><span class="venue">ADGM Hub71</span></div>
+      <div class="workshop"><span class="date">May 28</span><span class="city">Sharjah</span><span class="venue">Sheraa</span></div>
+      <div class="workshop"><span class="date">Jun 4</span><span class="city">Riyadh</span><span class="venue">Fintech Saudi</span></div>
+      <div class="workshop"><span class="date">Jun 7</span><span class="city">Manama</span><span class="venue">Bahrain FinTech Bay</span></div>
+      <div class="workshop"><span class="date">Jun 11</span><span class="city">Doha</span><span class="venue">QFC</span></div>
+      <div class="workshop"><span class="date">Jun 14</span><span class="city">Kuwait City</span><span class="venue">KFAS</span></div>
+      <div class="workshop"><span class="date">Jun 18</span><span class="city">Muscat</span><span class="venue">OAB Innovation Lab</span></div>
+      <div class="workshop"><span class="date">Jun 22</span><span class="city">Cairo</span><span class="venue">AUC Venture Lab</span></div>
+      <div class="workshop"><span class="date">Jun 26</span><span class="city">Amman</span><span class="venue">Orange Hub</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Try the journey</h2>
+    <p>Two ways to experience the consent flow against this repo's MCP server:</p>
+    <pre><code># Anonymous — the production default per PRD D-13
+npx -y @openfinance-os/sandbox-mcp --transport http --port 8787
+
+# Opt-in OAuth simulation — surfaces 401 + WWW-Authenticate, /authorize,
+# /token, and bearer-validation on every /mcp POST
+npx -y @openfinance-os/sandbox-mcp --transport http --port 8787 --simulate-oauth
+# or:
+MCP_SIMULATE_OAUTH=1 npx -y @openfinance-os/sandbox-mcp --transport http</code></pre>
+    <p>
+      A markdown design memo for this page lives at
+      <a href="https://github.com/openfinance-os/data-sandbox/blob/main/CLAUDE_FOR_OPEN_FINANCE.md" target="_blank" rel="noopener noreferrer"><code>CLAUDE_FOR_OPEN_FINANCE.md</code></a>.
+      The OAuth simulation lives at
+      <a href="https://github.com/openfinance-os/data-sandbox/blob/main/packages/sandbox-mcp/src/transports/oauth-simulation.mjs" target="_blank" rel="noopener noreferrer"><code>packages/sandbox-mcp/src/transports/oauth-simulation.mjs</code></a>.
+    </p>
+  </section>
+
+  <section>
+    <h2>Status &amp; scope</h2>
+    <p>
+      This page is a <strong>simulation, not a roadmap</strong>. Nothing here changes the load-bearing
+      invariants of the sandbox: spec-driven field metadata (EXP-01), no real customer data
+      (NG4 / EXP-07), no institution-specific operational detail (NG5 / D-14), deterministic
+      generation (EXP-05), Standards baseline v2.1 only (D-01), and no separate contributor
+      branding (NG6).
+    </p>
+    <p>
+      The OAuth simulation is opt-in and purely transport-side theatre — it gates the same
+      synthetic payloads behind a bearer token. There is nothing real to protect; the value is
+      letting a TPP demo a customer-facing consent journey end-to-end before they have to wire
+      a real Nebras-Open-Finance client.
+    </p>
+  </section>
+
+  <section>
+    <h2>Live spec pin</h2>
+    <dl class="meta-grid" aria-label="Live build metadata">
+      <dt>Standards baseline</dt><dd>UAE Open Finance v2.1</dd>
+      <dt>Pinned spec SHA</dt><dd id="meta-sha">—</dd>
+      <dt>Retrieved</dt><dd id="meta-retrieved">—</dd>
+      <dt>Sandbox version</dt><dd id="meta-version">—</dd>
+      <dt>Generated at</dt><dd id="meta-generated">—</dd>
+    </dl>
+  </section>
+</main>
+
+<footer class="footer" role="contentinfo">
+  <span>SYNTHETIC · Open Finance Data Sandbox · OpenFinance-OS Commons · Standards v2.1 @ <span id="footer-sha">unknown</span></span>
+</footer>
+
+<script type="module" src="connect.js"></script>
+</body>
+</html>
