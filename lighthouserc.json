@@ -9,7 +9,7 @@
       ],
       "startServerCommand": "node tools/gzip-static-server.mjs 8000",
       "startServerReadyPattern": "gzip-static-server listening",
-      "numberOfRuns": 2,
+      "numberOfRuns": 3,
       "settings": {
         "preset": "perf",
         "throttlingMethod": "simulate",

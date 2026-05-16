@@ -5,6 +5,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follo
 
 ## [Unreleased]
 
+### Fixed — v1 refinements (PR-17): Lighthouse CI run-count bump for median stability
+
+- **`lighthouserc.json` `numberOfRuns: 2 → 3`.** PR-12 squeezed the index-page Lighthouse perf score to ~0.77 against a 0.70 budget, leaving 0.07 of margin — narrower than typical Lighthouse simulate-mode per-run variance. With `numberOfRuns: 2`, lhci's median is just the lower of the two scores, so any single noisy CI runner drops the gate red even though the build itself hasn't regressed. PR-16's first CI run hit 0.45 / 0.66 → median 0.66 → fail, with zero cold-path bundle weight added (the 250 KB gzipped bundle-weight gate passed). Bumping to 3 runs uses the actual middle value, which ignores both extremes and matches the lhci docs' own recommendation. No code change.
+
 ### Fixed — v1 refinements (PR-16): Greptile a11y review pass on PR-15
 
 Addresses two Greptile findings on the lazy-load wrapper pattern + the SYNTHETIC banner popover.
