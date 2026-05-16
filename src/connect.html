@@ -614,6 +614,142 @@
     font-style: italic;
   }
 
+  /* Cross-domain card — a persona's non-primary domain. The bundle has
+     no fixture data, so the card stays tickable for consent-simulation
+     purposes but is visually de-emphasised. */
+  .inst-card.cross-domain {
+    opacity: 0.62;
+    border-style: dashed;
+  }
+  .inst-card.cross-domain.selected {
+    opacity: 1;
+    border-style: solid;
+  }
+
+  /* PFM card — synthesised from spec-defined Data.* paths only. */
+  .pfm-card {
+    margin-top: 4px;
+    padding: 16px 18px;
+    background: var(--bg-card);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    box-shadow: 0 0 0 1px var(--accent-soft) inset;
+  }
+  .pfm-card .pfm-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .pfm-card .pfm-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+  }
+  .pfm-metric {
+    padding: 8px 10px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+  .pfm-label {
+    font-size: 10.5px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .pfm-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    line-height: 1.2;
+  }
+  .pfm-hint {
+    font-size: 10.5px;
+    color: var(--text-muted);
+    margin-top: 3px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  /* Envelope inventory — proves spec compliance by listing every OF v2.1
+     path that contributed to the PFM card, plus the raw envelopes. */
+  details.envelopes {
+    margin-top: 14px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg-card);
+  }
+  details.envelopes > summary {
+    cursor: pointer;
+    padding: 10px 14px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--bg-soft);
+    border-radius: 4px;
+  }
+  details.envelopes[open] > summary { border-bottom: 1px solid var(--border); border-radius: 4px 4px 0 0; }
+  details.envelopes summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .env-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin: 10px 14px;
+    width: calc(100% - 28px);
+  }
+  .env-table th {
+    text-align: left;
+    padding: 6px 8px;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+  }
+  .env-table td {
+    padding: 5px 8px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .env-table code {
+    background: transparent;
+    border: none;
+    padding: 0;
+    font-size: 11.5px;
+  }
+  details.env-json-wrap {
+    border-top: 1px dashed var(--border);
+    background: var(--bg-card);
+  }
+  details.env-json-wrap > summary {
+    cursor: pointer;
+    padding: 8px 14px;
+    font-size: 11.5px;
+    color: var(--text-muted);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  details.env-json-wrap[open] > summary { background: var(--bg-soft); border-bottom: 1px solid var(--border); }
+  details.env-json-wrap .env-summary-meta {
+    color: var(--text-muted);
+    font-size: 11px;
+  }
+  details.env-json-wrap pre {
+    margin: 0;
+    padding: 10px 14px;
+    background: var(--bg-soft);
+    border: none;
+    border-radius: 0;
+    max-height: 360px;
+    overflow: auto;
+    font-size: 11.5px;
+    line-height: 1.55;
+  }
+
   /* ─── Supporting content (post-wizard) ──────────────────────────── */
 
   .grid {
