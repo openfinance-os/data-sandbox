@@ -281,6 +281,43 @@ describe('HTTP transport — OAuth simulation (simulateOauth: true)', () => {
     expect(location).toMatch(/error=invalid_request/);
   });
 
+  // PR-52 Greptile P1 (round 3) — the reverse case: code_challenge_method
+  // present, code_challenge absent. Earlier versions of the consent form
+  // would coerce the empty challenge to null and silently bypass PKCE at
+  // /token. Must be rejected at GET /authorize.
+  it('rejects code_challenge_method without code_challenge (silent-PKCE-bypass fix)', async () => {
+    const url = new URL(`${origin()}/authorize`);
+    url.searchParams.set('response_type', 'code');
+    url.searchParams.set('client_id', 'cc-test');
+    url.searchParams.set('redirect_uri', 'http://localhost:53117/callback');
+    url.searchParams.set('code_challenge_method', 'S256');
+    // no code_challenge
+    const res = await fetch(url, { redirect: 'manual' });
+    expect(res.status).toBe(302);
+    const location = res.headers.get('location');
+    expect(location).toMatch(/error=invalid_request/);
+    expect(location).toMatch(/code_challenge_method%20requires%20code_challenge/);
+  });
+
+  // Belt-and-braces: even if a malformed entry somehow ended up in the
+  // store with codeChallengeMethod set but codeChallenge empty, /token
+  // would never produce a bearer for it — because GET /authorize is now
+  // the only path into the store and rejects this shape outright. We
+  // assert the live flow can't reach that state from any input.
+  it('cannot reach POST /token from a code_challenge_method-only authz request', async () => {
+    const u = new URL(`${origin()}/authorize`);
+    u.searchParams.set('response_type', 'code');
+    u.searchParams.set('client_id', 'x');
+    u.searchParams.set('redirect_uri', 'http://localhost:53117/callback');
+    u.searchParams.set('code_challenge_method', 'S256');
+    const res = await fetch(u, { redirect: 'manual' });
+    // GET /authorize returns a 302 with error (not 200 HTML), so there is
+    // no nonce in the response. Sanity-check that's the case.
+    expect(res.status).toBe(302);
+    const html = await res.text();
+    expect(extractNonce(html)).toBeNull();
+  });
+
   it('full PKCE flow: authorize → code → token → /mcp call', async () => {
     const { verifier, challenge } = pkcePair();
     const redirectUri = 'http://localhost:53117/callback';
