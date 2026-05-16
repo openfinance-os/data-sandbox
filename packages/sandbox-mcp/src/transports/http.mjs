@@ -341,7 +341,16 @@ export async function startHttp({
     port: resolvedPort,
     extraAllowedHosts,
   });
-  const oauthSimulation = simulateOauth ? createOAuthSimulation() : null;
+  const oauthSimulation = simulateOauth
+    ? createOAuthSimulation({
+        // Lock the issuer to the resolved listen address so discovery
+        // documents can never be poisoned by a forged Host header (PR-52
+        // Greptile P1). Defence-in-depth: the simulation also validates
+        // Host against `allowedHosts` independently of the /mcp guard.
+        issuer: `http://${resolvedHost}:${resolvedPort}`,
+        allowedHosts,
+      })
+    : null;
   const handler = createHttpHandler({
     idleTtlMs,
     maxSessions,
