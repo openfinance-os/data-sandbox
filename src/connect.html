@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="description" content="Simulation-only design memo: what Claude's first-time connector handshake against the synthetic UAE Open Finance Bank + Insurance Data Sharing sandbox would look like — toggle install, OAuth consent, and a closed-loop PFM card from real v2.1 envelopes." />
 <title>Claude for Open Finance — Open Finance Data Sandbox</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Crect width=%2716%27 height=%2716%27 rx=%273%27 fill=%27%236E548F%27/%3E%3Ctext x=%278%27 y=%2712%27 font-family=%27system-ui,sans-serif%27 font-size=%2710%27 font-weight=%27700%27 text-anchor=%27middle%27 fill=%27%23fff%27%3E%C2%A4%3C/text%3E%3C/svg%3E" />
 <link rel="stylesheet" href="styles.css" />
@@ -48,6 +49,12 @@
   .connect-shell li { margin-bottom: 4px; }
   .connect-shell a { color: var(--accent); text-decoration: none; }
   .connect-shell a:hover { text-decoration: underline; }
+  /* In-text-block links (inside paragraphs / body copy) carry an underline
+     by default so they aren't distinguishable by colour alone — WCAG 1.4.1.
+     Standalone CTAs / nav links / card titles still rely on context. */
+  .connect-shell p a,
+  .connect-shell li a,
+  .connect-shell dd a { text-decoration: underline; }
   .connect-shell code {
     font-family: ui-monospace, "SF Mono", Menlo, monospace;
     font-size: 12.5px;
@@ -190,7 +197,10 @@
 
   /* ─── Step 1: persona gallery ────────────────────────────────────── */
 
-  .wizard-body h3.step-title {
+  /* Step eyebrow — purely decorative, not part of the heading outline
+     (the <h2 class="step-h"> below carries the semantic heading).
+     Rendered as a styled <p> to keep heading-order h1 → h2 sequential. */
+  .wizard-body p.step-title {
     font-size: 13px;
     margin: 0 0 4px;
     text-transform: uppercase;
@@ -906,7 +916,7 @@
 
     <!-- Step 1: persona gallery -->
     <div class="wizard-body" id="step-1">
-      <h3 class="step-title">Step 1 of 4</h3>
+      <p class="step-title">Step 1 of 4</p>
       <h2 class="step-h">Who are you, for this session?</h2>
       <p class="step-sub">
         Pick a synthetic UAE customer. Claude will answer every question in this session as if it
@@ -926,7 +936,7 @@
 
     <!-- Step 2: institutions -->
     <div class="wizard-body" id="step-2" hidden>
-      <h3 class="step-title">Step 2 of 4</h3>
+      <p class="step-title">Step 2 of 4</p>
       <h2 class="step-h">Which institutions are you sharing from?</h2>
       <p class="step-sub" id="step-2-sub">
         A real customer would tick the LFIs and insurance carriers they actually hold a relationship
@@ -941,7 +951,7 @@
 
     <!-- Step 3: consent -->
     <div class="wizard-body" id="step-3" hidden>
-      <h3 class="step-title">Step 3 of 4</h3>
+      <p class="step-title">Step 3 of 4</p>
       <h2 class="step-h">Authorize Claude</h2>
       <p class="step-sub">
         The UAE Open Finance Authority consent screen Claude would surface in
@@ -953,7 +963,7 @@
 
     <!-- Step 4: connected -->
     <div class="wizard-body" id="step-4" hidden>
-      <h3 class="step-title">Step 4 of 4</h3>
+      <p class="step-title">Step 4 of 4</p>
       <h2 class="step-h">Connected</h2>
       <p class="step-sub">
         Bearer token issued. Tools unlocked for this Claude session. Suggested first prompt:
