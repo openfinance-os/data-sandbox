@@ -11,6 +11,13 @@ import AxeBuilder from '@axe-core/playwright';
 test('renders Sara, switches endpoints, no console errors, axe-clean', async ({ page }) => {
   await page.goto('/src/index.html');
 
+  // PR #2 — tour auto-launches on cold landing; dismiss it so the rest
+  // of the test interacts with the navigator unobstructed.
+  if (await page.locator('#tour-overlay .tour-skip').count() > 0) {
+    await page.locator('#tour-overlay .tour-skip').click();
+    await expect(page.locator('#tour-overlay')).toHaveCount(0);
+  }
+
   // Persona list rendered.
   await expect(page.locator('.persona-card').first()).toBeVisible();
   await expect(page.locator('.persona-card.active')).toHaveCount(1);
@@ -18,8 +25,9 @@ test('renders Sara, switches endpoints, no console errors, axe-clean', async ({ 
   // Top bar pin shows the spec SHA.
   await expect(page.locator('#version-pin')).toContainText('v2.1 @');
 
-  // /accounts table renders. AccountId field-name is visible and the page has
-  // at least one Mandatory pill (the AccountId column header).
+  // PR #5 — banking cold landing now defaults to Underwriting Summary;
+  // navigate to /accounts explicitly to verify the spec table renders.
+  await page.locator('.nav-endpoint', { hasText: '/accounts' }).first().click();
   await expect(page.locator('.payload-rendered table')).toBeVisible();
   await expect(page.locator('.field-name', { hasText: 'AccountId' }).first()).toBeVisible();
   expect(await page.locator('.pill-solid').count()).toBeGreaterThan(0);
@@ -199,11 +207,34 @@ test('Compare-LFIs shows two side-by-side panels with diff classes — EXP-16', 
   expect(await page.locator('.diff-missing').count()).toBeGreaterThan(0);
 });
 
+test('Compare-N/A banner appears on derived pseudo-endpoints — PR #7', async ({ page }) => {
+  // Underwriting summary is now the banking default landing (PR #5).
+  await loadPersona(page);
+  // Turn on compare-mode.
+  await page.locator('#compare-toggle').click();
+  // The compare-pane should NOT render on a derived view — the inline
+  // banner explains why instead.
+  await expect(page.locator('.compare-pane')).toHaveCount(0);
+  const banner = page.locator('.compare-na-banner');
+  await expect(banner).toBeVisible();
+  await expect(banner).toContainText('field-level endpoints');
+  await expect(banner).toContainText('Underwriting summary');
+
+  // Navigate to a real spec endpoint → banner disappears, compare-pane renders.
+  await page.locator('.nav-endpoint', { hasText: '/transactions' }).first().click();
+  await expect(page.locator('.compare-na-banner')).toHaveCount(0);
+  await expect(page.locator('.compare-pane')).toBeVisible();
+});
+
 test('Stress-chip filter narrows the persona library', async ({ page }) => {
   await loadPersona(page);
   const fullCount = await page.locator('.persona-card').count();
-  // Click the first stress chip on Khalid's card (high DBR)
-  await page.locator('.persona-card', { hasText: 'Khalid' }).locator('.stress-chip', { hasText: 'high DBR' }).first().click();
+  // PR #4 — stress chips live inside the "More about this persona"
+  // disclosure on every card. Open Khalid's card first, then click the
+  // chip.
+  const khalidCard = page.locator('.persona-card', { hasText: 'Khalid' });
+  await khalidCard.locator('summary.persona-more-summary').click();
+  await khalidCard.locator('.stress-chip', { hasText: 'high DBR' }).first().click();
   const filteredCount = await page.locator('.persona-card').count();
   expect(filteredCount).toBeLessThan(fullCount);
   expect(filteredCount).toBeGreaterThan(0);
@@ -243,6 +274,28 @@ test('Senior persona triggers low-volume guard — EXP-18', async ({ page }) => 
   // DBR should be suppressed (—).
   const dbrCard = page.locator('.uw-card', { hasText: 'Implied DBR' });
   await expect(dbrCard.locator('.uw-card-value')).toHaveText('—');
+});
+
+test('collapsed nav-account stays collapsed across endpoint navigation (PR-13 Greptile P1)', async ({ page }) => {
+  // hnw_multicurrency has multiple accounts, so collapse is meaningful.
+  await loadPersona(page, { persona: 'hnw_multicurrency' });
+  const accounts = page.locator('details.nav-account[data-account-id]');
+  const count = await accounts.count();
+  expect(count).toBeGreaterThanOrEqual(2);
+  // Pick a non-owning account (not the first — that one is the selected
+  // account and stays force-open).
+  const target = accounts.nth(1);
+  const targetId = await target.getAttribute('data-account-id');
+  // Initially all per-account groups are open by default.
+  await expect(target).toHaveJSProperty('open', true);
+  // Collapse via the summary toggle.
+  await target.locator('summary.nav-account-header').click();
+  await expect(target).toHaveJSProperty('open', false);
+  // Navigate to a different endpoint (re-renders the navigator).
+  await page.locator('.nav-endpoint', { hasText: '/transactions' }).first().click();
+  // The collapsed account stays collapsed.
+  const same = page.locator(`details.nav-account[data-account-id="${targetId}"]`);
+  await expect(same).toHaveJSProperty('open', false);
 });
 
 test('field card shows all 9 elements + Report-an-issue link', async ({ page }) => {

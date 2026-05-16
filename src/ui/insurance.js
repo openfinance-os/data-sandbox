@@ -212,6 +212,35 @@ export function createInsurance(deps) {
     }
   }
 
+  function renderInsuranceCalibrationBanner() {
+    // Insurance shipped as GA in Phase 2.1 (30 endpoints across 7 lines)
+    // but populate-rate band calibration is still maturing — the
+    // lfi-bands.insurance.yaml starter file covers only the headline
+    // paths. The banner sets that expectation up-front and routes users
+    // who arrived here by mistake back to banking.
+    const wrap = el('div', { class: 'insurance-empty-banner', attrs: { role: 'note' } });
+    wrap.appendChild(el('strong', { text: 'Insurance is in early calibration.' }));
+    wrap.appendChild(document.createTextNode(
+      ' The 30 endpoints across 7 lines are spec-anchored and deterministic, but populate-rate bands are still maturing — treat the LFI Rich/Median/Sparse axis as indicative until v1.1.'
+    ));
+    const link = el('a', {
+      class: 'insurance-empty-link',
+      text: 'Switch to Banking →',
+      attrs: { href: '#', title: 'Back to the banking domain (18 personas, 12 endpoints, fully calibrated).' },
+    });
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const url = new URL(window.location.href);
+      url.searchParams.delete('domain');
+      // Drop persona/endpoint too — switching domain re-picks defaults.
+      url.searchParams.delete('persona');
+      url.searchParams.delete('endpoint');
+      window.location.href = url.toString();
+    });
+    wrap.appendChild(link);
+    return wrap;
+  }
+
   function renderInsurancePayload() {
     const body = document.getElementById('payload-body');
     const epLabel = document.getElementById('endpoint-label');
@@ -233,6 +262,9 @@ export function createInsurance(deps) {
     document
       .getElementById('view-raw')
       ?.setAttribute('aria-selected', state.view === 'raw');
+
+    // PR #9 — insurance early-calibration banner.
+    body.appendChild(renderInsuranceCalibrationBanner());
 
     const slice = insuranceDataForEndpoint(state.endpoint);
     if (!slice) {

@@ -29,31 +29,38 @@
 <link rel="modulepreload" href="generator/insurance/lfi-profile.js" />
 <link rel="modulepreload" href="shared/spec-helpers.js" />
 <link rel="modulepreload" href="shared/watermark.js" />
+<link rel="modulepreload" href="shared/banner.js" />
 <link rel="modulepreload" href="ui/export.js" />
 <link rel="modulepreload" href="ui/info-popover.js" />
+<link rel="modulepreload" href="ui/tour.js" />
+<link rel="modulepreload" href="ui/underwriting.js" />
+<link rel="modulepreload" href="ui/field-card.js" />
 <link rel="preload" href="../dist/SPEC.json" as="fetch" crossorigin="anonymous" />
 <link rel="preload" href="../dist/data.json" as="fetch" crossorigin="anonymous" />
 <link rel="preload" href="../dist/domains.json" as="fetch" crossorigin="anonymous" />
 </head>
 <body>
-<div class="banner" role="status" aria-label="Synthetic data notice" data-dismissible>
-  <strong>SYNTHETIC.</strong>
-  Data is generated from the UAE Open Finance Standards v2.1 OpenAPI spec — not from any real bank.
-  Median populate-rate is a Commons-curated ecosystem assumption, not endorsed by Nebras or CBUAE.
-</div>
+<div class="banner-stripe" role="presentation" aria-hidden="true"></div>
 <script type="module" src="shared/banner.js"></script>
 
 <header class="topbar" role="banner">
-  <div class="brand">
-    <span class="brand-title">Open Finance Data Sandbox</span>
-    <span class="brand-sub">OpenFinance-OS Commons</span>
-  </div>
   <nav class="controls" aria-label="Persona controls">
+    <!-- PR-11 — the persona dropdown is removed; the persona library on
+         the left pane is the canonical switcher. The persona showcase
+         (avatar + name + tagline + inline OF-OS attribution) now sits
+         inside the bordered .controls-scenario pill alongside LFI,
+         Compare-with, and Seed so the cluster reads as one unit. -->
     <div class="controls-scenario" aria-label="Scenario">
-      <label class="control-group">
-        <span class="control-label">Persona</span>
-        <select id="persona-select" aria-label="Persona"></select>
-      </label>
+      <div class="topbar-persona is-empty" id="topbar-persona" aria-label="Active persona">
+        <div class="topbar-persona-avatar" id="topbar-persona-avatar" aria-hidden="true"></div>
+        <div class="topbar-persona-meta">
+          <div class="topbar-persona-line">
+            <span class="topbar-persona-name" id="topbar-persona-name"></span>
+            <span class="topbar-attribution">Open Finance Data Sandbox · OF-OS Commons</span>
+          </div>
+          <span class="topbar-persona-tagline" id="topbar-persona-tagline"></span>
+        </div>
+      </div>
       <div class="control-group lfi-control">
         <span class="control-label">LFI profile</span>
         <button type="button" class="info-trigger" popovertarget="lfi-help" aria-expanded="false" aria-label="What is an LFI profile?">ⓘ</button>
@@ -76,24 +83,25 @@
             <button type="button" role="radio" data-cmp-lfi="median" aria-checked="false">Median</button>
             <button type="button" role="radio" data-cmp-lfi="sparse" aria-checked="true">Sparse</button>
           </div>
-          <button type="button" id="compare-swap" class="lfi-compare-swap" title="Swap left and right LFIs">↔</button>
+          <button type="button" id="compare-swap" class="lfi-compare-swap" aria-label="Swap left and right LFIs" title="Swap left and right LFIs">↔</button>
           <button type="button" id="compare-close" class="lfi-compare-close" aria-label="Close compare mode" title="Close compare">×</button>
         </div>
       </div>
-      <details class="control-advanced" id="control-advanced">
-        <summary title="Show advanced controls — seed lever, etc. The seed reshuffles the deterministic RNG; structure stays, details re-roll. Most users never touch this.">Advanced</summary>
-        <label class="control-group control-seed">
-          <span class="control-label">Seed</span>
-          <input id="seed-input" type="number" value="4729" min="0" step="1" aria-label="Seed (reshuffles deterministic RNG; structure stays, details re-roll)" />
-        </label>
+      <!-- PR #9 — seed lever hoisted out of the Advanced details. Determinism
+           (persona, lfi, seed → byte-identical bundle, EXP-05) is a
+           first-class feature; the lever sits inline next to LFI.
+           PR-15 — info popover from main (PR #51) preserved alongside. -->
+      <label class="control-group control-seed">
+        <span class="control-label">Seed</span>
+        <input id="seed-input" type="number" value="4729" min="0" step="1" aria-label="Seed (reshuffles deterministic RNG; structure stays, details re-roll)" title="Seed reshuffles the deterministic RNG. Same (persona, lfi, seed) → byte-identical bundle (EXP-05)." />
         <button type="button" class="info-trigger" popovertarget="seed-help" aria-expanded="false" aria-label="What does Seed do?">ⓘ</button>
-        <button type="button" id="seed-reset" class="seed-reset" title="Reset to the persona's default seed.">Reset</button>
-        <div id="seed-help" popover="auto" class="info-popover" role="note">
-          <h3 class="info-popover-title">Seed</h3>
-          <p>The third lever in the deterministic <code>(persona, LFI, seed)</code> tuple. Reshuffles random details — merchant names, transaction amounts, optional-field choices — while keeping the persona's structure intact (account count, balance bands, mandatory fields).</p>
-          <p>The seed is encoded in the share URL (EXP-17), so the same tuple always reproduces byte-identical data. <strong>Reset</strong> restores the persona's default.</p>
-        </div>
-      </details>
+        <button type="button" id="seed-reset" class="seed-reset" aria-label="Reset seed to persona default" title="Reset to the persona's default seed.">Reset</button>
+      </label>
+      <div id="seed-help" popover="auto" class="info-popover" role="note">
+        <h3 class="info-popover-title">Seed</h3>
+        <p>The third lever in the deterministic <code>(persona, LFI, seed)</code> tuple. Reshuffles random details — merchant names, transaction amounts, optional-field choices — while keeping the persona's structure intact (account count, balance bands, mandatory fields).</p>
+        <p>The seed is encoded in the share URL (EXP-17), so the same tuple always reproduces byte-identical data. <strong>Reset</strong> restores the persona's default.</p>
+      </div>
     </div>
     <div class="controls-runstate" aria-label="Run state">
       <select class="domain-chip" id="domain-chip" hidden aria-label="Open Finance domain"></select>
@@ -101,7 +109,10 @@
       <button type="button" class="info-trigger" popovertarget="spec-help" aria-expanded="false" aria-label="What is the pinned spec SHA?">ⓘ</button>
       <button class="topbar-btn" id="find-btn" title="Search fields, enums, and persona narratives (⌘K)" aria-label="Open find box">Find</button>
       <button class="topbar-btn" id="tour-btn" title="Walk through Sara's bundle in 5 steps" aria-label="Start guided tour">Tour</button>
-      <button class="topbar-btn" id="share-btn" title="Copy permalink to clipboard — the URL bar already reflects the active persona, LFI, and seed (EXP-17)" aria-label="Copy permalink">Share</button>
+      <button class="banner-chip" id="banner-chip" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="banner-popover" title="Show full synthetic-data disclaimer">
+        <span class="banner-chip-label">SYNTHETIC</span>
+        <span class="banner-chip-icon" aria-hidden="true">ⓘ</span>
+      </button>
       <details class="topbar-menu" id="topbar-more">
         <summary class="topbar-btn" aria-label="More" title="More — Integrate, About">More</summary>
         <div class="topbar-menu-content" role="menu">
@@ -127,6 +138,12 @@
     <p>Hover the pin for the upstream repo path and retrieval date. The same SHA appears in <code>dist/SPEC.json</code>, the About page, and every fixture-package manifest.</p>
   </div>
 </header>
+
+<div class="banner-popover" id="banner-popover" role="dialog" aria-modal="true" aria-labelledby="banner-popover-title" tabindex="-1" hidden>
+  <strong id="banner-popover-title">SYNTHETIC.</strong>
+  Data is generated from the UAE Open Finance Standards v2.1 OpenAPI spec — not from any real bank.
+  Median populate-rate is a Commons-curated ecosystem assumption, not endorsed by Nebras or CBUAE.
+</div>
 
 <main class="three-pane" id="three-pane">
   <section class="pane persona-pane" aria-label="Persona library">
@@ -189,12 +206,7 @@
             <input type="checkbox" id="toggle-pii-only" />
             PII only
           </label>
-          <div class="export-group" aria-label="Export the active bundle">
-            <button class="toggle export-btn" id="export-json" title="Download active endpoint as v2.1-shaped JSON">JSON</button>
-            <button class="toggle export-btn" id="export-csv" title="Download active resource as flat CSV">CSV</button>
-            <button class="toggle export-btn" id="export-tar" title="Download all endpoints + CSVs as a single tarball">Tarball</button>
-            <button class="toggle export-btn" id="export-embed" title="Copy an iframe snippet pinned to the current persona+LFI+endpoint+seed — drop into a slide deck, blog post, or LMS module (EXP-27).">Embed</button>
-          </div>
+          <button class="toggle export-btn" id="export-toggle" type="button" aria-haspopup="dialog" aria-label="Open export popover (⌘E)" title="Export the active bundle — Permalink · Embed iframe · JSON · CSV · Tarball · npm · Python · curl · MCP. (⌘E)">Export ▾</button>
         </div>
       </div>
       <div class="payload-body" id="payload-body" tabindex="0"></div>

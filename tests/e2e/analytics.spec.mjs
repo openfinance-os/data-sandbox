@@ -92,7 +92,9 @@ test.describe('EXP-21 / EXP-22 analytics wire-up', () => {
 
   test('no PostHog requests fire when POSTHOG_KEY is unset (PR 3 default)', async ({ page }) => {
     const { ingestRequests } = await configurePosthogStub(page, { withKey: false });
-    await page.goto('/src/index.html');
+    // PR-13 — use query params so PR #2's cold-landing tour auto-launch
+    // doesn't cover the navigator and block subsequent clicks.
+    await page.goto('/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729');
     await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
     // Click around — without a key the SDK never loads, so still nothing
     // hits the wire.
@@ -142,12 +144,12 @@ test.describe('EXP-21 / EXP-22 analytics wire-up', () => {
   });
 
   test('endpoint_nav, field_click, raw_json_toggle, share fire with sanitised props', async ({ page, isMobile }) => {
-    // The `#view-raw` / `#share-btn` controls live in the desktop topbar and
+    // The `#view-raw` / Export controls live in the desktop topbar and
     // are repositioned (or hidden) in the mobile viewport. Analytics prop
     // allowlisting is identical across viewports — the desktop projects
     // give us full coverage; skipping here keeps mobile runs green without
     // weakening the contract.
-    test.skip(isMobile, 'view-raw / share controls not exposed in the mobile-viewport layout');
+    test.skip(isMobile, 'view-raw / Export controls not exposed in the mobile-viewport layout');
 
     await configurePosthogStub(page);
     await page.goto('/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729');
@@ -156,7 +158,10 @@ test.describe('EXP-21 / EXP-22 analytics wire-up', () => {
     await page.locator('.nav-endpoint', { hasText: '/transactions' }).first().click();
     await page.locator('.field-name', { hasText: 'TransactionId' }).first().click();
     await page.locator('#view-raw').click();
-    await page.locator('#share-btn').click();
+    // PR-10 removed #share-btn; the 'share' event now fires from the
+    // Export popover's Permalink-tab Copy button (default-active tab).
+    await page.locator('#export-toggle').click();
+    await page.locator('.export-overlay .export-copy-btn', { hasText: 'Copy' }).first().click();
 
     const captures = await page.evaluate(() => window.__phStub.captures);
     const eventNames = captures.map((c) => c.name);

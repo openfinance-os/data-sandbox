@@ -17,7 +17,31 @@ export function createUnderwriting(deps) {
     renderNavigator,
     renderPayload,
     UNDERWRITING_PSEUDO,
+    openFieldCard,
   } = deps;
+
+  // PR #5 — deep-pin map: each underwriting card's source-field disclosure
+  // exposes a button that switches the active endpoint and opens the
+  // primary spec field that drives the signal. The fields are illustrative
+  // (not exhaustive), driven by PRD §4.4. DBR is derived and has no
+  // single source field, so it's omitted from the map.
+  const DEEP_PIN_MAP = Object.freeze({
+    income:      { endpoint: '/accounts/{AccountId}/transactions',    fieldName: 'Flags',              accountFirst: true },
+    commitments: { endpoint: '/accounts/{AccountId}/standing-orders', fieldName: 'NextPaymentAmount',  accountFirst: true },
+    nsf:         { endpoint: '/accounts/{AccountId}/transactions',    fieldName: 'Status',             accountFirst: true },
+  });
+  function deepPinSourceField(signalKey) {
+    const target = DEEP_PIN_MAP[signalKey];
+    if (!target || typeof openFieldCard !== 'function') return;
+    if (target.accountFirst) {
+      const firstAcc = state.bundle?.accounts?.[0]?.AccountId ?? null;
+      state.selectedAccountId = firstAcc;
+    }
+    state.endpoint = target.endpoint;
+    renderNavigator();
+    renderPayload();
+    openFieldCard(target.fieldName);
+  }
 
   // Compact 4-stat strip docked above /transactions. Click "Open full panel →"
   // to pivot to the EXP-18 endpoint for source fields and formulas. Honours
@@ -101,6 +125,7 @@ export function createUnderwriting(deps) {
 
     const grid = el('div', { class: 'uw-grid' });
     grid.appendChild(renderUwSignal({
+      signalKey: 'income',
       title: 'Implied monthly net income',
       value: result.income.value != null ? `${formatAmount(result.income.value)} ${result.income.currency}` : '—',
       sub: result.income.sourceLabel,
@@ -113,6 +138,7 @@ export function createUnderwriting(deps) {
       contributorRender: renderTxContributor,
     }));
     grid.appendChild(renderUwSignal({
+      signalKey: 'commitments',
       title: 'Total fixed commitments (monthly)',
       value: `${formatAmount(result.commitments.value)} ${result.commitments.currency}`,
       sub: `${result.commitments.contributors.length} active commitments — standing orders + direct debits, normalised to monthly via the resource's Frequency, multi-currency converted to AED at the pinned snapshot rate.`,
@@ -122,6 +148,7 @@ export function createUnderwriting(deps) {
       contributorRender: renderCommitmentContributor,
     }));
     grid.appendChild(renderUwSignal({
+      signalKey: 'dbr',
       title: 'Implied DBR',
       value: result.dbr.value != null ? result.dbr.label : '—',
       sub: result.dbr.value != null
@@ -131,6 +158,7 @@ export function createUnderwriting(deps) {
       formula: 'Implied DBR = Total fixed commitments / Implied monthly net income.',
     }));
     grid.appendChild(renderUwSignal({
+      signalKey: 'nsf',
       title: 'NSF / distress event count',
       value: String(result.nsf.value),
       sub: result.nsf.value > 0
@@ -144,7 +172,7 @@ export function createUnderwriting(deps) {
     body.appendChild(wrap);
   }
 
-  function renderUwSignal({ title, value, sub, contributors, formula, contributorRender }) {
+  function renderUwSignal({ signalKey, title, value, sub, contributors, formula, contributorRender }) {
     const card = el('div', { class: 'uw-card' });
     const header = el('div', { class: 'uw-card-header' });
     header.appendChild(el('div', { class: 'uw-card-title', text: title }));
@@ -160,6 +188,23 @@ export function createUnderwriting(deps) {
     if (contributors && contributors.length > 0) {
       const det = el('details', { class: 'uw-card-contrib' });
       det.appendChild(el('summary', { text: `Source fields (${contributors.length})` }));
+      // PR #5 — deep-pin button: switch the active endpoint and open the
+      // primary spec field that drives this signal in the Field Detail
+      // pane. Skips signals with no single source field (DBR is derived).
+      const pinTarget = DEEP_PIN_MAP[signalKey];
+      if (pinTarget && typeof openFieldCard === 'function') {
+        const pinBtn = el('button', {
+          class: 'uw-pin-btn',
+          attrs: {
+            type: 'button',
+            title: `Open ${pinTarget.fieldName} in the Field Detail pane on ${pinTarget.endpoint}.`,
+            'aria-label': `Pin ${pinTarget.fieldName} field card on ${pinTarget.endpoint}`,
+          },
+          text: `Pin ${pinTarget.fieldName} →`,
+        });
+        pinBtn.addEventListener('click', (ev) => { ev.preventDefault(); deepPinSourceField(signalKey); });
+        det.appendChild(pinBtn);
+      }
       const list = el('ul');
       for (const c of contributors.slice(0, 30)) list.appendChild(contributorRender(c));
       if (contributors.length > 30) {

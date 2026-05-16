@@ -50,6 +50,9 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   outline-offset: 2px;
 }
 
+/* Legacy full-width banner — kept for auxiliary pages (about.html,
+   integrate.html) that aren't space-constrained. The main index.html
+   uses the slim .banner-stripe + .banner-chip pattern below. */
 .banner {
   background: var(--warn-bg);
   border-bottom: 1px solid var(--warn-border);
@@ -58,9 +61,7 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   flex: 0 0 auto;
   position: relative;
 }
-
 .banner[hidden] { display: none; }
-
 .banner-close {
   position: absolute;
   top: 50%;
@@ -80,9 +81,149 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   line-height: 1;
   cursor: pointer;
 }
+.banner-close:hover { background: var(--warn-border); }
+.banner-close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
 
-.banner-close:hover {
+/* PR-10 — slim synthetic-data stripe. A 4 px amber bar at the very top of
+   the page keeps the synthetic provenance loud at all times; the full
+   disclaimer lives in a popover anchored to the SYNTHETIC chip in the
+   topbar. State is JS-only per EXP-22 (no storage writes). */
+.banner-stripe {
+  height: 4px;
   background: var(--warn-border);
+  flex: 0 0 auto;
+}
+.banner-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: inherit;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--warn-border);
+  background: var(--warn-bg);
+  color: var(--text);
+  cursor: pointer;
+}
+.banner-chip:hover { filter: brightness(0.98); }
+.banner-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.banner-chip-icon { font-size: 12px; line-height: 1; }
+.banner-popover {
+  position: absolute;
+  top: 48px;
+  right: 16px;
+  max-width: 440px;
+  padding: 10px 14px;
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-border);
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.5;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  z-index: 220;
+}
+.banner-popover[hidden] { display: none; }
+.banner-popover strong { margin-right: 4px; }
+
+/* PR-10 — Persona slot inside the topbar. Replaces the prior standalone
+   .persona-hero strip and the OF-OS wordmark block: the active persona
+   (avatar 36×36 + name + derived tagline) plus a small inline
+   attribution sits in the topbar's left edge. */
+/* PR-11 — .topbar-persona now sits inside .controls-scenario as its
+   first child. It claims a fixed share of the bordered pill, with a
+   subtle right-side separator so the persona showcase reads as the
+   left sub-cluster of the larger (persona + LFI + Seed) unit. */
+.topbar-persona {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 0 1 280px;
+  padding-right: 10px;
+  border-right: 1px solid var(--border);
+}
+@media (max-width: 760px) {
+  .topbar-persona {
+    flex: 1 1 100%;
+    padding-right: 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+  }
+}
+.topbar-persona-avatar {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bg-soft);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.topbar-persona-avatar .persona-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+}
+.topbar-persona-avatar .persona-avatar-sm { margin-top: 0; }
+.topbar-persona-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 auto;
+  line-height: 1.25;
+}
+.topbar-persona-line {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+.topbar-persona-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.topbar-attribution {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 0 1 auto;
+}
+.topbar-persona.is-empty .topbar-persona-name { display: none; }
+.topbar-persona-tagline {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+@media (max-width: 1099px) {
+  .topbar-attribution { display: none; }
+  .topbar-persona { flex: 0 1 240px; }
+}
+@media (max-width: 760px) {
+  .topbar-persona-tagline { white-space: normal; -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; }
 }
 
 .topbar {
@@ -95,15 +236,6 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   background: var(--bg-card);
   flex: 0 0 auto;
 }
-
-.brand {
-  display: flex;
-  flex-direction: column;
-  font-weight: 600;
-}
-
-.brand-title { font-size: 15px; }
-.brand-sub { font-size: 11px; color: var(--text-muted); font-weight: 400; }
 
 .controls {
   display: flex;
@@ -124,11 +256,14 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   flex-wrap: wrap;
 }
 .controls-scenario {
-  padding: 2px 8px;
+  padding: 4px 10px;
   background: var(--bg-soft);
   border: 1px solid var(--border);
   border-radius: 4px;
 }
+/* PR-11 — slightly larger gap between sub-clusters (persona | LFI | Seed)
+   so the merged pill reads as three logical groups, not a dense row. */
+.controls-scenario { gap: 10px; }
 .controls-runstate { gap: 6px; }
 
 .control-group {
@@ -220,6 +355,11 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   background: var(--accent-soft);
   color: var(--accent);
 }
+/* PR #9 — visible focus on icon-only LFI compare buttons (a11y). */
+.lfi-compare-swap:focus-visible, .lfi-compare-close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
 .control-seed[hidden] { display: none; }
 
 .version-pin {
@@ -244,6 +384,22 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   font-family: inherit;
 }
 .topbar-btn:hover { background: var(--accent-soft); }
+/* Demoted state for the Tour button after the user has seen the walkthrough
+   (PR #2). Same hover/focus affordances as .topbar-btn but compact, icon-only,
+   keyboard-restorable. */
+.topbar-btn.topbar-btn-icon {
+  font-size: 15px;
+  line-height: 1;
+  padding: 2px 6px;
+  min-width: 0;
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+.topbar-btn.topbar-btn-icon:hover { color: var(--text); }
+.topbar-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
 
 /* Phase 2.0 multi-domain selector. Banking is the default; preview-status
    domains (e.g. insurance) are tagged "(preview)" in the option label. */
@@ -429,6 +585,133 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   justify-content: center;
   z-index: 200;
 }
+
+/* PR #6 — unified Export popover. Tabbed dialog showing snippets for
+   Permalink / Embed / JSON / CSV / Tarball / npm / Python / curl / MCP. */
+.export-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.32);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 210;
+}
+.export-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  max-width: 720px;
+  width: 92vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+.export-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.export-title { margin: 0; font-size: 14px; font-weight: 700; }
+.export-close {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  font-size: 18px;
+  line-height: 1;
+  padding: 2px 6px;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+.export-close:hover { color: var(--text); }
+.export-close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.export-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-soft);
+  padding: 0 8px;
+}
+.export-tab {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.export-tab:hover { color: var(--text); }
+.export-tab.is-active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.export-tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.export-body {
+  padding: 14px 16px;
+  overflow: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.export-pre {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 10px 12px;
+  margin: 0;
+  max-height: 360px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.export-note {
+  margin: 0 0 12px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text);
+}
+.export-copy-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.export-copy-btn {
+  appearance: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 3px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--mandatory-fg);
+  cursor: pointer;
+}
+.export-copy-btn:hover { filter: brightness(1.05); }
+.export-copy-btn.export-copy-btn-secondary {
+  background: var(--bg-card);
+  color: var(--accent);
+}
+.export-copy-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
 .tour-card {
   background: var(--bg-card);
   border: 1px solid var(--border-strong);
@@ -606,7 +889,6 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   background: var(--bg-card);
   border-color: var(--border);
   color: var(--text);
-  outline: none;
 }
 /* Rail is absolutely positioned inside the pane so it overlays — never stacks
    with — the header. Toggling .left-collapsed / .right-collapsed flips
@@ -643,7 +925,6 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
 .pane-rail:focus-visible {
   background: var(--bg-card);
   color: var(--text);
-  outline: none;
 }
 .pane-rail .pane-rail-chevron { font-size: 14px; line-height: 1; }
 .pane-rail .pane-rail-label {
@@ -916,16 +1197,71 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   font-size: 11px;
   color: var(--text);
   line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  margin-top: 4px;
+}
+/* PR #4 — JTBD chips on persona cards. Compact pill-shaped chips that
+   filter the library to the same scenario family the hero exposes. */
+.persona-jtbd {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
   margin-top: 2px;
 }
-.persona-card.active .persona-narrative {
-  -webkit-line-clamp: unset;   /* expand on the active card */
-  display: block;
+.persona-jtbd-chip {
+  font: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-card);
+  color: var(--text);
+  cursor: pointer;
+  line-height: 1.3;
 }
+.persona-jtbd-chip:hover { border-color: var(--accent); color: var(--accent); }
+.persona-jtbd-chip.is-active {
+  background: var(--accent);
+  color: var(--mandatory-fg);
+  border-color: var(--accent);
+}
+.persona-jtbd-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+/* "More about this persona" disclosure. Compresses the card default view
+   to avatar + name + segment + JTBD chips; the narrative + stress chips
+   live behind a click. Applies to every card uniformly per PR #4. */
+.persona-more {
+  margin-top: 4px;
+  font-size: 11px;
+}
+.persona-more > summary.persona-more-summary {
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 0;
+  list-style: none;
+}
+.persona-more > summary.persona-more-summary::-webkit-details-marker { display: none; }
+.persona-more > summary.persona-more-summary::before {
+  content: '▸ ';
+  display: inline-block;
+  transition: transform 120ms ease;
+  margin-right: 2px;
+}
+.persona-more[open] > summary.persona-more-summary::before { content: '▾ '; }
+.persona-more > summary.persona-more-summary:hover { color: var(--text); }
+.persona-more > summary.persona-more-summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.persona-more > .persona-best,
+.persona-more > .persona-narrative,
+.persona-more > .persona-stress { margin-top: 4px; }
 .persona-stress {
   display: flex;
   flex-wrap: wrap;
@@ -1004,9 +1340,54 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   text-align: left;
   width: 100%;
   font-family: inherit;
+  /* Reserve room for the left accent bar so the active row doesn't shift. */
+  border-left: 3px solid transparent;
 }
 .nav-endpoint:hover { color: var(--accent); }
-.nav-endpoint.active { color: var(--accent); font-weight: 600; }
+/* PR #8 — active row is bold and carries a left accent bar. */
+.nav-endpoint.active {
+  color: var(--accent);
+  font-weight: 700;
+  border-left-color: var(--accent);
+  background: var(--accent-soft);
+}
+.nav-endpoint:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+/* Per-resource icon — decorative prefix, narrow column, monospace
+   so the labels align. */
+.nav-endpoint-icon {
+  flex: 0 0 14px;
+  display: inline-block;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--text-muted);
+}
+.nav-endpoint.active .nav-endpoint-icon { color: var(--accent); }
+/* PR #8 — collapsible per-account group. Summary acts as the toggle. */
+details.nav-account > summary.nav-account-header {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+}
+details.nav-account > summary.nav-account-header::-webkit-details-marker { display: none; }
+details.nav-account > summary.nav-account-header::before {
+  content: '▸';
+  display: inline-block;
+  font-size: 9px;
+  margin-right: 4px;
+  color: var(--text-muted);
+  transition: transform 120ms ease;
+}
+details.nav-account[open] > summary.nav-account-header::before { content: '▾'; }
+details.nav-account > summary.nav-account-header:hover { color: var(--text); }
+details.nav-account > summary.nav-account-header:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
 
 .nav-endpoint-label { flex: 1 1 auto; font-size: 12px; }
 
@@ -1253,7 +1634,21 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   border-collapse: separate;
   border-spacing: 0;
   width: 100%;
+  /* Safety floor — never let the table render so narrow that a field-name
+     monospace cell breaks mid-word. The parent .payload-body has
+     overflow:auto, so a viewport narrower than this triggers horizontal
+     scroll inside the navigator rather than mangled cell text. JS already
+     auto-collapses one side pane below 1280 px so this rarely fires. */
+  min-width: 520px;
   font-size: 12px;
+}
+/* Field-name cells are monospace identifiers like `MerchantCategoryCode` —
+   they must never break mid-word. CamelCase / single-token names should
+   either fit on one line or trigger a horizontal scroll via the table
+   min-width above. */
+.payload-rendered .field-name {
+  word-break: normal;
+  overflow-wrap: normal;
 }
 .payload-rendered th, .payload-rendered td {
   text-align: left;
@@ -1431,6 +1826,27 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   line-height: 1.4;
   color: var(--text);
 }
+/* PR #5 — deep-pin button beneath every "Source fields (N)" disclosure
+   summary. Switches the active endpoint and opens the primary spec field
+   in the Field Detail pane. */
+.uw-pin-btn {
+  display: inline-block;
+  margin: 6px 0 4px;
+  padding: 3px 8px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  cursor: pointer;
+}
+.uw-pin-btn:hover { background: var(--accent); color: var(--mandatory-fg); }
+.uw-pin-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
 
 @media (max-width: 1099px) {
   .uw-grid { grid-template-columns: 1fr; }
@@ -1539,6 +1955,44 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
 }
 .payload-rendered td.diff-changed {
   background: #fff5d6;
+}
+
+/* PR #7 — Compare-N/A banner. Inline note shown on Underwriting / Overview
+   pseudo-endpoints when Compare-with is on. */
+.compare-na-banner {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border-left: 3px solid var(--conditional-fg, #b67c00);
+  background: #fff5d6;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.45;
+  border-radius: 2px;
+}
+
+/* PR #9 — insurance early-calibration banner. Shown at the top of every
+   insurance-payload render so the calibration status is up-front. */
+.insurance-empty-banner {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--text);
+  font-size: 12.5px;
+  line-height: 1.5;
+  border-radius: 2px;
+}
+.insurance-empty-banner strong { margin-right: 6px; }
+.insurance-empty-link {
+  display: inline-block;
+  margin-left: 6px;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: underline;
+}
+.insurance-empty-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .payload-raw {

@@ -19,12 +19,26 @@ import { decodeFromUrl, encodeEmbed, encodeFixtureUrl, encodePermalink, CUSTOM_P
 import { expandRecipe } from './persona-builder/expand.js';
 import { decodeRecipe, encodeRecipe, RECIPE_DEFAULTS } from './persona-builder/recipe.js';
 import { mountPersonaBuilder } from './ui/persona-builder-ui.js';
-import { createFindBox } from './ui/find-box.js';
+// PR-14 perf — find-box module is dynamic-imported on first ⌘K /
+// button click. Like Export popover, the entry point is user-triggered
+// outside the cold-load measurement window, so the dynamic-import
+// latency is invisible.
 import { createTour } from './ui/tour.js';
+// PR-12 perf — export popover is dynamic-imported on first ⌘E / button
+// click so it stays off the cold-load critical path (EXP-24 Lighthouse
+// budget). The factory itself isn't invoked until a user interaction.
+// PR-14 — tour module was lazy-loaded in PR-13 (chasing 0.01 of perf
+// budget) but it backfired: the dynamic import fires at init's tail
+// on cold landing, inside the TBT measurement window, dropping the
+// median to 0.57. Static import + modulepreload is the right shape.
 import { createCompareView } from './ui/compare-view.js';
 import { createTxFilter } from './ui/tx-filter.js';
 import { createMonthlySummary } from './ui/monthly-summary.js';
-import { createInsurance } from './ui/insurance.js';
+// PR-15 perf — insurance module is dynamic-imported when the active
+// domain shifts to insurance. The banking default landing never needs
+// it, so keeping it off the cold-load path tightens the EXP-24
+// Lighthouse budget without affecting insurance-flow latency
+// (rebuildAndRender is already async work).
 import {
   envelopesFromBundle,
   csvForResource,
@@ -54,9 +68,12 @@ import {
   ACCOUNT_SCOPED_PATHS,
   BUNDLE_SCOPED_PATHS,
   JTBD_PRESETS,
+  INSURANCE_JTBD_PRESETS,
+  getJtbdPresets,
   STRESS_BEST_FOR,
   LFI_CAPTIONS,
   PANE_COLLAPSE_CLASS,
+  NARROW_PANE_BREAKPOINT_PX,
   MEDIAN_HINT,
 } from './app/constants.js';
 
@@ -75,7 +92,9 @@ const state = {
   personaId: null,
   lfi: 'median',
   seed: 4729,
-  endpoint: '/accounts',
+  // PR #5 — Underwriting Summary is the default landing for banking
+  // bundles. URL-pinned endpoints override this in init() per EXP-17.
+  endpoint: UNDERWRITING_PSEUDO,
   view: 'rendered',                     // 'rendered' | 'raw'  (orthogonal to compareMode)
   bundle: null,
   selectedAccountId: null,
@@ -125,6 +144,15 @@ const state = {
   // by design) and the cards fire only when the URL has no query params.
   welcomeShown: false,
   welcomeDismissed: false,
+  // Tour state — cold landing auto-launches the 5-step walkthrough and the
+  // Tour button is demoted to a small ⓘ icon once seen. Same EXP-22
+  // constraint as welcomeShown: JS-only, refresh re-arms by design.
+  tourSeen: false,
+  // PR-13 (Greptile P1) — set of AccountIds the user has explicitly
+  // collapsed in the navigator. renderNavigator() reads this to honour
+  // the toggle across re-renders (which call replaceChildren()).
+  // JS-only per EXP-22; cleared on persona switch.
+  navAccountCollapsed: new Set(),
 };
 
 // Mount the UI submodules. `state` is a const and the helpers below
@@ -137,17 +165,58 @@ const { openFieldCard } = createFieldCard({
 const { attachHoverPreview } = createHoverPreview({
   state, el, endpointFieldsByName,
 });
-const { copyEmbedSnippet } = createEmbedSnippet({
+const { copyEmbedSnippet, buildEmbedSnippet } = createEmbedSnippet({
   state, OVERVIEW_PSEUDO, UNDERWRITING_PSEUDO,
 });
-const { openFind, closeFind } = createFindBox({
-  state, el, humanArchetype, rebuildAndRender, clearTxState,
-  renderNavigator, renderPayload, openFieldCard,
-});
+// PR-14 perf — find-box lazy wrapper. Dynamic-import on first
+// invocation; reuse the resolved instance thereafter. Keeps the
+// ~200-line find-box module off the cold-load JS payload.
+const findBox = (() => {
+  let inner = null;
+  let loading = null;
+  function ensure() {
+    if (inner) return inner;
+    if (!loading) {
+      loading = import('./ui/find-box.js').then(({ createFindBox }) => {
+        inner = createFindBox({
+          state, el, humanArchetype, rebuildAndRender, clearTxState,
+          renderNavigator, renderPayload, openFieldCard,
+        });
+        return inner;
+      });
+    }
+    return loading;
+  }
+  // PR-16 (Greptile P1) — sync fast-path once the module has loaded so
+  // ⌘K spam can't race against itself.
+  return {
+    open() {
+      if (inner) { inner.openFind(); return; }
+      ensure().then((p) => p.openFind());
+    },
+    close() { inner?.closeFind(); },
+  };
+})();
+const openFind = () => findBox.open();
+const closeFind = () => findBox.close();
 const { startTour } = createTour({
   state, el, setPersona, emptyTxFilter,
   renderNavigator, renderPayload, renderCoverage,
+  onClose: () => demoteTourButton(),
 });
+
+// Demote the prominent "Tour" button to a small ⓘ icon once the user has
+// seen the walkthrough (finish/skip/click-outside all route through
+// closeTour). State is JS-only per EXP-22 — a refresh re-arms the prominent
+// label, and cold-landing visitors get auto-launched again next session.
+function demoteTourButton() {
+  const btn = document.getElementById('tour-btn');
+  if (!btn) return;
+  btn.classList.add('topbar-btn-icon');
+  btn.textContent = 'ⓘ';
+  btn.setAttribute('aria-label', 'Replay guided tour');
+  btn.setAttribute('title', 'Replay the 5-step guided tour');
+}
 const { renderCompareView } = createCompareView({
   state, el, stripInternal, personaAvatarEl,
 });
@@ -155,12 +224,94 @@ const { renderTxFilterBar, applyFilter, applySort, toggleSort } = createTxFilter
   state, el, renderPayload, emptyTxFilter, updateUrl: pushPermalink,
 });
 const { renderMonthlySummary } = createMonthlySummary({ el, formatAmount });
-const { renderInsuranceBundle } = createInsurance({
-  state, el, syncControls, pushPermalink,
-});
+// PR-15 — lazy insurance wrapper. The factory loads on the first
+// renderInsuranceBundle() call; subsequent calls reuse the cached
+// instance. Banking flow never triggers the import.
+// PR-16 (Greptile P1) — sync fast-path once `inner` is loaded so a
+// second call within the same tick can't race with the first.
+const renderInsuranceBundle = (() => {
+  let inner = null;
+  let loading = null;
+  function ensure() {
+    if (inner) return inner;
+    if (!loading) {
+      loading = import('./ui/insurance.js').then(({ createInsurance }) => {
+        inner = createInsurance({
+          state, el, syncControls, pushPermalink,
+        }).renderInsuranceBundle;
+        return inner;
+      });
+    }
+    return loading;
+  }
+  return () => {
+    if (inner) { inner(); return; }
+    ensure().then((fn) => fn());
+  };
+})();
 const { renderUnderwritingStrip, renderUnderwritingPanel } = createUnderwriting({
   state, el, formatAmount, renderNavigator, renderPayload, UNDERWRITING_PSEUDO,
+  openFieldCard,
 });
+
+// PR-12 perf — Export popover module is loaded on-demand on the first
+// ⌘E / button click. The wrapper exposes the same `{ open, close,
+// isOpen }` surface as the eagerly-instantiated factory used to, so
+// the keyboard / button handlers in attachEventHandlers don't change
+// shape. EXP-24 Lighthouse budget benefits because the popover code
+// is off the cold-load critical path.
+const exportPopover = (() => {
+  let inner = null;
+  let loading = null;
+  const deps = () => ({
+    state, el, track, copyToClipboard,
+    exportActiveJson:    () => exportActiveJson(),
+    exportActiveCsv:     () => exportActiveCsv(),
+    exportTarball:       () => exportTarball(),
+    embedIframeSnippet:  () => buildEmbedSnippet(),
+    activeFixtureUrl:    () => {
+      const origin = window.location.origin + window.location.pathname.replace(/\/index\.html$/, '').replace(/\/$/, '');
+      return encodeFixtureUrl({
+        origin, personaId: state.personaId, lfi: state.lfi, seed: state.seed,
+        endpoint: state.endpoint === OVERVIEW_PSEUDO || state.endpoint === UNDERWRITING_PSEUDO
+          ? '/accounts'
+          : state.endpoint,
+      });
+    },
+    activeJsonString: () => {
+      if (!state.bundle) return '';
+      const ctx = exportContext();
+      const envelopes = envelopesFromBundle(state.bundle, ctx);
+      const key = activeEnvelopeKey();
+      const env = envelopes[key] ?? envelopes[state.endpoint];
+      return env ? JSON.stringify(env, null, 2) : '';
+    },
+    activeCsvString: () => {
+      if (!state.bundle) return '';
+      return buildActiveCsvString();
+    },
+  });
+  function ensure() {
+    if (inner) return inner;
+    if (!loading) {
+      loading = import('./ui/export-popover.js')
+        .then(({ createExportPopover }) => { inner = createExportPopover(deps()); return inner; });
+    }
+    return loading;
+  }
+  // PR-16 — sync fast-path once the module has loaded so the common
+  // case (cache warm) doesn't pay a microtask yield. The inner open()
+  // at src/ui/export-popover.js:126 is itself a toggle, so a real
+  // dblclick still opens-then-closes by design.
+  return {
+    open() {
+      if (inner) { inner.open(); return; }
+      ensure().then((p) => p.open());
+    },
+    close() { inner?.close(); },
+    get isOpen() { return inner ? inner.isOpen : false; },
+  };
+})();
 
 // Phase R1.5 — merge a single enrichment record onto a /transactions row.
 // Returns a NEW row object so the underlying bundle stays untouched.
@@ -327,6 +478,18 @@ async function init() {
   // (plug-point 2) and the static-fixture zip download (plug-point 3).
   rebuildAndRender();
   emitPersonaLoad();
+
+  // Auto-launch the 5-step tour on cold landing (URL with no query params)
+  // — first-visit orientation. EXP-22 forbids storage-based "first visit"
+  // detection, so we reuse the same isColdLanding signal that drives the
+  // welcome cards. URL-with-params is treated as a returning visitor —
+  // the Tour button starts demoted to ⓘ and the tour does not auto-launch.
+  // After finish/skip on a cold landing, the button likewise demotes.
+  if (isColdLanding && !state.tourSeen) {
+    startTour();
+  } else {
+    demoteTourButton();
+  }
 }
 
 // EXP-21 helpers — kept thin and centralised so analytics call sites are
@@ -358,7 +521,12 @@ function attachBuilderHandlers() {
           state.activePersonas[CUSTOM_PERSONA_SLUG] = persona;
           state.recipe = recipe;
           state.personaId = CUSTOM_PERSONA_SLUG;
-          state.endpoint = OVERVIEW_PSEUDO;
+          state.navAccountCollapsed.clear();
+          // PR #5 — Banking bundles default to Underwriting Summary on a
+          // persona switch; it surfaces the four illustrative signals
+          // (income / commitments / DBR / NSF) up-front instead of routing
+          // through the bundle-level /accounts overview.
+          state.endpoint = UNDERWRITING_PSEUDO;
           state.selectedAccountId = null;
           buildPersonaList();
           rebuildAndRender();
@@ -436,14 +604,23 @@ function buildJtbdRail() {
   const rail = document.getElementById('jtbd-rail');
   if (!rail) return;
   rail.replaceChildren();
-  for (const [key, preset] of Object.entries(JTBD_PRESETS)) {
+  const presets = getJtbdPresets(state.domain);
+  // If the active filter doesn't belong to the current domain's presets
+  // (e.g. user switched banking → insurance with 'affordability' selected),
+  // drop it so the rail and library stay coherent.
+  if (state.jtbdFilter && !presets[state.jtbdFilter]) state.jtbdFilter = null;
+  for (const [key, preset] of Object.entries(presets)) {
     const active = state.jtbdFilter === key;
+    // PR-13 — these are toggle filters (deselectable by clicking again),
+    // not exclusive tabs. role="tab" was added in PR #3 by analogy but
+    // mixed with aria-pressed (axe-core critical aria-allowed-attr).
+    // Drop role="tab" and rely on the implicit button role + aria-pressed.
     const chip = el('button', {
       class: 'jtbd-chip',
       attrs: {
         type: 'button',
         'aria-pressed': active ? 'true' : 'false',
-        title: `Show personas covering ${preset.label.toLowerCase()} JTBDs (${preset.terms.join(', ')})`,
+        title: `Show personas covering ${preset.label.toLowerCase()} scenarios (${preset.terms.join(', ')})`,
       },
       text: preset.label,
       onClick: () => {
@@ -463,7 +640,8 @@ function personaMatchesActiveFilter(persona) {
   const terms = persona.stress_coverage ?? [];
   if (state.stressFilter && !terms.includes(state.stressFilter)) return false;
   if (state.jtbdFilter) {
-    const allow = JTBD_PRESETS[state.jtbdFilter]?.terms ?? [];
+    const presets = getJtbdPresets(state.domain);
+    const allow = presets[state.jtbdFilter]?.terms ?? [];
     if (!terms.some((t) => allow.includes(t))) return false;
   }
   return true;
@@ -472,8 +650,6 @@ function personaMatchesActiveFilter(persona) {
 function buildPersonaList() {
   const list = document.getElementById('persona-list');
   list.replaceChildren();
-  const select = document.getElementById('persona-select');
-  select.replaceChildren();
 
   // Render stress-filter bar state.
   const filterBar = document.getElementById('stress-filter-bar');
@@ -503,13 +679,85 @@ function buildPersonaList() {
       ),
       el('div', { class: 'persona-archetype', text: humanArchetype(p.archetype) }),
     );
+
+    // PR #4: JTBD chips are the visible default — one chip per scenario
+    // family this persona qualifies for. The richer stress-coverage chips
+    // + prose narrative move into the "▾ More about this persona"
+    // disclosure below, keeping the default card view compact.
+    const families = jtbdFamiliesForPersona(p);
+    if (families.length > 0) {
+      const jtbdRow = el('div', { class: 'persona-jtbd', attrs: { 'aria-label': 'Scenario families' } });
+      for (const fam of families) {
+        const active = state.jtbdFilter === fam.key;
+        const chip = el('button', {
+          class: `persona-jtbd-chip${active ? ' is-active' : ''}`,
+          text: fam.label,
+          attrs: {
+            type: 'button',
+            title: active
+              ? `Scenario filter active: ${fam.label} — click to clear`
+              : `Click to filter library by scenario: ${fam.label}`,
+            'aria-pressed': active ? 'true' : 'false',
+          },
+        });
+        chip.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          state.jtbdFilter = state.jtbdFilter === fam.key ? null : fam.key;
+          if (state.jtbdFilter) state.stressFilter = null;
+          buildJtbdRail();
+          buildPersonaList();
+          renderTopbarPersona();
+        });
+        jtbdRow.appendChild(chip);
+      }
+      cardBody.appendChild(jtbdRow);
+    }
+
+    // "More about this persona" disclosure — prose narrative, best-for
+    // signal, and the fine-grained stress chips. Collapsed by default.
     const bestFor = bestForLine(p);
-    if (bestFor) {
-      cardBody.appendChild(el('div', { class: 'persona-best', text: bestFor }));
+    const hasMore = Boolean(p.narrative) || Boolean(bestFor) || (Array.isArray(p.stress_coverage) && p.stress_coverage.length > 0);
+    if (hasMore) {
+      const details = el('details', { class: 'persona-more' });
+      const summary = el('summary', { class: 'persona-more-summary' });
+      summary.appendChild(document.createTextNode('More about this persona'));
+      details.appendChild(summary);
+      if (bestFor) details.appendChild(el('div', { class: 'persona-best', text: bestFor }));
+      if (p.narrative) details.appendChild(el('div', { class: 'persona-narrative', text: p.narrative.trim() }));
+      if (Array.isArray(p.stress_coverage) && p.stress_coverage.length > 0) {
+        const chips = el('div', { class: 'persona-stress', attrs: { 'aria-label': 'Stress coverage' } });
+        for (const term of p.stress_coverage) {
+          const isActive = term === state.stressFilter;
+          const chip = el('span', {
+            class: `stress-chip${isActive ? ' stress-active' : ''}`,
+            text: humanStressTerm(term),
+            attrs: {
+              role: 'button',
+              tabindex: '0',
+              title: isActive
+                ? `Filter active: ${term} — click to clear`
+                : `Click to show only personas covering: ${term}`,
+            },
+          });
+          const onChipActivate = (ev) => {
+            ev.stopPropagation();
+            state.stressFilter = state.stressFilter === term ? null : term;
+            buildPersonaList();
+          };
+          chip.addEventListener('click', onChipActivate);
+          chip.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); onChipActivate(ev); }
+          });
+          chips.appendChild(chip);
+        }
+        details.appendChild(chips);
+      }
+      // Stop card-click activation when the user opens the disclosure
+      // or interacts with anything inside it.
+      details.addEventListener('click', (ev) => ev.stopPropagation());
+      cardBody.appendChild(details);
     }
-    if (p.narrative) {
-      cardBody.appendChild(el('div', { class: 'persona-narrative', text: p.narrative.trim() }));
-    }
+
     const card = el(
       'div',
       {
@@ -517,50 +765,27 @@ function buildPersonaList() {
         attrs: { role: 'listitem' },
         dataset: { personaId: id },
         onClick: (e) => {
-          if (e.target.classList.contains('stress-chip')) return; // chip handles its own click
+          // Chips and the disclosure handle their own clicks. The card-level
+          // click only fires when the user clicks empty card chrome.
+          if (e.target.closest('.stress-chip, .persona-jtbd-chip, .persona-more')) return;
           state.personaId = id;
-          // Persona-switch defaults the payload pane to the overview —
-          // story-level orientation before drilling into wire endpoints.
-          state.endpoint = OVERVIEW_PSEUDO;
+          state.navAccountCollapsed.clear();
+          // PR #5 — banking persona-switch now lands on the Underwriting
+          // Summary by default; insurance flow has its own per-domain
+          // default endpoint resolved in rebuildAndRender.
+          state.endpoint = UNDERWRITING_PSEUDO;
           state.selectedAccountId = null;
           rebuildAndRender();
+          // PR-11 — emit EXP-21 persona_load on every card-click activation
+          // (previously this fired from the persona-select change listener;
+          // the dropdown is gone).
+          emitPersonaLoad();
         },
       },
       personaAvatarEl(id, p, 'sm'),
       cardBody,
     );
-    if (Array.isArray(p.stress_coverage) && p.stress_coverage.length > 0) {
-      const chips = el('div', { class: 'persona-stress', attrs: { 'aria-label': 'Stress coverage' } });
-      for (const term of p.stress_coverage) {
-        const isActive = term === state.stressFilter;
-        const chip = el('span', {
-          class: `stress-chip${isActive ? ' stress-active' : ''}`,
-          text: humanStressTerm(term),
-          attrs: {
-            role: 'button',
-            tabindex: '0',
-            title: isActive
-              ? `Filter active: ${term} — click to clear`
-              : `Click to show only personas covering: ${term}`,
-          },
-        });
-        const onChipActivate = (ev) => {
-          ev.stopPropagation();
-          state.stressFilter = state.stressFilter === term ? null : term;
-          buildPersonaList();
-        };
-        chip.addEventListener('click', onChipActivate);
-        chip.addEventListener('keydown', (ev) => {
-          if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); onChipActivate(ev); }
-        });
-        chips.appendChild(chip);
-      }
-      card.appendChild(chips);
-    }
     list.appendChild(card);
-
-    const opt = el('option', { text: p.name, attrs: { value: id } });
-    select.appendChild(opt);
   }
 
   if (visibleCount === 0) {
@@ -576,9 +801,10 @@ function buildPersonaList() {
 }
 
 function syncControls() {
-  document.getElementById('persona-select').value = state.personaId;
-  // Hidden legacy <select> kept for any URL-encoded form handlers and as a
-  // single readable accessor; the visible control is the segmented buttons.
+  // PR-11 — the visible persona dropdown is gone; persona switching is
+  // driven by the left-pane persona library only. Hidden legacy LFI
+  // <select> is kept for any URL-encoded form handlers and as a single
+  // readable accessor; the visible control is the segmented buttons.
   const legacy = document.getElementById('lfi-select');
   if (legacy) legacy.value = state.lfi;
   for (const btn of document.querySelectorAll('#lfi-seg button[data-lfi]')) {
@@ -607,6 +833,17 @@ function syncControls() {
 // lives in JS only (EXP-22 forbids storage), so a refresh restores both
 // panes. Field-card opens auto-expand the right pane (matches the existing
 // .field-detail.open overlay behavior used at ≤1099 px).
+//
+// Below NARROW_PANE_BREAKPOINT_PX (1280) the navigator gets squeezed when
+// both side panes are open, so expanding one auto-collapses the other.
+// At >= 1280 the manual two-open state is allowed.
+const OPPOSITE_PANE = Object.freeze({
+  'persona-pane': 'field-detail',
+  'field-detail': 'persona-pane',
+});
+function isNarrowViewport() {
+  return window.matchMedia(`(max-width: ${NARROW_PANE_BREAKPOINT_PX - 1}px)`).matches;
+}
 function setPaneCollapsed(target, collapsed) {
   const root = document.getElementById('three-pane');
   if (!root) return;
@@ -621,6 +858,36 @@ function setPaneCollapsed(target, collapsed) {
   for (const btn of document.querySelectorAll(`.pane-collapse[data-target="${target}"]`)) {
     btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
   }
+  // Narrow-viewport mutex: expanding one side pane collapses the opposite,
+  // so the middle navigator never sits between two simultaneously-open panes
+  // below 1280. Skip when at ≤1099 px (right pane is overlay, not a column,
+  // so the squeeze doesn't apply).
+  if (!collapsed && isNarrowViewport()) {
+    const overlayMode = window.matchMedia('(max-width: 1099px)').matches;
+    if (!overlayMode) {
+      const other = OPPOSITE_PANE[target];
+      const otherCls = PANE_COLLAPSE_CLASS[other];
+      if (other && otherCls && !root.classList.contains(otherCls)) {
+        // Recurse with collapse=true; the guard above means this branch
+        // can't loop indefinitely.
+        setPaneCollapsed(other, true);
+      }
+    }
+  }
+}
+function applyNarrowViewportDefault() {
+  // When the viewport drops below 1280 and both side panes are still open
+  // (typical fresh load between 1100–1279), auto-collapse the field-detail
+  // by default — the persona library is the entry point, field-detail
+  // re-expands on field click. At ≤1099 the existing overlay model takes
+  // over and this is a no-op.
+  const root = document.getElementById('three-pane');
+  if (!root) return;
+  if (!isNarrowViewport()) return;
+  if (window.matchMedia('(max-width: 1099px)').matches) return;
+  const leftOpen = !root.classList.contains('left-collapsed');
+  const rightOpen = !root.classList.contains('right-collapsed');
+  if (leftOpen && rightOpen) setPaneCollapsed('field-detail', true);
 }
 function wirePaneCollapse() {
   for (const btn of document.querySelectorAll('.pane-collapse')) {
@@ -629,16 +896,22 @@ function wirePaneCollapse() {
   for (const rail of document.querySelectorAll('.pane-rail')) {
     rail.addEventListener('click', () => setPaneCollapsed(rail.dataset.target, false));
   }
+  // Apply the narrow-viewport default once at boot and again whenever the
+  // viewport crosses the 1280 threshold (e.g. window resize / orientation
+  // change). Crossing back above 1280 leaves the user's current pane state
+  // alone — we only auto-collapse, never auto-expand.
+  applyNarrowViewportDefault();
+  const mql = window.matchMedia(`(max-width: ${NARROW_PANE_BREAKPOINT_PX - 1}px)`);
+  const onChange = (e) => { if (e.matches) applyNarrowViewportDefault(); };
+  if (mql.addEventListener) mql.addEventListener('change', onChange);
+  else if (mql.addListener) mql.addListener(onChange);
 }
 
 function attachEventHandlers() {
-  document.getElementById('persona-select').addEventListener('change', (e) => {
-    state.personaId = e.target.value;
-    state.endpoint = OVERVIEW_PSEUDO;
-    state.selectedAccountId = null;
-    rebuildAndRender();
-    emitPersonaLoad();
-  });
+  // PR-11 — the persona dropdown change handler is removed. Persona
+  // switching now flows exclusively through .persona-card clicks in
+  // buildPersonaList (same setPersona / rebuildAndRender path,
+  // emitPersonaLoad still fires from rebuildAndRender's chain).
   // LFI segmented control — replaces the v1 dropdown with a visible lever.
   for (const btn of document.querySelectorAll('#lfi-seg button[data-lfi]')) {
     btn.addEventListener('click', () => {
@@ -716,36 +989,23 @@ function attachEventHandlers() {
     state.piiOnly = !!e.target.checked;
     renderPayload();
   });
-  document.getElementById('export-json').addEventListener('click', () => {
-    exportActiveJson();
-    track('export', { format: 'json' });
-  });
-  document.getElementById('export-csv').addEventListener('click', () => {
-    exportActiveCsv();
-    track('export', { format: 'csv' });
-  });
-  document.getElementById('export-tar').addEventListener('click', () => {
-    exportTarball();
-    track('export', { format: 'tarball' });
-  });
-  document.getElementById('export-embed')?.addEventListener('click', () => {
-    copyEmbedSnippet();
-    track('share', { kind: 'embed' });
+  // PR #6 — unified Export popover replaces the JSON / CSV / Tarball /
+  // Embed button row and the toolbar Share button.
+  document.getElementById('export-toggle')?.addEventListener('click', () => {
+    exportPopover.open();
   });
   document.getElementById('tour-btn').addEventListener('click', () => startTour());
   document.getElementById('find-btn').addEventListener('click', openFind);
-  // EXP-17 Share — pushPermalink keeps window.location.href canonical on every
-  // state change, so the live href is the right thing to put on the clipboard.
-  document.getElementById('share-btn').addEventListener('click', () => {
-    copyToClipboard(window.location.href, 'Permalink copied.');
-    track('share', { kind: 'permalink' });
-  });
-  // ⌘K / Ctrl+K opens the find box from anywhere in the app.
+  // ⌘K / Ctrl+K opens the find box; ⌘E / Ctrl+E opens the Export popover.
   window.addEventListener('keydown', (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
       e.preventDefault();
       openFind();
+    } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'e') {
+      e.preventDefault();
+      exportPopover.open();
     } else if (e.key === 'Escape') {
+      if (exportPopover.isOpen) { exportPopover.close(); return; }
       if (document.getElementById('find-overlay')) closeFind();
     }
   });
@@ -753,6 +1013,7 @@ function attachEventHandlers() {
 
 function setPersona(personaId, lfi) {
   state.personaId = personaId;
+  state.navAccountCollapsed.clear();
   if (lfi) state.lfi = lfi;
   rebuildAndRender();
 }
@@ -788,31 +1049,37 @@ function exportActiveJson() {
   downloadJson(env, fname);
 }
 
-function exportActiveCsv() {
-  if (!state.bundle) return;
+// Picks the bundle key + filename suffix for the active endpoint's CSV.
+// Shared by exportActiveCsv (download) and buildActiveCsvString (popover).
+const RESOURCE_FOR_ENDPOINT = Object.freeze({
+  '/accounts': ['accounts', 'Account'],
+  '/accounts/{AccountId}': ['accounts', 'Account'],
+  '/accounts/{AccountId}/balances': ['balances', 'Balance'],
+  '/accounts/{AccountId}/transactions': ['transactions', 'Transaction'],
+  '/accounts/{AccountId}/standing-orders': ['standingOrders', 'StandingOrder'],
+  '/accounts/{AccountId}/direct-debits': ['directDebits', 'DirectDebit'],
+  '/accounts/{AccountId}/beneficiaries': ['beneficiaries', 'Beneficiary'],
+  '/accounts/{AccountId}/scheduled-payments': ['scheduledPayments', 'ScheduledPayment'],
+  '/accounts/{AccountId}/product': ['product', 'Product'],
+  '/accounts/{AccountId}/parties': ['parties', 'Party'],
+  '/parties': ['callingUserParty', 'Party'],
+  '/accounts/{AccountId}/statements': ['statements', 'Statements'],
+});
+function buildActiveCsvString() {
+  if (!state.bundle) return '';
   const ctx = exportContext();
-  // Pick the best-fit resource for the active endpoint.
-  const resourceForEndpoint = {
-    '/accounts': ['accounts', 'Account'],
-    '/accounts/{AccountId}': ['accounts', 'Account'],
-    '/accounts/{AccountId}/balances': ['balances', 'Balance'],
-    '/accounts/{AccountId}/transactions': ['transactions', 'Transaction'],
-    '/accounts/{AccountId}/standing-orders': ['standingOrders', 'StandingOrder'],
-    '/accounts/{AccountId}/direct-debits': ['directDebits', 'DirectDebit'],
-    '/accounts/{AccountId}/beneficiaries': ['beneficiaries', 'Beneficiary'],
-    '/accounts/{AccountId}/scheduled-payments': ['scheduledPayments', 'ScheduledPayment'],
-    '/accounts/{AccountId}/product': ['product', 'Product'],
-    '/accounts/{AccountId}/parties': ['parties', 'Party'],
-    '/parties': ['callingUserParty', 'Party'],
-    '/accounts/{AccountId}/statements': ['statements', 'Statements'],
-  };
-  const [bundleKey, resourceLabel] = resourceForEndpoint[state.endpoint] ?? ['accounts', 'Account'];
+  const [bundleKey] = RESOURCE_FOR_ENDPOINT[state.endpoint] ?? ['accounts', 'Account'];
   let rows = state.bundle[bundleKey] ?? [];
   if (state.selectedAccountId && Array.isArray(rows)) {
     rows = rows.filter((r) => !r._accountId || r._accountId === state.selectedAccountId);
   }
   if (!Array.isArray(rows)) rows = [rows];
-  const csv = csvForResource(rows, ctx);
+  return csvForResource(rows, ctx);
+}
+function exportActiveCsv() {
+  if (!state.bundle) return;
+  const [, resourceLabel] = RESOURCE_FOR_ENDPOINT[state.endpoint] ?? ['accounts', 'Account'];
+  const csv = buildActiveCsvString();
   const fname = `${state.personaId}-${state.lfi}-seed${state.seed}-${resourceLabel}.csv`;
   downloadCsv(csv, fname);
 }
@@ -857,6 +1124,7 @@ function rebuildAndRender() {
     // from the parsed insurance spec), replacing the bundle-wide JSON
     // inspector. Compare-LFIs / underwriting / banking-shaped coverage are
     // still banking-only — those are derived views with no insurance analogue.
+    renderTopbarPersona();
     renderInsuranceBundle();
     pushPermalink();
     setTimeout(() => body?.classList.remove('is-fading'), 30);
@@ -869,12 +1137,79 @@ function rebuildAndRender() {
   state.txHighlight = new Set();
   state.crossLink = null;
   syncControls();
+  renderTopbarPersona();
   renderNavigator();
   renderPayload();
   renderCoverage();
   pushPermalink();
 
   setTimeout(() => body?.classList.remove('is-fading'), 30);
+}
+
+// PR-10 — persona slot inside the topbar (renamed from PR #3's standalone
+// hero). Avatar + name + a one-line tagline derived from the first
+// sentence of the persona narrative. JTBD chips are dropped from the
+// topbar slot — the left-pane scenario tabs (.jtbd-rail) are the
+// canonical scenario filter surface post-PR #3. State changes (persona
+// switch, custom-persona expand, domain switch) all flow through
+// renderTopbarPersona() via rebuildAndRender / renderInsuranceBundle.
+function deriveTagline(persona, maxLen = 140) {
+  const narrative = (persona?.narrative ?? '').trim();
+  if (!narrative) return '';
+  // First sentence — break on ". " then strip trailing period. Falls back
+  // to the full narrative truncated when there's no sentence boundary.
+  const firstStop = narrative.indexOf('. ');
+  const first = firstStop > 0 ? narrative.slice(0, firstStop + 1) : narrative;
+  const collapsed = first.replace(/\s+/g, ' ').trim();
+  if (collapsed.length <= maxLen) return collapsed;
+  return `${collapsed.slice(0, maxLen - 1).trimEnd()}…`;
+}
+function jtbdFamiliesForPersona(persona) {
+  const terms = persona?.stress_coverage ?? [];
+  const presets = getJtbdPresets(state.domain);
+  const matched = [];
+  for (const [key, preset] of Object.entries(presets)) {
+    if (terms.some((t) => preset.terms.includes(t))) {
+      matched.push({ key, label: preset.label });
+    }
+  }
+  return matched;
+}
+function renderTopbarPersona() {
+  const slot = document.getElementById('topbar-persona');
+  if (!slot) return;
+  const persona = state.data?.personas?.[state.personaId];
+  if (!persona) {
+    slot.classList.add('is-empty');
+    return;
+  }
+  slot.classList.remove('is-empty');
+
+  const avatarSlot = document.getElementById('topbar-persona-avatar');
+  avatarSlot.replaceChildren(personaAvatarEl(state.personaId, persona, 'sm'));
+
+  const nameEl = document.getElementById('topbar-persona-name');
+  nameEl.textContent = persona.name ?? state.personaId;
+  nameEl.setAttribute('title', persona.name ?? state.personaId);
+
+  const tag = deriveTagline(persona);
+  const tagEl = document.getElementById('topbar-persona-tagline');
+  tagEl.textContent = tag;
+  // Full tagline in title so a truncated row stays inspectable on hover.
+  tagEl.setAttribute('title', tag);
+}
+
+// PR #7 — inline banner shown when Compare-with is on but the active
+// endpoint is a derived view (Underwriting summary / Persona overview)
+// where the split-pane diff has no meaningful field-level analogue.
+function renderCompareNaBanner(viewName) {
+  return el('div', {
+    class: 'compare-na-banner',
+    attrs: { role: 'note' },
+    text:
+      `Comparison applies to field-level endpoints (e.g. /transactions, /accounts/{AccountId}/balances). ` +
+      `${viewName} is a derived view — the populate-rate diff has no analogue here.`,
+  });
 }
 
 function renderBundleError(err, persona) {
@@ -957,6 +1292,7 @@ async function switchDomain(newDomain) {
     Object.entries(state.data.personas).filter(([, p]) => p.domain === newDomain)
   );
   state.personaId = Object.keys(state.activePersonas)[0];
+  state.navAccountCollapsed.clear();
   state.endpoint = entry.defaultEndpoint || Object.keys(state.spec.endpoints)[0];
   // Refresh topbar metadata to reflect the active spec.
   const v = String(state.spec.specVersion || '');
@@ -1046,11 +1382,29 @@ function renderCoverage() {
   }
 }
 
+// PR #8 — per-resource icons on per-account endpoints. Decorative-only;
+// the readable label stays the source of truth and screen readers see
+// the label text (icons are aria-hidden).
+const ENDPOINT_ICONS = Object.freeze({
+  '/accounts/{AccountId}':                    '☰',
+  '/accounts/{AccountId}/balances':           '⚖',
+  '/accounts/{AccountId}/transactions':       '⇄',
+  '/accounts/{AccountId}/standing-orders':    '↻',
+  '/accounts/{AccountId}/direct-debits':      '⇊',
+  '/accounts/{AccountId}/beneficiaries':      '⌂',
+  '/accounts/{AccountId}/scheduled-payments': '⏱',
+  '/accounts/{AccountId}/parties':            '⚑',
+  '/accounts/{AccountId}/product':            '◑',
+  '/accounts/{AccountId}/statements':         '▤',
+});
+
 function renderNavigator() {
   const nav = document.getElementById('nav-tree');
   nav.replaceChildren();
 
   // Bundle-scoped endpoints get their own header section at the top.
+  // Stays a plain <div> — not collapsible since the bundle section is the
+  // user's entry point to derived views (overview / underwriting).
   const bundleSection = el('div', { class: 'nav-account is-bundle' });
   bundleSection.appendChild(el('div', { class: 'nav-account-header', text: 'Bundle' }));
   for (const ep of BUNDLE_SCOPED_PATHS) {
@@ -1073,15 +1427,32 @@ function renderNavigator() {
   }
   nav.appendChild(bundleSection);
 
-  // One section per account, listing the per-account endpoints.
+  // PR #8 — per-account endpoint group is now a collapsible <details>
+  // element. Open by default; the user can collapse to free vertical
+  // space when many accounts are present (HNW / multi-currency personas).
+  // PR-13 (Greptile P1) — every renderNavigator() call rebuilds the list
+  // with replaceChildren(), so the previous code that unconditionally
+  // set open='open' silently re-opened any account the user had
+  // collapsed on every endpoint navigation. The owning account is
+  // force-open so the active endpoint stays visible; every other
+  // account respects state.navAccountCollapsed (a JS-only Set, EXP-22
+  // safe) so user toggles persist across re-renders within the session.
   for (const acc of state.bundle.accounts) {
-    const wrap = el('div', { class: 'nav-account' });
-    wrap.appendChild(
-      el('div', {
-        class: 'nav-account-header',
-        text: `${acc.AccountSubType} · ${acc.AccountIdentifiers?.[0]?.Identification?.slice(0, 12) ?? acc.AccountId}…`,
-      })
-    );
+    const isOwning = state.selectedAccountId === acc.AccountId;
+    const userCollapsed = state.navAccountCollapsed.has(acc.AccountId);
+    const shouldBeOpen = isOwning || !userCollapsed;
+    const attrs = { 'data-account-id': acc.AccountId };
+    if (shouldBeOpen) attrs.open = 'open';
+    const wrap = el('details', { class: 'nav-account', attrs });
+    wrap.addEventListener('toggle', () => {
+      if (wrap.open) state.navAccountCollapsed.delete(acc.AccountId);
+      else state.navAccountCollapsed.add(acc.AccountId);
+    });
+    const summary = el('summary', {
+      class: 'nav-account-header',
+      text: `${acc.AccountSubType} · ${acc.AccountIdentifiers?.[0]?.Identification?.slice(0, 12) ?? acc.AccountId}…`,
+    });
+    wrap.appendChild(summary);
     for (const ep of ACCOUNT_SCOPED_PATHS) {
       const isActive = state.endpoint === ep && state.selectedAccountId === acc.AccountId;
       wrap.appendChild(
@@ -1107,6 +1478,9 @@ function renderNavigator() {
 // Build a navigator button with an inline coverage sub-meter (EXP-15 second
 // half). For bundle-scoped endpoints the sub-meter is omitted; for per-account
 // endpoints it shows the populate-rate of optional fields under that scope.
+// PR #8 — the visible numeric "50%" badge is replaced by a tooltip that
+// surfaces the underlying populated/total ratio; the bar itself stays as
+// the at-a-glance affordance.
 function navButton({ endpoint, accountId, active, onSelect }) {
   const isVirtual = endpoint === UNDERWRITING_PSEUDO || endpoint === OVERVIEW_PSEUDO;
   const btn = el('button', {
@@ -1115,6 +1489,12 @@ function navButton({ endpoint, accountId, active, onSelect }) {
     dataset: { endpoint, accountId: accountId ?? '' },
     onClick: onSelect,
   });
+  // Per-resource icon prefix (PR #8). Decorative — aria-hidden so screen
+  // readers fall through to the label.
+  const icon = ENDPOINT_ICONS[endpoint];
+  if (icon) {
+    btn.appendChild(el('span', { class: 'nav-endpoint-icon', text: icon, attrs: { 'aria-hidden': 'true' } }));
+  }
   // Pseudo-endpoints (overview, underwriting summary) get friendlier labels
   // so they read clearly as derived views rather than spec wire endpoints.
   let label = endpoint;
@@ -1128,12 +1508,15 @@ function navButton({ endpoint, accountId, active, onSelect }) {
       // so a 30% sub-meter reads as warmer than a 90% one.
       const band = cov.pct < 25 ? 'low' : cov.pct < 66 ? 'medium' : 'high';
       btn.dataset.coverageBand = band;
-      const meter = el('span', { class: 'nav-submeter', attrs: { 'aria-label': `Coverage ${cov.pct}%` } });
+      const tooltip = `Optional-field coverage: ${cov.populated} of ${cov.total} populated (${cov.pct}%).`;
+      const meter = el('span', {
+        class: 'nav-submeter',
+        attrs: { 'aria-label': tooltip, title: tooltip },
+      });
       const fill = el('span', { class: 'nav-submeter-fill' });
       fill.style.width = `${cov.pct}%`;
       meter.appendChild(fill);
       btn.appendChild(meter);
-      btn.appendChild(el('span', { class: 'nav-submeter-pct', text: `${cov.pct}%` }));
     }
   }
   return btn;
@@ -1235,11 +1618,15 @@ function renderPayloadUnsafe() {
 
   // EXP-18 Underwriting Scenario panel — a derived view, not a spec endpoint.
   if (state.endpoint === UNDERWRITING_PSEUDO) {
+    // PR #7 — Compare-with doesn't apply to derived views; show the inline
+    // banner so the user understands why the split pane isn't rendering.
+    if (state.compareMode) body.appendChild(renderCompareNaBanner('Underwriting summary'));
     renderUnderwritingPanel(body);
     return;
   }
   // Persona overview — the natural landing on persona-switch.
   if (state.endpoint === OVERVIEW_PSEUDO) {
+    if (state.compareMode) body.appendChild(renderCompareNaBanner('Persona overview'));
     renderPersonaOverview(body);
     return;
   }

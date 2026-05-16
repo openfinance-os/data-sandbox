@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>Sandbox stories</title>
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { background: var(--bg); padding: 0; margin: 0; }
+  .stories-shell { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px; }
+  .stories-shell h1 { font-size: 20px; margin: 0 0 6px; }
+  .stories-shell > p.lead {
+    color: var(--text-muted);
+    font-size: 13px;
+    margin: 0 0 24px;
+  }
+  .story {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-card);
+    margin-bottom: 32px;
+    overflow: hidden;
+  }
+  .story-head {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-soft);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+  }
+  .story-head .story-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: none;
+    letter-spacing: 0;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  .story-body { padding: 0; background: var(--bg); }
+  .story-controls {
+    padding: 6px 12px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    font-size: 12px;
+    align-items: center;
+  }
+  .story-controls select { font: inherit; padding: 2px 6px; }
+  .story-stage { padding: 0; }
+  .stories-shell .jtbd-rail {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 8px 12px;
+  }
+</style>
+</head>
+<body>
+<div class="stories-shell">
+  <h1>Sandbox component stories</h1>
+  <p class="lead">
+    Isolated demo views of the v1 refinement components. Loads real persona
+    data from <code>dist/data.json</code> so the stories are spec-anchored,
+    not synthetic. Stories accrete per PR — current set covers PR #3
+    (PersonaHero, ScenarioTabs).
+  </p>
+
+  <section class="story" id="story-persona-hero">
+    <header class="story-head">
+      <span>TopbarPersona (PR-10 — replaces PR #3 PersonaHero)</span>
+      <span class="story-meta">src/index.html · .topbar-persona / renderTopbarPersona() · standalone .persona-hero removed</span>
+    </header>
+    <div class="story-body">
+      <div class="story-stage" id="stage-persona-hero" style="background:var(--bg-card);padding:8px 16px;"></div>
+    </div>
+    <div class="story-controls">
+      <label>Persona:</label>
+      <select id="story-hero-persona"></select>
+    </div>
+  </section>
+
+  <section class="story" id="story-scenario-tabs">
+    <header class="story-head">
+      <span>ScenarioTabs (PR #3)</span>
+      <span class="story-meta">src/index.html · #jtbd-rail / buildJtbdRail() · getJtbdPresets(domain)</span>
+    </header>
+    <div class="story-body">
+      <div class="story-stage" id="stage-scenario-tabs"></div>
+    </div>
+    <div class="story-controls">
+      <label>Domain:</label>
+      <select id="story-tabs-domain">
+        <option value="banking">banking</option>
+        <option value="insurance">insurance</option>
+      </select>
+    </div>
+  </section>
+
+  <section class="story" id="story-endpoint-tree">
+    <header class="story-head">
+      <span>EndpointTree (PR #8)</span>
+      <span class="story-meta">src/app.js · renderNavigator / navButton · #nav-tree</span>
+    </header>
+    <div class="story-body">
+      <div class="story-stage with-pad" id="stage-endpoint-tree" style="background:var(--bg-card); border-radius:4px; padding:8px 0;"></div>
+    </div>
+    <div class="story-controls">
+      <span style="color: var(--text-muted); font-size: 11px;">Collapsible per-account group, per-resource icons, submeter (tooltip only), left accent bar on the active row.</span>
+    </div>
+  </section>
+
+  <section class="story" id="story-compare-split-pane">
+    <header class="story-head">
+      <span>CompareSplitPane (PR #7)</span>
+      <span class="story-meta">src/ui/compare-view.js · .compare-pane · .diff-* classes</span>
+    </header>
+    <div class="story-body">
+      <div class="story-stage with-pad" id="stage-compare-swatches"></div>
+    </div>
+    <div class="story-controls">
+      <span style="color: var(--text-muted); font-size: 11px;">Visual contract for the per-field diff classes — populated by the live compare-view at runtime.</span>
+    </div>
+  </section>
+
+  <section class="story" id="story-export-popover">
+    <header class="story-head">
+      <span>ExportPopover (PR #6)</span>
+      <span class="story-meta">src/ui/export-popover.js · createExportPopover · 9 tabs</span>
+    </header>
+    <div class="story-body">
+      <div class="story-stage with-pad" id="stage-export-popover"></div>
+    </div>
+    <div class="story-controls">
+      <button id="story-export-open" type="button">Open Export popover</button>
+      <span style="color: var(--text-muted); font-size: 11px;">Tabs render with mock state. ⌘E shortcut isn't wired in the story.</span>
+    </div>
+  </section>
+</div>
+
+<script type="module">
+  import { getJtbdPresets } from '../app/constants.js';
+  import { svgFromString } from '../app/utils.js';
+  import { createExportPopover } from '../ui/export-popover.js';
+
+  const dataRes = await fetch('../../dist/data.json');
+  const data = await dataRes.json();
+  const avatarsRes = await fetch('../../dist/avatars.json').catch(() => null);
+  const avatars = avatarsRes && avatarsRes.ok ? await avatarsRes.json() : {};
+
+  function el(tag, opts = {}, ...children) {
+    const node = document.createElement(tag);
+    if (opts.class) node.className = opts.class;
+    if (opts.text != null) node.textContent = opts.text;
+    if (opts.attrs) for (const [k, v] of Object.entries(opts.attrs)) node.setAttribute(k, v);
+    for (const c of children) if (c) node.appendChild(c);
+    return node;
+  }
+
+  function avatarNode(id, persona) {
+    const wrap = el('div', { class: 'persona-avatar persona-avatar-lg', attrs: { role: 'img', 'aria-label': `Synthetic illustration for ${persona.name}` } });
+    const svgString = avatars?.[id]?.svg;
+    const svgNode = svgFromString(svgString);
+    if (svgNode) {
+      wrap.appendChild(svgNode);
+    } else {
+      wrap.classList.add('persona-avatar-fallback');
+      const name = persona?.name ?? id;
+      const head = name.split(/\s+[—–-]\s+/)[0].trim();
+      const words = head.split(/\s+/).filter(Boolean);
+      const initials = words.length >= 2
+        ? (words[0][0] + words[words.length - 1][0]).toUpperCase()
+        : (words[0]?.slice(0, 2) ?? '?').toUpperCase();
+      wrap.appendChild(el('span', { class: 'persona-avatar-initials', text: initials }));
+    }
+    return wrap;
+  }
+
+  function deriveTagline(persona, maxLen = 140) {
+    const narrative = (persona?.narrative ?? '').trim();
+    if (!narrative) return '';
+    const firstStop = narrative.indexOf('. ');
+    const first = firstStop > 0 ? narrative.slice(0, firstStop + 1) : narrative;
+    const collapsed = first.replace(/\s+/g, ' ').trim();
+    return collapsed.length <= maxLen ? collapsed : `${collapsed.slice(0, maxLen - 1).trimEnd()}…`;
+  }
+
+  function renderHero(stage, id) {
+    const persona = data.personas[id];
+    if (!persona) return;
+    stage.replaceChildren();
+    // PR-10 — the standalone .persona-hero is gone; the active persona
+    // is now a slot inside the topbar. This story renders the new shape
+    // directly so the visual contract stays auditable in isolation.
+    const slot = el('div', { class: 'topbar-persona', attrs: { 'aria-label': 'Active persona' } });
+    const avatarWrap = el('div', { class: 'topbar-persona-avatar', attrs: { 'aria-hidden': 'true' } });
+    // The story uses the persona-avatar-sm size (40 px). The topbar slot
+    // CSS overrides the dimensions to 36×36 in the live page.
+    const node = avatarNode(id, persona);
+    node.classList.add('persona-avatar-sm');
+    avatarWrap.appendChild(node);
+    slot.appendChild(avatarWrap);
+    const meta = el('div', { class: 'topbar-persona-meta' });
+    const line = el('div', { class: 'topbar-persona-line' });
+    line.appendChild(el('span', { class: 'topbar-persona-name', text: persona.name ?? id }));
+    line.appendChild(el('span', { class: 'topbar-attribution', text: 'Open Finance Data Sandbox · OF-OS Commons' }));
+    meta.appendChild(line);
+    meta.appendChild(el('span', { class: 'topbar-persona-tagline', text: deriveTagline(persona) }));
+    slot.appendChild(meta);
+    stage.appendChild(slot);
+  }
+
+  function renderTabs(stage, domain) {
+    const presets = getJtbdPresets(domain);
+    stage.replaceChildren();
+    const rail = el('div', { class: 'jtbd-rail', attrs: { role: 'tablist', 'aria-label': 'Scenario filter' } });
+    for (const [key, preset] of Object.entries(presets)) {
+      rail.appendChild(el('button', {
+        class: 'jtbd-chip',
+        text: preset.label,
+        attrs: { type: 'button', role: 'tab', 'aria-selected': 'false' },
+      }));
+    }
+    stage.appendChild(rail);
+  }
+
+  // Persona hero — populate select + first render
+  const heroSelect = document.getElementById('story-hero-persona');
+  const heroStage = document.getElementById('stage-persona-hero');
+  for (const [id, p] of Object.entries(data.personas)) {
+    const opt = document.createElement('option');
+    opt.value = id; opt.textContent = `${p.name} (${p.domain})`;
+    heroSelect.appendChild(opt);
+  }
+  const defaultHero = 'salaried_expat_mid';
+  heroSelect.value = data.personas[defaultHero] ? defaultHero : Object.keys(data.personas)[0];
+  heroSelect.addEventListener('change', () => renderHero(heroStage, heroSelect.value));
+  renderHero(heroStage, heroSelect.value);
+
+  // Scenario tabs — domain switch
+  const tabsSelect = document.getElementById('story-tabs-domain');
+  const tabsStage = document.getElementById('stage-scenario-tabs');
+  tabsSelect.addEventListener('change', () => renderTabs(tabsStage, tabsSelect.value));
+  renderTabs(tabsStage, 'banking');
+
+  // Export popover — instantiates with mock state. Story doesn't wire Cmd+E.
+  const mockState = {
+    personaId: 'salaried_expat_mid',
+    lfi: 'median',
+    seed: 4729,
+    endpoint: '/accounts/{AccountId}/transactions',
+    bundle: { accounts: [{ AccountId: 'ACC-DEMO-001' }] },
+  };
+  function mockCopyToClipboard(text, msg) {
+    navigator.clipboard?.writeText?.(text).catch(() => {});
+    console.log('[story] copyToClipboard:', msg);
+  }
+  function mockTrack() { /* no-op in stories */ }
+  const exportPopover = createExportPopover({
+    state: mockState, el, track: mockTrack, copyToClipboard: mockCopyToClipboard,
+    exportActiveJson: () => console.log('[story] exportActiveJson()'),
+    exportActiveCsv: () => console.log('[story] exportActiveCsv()'),
+    exportTarball: () => console.log('[story] exportTarball()'),
+    embedIframeSnippet: () => `<iframe src="https://example.com/embed?persona=${mockState.personaId}" width="100%" height="600"></iframe>`,
+    activeFixtureUrl: () => `https://example.com/fixtures/v1/bundles/${mockState.personaId}/${mockState.lfi}/seed-${mockState.seed}/accounts.json`,
+    activeJsonString: () => JSON.stringify({ Data: { Account: [] }, Links: { Self: '...' }, Meta: { TotalPages: 1 } }, null, 2),
+    activeCsvString: () => 'AccountId,Currency,Type\nACC-DEMO-001,AED,CurrentAccount',
+  });
+  document.getElementById('story-export-open').addEventListener('click', () => exportPopover.open());
+
+  // Compare split pane — static visual contract for the .diff-* classes.
+  function renderCompareSwatches(stage) {
+    stage.replaceChildren();
+    const wrap = el('div', { class: 'payload-rendered' });
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    for (const k of ['Field', 'Median', 'Sparse', 'Diff class']) {
+      const th = document.createElement('th'); th.textContent = k; headRow.appendChild(th);
+    }
+    thead.appendChild(headRow); table.appendChild(thead);
+    const tbody = document.createElement('tbody');
+    const rows = [
+      { field: 'Flags',           median: 'Payroll',         sparse: '—',     cls: 'diff-only-here',  note: 'present only on this side · green' },
+      { field: 'MerchantDetails', median: 'Carrefour DXB',   sparse: '—',     cls: 'diff-only-here',  note: '' },
+      { field: 'Nickname',        median: 'Main',            sparse: 'Main',  cls: '',                note: 'no diff' },
+      { field: 'Status',          median: 'Booked',          sparse: 'Rejected', cls: 'diff-changed', note: 'changed · amber' },
+      { field: 'CurrencyExchange', median: '—',              sparse: '—',     cls: 'diff-missing',    note: 'missing here · red (Sparse only)' },
+    ];
+    for (const r of rows) {
+      const tr = document.createElement('tr');
+      const f = document.createElement('td'); f.textContent = r.field; tr.appendChild(f);
+      const m = document.createElement('td'); m.textContent = r.median; if (r.cls === 'diff-only-here') m.className = r.cls; tr.appendChild(m);
+      const s = document.createElement('td'); s.textContent = r.sparse;
+      if (r.cls === 'diff-missing' || r.cls === 'diff-changed') s.className = r.cls;
+      tr.appendChild(s);
+      const n = document.createElement('td'); n.textContent = r.note; n.style.color = 'var(--text-muted)'; n.style.fontSize = '10.5px'; tr.appendChild(n);
+      tbody.appendChild(tr);
+    }
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+    stage.appendChild(wrap);
+  }
+  renderCompareSwatches(document.getElementById('stage-compare-swatches'));
+
+  // Endpoint tree — static demo of the bundle + per-account structure.
+  function renderEndpointTreeDemo(stage) {
+    stage.replaceChildren();
+    const tree = el('div', { class: 'nav-tree', attrs: { style: 'padding: 8px 12px;' } });
+
+    const bundleSection = el('div', { class: 'nav-account is-bundle' });
+    bundleSection.appendChild(el('div', { class: 'nav-account-header', text: 'Bundle' }));
+    const bundleEndpoints = [
+      { ep: '/(overview)',          label: '◇ Persona overview',     icon: null },
+      { ep: '/accounts',            label: '/accounts',               icon: null },
+      { ep: '/parties',             label: '/parties',                icon: null },
+      { ep: '/(underwriting)',      label: '◇ Underwriting summary', icon: null, active: true },
+    ];
+    for (const b of bundleEndpoints) {
+      const btn = el('button', { class: `nav-endpoint${b.active ? ' active' : ''}${b.label.startsWith('◇') ? ' nav-virtual' : ''}` });
+      btn.appendChild(el('span', { class: 'nav-endpoint-label', text: b.label }));
+      bundleSection.appendChild(btn);
+    }
+    tree.appendChild(bundleSection);
+
+    const accDetails = el('details', { class: 'nav-account', attrs: { open: 'open' } });
+    accDetails.appendChild(el('summary', { class: 'nav-account-header', text: 'CurrentAccount · AE0212345678…' }));
+    const accountEndpoints = [
+      { ep: '/accounts/{AccountId}',                    icon: '☰' },
+      { ep: '/accounts/{AccountId}/balances',           icon: '⚖', pct: 67 },
+      { ep: '/accounts/{AccountId}/transactions',       icon: '⇄', pct: 82 },
+      { ep: '/accounts/{AccountId}/standing-orders',    icon: '↻', pct: 55 },
+      { ep: '/accounts/{AccountId}/direct-debits',      icon: '⇊', pct: 48 },
+      { ep: '/accounts/{AccountId}/beneficiaries',      icon: '⌂', pct: 40 },
+      { ep: '/accounts/{AccountId}/scheduled-payments', icon: '⏱', pct: 22 },
+      { ep: '/accounts/{AccountId}/parties',            icon: '⚑', pct: 60 },
+      { ep: '/accounts/{AccountId}/product',            icon: '◑', pct: 35 },
+      { ep: '/accounts/{AccountId}/statements',         icon: '▤', pct: 18 },
+    ];
+    for (const e of accountEndpoints) {
+      const btn = el('button', { class: 'nav-endpoint' });
+      btn.appendChild(el('span', { class: 'nav-endpoint-icon', text: e.icon, attrs: { 'aria-hidden': 'true' } }));
+      btn.appendChild(el('span', { class: 'nav-endpoint-label', text: e.ep }));
+      if (e.pct != null) {
+        const band = e.pct < 25 ? 'low' : e.pct < 66 ? 'medium' : 'high';
+        btn.dataset.coverageBand = band;
+        const tooltip = `Optional-field coverage: ${e.pct}% (mocked).`;
+        const meter = el('span', { class: 'nav-submeter', attrs: { title: tooltip, 'aria-label': tooltip } });
+        const fill = el('span', { class: 'nav-submeter-fill' });
+        fill.style.width = `${e.pct}%`;
+        meter.appendChild(fill);
+        btn.appendChild(meter);
+      }
+      accDetails.appendChild(btn);
+    }
+    tree.appendChild(accDetails);
+    stage.appendChild(tree);
+  }
+  renderEndpointTreeDemo(document.getElementById('stage-endpoint-tree'));
+</script>
+</body>
+</html>
