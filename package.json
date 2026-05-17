@@ -35,7 +35,7 @@
     "test:e2e": "playwright test",
     "test:perf": "lhci autorun --config=lighthouserc.json",
     "serve": "python3 -m http.server 8000 --directory src",
-    "ci": "npm run verify:spec-shape && npm run build:spec && npm run build:data && npm run build:avatars && npm run check:dist-clean && npm run lint && npm test && npm run test:mcp",
+    "ci": "npm run verify:spec-shape && npm run build:spec && npm run build:data && npm run build:avatars && npm run build:fixtures && npm run check:dist-clean && npm run lint && npm test && npm run test:mcp",
     "ci:full": "npm run ci && npm run build:site && npm run test:e2e && npm run test:perf"
   },
   "dependencies": {
