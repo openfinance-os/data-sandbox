@@ -49,6 +49,52 @@ const LFI_PROFILES = [
 
 const INSURANCE_LINES = ['motor', 'home', 'health', 'life', 'travel', 'renters', 'employment'];
 
+// ─── UAE Open Finance Standards v2.1 — Permissions taxonomy ────────
+//
+// The Standards define discrete read permissions ("data clusters") that a
+// TPP requests via POST /account-access-consents. Each maps to a specific
+// shape of data the LFI will release. This taxonomy is the source of truth
+// the J1 and J2 consent screens render from — no parallel definitions.
+//
+// `ReadAccountsBasic` is the only mandatory permission — every consent
+// must include it (otherwise the TPP can't even enumerate the accounts to
+// read from). The UI shows it as disabled-but-checked.
+//
+// Reference: UAE OF v2.1 Bank Data Sharing spec · API Hub v8 Consent
+// Manager OpenAPI. See `references/api-specifications.md#consent-management-apis`
+// in the open-finance-uae skill.
+
+const OF_PERMISSIONS = [
+  { key: 'ReadAccountsBasic',       cluster: 'Accounts',         label: 'Account list',                body: 'AccountId, Type, SubType, Nickname', mandatory: true },
+  { key: 'ReadAccountsDetail',      cluster: 'Accounts',         label: 'Account details',             body: 'Identifiers (IBAN, ACCT), holders, currency, opening date' },
+  { key: 'ReadBalances',            cluster: 'Balances',         label: 'Balances',                    body: 'Current, available, overdraft · per-account' },
+  { key: 'ReadTransactionsBasic',   cluster: 'Transactions',     label: 'Transactions (basic)',        body: 'Amount, date, direction, status' },
+  { key: 'ReadTransactionsDetail',  cluster: 'Transactions',     label: 'Transactions (detail)',       body: 'Merchant, MCC, geolocation, references, counterparty' },
+  { key: 'ReadStandingOrdersBasic', cluster: 'Standing orders',  label: 'Standing orders (basic)',     body: 'Counterparty + amount + frequency' },
+  { key: 'ReadStandingOrdersDetail',cluster: 'Standing orders',  label: 'Standing orders (detail)',    body: 'Full schedule, references, next payment date' },
+  { key: 'ReadDirectDebits',        cluster: 'Direct debits',    label: 'Direct debits',               body: 'Mandates + last collection amount' },
+  { key: 'ReadBeneficiariesBasic',  cluster: 'Beneficiaries',    label: 'Beneficiaries (basic)',       body: 'Names + counterparties' },
+  { key: 'ReadBeneficiariesDetail', cluster: 'Beneficiaries',    label: 'Beneficiaries (detail)',      body: 'Account identifiers (IBAN, sort/account)' },
+  { key: 'ReadStatementsBasic',     cluster: 'Statements',       label: 'Statements (basic)',          body: 'Period + closing balance per statement' },
+  { key: 'ReadStatementsDetail',    cluster: 'Statements',       label: 'Statements (detail)',         body: 'Per-statement transactions and references' },
+  { key: 'ReadProducts',            cluster: 'Products',         label: 'Products',                    body: 'Account-type metadata, fees, conditions' },
+];
+
+// Set of mandatory permission keys for quick lookup. Per Standards, this
+// must always be a subset of any granted consent.
+const OF_MANDATORY_PERMISSIONS = new Set(OF_PERMISSIONS.filter((p) => p.mandatory).map((p) => p.key));
+
+// Mint a UAE-OF-flavoured ConsentId. Format mirrors what the API Hub returns
+// from POST /account-access-consents: a URN that the Consent Manager uses as
+// the durable handle for the consent record. crypto.randomUUID() is available
+// in every browser the rest of this page targets.
+function mintConsentId() {
+  const uuid = (crypto && typeof crypto.randomUUID === 'function')
+    ? crypto.randomUUID()
+    : `${Date.now().toString(16)}-${Math.random().toString(16).slice(2, 10)}`;
+  return `urn:openfinance:ae:consent:${uuid}`;
+}
+
 const INSURANCE_LINE_LABELS = {
   motor: { name: 'Motor Insurance', body: 'Comprehensive · TPL · UBI · 4 endpoints' },
   home: { name: 'Home Insurance', body: 'Buildings · contents · 4 endpoints' },
@@ -109,6 +155,139 @@ function formatAed(n) {
   return `AED ${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+// ─── Shared consent-flow render helpers ─────────────────────────────
+//
+// renderPermissionsList(selectedSet, onChange, opts?) — renders the v2.1
+// permissions taxonomy as toggleable checkboxes grouped by cluster. The
+// mandatory permission (ReadAccountsBasic) renders disabled-but-checked
+// with a "required" badge; toggling any optional permission re-emits the
+// new set via onChange.
+//
+// renderConsentParamsPanel({ expirationDays, isSingleAuth, transactionMonths },
+//   onChange) — renders the consent parameter controls: ExpirationDateTime
+// (30/90/180/365 day radio), IsSingleAuthorization (toggle), and
+// TransactionFromDateTime window (3/6/13 month radio, 13 = Standards max).
+//
+// Both helpers are pure UI — they don't touch state. Callers wire onChange
+// to mutate state and call refresh().
+
+function renderPermissionsList(selectedSet, onChange, opts = {}) {
+  const wrap = el('div', { className: 'permissions-list', role: 'group', 'aria-label': 'Permissions requested' });
+  if (opts.heading !== false) {
+    wrap.appendChild(el('div', { className: 'permissions-heading' }, [
+      el('strong', {}, 'Permissions requested'),
+      el('span', { className: 'permissions-help' }, '13 data clusters · ReadAccountsBasic is mandatory'),
+    ]));
+  }
+  // Group by cluster while preserving the taxonomy order
+  const byCluster = new Map();
+  for (const p of OF_PERMISSIONS) {
+    if (!byCluster.has(p.cluster)) byCluster.set(p.cluster, []);
+    byCluster.get(p.cluster).push(p);
+  }
+  for (const [cluster, perms] of byCluster.entries()) {
+    const block = el('div', { className: 'permissions-cluster' });
+    block.appendChild(el('div', { className: 'permissions-cluster-name' }, cluster));
+    const items = el('div', { className: 'permissions-items' });
+    for (const p of perms) {
+      const isChecked = selectedSet.has(p.key);
+      const id = `perm-${opts.idPrefix || 'p'}-${p.key}`;
+      const cb = el('input', {
+        type: 'checkbox',
+        id,
+        checked: isChecked,
+        disabled: !!p.mandatory,
+      });
+      cb.addEventListener('change', () => {
+        const next = new Set(selectedSet);
+        if (cb.checked) next.add(p.key);
+        else next.delete(p.key);
+        // Mandatory permissions stay set regardless
+        for (const m of OF_MANDATORY_PERMISSIONS) next.add(m);
+        onChange(next);
+      });
+      const label = el('label', { for: id, className: 'permissions-item' + (p.mandatory ? ' mandatory' : '') }, [
+        cb,
+        el('div', { className: 'permissions-item-text' }, [
+          el('div', { className: 'permissions-item-label' }, [
+            p.label,
+            ...(p.mandatory ? [el('span', { className: 'permissions-required' }, 'required')] : []),
+          ]),
+          el('div', { className: 'permissions-item-body' }, p.body),
+          el('code', { className: 'permissions-item-key' }, p.key),
+        ]),
+      ]);
+      items.appendChild(label);
+    }
+    block.appendChild(items);
+    wrap.appendChild(block);
+  }
+  return wrap;
+}
+
+function renderConsentParamsPanel(params, onChange) {
+  // params: { expirationDays, isSingleAuth, transactionMonths }
+  const wrap = el('div', { className: 'consent-params-panel', role: 'group', 'aria-label': 'Consent parameters' });
+  wrap.appendChild(el('div', { className: 'consent-params-heading' }, 'Consent parameters'));
+
+  // ExpirationDateTime
+  const expRow = el('div', { className: 'consent-params-row' });
+  expRow.appendChild(el('div', { className: 'consent-params-label' }, [
+    el('strong', {}, 'ExpirationDateTime'),
+    el('span', { className: 'consent-params-help' }, 'Sharing window — TPP can keep reading until this date'),
+  ]));
+  const expChoices = el('div', { className: 'consent-params-choices', role: 'radiogroup' });
+  for (const days of [30, 90, 180, 365]) {
+    const selected = params.expirationDays === days;
+    const chip = el('button', {
+      type: 'button',
+      className: 'consent-params-chip' + (selected ? ' selected' : ''),
+      'aria-pressed': selected ? 'true' : 'false',
+      onclick: () => onChange({ ...params, expirationDays: days }),
+    }, `${days} days`);
+    expChoices.appendChild(chip);
+  }
+  expRow.appendChild(expChoices);
+  wrap.appendChild(expRow);
+
+  // IsSingleAuthorization
+  const singleAuthRow = el('div', { className: 'consent-params-row' });
+  singleAuthRow.appendChild(el('div', { className: 'consent-params-label' }, [
+    el('strong', {}, 'IsSingleAuthorization'),
+    el('span', { className: 'consent-params-help' }, 'When on, the consent must be approved by a single authoriser. For joint or corporate accounts, leave off to allow multi-auth.'),
+  ]));
+  const toggle = el('button', {
+    type: 'button',
+    className: 'consent-params-toggle' + (params.isSingleAuth ? ' on' : ''),
+    'aria-pressed': params.isSingleAuth ? 'true' : 'false',
+    onclick: () => onChange({ ...params, isSingleAuth: !params.isSingleAuth }),
+  }, params.isSingleAuth ? 'On' : 'Off');
+  singleAuthRow.appendChild(toggle);
+  wrap.appendChild(singleAuthRow);
+
+  // TransactionFromDateTime
+  const txRow = el('div', { className: 'consent-params-row' });
+  txRow.appendChild(el('div', { className: 'consent-params-label' }, [
+    el('strong', {}, 'TransactionFromDateTime'),
+    el('span', { className: 'consent-params-help' }, 'How far back the TPP can read transactions. Standards max: 13 months.'),
+  ]));
+  const txChoices = el('div', { className: 'consent-params-choices', role: 'radiogroup' });
+  for (const months of [3, 6, 13]) {
+    const selected = params.transactionMonths === months;
+    const chip = el('button', {
+      type: 'button',
+      className: 'consent-params-chip' + (selected ? ' selected' : ''),
+      'aria-pressed': selected ? 'true' : 'false',
+      onclick: () => onChange({ ...params, transactionMonths: months }),
+    }, `${months} months`);
+    txChoices.appendChild(chip);
+  }
+  txRow.appendChild(txChoices);
+  wrap.appendChild(txRow);
+
+  return wrap;
+}
+
 // ─── State ──────────────────────────────────────────────────────────
 
 // view: 'hub' (default landing — two cards + J3 contrast)
@@ -128,12 +307,32 @@ const state = {
   selectedBankProfiles: new Set(),
   selectedInsuranceLines: new Set(),
   approved: false,
+  // J1 consent-flow extensions (Phase C — consent-fidelity refit) ───
+  // subStep walks inside the J1 wizard's step 3: discovery → SCA → consent → token
+  subStep: 'discovery',
+  j1Permissions: new Set(OF_PERMISSIONS.map((p) => p.key)),
+  j1ExpirationDays: 90,
+  j1ConsentId: null,
   // J2 ──────────────────────────────────────────────────────────────
   j2Step: 1,
   j2Filter: 'all',                // 'all' | 'retail' | 'sme'
   j2Scope: null,                  // 'single' | 'multi'
   j2SelectedLFIs: new Set(),      // subset of LFI_PROFILES keys (rich/median/sparse)
   j2Approved: false,
+  // J2 step 4 sub-flow state (Phase C — consent-fidelity refit) ────
+  // j2SubStep walks inside J2's step 4: tpp → altareq → sca → manager
+  j2SubStep: 'tpp',
+  j2SCAIndex: 0,                  // 0-based index into j2SelectedLFIs during per-LFI SCA
+  j2Permissions: new Set(OF_PERMISSIONS.map((p) => p.key)),
+  j2ExpirationDays: 90,
+  j2IsSingleAuth: false,
+  j2TransactionMonths: 13,        // Standards v2.1 maximum
+  j2SelectedAccounts: new Map(),  // lfiKey → Set<accountId>, populated lazily during 4c
+  j2ConsentIds: new Map(),        // lfiKey → ConsentId (urn:…), minted on per-LFI confirm
+  // Flat list of consent records — Consent Manager view renders from this.
+  // Each record: { source: 'j1' | 'j2', tpp, lfi, consentId, permissions,
+  //                expiresAt, accounts, status: 'Active' | 'Revoked' }
+  consentRecords: [],
 };
 
 function selectedPersona() {

@@ -1409,6 +1409,184 @@
     line-height: 1.5;
   }
 
+  /* ─── Phase C — Consent-flow primitives ────────────────────────── */
+  /* Shared by J1 step 3 (bank-own OAuth consent) and J2 step 4b      */
+  /* (Al Tareq CAAP consent). Source of truth is OF_PERMISSIONS in    */
+  /* connect.js — never hand-author permission names in HTML.         */
+
+  .permissions-list {
+    margin: 14px 0 4px;
+    padding: 14px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+  }
+  .permissions-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .permissions-heading strong { font-size: 13.5px; }
+  .permissions-help {
+    font-size: 11.5px;
+    color: var(--text-muted);
+  }
+  .permissions-cluster {
+    margin-top: 10px;
+  }
+  .permissions-cluster:first-of-type { margin-top: 4px; }
+  .permissions-cluster-name {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .permissions-items {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 12px;
+  }
+  @media (max-width: 720px) { .permissions-items { grid-template-columns: 1fr; } }
+  .permissions-item {
+    display: flex;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    align-items: flex-start;
+  }
+  .permissions-item:hover { background: var(--bg-soft); }
+  .permissions-item.mandatory {
+    cursor: default;
+    background: var(--bg-soft);
+  }
+  .permissions-item input[type="checkbox"] {
+    margin-top: 3px;
+    flex: 0 0 auto;
+  }
+  .permissions-item-text { flex: 1; min-width: 0; }
+  .permissions-item-label {
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .permissions-item-body {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    line-height: 1.45;
+    margin-top: 1px;
+  }
+  .permissions-item-key {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 10.5px;
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin-top: 2px;
+    display: block;
+  }
+  .permissions-required {
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: var(--mandatory-bg, #1d4a3e);
+    color: var(--mandatory-fg, #fff);
+    font-weight: 700;
+  }
+
+  .consent-params-panel {
+    margin: 14px 0 6px;
+    padding: 14px 16px 12px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+  }
+  .consent-params-heading {
+    font-size: 13.5px;
+    font-weight: 600;
+    padding-bottom: 8px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  .consent-params-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    padding: 8px 0;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .consent-params-row:first-of-type { border-top: none; padding-top: 4px; }
+  .consent-params-label {
+    flex: 1;
+    min-width: 200px;
+  }
+  .consent-params-label strong {
+    font-size: 12.5px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    display: block;
+  }
+  .consent-params-help {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    line-height: 1.45;
+    display: block;
+    margin-top: 2px;
+  }
+  .consent-params-choices {
+    display: inline-flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .consent-params-chip {
+    padding: 4px 10px;
+    border-radius: 14px;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-card);
+    color: var(--text);
+    font-size: 12px;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .consent-params-chip:hover { border-color: var(--accent); }
+  .consent-params-chip.selected {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .consent-params-toggle {
+    padding: 4px 14px;
+    border-radius: 14px;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-card);
+    color: var(--text);
+    font-size: 12px;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    min-width: 64px;
+  }
+  .consent-params-toggle.on {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
 </style>
 </head>
 <body>
