@@ -388,6 +388,8 @@ function serializeStateToParams() {
   if (state.j2Step && state.j2Step !== 1) params.set('j2step', String(state.j2Step));
   if (state.j2Scope) params.set('j2scope', state.j2Scope);
   if (state.j2SelectedLFIs.size) params.set('j2lfis', [...state.j2SelectedLFIs].join(','));
+  // J2 sub-step (only meaningful when view=j2 and j2step=4)
+  if (state.j2SubStep && state.j2SubStep !== 'tpp' && state.j2Step === 4) params.set('j2substep', state.j2SubStep);
   return params;
 }
 
@@ -465,6 +467,12 @@ function restoreStateFromUrl() {
   if (state.j2Step > 2 && !state.j2Scope) state.j2Step = 2;
   if (state.j2Step > 3 && state.j2SelectedLFIs.size === 0) state.j2Step = 3;
   if (state.j2Scope === 'multi' && state.j2SelectedLFIs.size === 1 && state.j2Step > 3) state.j2Step = 3;
+  // J2 sub-step restore
+  const j2Sub = params.get('j2substep');
+  if (j2Sub === 'tpp' || j2Sub === 'altareq' || j2Sub === 'sca' || j2Sub === 'manager') {
+    state.j2SubStep = j2Sub;
+    if (j2Sub !== 'tpp') any = true;
+  }
   return any;
 }
 
@@ -1667,12 +1675,124 @@ function renderJ2LFIs() {
   }
 }
 
+// J2 step 4 sub-flow ────────────────────────────────────────────────
+//
+// Replaces the old single-screen Al Tareq consent with a multi-screen
+// journey that mirrors what the regulated TPP flow actually does:
+//   4a tpp     — Khazaa's TPP-side launchpad (the moment you tap "Connect
+//                your bank accounts" in a real PFM/BFM app)
+//   4b altareq — Al Tareq CAAP with full Permissions taxonomy +
+//                consent parameters + per-LFI summary
+//   4c sca     — per-LFI Strong Customer Authentication + account selection
+//                (lands in Part 2)
+//   4d manager — Nebras Consent Manager confirmation, ConsentId per LFI
+//                (lands in Part 2)
+//
+// For Phase C part 1, sub-steps tpp and altareq are fully rendered. Next
+// from altareq advances straight to step 5 (the dashboard) until Part 2
+// inserts sca and manager between them.
+
+const J2_SUB_STEPS = [
+  { key: 'tpp',     label: 'TPP launchpad' },
+  { key: 'altareq', label: 'Al Tareq consent' },
+];
+
 function renderJ2Consent() {
   const persona = selectedPersona();
   const body = document.getElementById('j2-consent-body');
   body.replaceChildren();
   if (!persona) return;
 
+  body.appendChild(renderSubStepIndicator(J2_SUB_STEPS, state.j2SubStep, (key) => {
+    state.j2SubStep = key;
+    refresh();
+  }));
+
+  if (state.j2SubStep === 'tpp') renderJ2TppLaunchpad(body, persona);
+  else if (state.j2SubStep === 'altareq') renderJ2AlTareq(body, persona);
+  else {
+    // Unknown sub-step (e.g. deep-link with a Part-2-only value) — fall
+    // back to the first sub-step.
+    state.j2SubStep = 'tpp';
+    renderJ2TppLaunchpad(body, persona);
+  }
+}
+
+// 4a — TPP launchpad. The user is inside Khazaa's PFM/BFM app, about to
+// tap "Connect your bank accounts." Shows the TPP licence stub (Article 6
+// requires a UAE OF Provider Licence) and previews what's about to happen
+// in the next three sub-steps. The "Continue with Al Tareq" CTA mirrors
+// the real handoff to the regulated CAAP surface.
+function renderJ2TppLaunchpad(body, persona) {
+  const isSme = (persona.segment || '').toLowerCase() === 'sme';
+  const tppName = isSme ? 'Khazaa BFM' : 'Khazaa PFM';
+  const tppTagline = isSme
+    ? 'Working capital, receivables, payables — across every regulated LFI you bank with.'
+    : 'Your full financial picture — every account, every LFI, one view.';
+
+  const wrap = el('div', { className: 'tpp-launchpad', role: 'img', 'aria-label': 'Mock TPP launchpad' });
+  wrap.appendChild(el('div', { className: 'tpp-launchpad-chrome' }, [
+    el('span', { className: 'tpp-chrome-dot' }),
+    el('span', { className: 'tpp-chrome-dot' }),
+    el('span', { className: 'tpp-chrome-dot' }),
+    el('span', { className: 'tpp-chrome-app' }, `${tppName} · iOS / web`),
+  ]));
+  const inner = el('div', { className: 'tpp-launchpad-body' });
+  inner.appendChild(el('div', { className: 'tpp-launchpad-brand' }, [
+    el('div', { className: 'tpp-icon-large', 'aria-hidden': 'true' }, 'K'),
+    el('div', {}, [
+      el('div', { className: 'tpp-launchpad-name' }, tppName),
+      el('div', { className: 'tpp-launchpad-tagline' }, tppTagline),
+    ]),
+  ]));
+  inner.appendChild(el('h4', { className: 'tpp-launchpad-h' }, 'Connect your bank accounts via UAE Open Finance'));
+  inner.appendChild(el('p', { className: 'tpp-launchpad-lede' }, [
+    `${tppName} is licensed by the CBUAE to read account data via UAE Open Finance. `,
+    'The next three screens are the regulated consent flow — operated by Al Tareq (Nebras), not by ',
+    el('strong', {}, tppName),
+    '. We never see your credentials or your bank login.',
+  ]));
+  const steps = el('ol', { className: 'tpp-launchpad-steps' });
+  steps.appendChild(el('li', {}, [
+    el('strong', {}, 'Al Tareq consent.'),
+    ' Pick the data clusters and sharing window. One consent grant covers every LFI you authorise.',
+  ]));
+  steps.appendChild(el('li', {}, [
+    el('strong', {}, 'Bank sign-in.'),
+    ' Strong Customer Authentication at each LFI. Article 18 — your bank verifies you with 2FA.',
+  ]));
+  steps.appendChild(el('li', {}, [
+    el('strong', {}, 'Back to ' + tppName + '.'),
+    ` ${isSme ? 'Your BFM dashboard' : 'Your PFM dashboard'} populates the moment consent registers with the Nebras Consent Manager.`,
+  ]));
+  inner.appendChild(steps);
+  inner.appendChild(el('div', { className: 'tpp-licence-stub' }, [
+    el('div', { className: 'tpp-licence-label' }, 'Licence'),
+    el('div', { className: 'tpp-licence-body' }, [
+      el('strong', {}, `${tppName} FZ-LLC`),
+      ' · Licensed by CBUAE · Open Finance Provider Licence ',
+      el('code', {}, 'OF-DSPL-2026-K001'),
+      ' · Data Sharing Provider · ',
+      el('strong', {}, 'AED 1,000,000'),
+      ' paid-up capital · PI insurance ',
+      el('strong', {}, 'AED 5,000,000'),
+      ' (Article 6, 7, 9).',
+    ]),
+  ]));
+  inner.appendChild(el('p', { className: 'tpp-launchpad-note' }, [
+    'No real network call. Click ',
+    el('strong', {}, 'Continue →'),
+    ' to hand off to Al Tareq.',
+  ]));
+  wrap.appendChild(inner);
+  body.appendChild(wrap);
+}
+
+// 4b — Al Tareq CAAP consent. The regulated unified consent surface.
+// Now carries the full Permissions taxonomy (toggleable), consent
+// parameters (ExpirationDateTime / IsSingleAuthorization /
+// TransactionFromDateTime), and per-LFI consent summary groupings.
+function renderJ2AlTareq(body, persona) {
   const isSme = (persona.segment || '').toLowerCase() === 'sme';
   const tppName = isSme ? 'Khazaa BFM' : 'Khazaa PFM';
   const tppRole = 'Regulated TPP · Data Sharing Provider · UAE OF licensed';
@@ -1680,7 +1800,7 @@ function renderJ2Consent() {
   const consent = el('div', { className: 'altareq-consent', role: 'img', 'aria-label': 'Mock Al Tareq CAAP consent screen (Journey 2)' });
   consent.appendChild(el('div', { className: 'browser-bar' }, [
     el('span', { className: 'dots' }, [el('span'), el('span'), el('span')]),
-    el('span', { className: 'url' }, 'https://caap.altareq.openfinanceuae.ae/authorize?client_id=khazaa&request=…'),
+    el('span', { className: 'url' }, 'https://caap.altareq.openfinanceuae.ae/authorize?client_id=khazaa&request=…&intent_id=…'),
   ]));
   consent.appendChild(el('div', { className: 'ribbon' }, [
     el('span', {}, 'Al Tareq · Consent and Authorization Application Platform'),
@@ -1691,7 +1811,8 @@ function renderJ2Consent() {
   inner.appendChild(el('h4', {}, 'Authorize data sharing'));
   inner.appendChild(el('p', { className: 'sub' }, [
     el('strong', {}, tppName),
-    ` is requesting consent to read your Open Finance data at ${state.j2SelectedLFIs.size} LFI${state.j2SelectedLFIs.size === 1 ? '' : 's'} for the next 90 days.`,
+    ` is requesting consent to read your Open Finance data at ${state.j2SelectedLFIs.size} LFI${state.j2SelectedLFIs.size === 1 ? '' : 's'}. `,
+    'Pick the data clusters and sharing window. After Approve, you’ll authenticate at each LFI separately (Sub-step 4c).',
   ]));
 
   inner.appendChild(el('div', { className: 'tpp-info' }, [
@@ -1702,10 +1823,29 @@ function renderJ2Consent() {
     ]),
   ]));
 
-  // Per-LFI consent groupings — one per authorized profile. Each shows the
-  // scopes Khazaa is asking for at that LFI; the user grants them together
-  // in one CAAP transaction (the load-bearing difference from J1 and J3).
-  const scopes = SCOPE_LABELS.banking.body;
+  inner.appendChild(renderPermissionsList(
+    state.j2Permissions,
+    (next) => { state.j2Permissions = next; refresh(); },
+    { idPrefix: 'j2' },
+  ));
+
+  inner.appendChild(renderConsentParamsPanel(
+    {
+      expirationDays: state.j2ExpirationDays,
+      isSingleAuth: state.j2IsSingleAuth,
+      transactionMonths: state.j2TransactionMonths,
+    },
+    ({ expirationDays, isSingleAuth, transactionMonths }) => {
+      state.j2ExpirationDays = expirationDays;
+      state.j2IsSingleAuth = isSingleAuth;
+      state.j2TransactionMonths = transactionMonths;
+      refresh();
+    },
+  ));
+
+  // Per-LFI summary groupings — one per LFI the user picked in step 3.
+  // For Part 1 these show scopes generically; Part 2 swaps in account
+  // selection per LFI captured during the SCA loop.
   for (const key of state.j2SelectedLFIs) {
     const prof = LFI_PROFILES.find((p) => p.key === key);
     if (!prof) continue;
@@ -1714,18 +1854,17 @@ function renderJ2Consent() {
       el('span', { className: 'lfi-label' }, prof.name),
       el('span', { className: 'lfi-badge' }, prof.key),
     ]));
-    block.appendChild(el('div', { className: 'lfi-scopes' }, [
-      el('strong', {}, 'Bank Data Sharing — '),
-      scopes,
-    ]));
+    block.appendChild(el('div', { className: 'lfi-scopes' },
+      `${[...state.j2Permissions].length} permission${[...state.j2Permissions].length === 1 ? '' : 's'} requested · account selection happens during this LFI’s sign-in (sub-step 4c)`));
     inner.appendChild(block);
   }
 
   inner.appendChild(el('p', { className: 'footnote' }, [
-    'Sharing window ', el('strong', {}, '90 days'),
-    '. Revoke any time at ',
+    'Sharing window ', el('strong', {}, `${state.j2ExpirationDays} days`),
+    `. Transactions readable back ${state.j2TransactionMonths} months. `,
+    'Revoke any time at ',
     el('em', {}, 'portal.openfinance.ae · My Consents'),
-    ' (Nebras Consent Manager — the single source of truth for every TPP consent under UAE Open Finance, regardless of LFI). ',
+    ' (Nebras Consent Manager — the single source of truth for every TPP consent under UAE Open Finance). ',
     'Data is ', el('strong', {}, 'SYNTHETIC'), '. No real customer. No real institution.',
   ]));
 
@@ -2064,8 +2203,16 @@ function renderJ2Actions() {
     status.textContent = `${lfiCount} of ${state.j2Scope === 'multi' ? '2–4' : '1'} LFI profile${lfiCount === 1 ? '' : 's'} selected.`;
   } else if (state.j2Step === 4) {
     next.disabled = false;
-    next.textContent = 'Approve all (1 tap)';
-    status.textContent = 'Approving will simulate the regulated CAAP consent grant — no real network call.';
+    if (state.j2SubStep === 'tpp') {
+      next.textContent = 'Continue with Al Tareq →';
+      status.textContent = `Sub-step 4a · ${(persona?.segment || '').toLowerCase() === 'sme' ? 'Khazaa BFM' : 'Khazaa PFM'} launchpad — TPP-side initiation.`;
+    } else if (state.j2SubStep === 'altareq') {
+      next.textContent = `Continue (${[...state.j2Permissions].length} permissions, ${state.j2ExpirationDays}d) →`;
+      status.textContent = `Sub-step 4b · Al Tareq CAAP · ${state.j2SelectedLFIs.size} LFI${state.j2SelectedLFIs.size === 1 ? '' : 's'} requested.`;
+    } else {
+      next.textContent = 'Continue →';
+      status.textContent = `Sub-step ${state.j2SubStep}.`;
+    }
   } else if (state.j2Step === 5) {
     next.disabled = true;
     next.textContent = 'Aggregated ✓';
@@ -2184,10 +2331,34 @@ function wireControls() {
   const j2Next = document.getElementById('j2-btn-next');
   if (j2Next) j2Next.addEventListener('click', () => {
     if (state.j2Step < 4) { state.j2Step += 1; refresh(); return; }
-    if (state.j2Step === 4) { state.j2Approved = true; state.j2Step = 5; refresh(); return; }
+    if (state.j2Step === 4) {
+      // Walk through J2_SUB_STEPS. From the last sub-step, advance to step 5.
+      const keys = J2_SUB_STEPS.map((s) => s.key);
+      const i = keys.indexOf(state.j2SubStep);
+      if (i === -1 || i >= keys.length - 1) {
+        state.j2Approved = true;
+        state.j2Step = 5;
+        // Reset sub-step so a re-entry starts at tpp again.
+        state.j2SubStep = 'tpp';
+        refresh();
+        return;
+      }
+      state.j2SubStep = keys[i + 1];
+      refresh();
+    }
   });
   const j2Back = document.getElementById('j2-btn-back');
   if (j2Back) j2Back.addEventListener('click', () => {
+    if (state.j2Step === 4) {
+      const keys = J2_SUB_STEPS.map((s) => s.key);
+      const i = keys.indexOf(state.j2SubStep);
+      if (i > 0) { state.j2SubStep = keys[i - 1]; refresh(); return; }
+      // At first sub-step: leave step 4 entirely.
+      state.j2Step = 3;
+      state.j2SubStep = 'tpp';
+      refresh();
+      return;
+    }
     if (state.j2Step > 1) { state.j2Step -= 1; refresh(); }
   });
   const j2Restart = document.getElementById('j2-btn-restart');
