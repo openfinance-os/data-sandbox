@@ -439,9 +439,13 @@ function restoreStateFromUrl() {
     if (step !== 1) any = true;
   }
   // Validate: if step > 1 but no persona, bounce to step 1. If step > 2 but
-  // no institutions, bounce to step 2.
+  // no institutions, bounce to step 2. If step >= 4 (chat-back) but no
+  // ConsentId on file, bounce to step 3 — j1ConsentId is session-only state
+  // and any reload at step=4 lands with it null, so we re-walk consent
+  // rather than surfacing the chat without a bearer.
   if (state.step > 1 && !selectedPersona()) state.step = 1;
   if (state.step > 2 && state.selectedBankProfiles.size + state.selectedInsuranceLines.size === 0) state.step = 2;
+  if (state.step >= 4 && !state.j1ConsentId) state.step = 3;
   // J1 sub-step restore
   const subStep = params.get('substep');
   if (subStep === 'discovery' || subStep === 'sca' || subStep === 'consent' || subStep === 'token') {
@@ -464,11 +468,25 @@ function restoreStateFromUrl() {
     state.j2SelectedLFIs = new Set(j2Lfis.split(',').filter((b) => LFI_PROFILES.some((p) => p.key === b)));
     any = true;
   }
+  // Single-scope safety: a crafted URL can pack multiple j2lfis with
+  // j2scope=single. Trim down to one so the wizard's "single LFI" framing
+  // matches the consent payload (otherwise step 4's CAAP would authorise
+  // N LFIs while step 2 claims single-scope). Prefer 'median' if present,
+  // else first.
+  if (state.j2Scope === 'single' && state.j2SelectedLFIs.size > 1) {
+    const keep = state.j2SelectedLFIs.has('median') ? 'median' : [...state.j2SelectedLFIs][0];
+    state.j2SelectedLFIs = new Set([keep]);
+  }
   // J2 step gating: bounce back if the prerequisite for a step isn't met.
   if (state.j2Step > 1 && !selectedPersona()) state.j2Step = 1;
   if (state.j2Step > 2 && !state.j2Scope) state.j2Step = 2;
   if (state.j2Step > 3 && state.j2SelectedLFIs.size === 0) state.j2Step = 3;
   if (state.j2Scope === 'multi' && state.j2SelectedLFIs.size === 1 && state.j2Step > 3) state.j2Step = 3;
+  // Step 5 (PFM/BFM dashboard) requires at least one J2 consent. j2ConsentIds
+  // is session-only state (never serialised to the URL), so any reload at
+  // j2step=5 lands with size=0 and must bounce to step 4 to re-walk consent
+  // — preserves the invariant that the consent mockup precedes data access.
+  if (state.j2Step >= 5 && state.j2ConsentIds.size === 0) state.j2Step = 4;
   // J2 sub-step restore
   const j2Sub = params.get('j2substep');
   if (j2Sub === 'tpp' || j2Sub === 'altareq' || j2Sub === 'sca' || j2Sub === 'manager') {
@@ -2795,7 +2813,11 @@ function wireControls() {
       if (target === 3 && !state.j2Scope) return;
       const minLfi = state.j2Scope === 'multi' ? 2 : 1;
       if (target === 4 && state.j2SelectedLFIs.size < minLfi) return;
-      if (target === 5 && state.j2SelectedLFIs.size < minLfi) return;
+      // Step 5 (dashboard) additionally requires consent to have been
+      // granted — j2ConsentIds is populated only after the per-LFI SCA loop
+      // in step 4c mints them. Without this, the stepper could short-
+      // circuit the load-bearing pedagogical step (the consent flow itself).
+      if (target === 5 && (state.j2SelectedLFIs.size < minLfi || state.j2ConsentIds.size === 0)) return;
       state.j2Step = target; refresh();
     });
   });
