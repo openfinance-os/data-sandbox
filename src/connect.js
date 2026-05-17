@@ -402,6 +402,64 @@ function pushUrl() {
   const qs = params.toString();
   const url = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
   window.history.replaceState(null, '', url);
+  persistConsents();
+}
+
+// ─── Consent persistence (sessionStorage) ──────────────────────────
+//
+// Consents are server-side artifacts in the real world — they survive a
+// browser reload because the LFI / Consent Manager holds the record. The
+// sandbox mirrors that with sessionStorage: granted ConsentIds (J1 + J2),
+// the per-LFI account selections, and the approval flags survive within a
+// tab session. Closing the tab clears everything — same UX as "session
+// ends, you re-consent."
+//
+// What's NOT persisted: in-progress wizard form state (permissions ticked
+// but not yet approved, ExpirationDateTime picks, etc.). If the user
+// reloads mid-flow, they see defaults but their already-granted consents
+// are still in the registry. Step-gate logic in restoreStateFromUrl then
+// lets them land at the right step.
+
+const CONSENT_STORAGE_KEY = 'openfinance-sandbox.connect.consents.v1';
+
+function persistConsents() {
+  if (typeof sessionStorage === 'undefined') return;
+  try {
+    const payload = {
+      consentRecords: state.consentRecords,
+      j1ConsentId: state.j1ConsentId,
+      j2ConsentIds: [...state.j2ConsentIds.entries()],
+      j2SelectedAccounts: [...state.j2SelectedAccounts.entries()].map(([k, set]) => [k, [...set]]),
+      j2Approved: state.j2Approved,
+      approved: state.approved,
+    };
+    sessionStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(payload));
+  } catch {
+    // Quota exceeded / disabled by policy — degrade to in-memory only.
+  }
+}
+
+function rehydrateConsents() {
+  if (typeof sessionStorage === 'undefined') return;
+  try {
+    const raw = sessionStorage.getItem(CONSENT_STORAGE_KEY);
+    if (!raw) return;
+    const payload = JSON.parse(raw);
+    if (Array.isArray(payload.consentRecords)) state.consentRecords = payload.consentRecords;
+    if (typeof payload.j1ConsentId === 'string') state.j1ConsentId = payload.j1ConsentId;
+    if (Array.isArray(payload.j2ConsentIds)) state.j2ConsentIds = new Map(payload.j2ConsentIds);
+    if (Array.isArray(payload.j2SelectedAccounts)) {
+      state.j2SelectedAccounts = new Map(
+        payload.j2SelectedAccounts.map(([k, arr]) => [k, new Set(arr)])
+      );
+    }
+    if (typeof payload.j2Approved === 'boolean') state.j2Approved = payload.j2Approved;
+    if (typeof payload.approved === 'boolean') state.approved = payload.approved;
+  } catch {
+    // Bad JSON / schema drift — fall through to defaults. Synthetic data,
+    // nothing to lose. Bump CONSENT_STORAGE_KEY's version suffix if the
+    // payload shape ever changes incompatibly.
+  }
 }
 
 // Read state from URL on load. Returns true if any state was restored.
@@ -2860,7 +2918,10 @@ async function init() {
     grid.appendChild(el('p', { className: 'skeleton' }, `Could not load personas: ${err.message}`));
     return;
   }
-  // Restore from URL after personas loaded so persona-id validation works.
+  // Rehydrate consents from sessionStorage BEFORE restoreStateFromUrl so
+  // the step-gate logic there sees the real consent registry (otherwise a
+  // reload at j2step=5 with consents on file would bounce to step 4).
+  rehydrateConsents();
   restoreStateFromUrl();
   refresh();
   fillSpecMeta().catch(() => {});
