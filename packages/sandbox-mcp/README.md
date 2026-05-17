@@ -21,7 +21,7 @@ The sandbox's `/connect` page teaches three connection journeys for UAE Open Fin
 
 | Journey | Pattern | Consent UI | This server's role |
 |---|---|---|---|
-| **J1 — Bank-direct (MCP labs)** | A single LFI exposes the OF v2.1 data shape directly to its own retail or SME customer | Bank's own OAuth 2.1 + PKCE (the `--simulate-oauth` screen in this server) | **Canonical backend.** `https://data-sandbox.fly.dev/mcp` is the live J1 demo surface — add it as a Claude custom connector. |
+| **J1 — Bank-direct (MCP labs)** | A single LFI exposes the OF v2.1 data shape directly to its own retail or SME customer | Bank's own OAuth 2.1 + PKCE (the `--simulate-oauth` screen in this server). The on-page sandbox now walks the J1 consent in 4 sub-steps that mirror what this server does: MCP discovery (401 + RFC 9728/8414) → bank-side SCA (Article 18) → consent (v2.1 Permissions taxonomy + ExpirationDateTime + TransactionFromDateTime) → token (PKCE-validated bearer). | **Canonical backend.** `https://data-sandbox.fly.dev/mcp` is the live J1 demo surface — add it as a Claude custom connector. |
 | **J2 — OF rails (TPP via Al Tareq)** | A regulated TPP aggregates one or many LFIs through Al Tareq CAAP / Consent Manager (FAPI 2.0, OFTF mTLS) | Al Tareq CAAP (regulated, centralized at the Consent Manager) | Out of scope for v1. The `/connect` page's J2 wizard is fully client-side and reads the same fixture corpus directly. A future `/tpp/*` surface here would let a real agent walk J2 too. |
 | **J3 — Off-rails aggregator (Plaid-pattern)** | Multi-entity aggregation via screen-scraping or partner deals | None (no consent broker) | **Specifically not modelled.** UAE Article 15 forecloses this pattern; `/connect` shows it as a static contrast only. |
 

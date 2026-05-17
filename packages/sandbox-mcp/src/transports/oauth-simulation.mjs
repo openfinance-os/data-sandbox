@@ -48,6 +48,13 @@ const AUTH_CODE_TTL_MS = 10 * 60 * 1000; // 10 min (OAuth spec recommends ≤ 10
 const CONSENT_NONCE_TTL_MS = 10 * 60 * 1000; // 10 min — consent screen → submit window
 const TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hour — short-lived per RFC 6749 best practice
 
+// OAuth scope strings — coarser than the v2.1 Permissions taxonomy.
+// The sandbox's on-page J1 consent simulation (src/connect.html step 3c)
+// renders the discrete Permissions (ReadAccountsBasic / ReadAccountsDetail
+// / ReadBalances / ReadTransactionsBasic / ReadTransactionsDetail / etc.)
+// that map onto these scope groups. For the server-side simulation we
+// keep the scope strings simple since the user-facing differentiation
+// happens on the on-page consent — Claude's MCP client only sees scopes.
 const SUPPORTED_SCOPES = [
   'accounts:read',
   'balances:read',
