@@ -215,7 +215,7 @@ describe('HTTP transport — OAuth simulation (simulateOauth: true)', () => {
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toMatch(/text\/html/);
     const body = await res.text();
-    expect(body).toContain('Authorize Claude');
+    expect(body).toContain('Share with Claude');
     expect(body).toContain('cc-connector-test');
     expect(body).toContain('SYNTHETIC');
     expect(body).toContain('Bank Data Sharing');

@@ -12,7 +12,7 @@ The intended use: run Claude as a **dynamic PFM** against a synthetic customer. 
 - **27 curated personas (18 banking + 9 insurance) + a custom-persona builder** — pick from the curated list with `set_session`, or compose a recipe and call `build_persona` to generate a fresh deterministic persona at runtime.
 - **Read-only** — no writes, no Service Initiation.
 - **Anonymous by default** — no auth, no API keys, no OAuth. The data is synthetic so there is nothing real to protect. PRD D-13.
-- **Opt-in OAuth journey simulation** — `--simulate-oauth` / `MCP_SIMULATE_OAUTH=1` wires a UAE-Open-Finance-styled consent screen, RFC 9728 + RFC 8414 metadata, and a PKCE-validated `/authorize` + `/token` pair in front of `/mcp`, so a TPP can demo the customer-facing consent journey end-to-end. Off by default — the production deploy stays anonymous. See [`CLAUDE_FOR_OPEN_FINANCE.md`](../../CLAUDE_FOR_OPEN_FINANCE.md) at the repo root.
+- **Opt-in OAuth journey simulation** — `--simulate-oauth` / `MCP_SIMULATE_OAUTH=1` wires a UAE-Open-Finance-styled consent screen, RFC 9728 + RFC 8414 metadata, and a PKCE-validated `/authorize` + `/token` pair in front of `/mcp`, so a consumer-facing AI assistant can walk the share-with-Claude journey end-to-end (the shape of the [Plaid + ChatGPT integration](https://plaid.com/blog/chatgpt-personal-finance-plaid/), projected onto UAE Open Finance). Off by default — the production deploy stays anonymous. See [`CLAUDE_PERSONAL_BANKING.md`](../../CLAUDE_PERSONAL_BANKING.md) at the repo root.
 - **Two transports** — stdio (default, for `npx` / Claude Desktop / Claude Code) and Streamable HTTP (for the Claude marketplace listing and any browser-side client). PRD decision D-13.
 
 ## Install

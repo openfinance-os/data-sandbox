@@ -1,6 +1,7 @@
-// /connect page — interactive simulator for the Claude-for-Open-Finance
-// connector journey. Four steps: persona gallery → institution picker →
-// authorize → connected.
+// /connect page — interactive walkthrough of a consumer connecting their
+// UAE bank to Claude in a chat. Four steps: pick profile → pick bank →
+// share (consent) → back in chat. Modelled on Plaid + ChatGPT's
+// integration pattern.
 //
 // State is encoded in the URL via history.replaceState so refresh / share
 // preserves the journey (EXP-17-aligned). Persona/footprint data comes
@@ -9,11 +10,12 @@
 // handshake lives in packages/sandbox-mcp/src/transports/oauth-simulation.mjs
 // behind --simulate-oauth.
 //
-// Step 4 (Connected) fans out across multiple OF v2.1 endpoints and
-// renders a small PFM card from the *real* fixture envelopes. Spec
-// compliance (EXP-01): every key it reads is one the parsed OpenAPI spec
-// declares at /accounts, /balances, /transactions, /standing-orders,
-// /direct-debits, and the per-line insurance policies endpoint:
+// Step 4 ("Back in chat") renders a hybrid layout: a chat-style transcript
+// on top with 4–5 deterministic Q&A pairs answered from the bound persona's
+// fixtures, plus a compressed dashboard strip underneath (balance, last
+// salary, biggest spend, next renewal). Both are fed from the *real* v2.1
+// envelopes — spec compliance (EXP-01): every value comes from a
+// spec-defined Data.* path:
 //
 //   banking accounts    → Data.Account[]                  · v2.1 §accounts
 //   banking balances    → Data.Balance[]                  · v2.1 §balances
@@ -21,9 +23,10 @@
 //   banking SOs / DDs   → Data.StandingOrder[] / DirectDebit[]
 //   insurance policies  → Data.Policies[]                 · v2.1 insurance
 //
-// The card surfaces only fields that are spec-defined and present on the
-// envelope; it never invents values. The full envelope is also rendered
-// in a collapsible so the reader can verify nothing was fabricated.
+// The chat and dashboard surface only fields that are spec-defined and
+// present on the envelope; they never invent values. The full envelope
+// is also rendered in a collapsible so the reader can verify nothing
+// was fabricated.
 
 const SCOPE_LABELS = {
   banking: {
@@ -32,7 +35,7 @@ const SCOPE_LABELS = {
   },
   insurance: {
     title: 'Insurance Data Sharing',
-    body: 'policies · payment details · quotes (read-only across 7 lines)',
+    body: 'motor · home · health · life · travel · renters · employment renewals and payment details',
   },
 };
 
@@ -404,14 +407,16 @@ function renderConsent() {
   const mock = el('div', { className: 'consent-mock', role: 'img', 'aria-label': 'Mock UAE Open Finance consent screen' }, [
     el('div', { className: 'browser-bar' }, [
       el('span', { className: 'dots' }, [el('span'), el('span'), el('span')]),
-      el('span', { className: 'url' }, 'https://auth.openfinance-os.org/oauth2/authorize?client_id=cc-connector-9f3a&…'),
+      el('span', { className: 'url' }, 'https://auth.openfinance.ae/authorize?client_id=claude&…'),
     ]),
   ]);
   const inner = el('div', { className: 'body' });
-  inner.appendChild(el('h4', {}, 'Claude × UAE Open Finance Authority'));
-  const subL = el('p', { className: 'sub' });
-  subL.innerHTML = `Claude is requesting access on behalf of <strong>"Claude for Open Finance"</strong> · TPP licence <code>SANDBOX-CC-9F3A</code>`;
-  inner.appendChild(subL);
+  inner.appendChild(el('h4', {}, 'Share with Claude · UAE Open Finance Authority'));
+  inner.appendChild(el('p', { className: 'sub' }, [
+    'Claude will be able to read what you tick. You can stop sharing at any time at ',
+    el('em', {}, 'portal.openfinance.ae · My Consents'),
+    '.',
+  ]));
 
   inner.appendChild(el('div', { className: 'persona-line' }, [
     el('div', { className: 'avatar', style: `background:${avatarColor(persona.id)};` }, initials(persona.name)),
@@ -460,16 +465,16 @@ function renderConsent() {
 function renderConnected() {
   const persona = selectedPersona();
   const body = document.getElementById('connected-body');
-  body.innerHTML = '';
+  body.replaceChildren();
   if (!persona) return;
 
   const totalInst = state.selectedBankProfiles.size + state.selectedInsuranceLines.size;
   const fakeToken = `ofx_at_${Math.random().toString(36).slice(2, 10)}${Math.random().toString(36).slice(2, 10)}`;
 
   body.appendChild(el('div', { className: 'connected-summary' }, [
-    el('div', { className: 'label' }, '✓ Connected'),
+    el('div', { className: 'label' }, '✓ Bearer issued'),
     el('div', { className: 'summary-line' }, [
-      el('span', {}, 'Bearer issued for '),
+      el('span', {}, 'Connected as '),
       el('strong', {}, persona.name),
       el('span', {}, ' · '),
       el('strong', {}, `${totalInst} institution${totalInst === 1 ? '' : 's'}`),
@@ -479,62 +484,41 @@ function renderConnected() {
       `access_token: ${fakeToken}`),
   ]));
 
-  for (const p of nextPromptFor(persona)) {
-    body.appendChild(el('div', { className: 'next-prompt' }, [
-      el('div', { className: 'label' }, p.label),
-      el('div', { className: 'prompt-quote' }, `"${p.quote}"`),
-      el('div', { className: 'tool-chain' }, `tool chain: ${p.tools.join(' → ')}`),
-    ]));
-  }
-
-  // Multi-endpoint fetch CTA. Only available for personas with a primary
-  // domain that has fixtures; cross-domain ticks are surfaced in the
-  // consent step (3) but the sandbox doesn't ship cross-domain bundles.
+  // Auto-fetch on entering step 4 — no extra button click. This is the
+  // Plaid + ChatGPT "return to chat" pattern: connection completes and
+  // the conversation surface immediately reflects the new data.
   const lfi = firstSelectedLfi();
-  const fetchPanel = el('div', { className: 'fetch-panel' });
-  fetchPanel.appendChild(el('div', { className: 'label', style: 'margin-bottom:6px;' },
-    'Close the loop — pull the real envelopes'));
-  const desc = persona.domain === 'banking'
-    ? `Chains GET /accounts → per-account GET /balances + /transactions + /standing-orders + /direct-debits and renders a PFM card.`
-    : `Fetches GET /${inferInsuranceLine(persona) || 'motor'}-insurance-policies and renders the policy summary.`;
-  fetchPanel.appendChild(el('div', { className: 'tool-chain', style: 'margin-top:0;margin-bottom:8px;' }, desc));
-  const fetchBtn = el('button', {
-    type: 'button',
-    className: 'btn primary',
-    onclick: () => runLiveFetch(persona, lfi, fetchPanel),
-  }, persona.domain === 'banking' ? 'Build PFM snapshot →' : 'Pull policy summary →');
-  fetchPanel.appendChild(fetchBtn);
+  const container = el('div', { className: 'chat-and-strip' });
+  body.appendChild(container);
   if (!persona.default_seed) {
-    fetchPanel.appendChild(el('div', { className: 'tool-chain', style: 'margin-top:6px;color:var(--warn-border);' },
-      `No default_seed for this persona — run \`npm run build:fixtures\` first.`));
-    fetchBtn.disabled = true;
+    container.appendChild(el('p', { className: 'skeleton', style: 'color:var(--warn-border);' },
+      `No default_seed for this persona — run \`npm run build:fixtures && npm run build:site\` first.`));
+  } else {
+    container.appendChild(el('p', { className: 'skeleton' }, 'Loading your account data…'));
+    runLiveFetch(persona, lfi, container);
   }
-  body.appendChild(fetchPanel);
 
-  const reuse = el('div', { className: 'callout' });
-  reuse.innerHTML =
-    `<strong>Want to fire this against the live MCP?</strong> ` +
-    `<code>npx -y @openfinance-os/sandbox-mcp --transport http --simulate-oauth</code>, ` +
-    `then point a Claude.ai connector at <code>http://127.0.0.1:8787/mcp</code>.`;
+  const reuse = el('div', { className: 'callout' }, [
+    el('strong', {}, 'Want to wire a real Claude.ai connector against this?'),
+    ' Run ',
+    el('code', {}, 'npx -y @openfinance-os/sandbox-mcp --transport http --simulate-oauth'),
+    ' and point Claude at ',
+    el('code', {}, 'http://127.0.0.1:8787/mcp'),
+    '. Discovery, consent, and bearer-gated tool calls all work the same way you walked them above.',
+  ]);
   body.appendChild(reuse);
 }
 
-// ─── Multi-endpoint live fetch + PFM card ───────────────────────────
+// ─── Multi-endpoint live fetch + chat-and-strip render ─────────────
 
-async function runLiveFetch(persona, lfi, panel) {
-  const old = panel.querySelector('.fetch-result');
-  if (old) old.remove();
-  const result = el('div', { className: 'fetch-result' });
-  result.appendChild(el('div', { className: 'fetch-status' }, 'Fetching envelopes…'));
-  panel.appendChild(result);
-
+async function runLiveFetch(persona, lfi, container) {
   try {
-    if (persona.domain === 'banking') await renderBankingPFM(persona, lfi, result);
-    else await renderInsuranceSummary(persona, result);
+    if (persona.domain === 'banking') await renderBankingChat(persona, lfi, container);
+    else await renderInsuranceChat(persona, container);
   } catch (err) {
-    result.innerHTML = '';
-    result.appendChild(el('div', { className: 'fetch-status', style: 'color:#a13;' },
-      `Fetch failed: ${err.message}. Run \`npm run build:fixtures && npm run build:site\`, then serve from \`_site\`.`));
+    container.replaceChildren();
+    container.appendChild(el('p', { className: 'skeleton', style: 'color:#a13;' },
+      `Couldn't load the fixtures: ${err.message}. Run \`npm run build:fixtures && npm run build:site\`, then serve from \`_site\`.`));
   }
 }
 
@@ -552,12 +536,13 @@ async function fetchJson(url) {
 // Per /balances:
 //   Data.Balance[].Amount.{Amount, Currency}, .CreditDebitIndicator, .Type, .DateTime
 // Per /transactions:
-//   Data.Transaction[].Amount.{Amount, Currency}, .CreditDebitIndicator, .BookingDateTime
+//   Data.Transaction[].Amount.{Amount, Currency}, .CreditDebitIndicator, .BookingDateTime, .TransactionInformation
 // Per /standing-orders, /direct-debits:
 //   Data.StandingOrder[], Data.DirectDebit[]
 //
-// The PFM card only surfaces these spec-defined fields; nothing is invented.
-async function renderBankingPFM(persona, lfi, container) {
+// The chat answers and mini-strip surface only these spec-defined fields;
+// nothing is invented.
+async function renderBankingChat(persona, lfi, container) {
   const base = `../fixtures/v1/bundles/${persona.id}/${lfi}/seed-${persona.default_seed}`;
 
   // Phase 1: discover accounts.
@@ -578,58 +563,17 @@ async function renderBankingPFM(persona, lfi, container) {
     return { account: acct, balances: bal, transactions: tx, standingOrders: so, directDebits: dd };
   }));
 
-  // Phase 3: aggregate. Per spec:
-  //   • Available balance: prefer Balance.Type=InterimAvailable, else
-  //     InterimBooked, else most-recent. CreditDebitIndicator drives sign.
-  //   • Inflow / outflow: sum Transaction.Amount.Amount by CreditDebitIndicator
-  //     over the last 30 days of BookingDateTime.
-  //   • SO / DD count: cardinality of Data.StandingOrder[] / Data.DirectDebit[].
-  let availableTotal = 0;
-  let inflow30 = 0;
-  let outflow30 = 0;
-  let soCount = 0;
-  let ddCount = 0;
-  const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
-  let latestTx = null;
+  // Phase 3: compute the deterministic answers off the bound bundle.
+  const insights = computeBankingInsights(accounts, perAccount);
 
-  for (const a of perAccount) {
-    const balances = a.balances?.Data?.Balance ?? [];
-    const pick = balances.find((b) => b.Type === 'InterimAvailable')
-              || balances.find((b) => b.Type === 'InterimBooked')
-              || balances[0];
-    if (pick && pick.Amount?.Currency === 'AED') {
-      const amt = parseFloat(pick.Amount.Amount);
-      availableTotal += pick.CreditDebitIndicator === 'Credit' ? amt : -amt;
-    }
-    for (const t of (a.transactions?.Data?.Transaction ?? [])) {
-      if (t.Amount?.Currency !== 'AED') continue;
-      const when = Date.parse(t.BookingDateTime || '') || 0;
-      if (when < cutoff) continue;
-      const amt = parseFloat(t.Amount.Amount);
-      if (t.CreditDebitIndicator === 'Credit') inflow30 += amt;
-      else outflow30 += amt;
-      if (!latestTx || when > Date.parse(latestTx.BookingDateTime || '')) latestTx = t;
-    }
-    soCount += (a.standingOrders?.Data?.StandingOrder ?? []).length;
-    ddCount += (a.directDebits?.Data?.DirectDebit ?? []).length;
-  }
-
-  // Phase 4: render.
-  container.innerHTML = '';
+  // Phase 4: render — chat transcript on top, mini-strip below, full
+  // envelope inventory as a collapsible at the bottom.
+  container.replaceChildren();
   const wm = acctEnv._watermark || '';
   if (wm) container.appendChild(el('div', { className: 'watermark-banner' }, wm));
 
-  container.appendChild(el('div', { className: 'pfm-card' }, [
-    el('div', { className: 'pfm-title' }, '📊 PFM snapshot · last 30 days'),
-    el('div', { className: 'pfm-grid' }, [
-      pfmMetric('Available balance', formatAed(availableTotal), 'sum across accounts (InterimAvailable / InterimBooked)'),
-      pfmMetric('Accounts', String(accounts.length), accounts.map((a) => a.AccountSubType || a.AccountType || '?').join(' · ')),
-      pfmMetric('Inflows (30d)', formatAed(inflow30), 'sum of Credit transactions'),
-      pfmMetric('Outflows (30d)', formatAed(outflow30), 'sum of Debit transactions'),
-      pfmMetric('Standing orders', String(soCount), 'Data.StandingOrder[]'),
-      pfmMetric('Direct debits', String(ddCount), 'Data.DirectDebit[]'),
-    ]),
-  ]));
+  container.appendChild(renderChatTranscript(persona, buildBankingChat(insights)));
+  container.appendChild(renderMiniStrip(buildBankingMiniStrip(insights)));
 
   // Endpoint inventory — exactly which OF v2.1 paths were touched.
   const inventoryRows = [
@@ -645,35 +589,228 @@ async function renderBankingPFM(persona, lfi, container) {
   container.appendChild(renderEnvelopeInventory(inventoryRows, persona, lfi));
 
   container.appendChild(el('div', { className: 'fetch-footnote' },
-    `Every value above is read from spec-defined Data.* paths on the v2.1 envelope. The PFM card invents nothing — expand "All envelopes" to verify.`));
+    `Every value above is read from spec-defined Data.* paths on the v2.1 envelope. The chat invents nothing — expand "All envelopes" to verify.`));
+}
+
+// Compute the answer-bearing facts off the v2.1 envelopes. Every field
+// referenced is spec-defined. The function returns plain values so the
+// downstream chat-bubble builder can compose them into prose without
+// touching the envelopes again.
+function computeBankingInsights(accounts, perAccount) {
+  let availableTotal = 0;
+  let primaryAccountLabel = '';
+  let primaryAccountBalance = null;
+  let inflow30 = 0;
+  let outflow30 = 0;
+  const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+
+  let latestSalary = null;
+  const merchants = new Map(); // 30-day merchant → cumulative outflow
+  const RENT_KEY = '__RENT__';
+
+  let soCount = 0;
+  let ddCount = 0;
+
+  for (const a of perAccount) {
+    const balances = a.balances?.Data?.Balance ?? [];
+    const pick = balances.find((b) => b.Type === 'InterimAvailable')
+              || balances.find((b) => b.Type === 'InterimBooked')
+              || balances[0];
+    if (pick && pick.Amount?.Currency === 'AED') {
+      const amt = parseFloat(pick.Amount.Amount);
+      const signed = pick.CreditDebitIndicator === 'Credit' ? amt : -amt;
+      availableTotal += signed;
+      if (primaryAccountBalance == null) {
+        primaryAccountBalance = signed;
+        primaryAccountLabel = a.account.Nickname || a.account.AccountSubType || a.account.AccountType || 'main account';
+      }
+    }
+
+    for (const t of (a.transactions?.Data?.Transaction ?? [])) {
+      if (t.Amount?.Currency !== 'AED') continue;
+      const when = Date.parse(t.BookingDateTime || '') || 0;
+      if (when < cutoff) continue;
+      const amt = parseFloat(t.Amount.Amount);
+      const info = t.TransactionInformation || '';
+
+      if (t.CreditDebitIndicator === 'Credit') {
+        inflow30 += amt;
+        // Salary heuristic — Standards v2.1 leaves payroll detection to TPPs;
+        // SAL/PAYROLL is the synthetic-pool convention used in the fixtures.
+        if (/SAL|PAYROLL/i.test(info)) {
+          if (!latestSalary || when > Date.parse(latestSalary.BookingDateTime || '')) {
+            latestSalary = t;
+          }
+        }
+      } else {
+        outflow30 += amt;
+        // Merchant bucketing: pull the second segment of TransactionInformation
+        // (synthetic-pool format "TYPE/MERCHANT/REF"), with RENT folded
+        // separately so we can call it out distinctly.
+        const merchantRaw = info.split('/')[1] || info;
+        const m = merchantRaw === 'RENT' ? RENT_KEY : merchantRaw;
+        merchants.set(m, (merchants.get(m) || 0) + amt);
+      }
+    }
+    soCount += (a.standingOrders?.Data?.StandingOrder ?? []).length;
+    ddCount += (a.directDebits?.Data?.DirectDebit ?? []).length;
+  }
+
+  const topMerchants = [...merchants.entries()]
+    .filter(([k]) => k !== RENT_KEY)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3);
+  const rentTotal = merchants.get(RENT_KEY) || 0;
+
+  return {
+    accounts,
+    primaryAccountLabel,
+    primaryAccountBalance,
+    availableTotal,
+    inflow30,
+    outflow30,
+    latestSalary,
+    topMerchants,
+    rentTotal,
+    soCount,
+    ddCount,
+  };
+}
+
+// Compose 4–5 deterministic Q&A pairs that read like a Plaid + ChatGPT
+// post-connect exchange. Numbers come from computeBankingInsights().
+function buildBankingChat(ins) {
+  const exchanges = [];
+
+  exchanges.push({
+    q: `What's my main account balance?`,
+    a: ins.primaryAccountBalance != null
+      ? `Your AED ${ins.primaryAccountLabel} account is at ${formatAed(ins.primaryAccountBalance)} as of the latest reported balance.`
+      : `I can see ${ins.accounts.length} account${ins.accounts.length === 1 ? '' : 's'} on file, but no balance was returned for this profile.`,
+  });
+
+  if (ins.latestSalary) {
+    const t = ins.latestSalary;
+    const day = new Date(t.BookingDateTime).getUTCDate();
+    const payer = (t.TransactionInformation || '').split('/').slice(-1)[0] || 'your payroll';
+    exchanges.push({
+      q: 'Did my salary land?',
+      a: `Yes — ${formatAed(parseFloat(t.Amount.Amount))} on the ${day}${ordinalSuffix(day)} from ${payer}. Tagged as payroll on the standing pattern.`,
+    });
+  } else {
+    exchanges.push({
+      q: 'Did my salary land this month?',
+      a: `I don't see a payroll-tagged inflow in the last 30 days. Your total credits over that window were ${formatAed(ins.inflow30)}.`,
+    });
+  }
+
+  if (ins.topMerchants.length || ins.rentTotal) {
+    const tops = [...ins.topMerchants];
+    const lead = ins.rentTotal
+      ? `Rent — ${formatAed(ins.rentTotal)} to your usual landlord.`
+      : tops.length ? `${tops[0][0]} — ${formatAed(tops[0][1])}.` : null;
+    const rest = (ins.rentTotal ? tops : tops.slice(1))
+      .slice(0, 3)
+      .map(([m, v]) => `${formatAed(v)} at ${m}`)
+      .join(', ');
+    exchanges.push({
+      q: 'What were my biggest spends last 30 days?',
+      a: lead ? `${lead}${rest ? ` After that: ${rest}.` : ''}` : `Your total outflows were ${formatAed(ins.outflow30)} across ${ins.soCount + ins.ddCount} recurring orders.`,
+    });
+  }
+
+  exchanges.push({
+    q: 'Am I tracking to AED 12,000 a month in non-rent spend?',
+    a: (() => {
+      const nonRent = ins.outflow30 - ins.rentTotal;
+      const headroom = 12000 - nonRent;
+      if (headroom > 0) return `You're at ${formatAed(nonRent)} in non-rent spend over the last 30 days — about ${formatAed(headroom)} under AED 12,000.`;
+      return `You're at ${formatAed(nonRent)} in non-rent spend over the last 30 days, ${formatAed(-headroom)} over the AED 12,000 line. Worth a closer look.`;
+    })(),
+  });
+
+  if (ins.soCount + ins.ddCount > 0) {
+    exchanges.push({
+      q: 'What recurring payments do I have on file?',
+      a: `${ins.soCount} standing order${ins.soCount === 1 ? '' : 's'} and ${ins.ddCount} direct debit${ins.ddCount === 1 ? '' : 's'} are active. I can list them by amount or by next-due-date if you want.`,
+    });
+  }
+
+  return exchanges;
+}
+
+function buildBankingMiniStrip(ins) {
+  const cards = [];
+  if (ins.primaryAccountBalance != null) {
+    cards.push({ label: 'Main balance', value: formatAed(ins.primaryAccountBalance), hint: ins.primaryAccountLabel });
+  }
+  cards.push({ label: 'Inflows · 30d', value: formatAed(ins.inflow30), hint: ins.latestSalary ? 'incl. payroll' : 'no payroll match' });
+  cards.push({ label: 'Outflows · 30d', value: formatAed(ins.outflow30), hint: ins.rentTotal ? `incl. ${formatAed(ins.rentTotal)} rent` : 'no rent match' });
+  if (ins.soCount + ins.ddCount > 0) {
+    cards.push({ label: 'Recurring', value: String(ins.soCount + ins.ddCount), hint: `${ins.soCount} SO · ${ins.ddCount} DD` });
+  } else {
+    cards.push({ label: 'Accounts', value: String(ins.accounts.length), hint: 'on file' });
+  }
+  return cards;
+}
+
+function ordinalSuffix(n) {
+  const v = n % 100;
+  if (v >= 11 && v <= 13) return 'th';
+  const last = n % 10;
+  return last === 1 ? 'st' : last === 2 ? 'nd' : last === 3 ? 'rd' : 'th';
+}
+
+// Renders a chat-style transcript with alternating user / Claude bubbles.
+// Q&A pairs come from build*Chat() helpers — keep this function pure UI.
+function renderChatTranscript(persona, exchanges) {
+  const userInitials = initials(persona.name);
+  const userColor = avatarColor(persona.id);
+  const wrap = el('div', { className: 'chat-mock', role: 'group', 'aria-label': 'Chat transcript' });
+  wrap.appendChild(el('div', { className: 'chat-title' }, '💬 Back in the chat with Claude'));
+  for (const { q, a } of exchanges) {
+    wrap.appendChild(el('div', { className: 'chat-msg user' }, [
+      el('span', { className: 'chat-avatar', style: `background:${userColor};` }, userInitials),
+      el('span', { className: 'chat-bubble' }, q),
+    ]));
+    wrap.appendChild(el('div', { className: 'chat-msg claude' }, [
+      el('span', { className: 'chat-avatar' }, 'C'),
+      el('span', { className: 'chat-bubble' }, a),
+    ]));
+  }
+  return wrap;
+}
+
+function renderMiniStrip(cards) {
+  const strip = el('div', { className: 'mini-strip', role: 'group', 'aria-label': 'Account summary at a glance' });
+  for (const c of cards) {
+    strip.appendChild(el('div', { className: 'mini-card' }, [
+      el('div', { className: 'mini-label' }, c.label),
+      el('div', { className: 'mini-value' }, c.value),
+      c.hint ? el('div', { className: 'mini-hint' }, c.hint) : null,
+    ]));
+  }
+  return strip;
 }
 
 // Spec-compliant per /<line>-insurance-policies (v2.1 insurance):
 //   Data.Policies[].InsurancePolicyId, .PolicyNumber, .PolicyStatus,
 //   .PolicyStartDate, .PolicyEndDate
-async function renderInsuranceSummary(persona, container) {
+async function renderInsuranceChat(persona, container) {
   const line = inferInsuranceLine(persona);
   if (!line) throw new Error(`could not infer insurance line for ${persona.id}`);
   const base = `../fixtures/v1/bundles/${persona.id}/median/seed-${persona.default_seed}`;
   const env = await fetchJson(`${base}/${line}-insurance-policies.json`);
   if (!env) throw new Error(`${line}-insurance-policies.json not found`);
   const policies = env.Data?.Policies ?? [];
+  const first = policies[0] || {};
 
-  container.innerHTML = '';
+  container.replaceChildren();
   const wm = env._watermark || '';
   if (wm) container.appendChild(el('div', { className: 'watermark-banner' }, wm));
 
-  const first = policies[0] || {};
-  container.appendChild(el('div', { className: 'pfm-card' }, [
-    el('div', { className: 'pfm-title' }, `🛡 ${INSURANCE_LINE_LABELS[line].name} · summary`),
-    el('div', { className: 'pfm-grid' }, [
-      pfmMetric('Policies on file', String(policies.length), `Data.Policies[]`),
-      pfmMetric('Policy number', first.PolicyNumber || '—', 'Data.Policies[0].PolicyNumber'),
-      pfmMetric('Status', first.PolicyStatus || '—', 'Data.Policies[0].PolicyStatus'),
-      pfmMetric('Start', first.PolicyStartDate || '—', 'Data.Policies[0].PolicyStartDate'),
-      pfmMetric('End', first.PolicyEndDate || '—', 'Data.Policies[0].PolicyEndDate'),
-    ]),
-  ]));
+  container.appendChild(renderChatTranscript(persona, buildInsuranceChat(line, policies, first)));
+  container.appendChild(renderMiniStrip(buildInsuranceMiniStrip(line, policies, first)));
 
   container.appendChild(renderEnvelopeInventory([
     { path: `/${line}-insurance-policies`, env, count: policies.length, key: 'Policies' },
@@ -683,12 +820,41 @@ async function renderInsuranceSummary(persona, container) {
     `For richer policy detail (PolicyHolder, Premium, Product, Claims) call GET /${line}-insurance-policies/{InsurancePolicyId} via the MCP — the list endpoint per spec carries summary fields only.`));
 }
 
-function pfmMetric(label, value, hint) {
-  return el('div', { className: 'pfm-metric' }, [
-    el('div', { className: 'pfm-label' }, label),
-    el('div', { className: 'pfm-value' }, value),
-    hint ? el('div', { className: 'pfm-hint' }, hint) : null,
-  ]);
+function buildInsuranceChat(line, policies, first) {
+  const lineName = INSURANCE_LINE_LABELS[line]?.name || `${line} insurance`;
+  const exchanges = [];
+  exchanges.push({
+    q: `What ${line} cover do I have?`,
+    a: policies.length
+      ? `You have ${policies.length} ${lineName.toLowerCase()} polic${policies.length === 1 ? 'y' : 'ies'} on file. The active one is ${first.PolicyNumber || 'unknown'} — status ${first.PolicyStatus || 'unknown'}.`
+      : `I don't see any ${lineName.toLowerCase()} policies on the consent.`,
+  });
+  if (first.PolicyEndDate) {
+    exchanges.push({
+      q: 'When does it renew?',
+      a: `Your policy ends on ${formatDate(first.PolicyEndDate)}${first.PolicyStartDate ? ` (active since ${formatDate(first.PolicyStartDate)})` : ''}. Expect a renewal quote a few weeks beforehand.`,
+    });
+  }
+  exchanges.push({
+    q: 'Can you pull the policy details?',
+    a: `For premium, policyholder, product details, and claims history I'd call GET /${line}-insurance-policies/${first.InsurancePolicyId || '{id}'} next. The list response only carries the summary view.`,
+  });
+  return exchanges;
+}
+
+function buildInsuranceMiniStrip(line, policies, first) {
+  return [
+    { label: 'Policies', value: String(policies.length), hint: INSURANCE_LINE_LABELS[line]?.name || line },
+    { label: 'Number', value: first.PolicyNumber || '—', hint: 'Data.Policies[0].PolicyNumber' },
+    { label: 'Status', value: first.PolicyStatus || '—', hint: 'Data.Policies[0].PolicyStatus' },
+    { label: 'Renews', value: first.PolicyEndDate ? formatDate(first.PolicyEndDate) : '—', hint: 'Data.Policies[0].PolicyEndDate' },
+  ];
+}
+
+function formatDate(s) {
+  const d = new Date(s);
+  if (Number.isNaN(d.getTime())) return s;
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function renderEnvelopeInventory(rows, persona, lfi) {
@@ -727,29 +893,6 @@ function renderEnvelopeInventory(rows, persona, lfi) {
   return wrapper;
 }
 
-function nextPromptFor(persona) {
-  if (persona.domain === 'insurance') {
-    const line = inferInsuranceLine(persona) || 'motor';
-    return [{
-      label: 'Suggested first prompt',
-      quote: `Show me ${persona.name.replace(/—.*$/, '').trim()}'s current ${line} policy and the next renewal date.`,
-      tools: ['set_session', `get_${line}_policies`, `get_${line}_policy`],
-    }];
-  }
-  if (persona.segment === 'SME') {
-    return [{
-      label: 'Suggested first prompt',
-      quote: `Reconcile this month's aggregator payouts against POS settlements across all three accounts and flag anything unusual.`,
-      tools: ['set_session', 'get_accounts', 'get_transactions', 'get_standing_orders', 'get_direct_debits'],
-    }];
-  }
-  return [{
-    label: 'Suggested first prompt — ready skill #1: Monthly PFM Summary',
-    quote: `Give me a month-end PFM summary for ${persona.name.replace(/—.*$/, '').trim()}.`,
-    tools: ['set_session', 'get_accounts', 'get_balances', 'get_transactions', 'get_standing_orders', 'get_direct_debits'],
-  }];
-}
-
 function renderActions() {
   const next = document.getElementById('btn-next');
   const back = document.getElementById('btn-back');
@@ -763,20 +906,20 @@ function renderActions() {
 
   if (state.step === 1) {
     next.disabled = !persona;
-    next.textContent = persona ? `Continue as ${persona.name.split('—')[0].trim()} →` : 'Pick a persona →';
-    status.textContent = persona ? `Selected: ${persona.name}.` : 'Pick a persona to continue.';
+    next.textContent = persona ? `Continue as ${persona.name.split('—')[0].trim()} →` : 'Pick a profile →';
+    status.textContent = persona ? `Selected: ${persona.name}.` : 'Pick a profile to continue.';
   } else if (state.step === 2) {
     next.disabled = totalInst === 0;
-    next.textContent = totalInst ? `Authorize ${totalInst} institution${totalInst === 1 ? '' : 's'} →` : 'Select at least one institution';
-    status.textContent = persona ? `${persona.name} · ${totalInst} institution${totalInst === 1 ? '' : 's'} selected.` : '';
+    next.textContent = totalInst ? `Share with Claude (${totalInst}) →` : 'Pick at least one to share';
+    status.textContent = persona ? `${persona.name} · ${totalInst} selected.` : '';
   } else if (state.step === 3) {
     next.disabled = false;
     next.textContent = 'Approve all (1 tap)';
     status.textContent = 'Approving will simulate the OAuth handshake — no real network call.';
   } else if (state.step === 4) {
     next.disabled = true;
-    next.textContent = 'Connected ✓';
-    status.textContent = `Bearer issued. Tools unlocked for ${persona?.name}.`;
+    next.textContent = 'Back in chat ✓';
+    status.textContent = `Bearer issued. Claude can answer about ${persona?.name?.split('—')[0]?.trim() || persona?.name}'s accounts.`;
   }
 }
 

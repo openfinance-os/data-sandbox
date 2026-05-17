@@ -130,7 +130,7 @@ function consentScreenHtml({ nonce, clientId, redirectUri, scope }) {
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Authorize Claude · UAE Open Finance Authority</title>
+<title>Share with Claude · UAE Open Finance Authority</title>
 <style>
   :root {
     --bg:#fafaf7; --bg-soft:#f3f1eb; --bg-card:#fff; --text:#1d1d1b; --text-muted:#5a5a55;
@@ -164,15 +164,15 @@ function consentScreenHtml({ nonce, clientId, redirectUri, scope }) {
 <div class="banner"><strong>SYNTHETIC.</strong> No real customer data. No real institution. This is a simulation of the UAE Open Finance consent journey.</div>
 <main class="shell">
   <div class="card">
-    <h1>Authorize Claude</h1>
-    <p class="sub">on behalf of <strong>"${htmlEscape(clientId)}"</strong> via the UAE Open Finance Authority sandbox</p>
+    <h1>Share with Claude</h1>
+    <p class="sub"><strong>${htmlEscape(clientId)}</strong> will be able to read what you tick below. You can stop sharing at any time.</p>
 
     ${hasBanking ? `<div class="scope"><span class="tick">✓</span><div><strong>Bank Data Sharing</strong><span class="body">${htmlEscape(scopes.filter(s=>!s.startsWith('insurance')).join(' · '))}</span></div></div>` : ''}
-    ${hasInsurance ? `<div class="scope"><span class="tick">✓</span><div><strong>Insurance Data Sharing</strong><span class="body">policies · payment details · quotes — read-only across 7 lines</span></div></div>` : ''}
+    ${hasInsurance ? `<div class="scope"><span class="tick">✓</span><div><strong>Insurance Data Sharing</strong><span class="body">motor · home · health · life · travel · renters · employment renewals and payment details</span></div></div>` : ''}
     <div class="scope off"><span class="tick">✓</span><div><strong>Service Initiation — payments</strong><span class="body">Not requested · v1 read-only</span></div></div>
 
     <p class="footnote">
-      Sharing window <strong>90 days</strong> · Revoke any time at <em>My Consents</em>.
+      Sharing window <strong>90 days</strong> · Revoke any time at <em>portal.openfinance.ae · My Consents</em>.
       Data is <strong>SYNTHETIC</strong>.
     </p>
 
@@ -301,7 +301,7 @@ export function createOAuthSimulation({ issuer, resource, allowedHosts } = {}) {
         authorization_servers: [effectiveIssuer(req)],
         scopes_supported: SUPPORTED_SCOPES,
         bearer_methods_supported: ['header'],
-        resource_documentation: 'https://github.com/openfinance-os/data-sandbox/blob/main/CLAUDE_FOR_OPEN_FINANCE.md',
+        resource_documentation: 'https://github.com/openfinance-os/data-sandbox/blob/main/CLAUDE_PERSONAL_BANKING.md',
       });
       return true;
     }
