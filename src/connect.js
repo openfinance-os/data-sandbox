@@ -111,7 +111,12 @@ function formatAed(n) {
 
 // ─── State ──────────────────────────────────────────────────────────
 
+// view: 'hub' (default landing — two cards + J3 contrast)
+//       'j1'  (Bank-direct MCP labs wizard — was the only view before this redesign)
+//       'j2'  (OF rails TPP via Al Tareq — placeholder in Phase A, wizard in Phase B)
+// step:  1..4 inside the J1 wizard. Ignored when view !== 'j1'.
 const state = {
+  view: 'hub',
   step: 1,
   filter: 'all',
   personas: [],
@@ -131,6 +136,7 @@ function selectedPersona() {
 // (filter, in-flight loaders) is deliberately excluded.
 function serializeStateToParams() {
   const params = new URLSearchParams();
+  if (state.view && state.view !== 'hub') params.set('view', state.view);
   if (state.selectedPersonaId) params.set('persona', state.selectedPersonaId);
   if (state.selectedBankProfiles.size) params.set('banks', [...state.selectedBankProfiles].join(','));
   if (state.selectedInsuranceLines.size) params.set('lines', [...state.selectedInsuranceLines].join(','));
@@ -151,6 +157,16 @@ function pushUrl() {
 function restoreStateFromUrl() {
   const params = new URLSearchParams(window.location.search);
   let any = false;
+  // View routing — explicit ?view=j1|j2|hub, else inferred from legacy state
+  // (a pre-redesign deep-link with persona/step but no view → land in j1).
+  const view = params.get('view');
+  if (view === 'j1' || view === 'j2' || view === 'hub') {
+    state.view = view;
+    if (view !== 'hub') any = true;
+  } else if (params.has('persona') || params.has('banks') || params.has('lines') || params.has('step')) {
+    state.view = 'j1';
+    any = true;
+  }
   const personaId = params.get('persona');
   if (personaId && state.personas.some((p) => p.id === personaId)) {
     state.selectedPersonaId = personaId;
@@ -222,20 +238,43 @@ function firstSelectedLfi() {
 
 // ─── Rendering ─────────────────────────────────────────────────────
 
-function refresh() {
-  document.querySelectorAll('#wizard-steps .step').forEach((node) => {
-    const s = Number(node.dataset.step);
-    node.classList.toggle('active', s === state.step);
-    node.classList.toggle('done', s < state.step);
-  });
-  for (const s of [1, 2, 3, 4]) {
-    document.getElementById(`step-${s}`).hidden = s !== state.step;
+// Hub / J1 / J2 view swap. Run on every refresh so URL → view changes
+// (back/forward, deep-link) stay in sync with the DOM.
+function renderView() {
+  const hub = document.getElementById('hub');
+  const j3 = document.getElementById('j3-contrast');
+  const j1Box = document.getElementById('journey-j1');
+  const j2Box = document.getElementById('journey-j2');
+  const showHub = state.view === 'hub';
+  if (hub) hub.hidden = !showHub;
+  if (j3) j3.hidden = !showHub; // J3 is part of the hub story — only visible there
+  if (j1Box) j1Box.hidden = state.view !== 'j1';
+  if (j2Box) j2Box.hidden = state.view !== 'j2';
+  if (!showHub) {
+    // When entering a journey, scroll back to top so the user lands on the
+    // journey eyebrow rather than wherever the hub scroll left them.
+    window.scrollTo({ top: 0, behavior: 'auto' });
   }
-  if (state.step === 1) renderPersonaGallery();
-  else if (state.step === 2) renderInstitutions();
-  else if (state.step === 3) renderConsent();
-  else if (state.step === 4) renderConnected();
-  renderActions();
+}
+
+function refresh() {
+  renderView();
+  // Only do the J1 wizard rendering work when J1 is actually visible.
+  if (state.view === 'j1') {
+    document.querySelectorAll('#wizard-steps .step').forEach((node) => {
+      const s = Number(node.dataset.step);
+      node.classList.toggle('active', s === state.step);
+      node.classList.toggle('done', s < state.step);
+    });
+    for (const s of [1, 2, 3, 4]) {
+      document.getElementById(`step-${s}`).hidden = s !== state.step;
+    }
+    if (state.step === 1) renderPersonaGallery();
+    else if (state.step === 2) renderInstitutions();
+    else if (state.step === 3) renderConsent();
+    else if (state.step === 4) renderConnected();
+    renderActions();
+  }
   pushUrl();
 }
 
@@ -404,18 +443,22 @@ function renderConsent() {
   const bankList = [...state.selectedBankProfiles].map((p) => `LFI · ${p}`).join('  ·  ');
   const insList = [...state.selectedInsuranceLines].map((l) => INSURANCE_LINE_LABELS[l].name).join('  ·  ');
 
-  const mock = el('div', { className: 'consent-mock', role: 'img', 'aria-label': 'Mock UAE Open Finance consent screen' }, [
+  // J1 framing: this is the BANK's own OAuth screen, not Al Tareq. URL,
+  // heading, and revocation pointer all sit with the bank — that's the
+  // load-bearing distinction between J1 (direct, bank-own consent) and
+  // J2 (regulated, Consent Manager as single source of truth).
+  const mock = el('div', { className: 'consent-mock', role: 'img', 'aria-label': 'Mock bank-own OAuth consent screen (Journey 1)' }, [
     el('div', { className: 'browser-bar' }, [
       el('span', { className: 'dots' }, [el('span'), el('span'), el('span')]),
-      el('span', { className: 'url' }, 'https://auth.openfinance.ae/authorize?client_id=claude&…'),
+      el('span', { className: 'url' }, 'https://auth.your-bank-labs.example/authorize?client_id=claude&…'),
     ]),
   ]);
   const inner = el('div', { className: 'body' });
-  inner.appendChild(el('h4', {}, 'Share with Claude · UAE Open Finance Authority'));
+  inner.appendChild(el('h4', {}, 'Share with Claude · your bank’s labs MCP'));
   inner.appendChild(el('p', { className: 'sub' }, [
-    'Claude will be able to read what you tick. You can stop sharing at any time at ',
-    el('em', {}, 'portal.openfinance.ae · My Consents'),
-    '.',
+    'OAuth 2.1 + PKCE. Claude will be able to read what you tick. You can stop sharing at any time in your bank’s ',
+    el('em', {}, 'Connected apps'),
+    ' page (not Al Tareq — this is the bank’s own consent surface).',
   ]));
 
   inner.appendChild(el('div', { className: 'persona-line' }, [
@@ -454,8 +497,11 @@ function renderConsent() {
     ]),
   ]));
 
-  const footnote = el('p', { className: 'footnote' });
-  footnote.innerHTML = 'Sharing window <strong>90 days</strong> · Revoke any time at <em>My Consents</em>. Data is <strong>SYNTHETIC</strong>. No real customer. No real institution.';
+  const footnote = el('p', { className: 'footnote' }, [
+    'Sharing window ', el('strong', {}, '90 days'),
+    ' · Revoke any time in your bank’s ', el('em', {}, 'Connected apps'), '. ',
+    'Data is ', el('strong', {}, 'SYNTHETIC'), '. No real customer. No real institution.',
+  ]);
   inner.appendChild(footnote);
 
   mock.appendChild(inner);
@@ -498,15 +544,38 @@ function renderConnected() {
     runLiveFetch(persona, lfi, container);
   }
 
-  const reuse = el('div', { className: 'callout' }, [
-    el('strong', {}, 'Want to wire a real Claude.ai connector against this?'),
-    ' Run ',
-    el('code', {}, 'npx -y @openfinance-os/sandbox-mcp --transport http --simulate-oauth'),
-    ' and point Claude at ',
-    el('code', {}, 'http://127.0.0.1:8787/mcp'),
-    '. Discovery, consent, and bearer-gated tool calls all work the same way you walked them above.',
+  // "Or do this for real in Claude" sidebar — the step-4 hook that takes
+  // the walkthrough out of the simulator and into a real Claude.ai chat
+  // backed by the same fixtures. The Fly-hosted MCP server is the
+  // canonical J1 demo surface; the local-install instructions are the
+  // fallback for users behind a corporate firewall.
+  const forReal = el('div', { className: 'for-real-card' }, [
+    el('div', { className: 'label' }, '✦ Or do this for real in Claude'),
+    el('h4', {}, 'Add the sandbox as a Claude.ai custom connector'),
+    el('ol', {}, [
+      el('li', {}, [
+        'Open ', el('strong', {}, 'Claude.ai'),
+        ' (Free, Pro, Max, Team, or Enterprise) → ',
+        el('strong', {}, 'Customize → Connectors → + Add custom connector'),
+        '.',
+      ]),
+      el('li', {}, 'Paste the URL below into the connector URL field. No OAuth Client ID or Secret needed — the deploy is anonymous.'),
+      el('li', {}, [
+        'In a new chat, call the connector and pick the same persona via ',
+        el('code', {}, 'set_session'),
+        '. Then ask: ',
+        el('em', {}, '“what’s my balance?”'),
+      ]),
+    ]),
+    el('div', { className: 'url-copy', 'aria-label': 'Sandbox MCP connector URL' }, 'https://data-sandbox.fly.dev/mcp'),
+    el('a', {
+      className: 'docs-link',
+      href: 'https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp',
+      target: '_blank',
+      rel: 'noopener noreferrer',
+    }, 'Claude custom-connector help →'),
   ]);
-  body.appendChild(reuse);
+  body.appendChild(forReal);
 }
 
 // ─── Multi-endpoint live fetch + chat-and-strip render ─────────────
@@ -926,6 +995,21 @@ function renderActions() {
 // ─── Wiring ────────────────────────────────────────────────────────
 
 function wireControls() {
+  // Hub → journey card clicks. Both buttons drop the user into their
+  // respective journey container. The J1 wizard rehydrates from existing
+  // state (persona / step) so a back-trip from the hub doesn't reset it.
+  const openJ1 = document.getElementById('open-j1');
+  if (openJ1) openJ1.addEventListener('click', () => { state.view = 'j1'; refresh(); });
+  const openJ2 = document.getElementById('open-j2');
+  if (openJ2) openJ2.addEventListener('click', () => { state.view = 'j2'; refresh(); });
+
+  // "← Back to all journeys" links inside each journey container.
+  const goHub = (ev) => { ev.preventDefault(); state.view = 'hub'; refresh(); };
+  const backJ1 = document.getElementById('back-from-j1');
+  if (backJ1) backJ1.addEventListener('click', goHub);
+  const backJ2 = document.getElementById('back-from-j2');
+  if (backJ2) backJ2.addEventListener('click', goHub);
+
   document.querySelectorAll('.persona-filters button').forEach((btn) => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.persona-filters button').forEach((b) => {

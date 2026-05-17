@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="description" content="Walk through what it looks like for a person to connect their UAE bank to Claude in a chat: one-tap consent, a 1-hour bearer, and Claude answering questions grounded in real v2.1 fixture data. Modelled on the Plaid + ChatGPT integration." />
-<title>Connect your UAE bank to Claude — Open Finance Data Sandbox</title>
+<meta name="description" content="Three connection journeys for UAE Open Finance: a bank's own MCP-direct labs path, the regulated Al Tareq TPP flow (single or multi-LFI), and the off-rails Plaid pattern that Article 15 specifically forecloses. All three return the same v2.1 data contract — only the consent journey varies." />
+<title>Connection journeys — Open Finance Data Sandbox</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Crect width=%2716%27 height=%2716%27 rx=%273%27 fill=%27%236E548F%27/%3E%3Ctext x=%278%27 y=%2712%27 font-family=%27system-ui,sans-serif%27 font-size=%2710%27 font-weight=%27700%27 text-anchor=%27middle%27 fill=%27%23fff%27%3E%C2%A4%3C/text%3E%3C/svg%3E" />
 <link rel="stylesheet" href="styles.css" />
 <style>
@@ -100,6 +100,290 @@
   }
   .hero h1 { margin-top: 8px; font-size: 26px; }
   .hero .lead { font-size: 15px; max-width: 680px; }
+
+  /* ─── Hub: two journey cards above the fold ──────────────────────── */
+
+  .journey-hub { margin: 16px 0 22px; }
+  .journey-hub .hub-hero {
+    margin: 0 0 18px;
+    padding: 22px 24px 18px;
+    background: linear-gradient(135deg, var(--accent-soft), var(--bg-card));
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+  }
+  .journey-hub .hub-hero h1 { font-size: 26px; margin: 8px 0 10px; letter-spacing: -0.01em; }
+  .journey-hub .hub-hero .lead { font-size: 15px; max-width: 680px; }
+  .journey-hub .hub-hero .lead.secondary {
+    font-size: 13.5px;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+
+  .journey-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  @media (max-width: 680px) {
+    .journey-cards { grid-template-columns: 1fr; }
+  }
+  .journey-card {
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    padding: 18px 20px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    color: var(--text);
+    transition: border-color 0.12s, box-shadow 0.12s, transform 0.12s;
+  }
+  .journey-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 1px 0 var(--accent-soft);
+    transform: translateY(-1px);
+  }
+  .journey-card:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .journey-card .jc-eyebrow {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .journey-card .jc-icon {
+    font-size: 22px;
+    line-height: 1;
+    margin-bottom: 8px;
+    display: inline-block;
+  }
+  .journey-card .jc-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 6px;
+    letter-spacing: -0.01em;
+  }
+  .journey-card .jc-body {
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--text);
+    margin: 0 0 12px;
+  }
+  .journey-card .jc-meta {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+  .journey-card .jc-meta .pill {
+    display: inline-block;
+    padding: 2px 7px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    margin-right: 4px;
+    font-size: 11px;
+  }
+  .journey-card .jc-cta {
+    margin-top: auto;
+    font-weight: 600;
+    color: var(--accent);
+    font-size: 14px;
+  }
+
+  /* ─── J3 contrast section: static, no CTA, lower visual weight ────── */
+
+  .j3-contrast {
+    margin: 8px 0 26px;
+    padding: 20px 22px 18px;
+    background: var(--bg-soft);
+    border: 1px dashed var(--border-strong);
+    border-radius: 8px;
+  }
+  .j3-contrast .j3-eyebrow {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .j3-contrast h2 {
+    font-size: 17px;
+    margin: 0 0 12px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+  }
+  .j3-contrast h2 .badge-warn {
+    display: inline-block;
+    margin-left: 8px;
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 7px;
+    background: var(--warn-bg, #fff7d4);
+    border: 1px solid var(--warn-border, #d6c374);
+    border-radius: 3px;
+    color: var(--text);
+    vertical-align: middle;
+  }
+  .j3-contrast .j3-diagram {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin: 12px 0 16px;
+  }
+  @media (max-width: 720px) {
+    .j3-contrast .j3-diagram { grid-template-columns: 1fr; }
+  }
+  .j3-contrast .j3-pane {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 12px 10px;
+    font-size: 12.5px;
+  }
+  .j3-contrast .j3-pane.compliant { border-color: #2f6c4a; }
+  .j3-contrast .j3-pane.warn { border-color: #a14242; }
+  .j3-contrast .j3-pane.amber { border-color: #b07b1f; }
+  .j3-contrast .j3-pane .pane-label {
+    font-weight: 700;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 8px;
+  }
+  .j3-contrast .j3-pane.warn .pane-label { color: #a14242; }
+  .j3-contrast .j3-pane.amber .pane-label { color: #b07b1f; }
+  .j3-contrast .j3-pane.compliant .pane-label { color: #2f6c4a; }
+  .j3-contrast .j3-pane svg { width: 100%; height: auto; display: block; margin-bottom: 8px; }
+  .j3-contrast .j3-pane .pane-body { font-size: 12px; color: var(--text); line-height: 1.5; }
+  .j3-contrast .j3-explainer p {
+    font-size: 13.5px;
+    line-height: 1.6;
+    margin: 0 0 8px;
+  }
+  .j3-contrast .j3-explainer p:last-child { margin-bottom: 0; }
+  .j3-contrast .j3-explainer blockquote {
+    margin: 6px 0;
+    padding: 8px 12px;
+    border-left: 3px solid var(--border-strong);
+    background: var(--bg-card);
+    font-size: 13px;
+    color: var(--text);
+    font-style: italic;
+  }
+
+  /* ─── Journey container (wraps a journey's wizard + supporting copy) — */
+
+  .journey-container[hidden] { display: none !important; }
+  .journey-back {
+    font-size: 12px;
+    margin: 8px 0 14px;
+  }
+  .journey-back a { color: var(--text-muted); }
+  .journey-eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin: 0 0 4px;
+    font-weight: 600;
+  }
+  .journey-title {
+    font-size: 22px;
+    margin: 0 0 6px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .journey-pitch {
+    font-size: 14px;
+    color: var(--text);
+    margin: 0 0 18px;
+    max-width: 700px;
+  }
+
+  /* ─── "Or do this for real in Claude" sidebar (J1 step 4) ─────────── */
+
+  .for-real-card {
+    margin-top: 14px;
+    padding: 16px 18px 14px;
+    border: 1px solid var(--accent);
+    background: var(--accent-soft);
+    border-radius: 6px;
+  }
+  .for-real-card .label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .for-real-card h4 {
+    font-size: 15px;
+    margin: 0 0 10px;
+    font-weight: 600;
+  }
+  .for-real-card ol {
+    margin: 8px 0 8px 18px;
+    padding: 0;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .for-real-card ol li { margin-bottom: 4px; }
+  .for-real-card code {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-strong);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+  .for-real-card .url-copy {
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12.5px;
+    word-break: break-all;
+  }
+  .for-real-card .docs-link {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 12.5px;
+  }
+
+  /* ─── J2 placeholder card (Phase A — wizard arrives in Phase B) ───── */
+
+  .j2-placeholder {
+    padding: 28px 24px;
+    border: 1px dashed var(--border-strong);
+    background: var(--bg-soft);
+    border-radius: 6px;
+    text-align: center;
+  }
+  .j2-placeholder h3 {
+    font-size: 16px;
+    margin: 0 0 8px;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--text);
+  }
+  .j2-placeholder p {
+    font-size: 13.5px;
+    color: var(--text-muted);
+    margin: 0 auto;
+    max-width: 520px;
+  }
 
   /* ─── Wizard ─────────────────────────────────────────────────────── */
 
@@ -913,21 +1197,168 @@
 <main class="connect-shell">
   <p class="back-link"><a href="index.html">← Back to the sandbox</a></p>
 
-  <section class="hero">
-    <span class="status-pill" aria-label="Simulation status">Walkthrough · Synthetic sandbox</span>
-    <p class="eyebrow">Connect</p>
-    <h1>Your UAE bank to Claude</h1>
-    <p class="lead">
-      Answers grounded in your real accounts. One-tap consent, a 1-hour bearer, and Claude can
-      read what you tick — accounts, balances, transactions, insurance renewals. Stop sharing
-      any time at the UAE Open Finance Authority's <em>My Consents</em> page.
-    </p>
-    <p class="lead" style="font-size:13.5px;color:var(--text-muted);max-width:680px;">
-      Modelled on the <a href="https://plaid.com/blog/chatgpt-personal-finance-plaid/" target="_blank" rel="noopener noreferrer">Plaid + ChatGPT integration</a>
-      and projected onto this repo's synthetic UAE Open Finance v2.1 sandbox. Walk the four
-      steps below; nothing here is endorsed by Anthropic, CBUAE, Nebras, or any UAE LFI.
-    </p>
+  <!-- ============================================================== -->
+  <!-- HUB — two tryable journey cards (J1 + J2)                       -->
+  <!-- ============================================================== -->
+
+  <section class="journey-hub" id="hub">
+    <div class="hub-hero">
+      <span class="status-pill" aria-label="Simulation status">Walkthrough · Synthetic sandbox</span>
+      <p class="eyebrow">Connect</p>
+      <h1>How AI assistants reach your bank data</h1>
+      <p class="lead">
+        Three shapes a connection can take in (or alongside) UAE Open Finance. All three return the
+        <strong>same v2.1 data contract</strong> — only the consent journey varies. Two are tryable
+        below; the third is shown for context as the pattern UAE Open Finance was designed to replace.
+      </p>
+      <p class="lead secondary">
+        Nothing here is endorsed by Anthropic, CBUAE, Nebras, or any UAE LFI. Every persona is
+        synthetic; bank profiles are anonymous Rich/Median/Sparse populate-rate bands, never real
+        UAE bank names (PRD NG5 / D-14).
+      </p>
+    </div>
+
+    <div class="journey-cards" role="list" aria-label="Pick a connection journey">
+      <button type="button" class="journey-card" id="open-j1" data-journey="j1" role="listitem" aria-describedby="j1-desc">
+        <span class="jc-eyebrow">Journey 1 · Single-entity</span>
+        <span class="jc-icon" aria-hidden="true">🏦</span>
+        <h3 class="jc-title">Bank-direct (MCP labs)</h3>
+        <p class="jc-body" id="j1-desc">
+          What if your bank ran a labs MCP endpoint exposing the same OF v2.1 data shape directly to
+          its own retail or SME customer — no TPP, no Al Tareq? The bank's own OAuth handles consent.
+        </p>
+        <div class="jc-meta">
+          <span class="pill">Retail or SME</span>
+          <span class="pill">OAuth 2.1 + PKCE</span>
+          <span class="pill">OF v2.1 data</span>
+        </div>
+        <span class="jc-cta" aria-hidden="true">Try this →</span>
+      </button>
+
+      <button type="button" class="journey-card" id="open-j2" data-journey="j2" role="listitem" aria-describedby="j2-desc">
+        <span class="jc-eyebrow">Journey 2 · OF rails</span>
+        <span class="jc-icon" aria-hidden="true">🔗</span>
+        <h3 class="jc-title">TPP via Al Tareq</h3>
+        <p class="jc-body" id="j2-desc">
+          A regulated TPP — or an agent acting as TPP — aggregates one or many LFIs through the Al
+          Tareq CAAP consent flow and returns a holistic PFM (Retail) or BFM (SME) view.
+        </p>
+        <div class="jc-meta">
+          <span class="pill">Single or multi LFI</span>
+          <span class="pill">FAPI 2.0</span>
+          <span class="pill">PFM / BFM</span>
+        </div>
+        <span class="jc-cta" aria-hidden="true">Try this →</span>
+      </button>
+    </div>
   </section>
+
+  <!-- ============================================================== -->
+  <!-- J3 CONTRAST — static. No CTA. Always visible.                  -->
+  <!-- ============================================================== -->
+
+  <section class="j3-contrast" id="j3-contrast" aria-labelledby="j3-heading">
+    <p class="j3-eyebrow">For context · what UAE Open Finance replaced</p>
+    <h2 id="j3-heading">
+      Off-rails aggregator (Plaid-pattern)
+      <span class="badge-warn" aria-label="Not a compliant UAE path">Not compliant in UAE</span>
+    </h2>
+
+    <div class="j3-diagram" role="img" aria-label="Three-pane comparison: screen-scrape, partner-deal, and the regulated Al Tareq path">
+      <div class="j3-pane warn">
+        <div class="pane-label">⚠ Screen-scraping</div>
+        <svg viewBox="0 0 180 90" aria-hidden="true">
+          <rect x="6" y="34" width="34" height="22" rx="3" fill="#fff" stroke="#a14242" stroke-width="1.2"/>
+          <text x="23" y="48" text-anchor="middle" font-size="9" fill="#a14242" font-family="system-ui">User</text>
+          <line x1="40" y1="45" x2="68" y2="45" stroke="#a14242" stroke-width="1.2" stroke-dasharray="3,2"/>
+          <text x="54" y="40" text-anchor="middle" font-size="7" fill="#a14242" font-family="system-ui">creds</text>
+          <rect x="68" y="30" width="44" height="30" rx="3" fill="#fbe9e9" stroke="#a14242" stroke-width="1.2"/>
+          <text x="90" y="42" text-anchor="middle" font-size="8" fill="#a14242" font-family="system-ui">Scraper</text>
+          <text x="90" y="52" text-anchor="middle" font-size="7" fill="#a14242" font-family="system-ui">(no consent)</text>
+          <line x1="112" y1="45" x2="140" y2="45" stroke="#a14242" stroke-width="1.2"/>
+          <rect x="140" y="34" width="34" height="22" rx="3" fill="#fff" stroke="#a14242" stroke-width="1.2"/>
+          <text x="157" y="48" text-anchor="middle" font-size="8" fill="#a14242" font-family="system-ui">Bank UI</text>
+        </svg>
+        <div class="pane-body">User hands their internet-banking credentials to an aggregator that logs in as them and reads the screen. The bank never sees an authorization step.</div>
+      </div>
+      <div class="j3-pane amber">
+        <div class="pane-label">⚠ Partner back-channel</div>
+        <svg viewBox="0 0 180 90" aria-hidden="true">
+          <rect x="6" y="34" width="34" height="22" rx="3" fill="#fff" stroke="#b07b1f" stroke-width="1.2"/>
+          <text x="23" y="48" text-anchor="middle" font-size="9" fill="#b07b1f" font-family="system-ui">User</text>
+          <line x1="40" y1="45" x2="68" y2="45" stroke="#b07b1f" stroke-width="1.2"/>
+          <rect x="68" y="30" width="44" height="30" rx="3" fill="#fdf1da" stroke="#b07b1f" stroke-width="1.2"/>
+          <text x="90" y="42" text-anchor="middle" font-size="8" fill="#b07b1f" font-family="system-ui">Aggregator</text>
+          <text x="90" y="52" text-anchor="middle" font-size="7" fill="#b07b1f" font-family="system-ui">(partner deal)</text>
+          <line x1="112" y1="45" x2="140" y2="45" stroke="#b07b1f" stroke-width="1.2" stroke-dasharray="3,2"/>
+          <text x="126" y="40" text-anchor="middle" font-size="7" fill="#b07b1f" font-family="system-ui">private API</text>
+          <rect x="140" y="34" width="34" height="22" rx="3" fill="#fff" stroke="#b07b1f" stroke-width="1.2"/>
+          <text x="157" y="48" text-anchor="middle" font-size="8" fill="#b07b1f" font-family="system-ui">Bank</text>
+        </svg>
+        <div class="pane-body">Aggregator and bank arrange a back-channel feed via a commercial deal. Less risky than scraping, but no consent broker — the user has no central registry to inspect or revoke.</div>
+      </div>
+      <div class="j3-pane compliant">
+        <div class="pane-label">✓ Al Tareq (Journey 2)</div>
+        <svg viewBox="0 0 180 90" aria-hidden="true">
+          <rect x="6" y="34" width="30" height="22" rx="3" fill="#fff" stroke="#2f6c4a" stroke-width="1.2"/>
+          <text x="21" y="48" text-anchor="middle" font-size="9" fill="#2f6c4a" font-family="system-ui">User</text>
+          <line x1="36" y1="45" x2="60" y2="45" stroke="#2f6c4a" stroke-width="1.2"/>
+          <rect x="60" y="30" width="38" height="30" rx="3" fill="#e3efe6" stroke="#2f6c4a" stroke-width="1.4"/>
+          <text x="79" y="42" text-anchor="middle" font-size="8" fill="#2f6c4a" font-family="system-ui">Al Tareq</text>
+          <text x="79" y="52" text-anchor="middle" font-size="7" fill="#2f6c4a" font-family="system-ui">(CAAP)</text>
+          <line x1="98" y1="45" x2="120" y2="45" stroke="#2f6c4a" stroke-width="1.2"/>
+          <rect x="120" y="22" width="50" height="14" rx="2" fill="#fff" stroke="#2f6c4a" stroke-width="1.2"/>
+          <text x="145" y="32" text-anchor="middle" font-size="7.5" fill="#2f6c4a" font-family="system-ui">LFI A</text>
+          <rect x="120" y="38" width="50" height="14" rx="2" fill="#fff" stroke="#2f6c4a" stroke-width="1.2"/>
+          <text x="145" y="48" text-anchor="middle" font-size="7.5" fill="#2f6c4a" font-family="system-ui">LFI B</text>
+          <rect x="120" y="54" width="50" height="14" rx="2" fill="#fff" stroke="#2f6c4a" stroke-width="1.2"/>
+          <text x="145" y="64" text-anchor="middle" font-size="7.5" fill="#2f6c4a" font-family="system-ui">LFI C</text>
+        </svg>
+        <div class="pane-body">User authorizes a TPP through Al Tareq's CAAP. Consent Manager is the single source of truth. Every LFI sees a regulated request; the user has one place to inspect and revoke.</div>
+      </div>
+    </div>
+
+    <div class="j3-explainer">
+      <p>
+        In markets without open finance, multi-institution aggregation works the way Plaid built it in
+        the US: customers paste their bank credentials into a third party that logs in as them, or a
+        commercial partner deal opens a back-channel feed. It works — and it's how a lot of consumer
+        fintech got off the ground — but the user has no consent broker, no scope picker, and no central
+        revocation portal.
+      </p>
+      <p>
+        UAE Open Finance is built to close that gap. Article 15 of CBUAE Circular C 03/2025 is explicit:
+      </p>
+      <blockquote>
+        Licensees must […] establish dedicated interface via API Hub for secure access. […] [The following
+        are] prohibited: data scraping or similar extraction activities; interception of digital
+        connections via reverse engineering.
+      </blockquote>
+      <p>
+        That's why <strong>Journey 1 is not Journey 3</strong>, even though both bypass a third-party
+        consent broker. J1 is a bank serving its <em>own</em> customer with its <em>own</em> data — not
+        "Data Sharing" in the regulated sense, so Article 15's prohibitions don't apply. J3 is a third
+        party reaching <em>across</em> institutions without the regulated rails. That's the line UAE OF
+        draws.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- JOURNEY 1 — Bank-direct (MCP labs)                              -->
+  <!-- Reuses the existing 4-step wizard; copy revised for J1 framing.  -->
+  <!-- ============================================================== -->
+
+  <section class="journey-container" id="journey-j1" hidden aria-labelledby="j1-title">
+    <p class="journey-back"><a href="#hub" id="back-from-j1">← Back to all journeys</a></p>
+    <p class="journey-eyebrow">Journey 1 · Bank-direct (MCP labs)</p>
+    <h2 class="journey-title" id="j1-title">Your bank's own connector — to Claude</h2>
+    <p class="journey-pitch">
+      A simulation of what an LFI's own MCP endpoint could look like if it exposed the OF v2.1 data
+      contract directly to its retail or SME customers. The consent screen below is the bank's own
+      OAuth — no Al Tareq, no Nebras. The same OAuth 2.1 + PKCE flow powers the live
+      <code>--simulate-oauth</code> mode of the sandbox's MCP server.
+    </p>
 
   <!-- ============================================================== -->
   <!-- WIZARD                                                          -->
@@ -966,24 +1397,24 @@
       <p class="step-title">Step 2 of 4</p>
       <h2 class="step-h">Pick the bank you hold with</h2>
       <p class="step-sub" id="step-2-sub">
-        Connecting via the UAE Open Finance Authority. Tap the bank you actually hold a
-        relationship with; the sandbox surfaces each one as an anonymised populate-rate band
-        (Rich · Median · Sparse) per PRD <abbr title="Non-Goal 5">NG5</abbr> — never as a named
-        real bank. Same shape as Plaid Link's institution picker.
+        Pretend this is your bank's own labs MCP. Pick the populate-rate band you want to simulate
+        — Rich (every optional field set), Median (typical UAE-market posture), or Sparse
+        (minimum-conformant). The sandbox uses anonymous bands per PRD
+        <abbr title="Non-Goal 5">NG5</abbr> — never a named real bank.
       </p>
       <div id="institutions-body" class="institutions-block">
         <p class="skeleton">Pick a persona to see their applicable institutions.</p>
       </div>
     </div>
 
-    <!-- Step 3: consent -->
+    <!-- Step 3: consent — your bank's own OAuth, not Al Tareq (J1 framing) -->
     <div class="wizard-body" id="step-3" hidden>
       <p class="step-title">Step 3 of 4</p>
       <h2 class="step-h">Share with Claude</h2>
       <p class="step-sub">
-        The UAE Open Finance Authority consent screen Claude would surface. Claude is asking
-        to read your accounts, balances, transactions, and insurance renewals for the next
-        90 days. Tap Approve to share, or Deny to back out.
+        Your bank's own OAuth consent screen — the same shape <code>--simulate-oauth</code>
+        renders today. Claude is asking to read your accounts, balances, transactions, and
+        insurance renewals for the next 90 days. Tap Approve to share, or Deny to back out.
       </p>
       <div id="consent-body"></div>
     </div>
@@ -1009,61 +1440,88 @@
     </div>
   </section>
 
-  <!-- ============================================================== -->
-  <!-- SUPPORTING CONTENT (post-wizard)                                -->
-  <!-- ============================================================== -->
+    <!-- ============================================================ -->
+    <!-- J1 SUPPORTING CONTENT (post-wizard)                            -->
+    <!-- ============================================================ -->
 
-  <section>
-    <h2>How to revoke</h2>
-    <p>
-      The consent screen pointed at <em>portal.openfinance.ae · My Consents</em> — the UAE
-      Open Finance Authority's mock revoke page. In v1 of this sandbox it's a pointer, not
-      a working URL; the journey it implies is the same one
-      <a href="https://my.plaid.com" target="_blank" rel="noopener noreferrer">Plaid Portal</a>
-      models: every connection I've authorized, what data each one can read, when I gave
-      permission, and a one-click <em>stop sharing</em> that wipes the bearer server-side
-      and 401s every subsequent call.
-    </p>
-    <p>
-      Until that page is real, the local equivalent is
-      <code>DELETE /mcp</code> with <code>Mcp-Session-Id</code> — the sandbox-mcp server
-      destroys the session and forces re-authentication on the next call.
-    </p>
-  </section>
+    <section>
+      <h2>How to revoke (J1)</h2>
+      <p>
+        Because J1's consent is the bank's own OAuth — not Al Tareq — revocation lives in the
+        <em>bank's</em> labs portal, not the regulator's Consent Manager. Locally, the equivalent
+        is <code>DELETE /mcp</code> with <code>Mcp-Session-Id</code> — the sandbox-mcp server
+        destroys the session and the next tool call gets a 401.
+      </p>
+      <p>
+        In a real LFI deployment, this would be a "Connected apps" / "Active sessions" page in
+        the bank's mobile or web app, with one-click <em>stop sharing</em> per connector. The
+        UAE OF Consent Manager is not in this loop — that's J2's territory.
+      </p>
+    </section>
 
-  <section>
-    <h2>Try the journey for real</h2>
-    <p>
-      The wizard above is a UI mock. To exercise the actual OAuth handshake — 401 challenge,
-      RFC 9728 + RFC 8414 metadata, PKCE-validated <code>/token</code> exchange, bearer-gated
-      <code>/mcp</code> — start the MCP server with the opt-in simulation flag:
-    </p>
-    <pre><code># Anonymous — the production default per PRD D-13
+    <section id="try-for-real">
+      <h2>Try this journey for real in Claude</h2>
+      <p>
+        The wizard above is a UI mock; the actual OAuth handshake — 401 challenge, RFC 9728 +
+        RFC 8414 metadata, PKCE-validated <code>/token</code> exchange, bearer-gated <code>/mcp</code>
+        — is already live at <a href="https://data-sandbox.fly.dev/mcp" target="_blank" rel="noopener noreferrer"><code>https://data-sandbox.fly.dev/mcp</code></a>.
+        Add it as a custom connector in <strong>Claude.ai → Customize → Connectors → Add custom
+        connector</strong>, paste the URL, and chat as if the sandbox were your bank's labs MCP.
+      </p>
+      <pre><code># Or run your own instance locally
 npx -y @openfinance-os/sandbox-mcp --transport http --port 8787
 
-# Opt-in OAuth simulation
+# Opt-in OAuth simulation (J1 consent screen end-to-end)
 npx -y @openfinance-os/sandbox-mcp --transport http --port 8787 --simulate-oauth
 # or:
 MCP_SIMULATE_OAUTH=1 npx -y @openfinance-os/sandbox-mcp --transport http</code></pre>
-    <p>
-      A short design memo for this page lives at
-      <a href="https://github.com/openfinance-os/data-sandbox/blob/main/CLAUDE_PERSONAL_BANKING.md" target="_blank" rel="noopener noreferrer"><code>CLAUDE_PERSONAL_BANKING.md</code></a>;
-      the OAuth simulation lives at
-      <a href="https://github.com/openfinance-os/data-sandbox/blob/main/packages/sandbox-mcp/src/transports/oauth-simulation.mjs" target="_blank" rel="noopener noreferrer"><code>packages/sandbox-mcp/src/transports/oauth-simulation.mjs</code></a>.
-    </p>
-  </section>
+      <p>
+        Helpful links:
+        <a href="https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp" target="_blank" rel="noopener noreferrer">Claude custom-connector help</a>
+        · <a href="https://github.com/openfinance-os/data-sandbox/blob/main/CLAUDE_PERSONAL_BANKING.md" target="_blank" rel="noopener noreferrer"><code>CLAUDE_PERSONAL_BANKING.md</code></a>
+        · <a href="https://github.com/openfinance-os/data-sandbox/blob/main/packages/sandbox-mcp/src/transports/oauth-simulation.mjs" target="_blank" rel="noopener noreferrer"><code>oauth-simulation.mjs</code></a>
+      </p>
+    </section>
 
-  <section>
-    <h2>Status &amp; scope</h2>
-    <p>
-      This page is a <strong>simulation, not a roadmap</strong>. Nothing here changes the load-bearing
-      invariants of the sandbox: spec-driven field metadata (EXP-01), no real customer data
-      (NG4 / EXP-07), no institution-specific operational detail (NG5 / D-14), deterministic
-      generation (EXP-05), Standards baseline v2.1 only (D-01), and no separate contributor
-      branding (NG6). Real UAE bank names appear only in the SME advisory panel pulled from
-      each persona's <code>multi_lfi_footprint.plausible_lfi_candidates</code> — never bound
-      to a populate-rate profile.
+    <section>
+      <h2>Status &amp; scope (applies to all journeys)</h2>
+      <p>
+        These pages are <strong>simulations, not a roadmap</strong>. Nothing here changes the load-bearing
+        invariants of the sandbox: spec-driven field metadata (EXP-01), no real customer data
+        (NG4 / EXP-07), no institution-specific operational detail (NG5 / D-14), deterministic
+        generation (EXP-05), Standards baseline v2.1 only (D-01), and no separate contributor
+        branding (NG6). Real UAE bank names appear only in the SME advisory panel pulled from
+        each persona's <code>multi_lfi_footprint.plausible_lfi_candidates</code> — never bound
+        to a populate-rate profile.
+      </p>
+    </section>
+  </section> <!-- /journey-j1 -->
+
+  <!-- ============================================================== -->
+  <!-- JOURNEY 2 — OF rails (TPP via Al Tareq)                         -->
+  <!-- Phase A: placeholder. Wizard arrives in Phase B.                -->
+  <!-- ============================================================== -->
+
+  <section class="journey-container" id="journey-j2" hidden aria-labelledby="j2-title">
+    <p class="journey-back"><a href="#hub" id="back-from-j2">← Back to all journeys</a></p>
+    <p class="journey-eyebrow">Journey 2 · OF rails (TPP via Al Tareq)</p>
+    <h2 class="journey-title" id="j2-title">Regulated multi-LFI aggregation</h2>
+    <p class="journey-pitch">
+      A TPP — or an agent acting as TPP — walks the user through the Al Tareq CAAP consent
+      flow to authorize access at one or many LFIs at once. FAPI 2.0, mTLS via OFTF, Consent
+      Manager as the single source of truth. The end-state is a holistic PFM (Retail) or BFM
+      (SME) view aggregated across the consented LFIs.
     </p>
+    <div class="j2-placeholder">
+      <h3>Wizard arrives in the next iteration</h3>
+      <p>
+        Phase B of this redesign will add the 5-step J2 flow: persona → single/multi scope →
+        LFI selection → Al Tareq CAAP consent screen → PFM/BFM dashboard. Until then, the
+        <a href="../examples/tpp-budgeting-demo/index.html">worked TPP budgeting demo</a> is
+        the closest existing surface: it consumes the same v2.1 fixtures over raw HTTPS the
+        way a regulated TPP app would.
+      </p>
+    </div>
   </section>
 
   <section>

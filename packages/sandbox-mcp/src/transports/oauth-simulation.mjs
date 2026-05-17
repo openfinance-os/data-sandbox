@@ -3,9 +3,16 @@
 // Default deploy at https://data-sandbox.fly.dev/mcp remains anonymous per
 // PRD D-13 ("Anonymous — no auth, no API keys, no OAuth. The data is
 // synthetic so there is nothing to protect"). This module is wired only
-// when --simulate-oauth / MCP_SIMULATE_OAUTH=1 is set, and exists so a TPP
-// can demo a full UAE Open Finance consent journey end-to-end against
-// synthetic payloads before integrating the real Nebras client.
+// when --simulate-oauth / MCP_SIMULATE_OAUTH=1 is set.
+//
+// Journey framing: this is Journey 1 of /connect — a *bank's own* OAuth
+// consent screen layered in front of the bank's labs MCP. It is NOT the
+// Al Tareq CAAP / Nebras Consent Manager flow (that's Journey 2, which
+// runs through the regulated API Hub and a different consent surface).
+// Both journeys return the same OF v2.1 data contract; only the consent
+// UI differs. The data contract reuse is the load-bearing point — and
+// what makes this simulation faithful to UAE Open Finance even though
+// the consent UI here is the bank's own, not the regulator's.
 //
 // Exposes the four endpoints an MCP-spec-compliant OAuth client expects:
 //
@@ -130,7 +137,7 @@ function consentScreenHtml({ nonce, clientId, redirectUri, scope }) {
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Share with Claude · UAE Open Finance Authority</title>
+<title>Share with Claude · your bank’s labs MCP</title>
 <style>
   :root {
     --bg:#fafaf7; --bg-soft:#f3f1eb; --bg-card:#fff; --text:#1d1d1b; --text-muted:#5a5a55;
@@ -161,18 +168,18 @@ function consentScreenHtml({ nonce, clientId, redirectUri, scope }) {
 </style></head>
 <body>
 <div class="stripe"></div>
-<div class="banner"><strong>SYNTHETIC.</strong> No real customer data. No real institution. This is a simulation of the UAE Open Finance consent journey.</div>
+<div class="banner"><strong>SYNTHETIC.</strong> No real customer data. No real institution. This is a simulation of a bank-own OAuth consent — Journey 1 of <code>/connect</code> on the sandbox. The regulated Al Tareq flow is Journey 2.</div>
 <main class="shell">
   <div class="card">
     <h1>Share with Claude</h1>
-    <p class="sub"><strong>${htmlEscape(clientId)}</strong> will be able to read what you tick below. You can stop sharing at any time.</p>
+    <p class="sub">OAuth 2.1 + PKCE. <strong>${htmlEscape(clientId)}</strong> will be able to read what you tick below. You can stop sharing at any time in your bank’s <em>Connected apps</em> page.</p>
 
     ${hasBanking ? `<div class="scope"><span class="tick">✓</span><div><strong>Bank Data Sharing</strong><span class="body">${htmlEscape(scopes.filter(s=>!s.startsWith('insurance')).join(' · '))}</span></div></div>` : ''}
     ${hasInsurance ? `<div class="scope"><span class="tick">✓</span><div><strong>Insurance Data Sharing</strong><span class="body">motor · home · health · life · travel · renters · employment renewals and payment details</span></div></div>` : ''}
     <div class="scope off"><span class="tick">✓</span><div><strong>Service Initiation — payments</strong><span class="body">Not requested · v1 read-only</span></div></div>
 
     <p class="footnote">
-      Sharing window <strong>90 days</strong> · Revoke any time at <em>portal.openfinance.ae · My Consents</em>.
+      Sharing window <strong>90 days</strong> · Revoke any time in your bank’s <em>Connected apps</em> page (not Al Tareq — this is the bank’s own consent surface).
       Data is <strong>SYNTHETIC</strong>.
     </p>
 
