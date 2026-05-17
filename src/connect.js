@@ -1786,15 +1786,21 @@ const J2_SUB_STEPS = [
 // state / URL) since it's just a fetch cache — accounts come from the
 // persona's deterministic bundle, so re-fetch is cheap but also redundant
 // once we've seen them this session.
-const j2AccountCache = new Map(); // lfiKey → Account[]
+//
+// Key MUST include personaId — different personas yield different
+// AccountIds at the same LFI profile, and a stale cache hit would write
+// the wrong AccountIds into state.j2SelectedAccounts and the minted
+// consent record.
+const j2AccountCache = new Map(); // `${personaId}:${lfiKey}` → Account[]
 
 async function fetchJ2AccountsFor(persona, lfiKey) {
-  if (j2AccountCache.has(lfiKey)) return j2AccountCache.get(lfiKey);
+  const cacheKey = `${persona.id}:${lfiKey}`;
+  if (j2AccountCache.has(cacheKey)) return j2AccountCache.get(cacheKey);
   if (!persona.default_seed) return [];
   const base = `../fixtures/v1/bundles/${persona.id}/${lfiKey}/seed-${persona.default_seed}`;
   const env = await fetchJson(`${base}/accounts.json`);
   const accounts = env?.Data?.Account ?? [];
-  j2AccountCache.set(lfiKey, accounts);
+  j2AccountCache.set(cacheKey, accounts);
   // Default selection: all accounts ticked (Standards default — TPP gets
   // every account unless the user narrows it down).
   if (!state.j2SelectedAccounts.has(lfiKey)) {
@@ -2730,10 +2736,19 @@ function wireControls() {
   });
   document.getElementById('btn-restart').addEventListener('click', () => {
     state.step = 1;
+    state.subStep = 'discovery';
     state.selectedPersonaId = null;
     state.selectedBankProfiles = new Set();
     state.selectedInsuranceLines = new Set();
     state.approved = false;
+    // Clear the J1 consent + reset form defaults so the next pass starts
+    // clean. Without this, the J1 ConsentId from the previous run lingers
+    // in state.j1ConsentId / consentRecords, defeating the step-4 gate
+    // and the Consent Manager view.
+    state.j1ConsentId = null;
+    state.j1Permissions = new Set(OF_PERMISSIONS.map((p) => p.key));
+    state.j1ExpirationDays = 90;
+    state.consentRecords = state.consentRecords.filter((r) => r.source !== 'j1');
     refresh();
   });
   document.querySelectorAll('#wizard-steps .step').forEach((node) => {
@@ -2855,9 +2870,24 @@ function wireControls() {
   const j2Restart = document.getElementById('j2-btn-restart');
   if (j2Restart) j2Restart.addEventListener('click', () => {
     state.j2Step = 1;
+    state.j2SubStep = 'tpp';
+    state.j2SCAIndex = 0;
     state.j2Scope = null;
     state.j2SelectedLFIs = new Set();
     state.j2Approved = false;
+    // Clear stale ConsentIds, J2 consent records, per-LFI account picks,
+    // and reset the parameter form to defaults. Without this, the J2
+    // ConsentIds from the previous run linger and the step-5 stepper gate
+    // (which checks j2ConsentIds.size) would let the user skip the consent
+    // flow entirely after restart. Restart MUST land you somewhere where
+    // the dashboard requires re-consent to reach.
+    state.j2ConsentIds = new Map();
+    state.j2SelectedAccounts = new Map();
+    state.j2Permissions = new Set(OF_PERMISSIONS.map((p) => p.key));
+    state.j2ExpirationDays = 90;
+    state.j2IsSingleAuth = false;
+    state.j2TransactionMonths = 13;
+    state.consentRecords = state.consentRecords.filter((r) => r.source !== 'j2');
     refresh();
   });
   document.querySelectorAll('#j2-wizard-steps .step').forEach((node) => {
