@@ -390,6 +390,8 @@ function serializeStateToParams() {
   if (state.j2SelectedLFIs.size) params.set('j2lfis', [...state.j2SelectedLFIs].join(','));
   // J2 sub-step (only meaningful when view=j2 and j2step=4)
   if (state.j2SubStep && state.j2SubStep !== 'tpp' && state.j2Step === 4) params.set('j2substep', state.j2SubStep);
+  // J2 SCA index (only meaningful when j2substep=sca)
+  if (state.j2SCAIndex > 0 && state.j2SubStep === 'sca' && state.j2Step === 4) params.set('j2scaindex', String(state.j2SCAIndex));
   return params;
 }
 
@@ -472,6 +474,11 @@ function restoreStateFromUrl() {
   if (j2Sub === 'tpp' || j2Sub === 'altareq' || j2Sub === 'sca' || j2Sub === 'manager') {
     state.j2SubStep = j2Sub;
     if (j2Sub !== 'tpp') any = true;
+  }
+  const j2ScaIdx = parseInt(params.get('j2scaindex') || '0', 10);
+  if (j2ScaIdx > 0 && j2ScaIdx < state.j2SelectedLFIs.size) {
+    state.j2SCAIndex = j2ScaIdx;
+    any = true;
   }
   return any;
 }
@@ -1695,7 +1702,30 @@ function renderJ2LFIs() {
 const J2_SUB_STEPS = [
   { key: 'tpp',     label: 'TPP launchpad' },
   { key: 'altareq', label: 'Al Tareq consent' },
+  { key: 'sca',     label: 'Per-LFI sign-in' },
+  { key: 'manager', label: 'Consent Manager' },
 ];
+
+// Account cache for J2 SCA per-LFI account picker. Module-level (not in
+// state / URL) since it's just a fetch cache — accounts come from the
+// persona's deterministic bundle, so re-fetch is cheap but also redundant
+// once we've seen them this session.
+const j2AccountCache = new Map(); // lfiKey → Account[]
+
+async function fetchJ2AccountsFor(persona, lfiKey) {
+  if (j2AccountCache.has(lfiKey)) return j2AccountCache.get(lfiKey);
+  if (!persona.default_seed) return [];
+  const base = `../fixtures/v1/bundles/${persona.id}/${lfiKey}/seed-${persona.default_seed}`;
+  const env = await fetchJson(`${base}/accounts.json`);
+  const accounts = env?.Data?.Account ?? [];
+  j2AccountCache.set(lfiKey, accounts);
+  // Default selection: all accounts ticked (Standards default — TPP gets
+  // every account unless the user narrows it down).
+  if (!state.j2SelectedAccounts.has(lfiKey)) {
+    state.j2SelectedAccounts.set(lfiKey, new Set(accounts.map((a) => a.AccountId)));
+  }
+  return accounts;
+}
 
 function renderJ2Consent() {
   const persona = selectedPersona();
@@ -1710,9 +1740,9 @@ function renderJ2Consent() {
 
   if (state.j2SubStep === 'tpp') renderJ2TppLaunchpad(body, persona);
   else if (state.j2SubStep === 'altareq') renderJ2AlTareq(body, persona);
+  else if (state.j2SubStep === 'sca') renderJ2SCA(body, persona);
+  else if (state.j2SubStep === 'manager') renderJ2ConsentConfirmed(body, persona);
   else {
-    // Unknown sub-step (e.g. deep-link with a Part-2-only value) — fall
-    // back to the first sub-step.
     state.j2SubStep = 'tpp';
     renderJ2TppLaunchpad(body, persona);
   }
@@ -1870,6 +1900,180 @@ function renderJ2AlTareq(body, persona) {
 
   consent.appendChild(inner);
   body.appendChild(consent);
+}
+
+// 4c — Per-LFI SCA + account selection. Walks each selected LFI sequentially
+// via state.j2SCAIndex. For each LFI: bank chrome → username + password +
+// OTP (decorative, Article 18 SCA framing) → account picker fetched lazily
+// from the persona's bundle at that LFI. The main wizard Next button mints
+// a ConsentId for the current LFI and advances the index, or jumps to 4d
+// once the last LFI is done.
+function renderJ2SCA(body, persona) {
+  const lfiKeys = [...state.j2SelectedLFIs];
+  if (!lfiKeys.length) {
+    body.appendChild(el('p', { className: 'skeleton' }, 'No LFIs selected — go back to step 3.'));
+    return;
+  }
+  // Clamp index defensively.
+  if (state.j2SCAIndex >= lfiKeys.length) state.j2SCAIndex = lfiKeys.length - 1;
+  if (state.j2SCAIndex < 0) state.j2SCAIndex = 0;
+
+  const currentLfi = lfiKeys[state.j2SCAIndex];
+  const prof = LFI_PROFILES.find((p) => p.key === currentLfi);
+
+  body.appendChild(el('div', { className: 'sca-progress' }, [
+    el('span', {}, `LFI ${state.j2SCAIndex + 1} of ${lfiKeys.length}`),
+    el('span', { className: 'sca-progress-name' }, prof?.name || currentLfi),
+    el('span', { className: 'sca-progress-hint' },
+      state.j2SCAIndex < lfiKeys.length - 1
+        ? `After confirming, you'll authenticate at LFI ${state.j2SCAIndex + 2} of ${lfiKeys.length}.`
+        : 'Last LFI — confirming will register every consent with the Consent Manager.'),
+  ]));
+
+  const mock = el('div', { className: 'sca-mock', role: 'img', 'aria-label': `Mock Strong Customer Authentication screen at LFI ${currentLfi}` });
+  mock.appendChild(el('div', { className: 'browser-bar' }, [
+    el('span', { className: 'dots' }, [el('span'), el('span'), el('span')]),
+    el('span', { className: 'url' }, `https://auth.${currentLfi}-lfi.example/sca?caap_intent=urn:openfinance:ae:intent:…`),
+  ]));
+  const inner = el('div', { className: 'body' });
+  inner.appendChild(el('h4', {}, `Sign in at ${prof?.name || currentLfi}`));
+  inner.appendChild(el('p', { className: 'sub' }, [
+    `Strong Customer Authentication for the ${prof?.body || currentLfi}. `,
+    'After SCA, pick which accounts at this LFI Khazaa will see.',
+  ]));
+
+  const userBase = persona ? persona.name.split('—')[0].trim().toLowerCase().replace(/\s+/g, '.').replace(/[^a-z.]/g, '') : 'you';
+  const form = el('div', { className: 'sca-form' });
+  form.appendChild(el('label', { for: `sca-user-${currentLfi}` }, 'Username'));
+  form.appendChild(el('input', { type: 'text', id: `sca-user-${currentLfi}`, value: `${userBase}@${currentLfi}-lfi.example`, readonly: true }));
+  form.appendChild(el('label', { for: `sca-pass-${currentLfi}`, style: 'margin-top:10px;' }, 'Password'));
+  form.appendChild(el('input', { type: 'password', id: `sca-pass-${currentLfi}`, value: '••••••••••', readonly: true }));
+
+  const otpBlock = el('div', { className: 'sca-otp' });
+  otpBlock.appendChild(el('div', { className: 'sca-otp-heading' }, '2FA — enter the 6-digit code from your bank app'));
+  const otpInputs = el('div', { className: 'sca-otp-inputs' });
+  const otpDigits = (currentLfi === 'rich' ? ['8','3','9','1','7','2']
+                  : currentLfi === 'median' ? ['4','5','0','2','8','1']
+                  : ['9','1','3','6','5','4']);
+  for (let i = 0; i < 6; i++) {
+    otpInputs.appendChild(el('input', { type: 'text', maxlength: 1, value: otpDigits[i], readonly: true, 'aria-label': `OTP digit ${i + 1}` }));
+  }
+  otpBlock.appendChild(otpInputs);
+  otpBlock.appendChild(el('p', { className: 'sca-otp-alt' }, [
+    'or ', el('strong', {}, 'use your bank app'), ' to push-approve — same regulatory category.',
+  ]));
+  form.appendChild(otpBlock);
+  inner.appendChild(form);
+  mock.appendChild(inner);
+  body.appendChild(mock);
+
+  // Account picker — fetched lazily from the LFI's bundle. Shows checkboxes
+  // for each account; defaults to all checked. Real consent grant binds to
+  // the AccountId set the user picks here.
+  const acctSection = el('div', { className: 'sca-accounts' });
+  acctSection.appendChild(el('h4', { style: 'margin-top:18px;' }, 'Pick accounts to authorise at this LFI'));
+  acctSection.appendChild(el('p', { className: 'sub', style: 'margin-bottom:10px;' }, [
+    'Per-account consent. ',
+    el('strong', {}, 'Standards default'),
+    ' is all accounts; untick to grant narrower scope. Khazaa will only read transactions for the accounts you keep ticked.',
+  ]));
+  const acctList = el('div', { className: 'sca-account-list' });
+  acctList.appendChild(el('p', { className: 'skeleton' }, 'Loading accounts at this LFI…'));
+  acctSection.appendChild(acctList);
+  body.appendChild(acctSection);
+
+  fetchJ2AccountsFor(persona, currentLfi).then((accounts) => {
+    acctList.replaceChildren();
+    if (!accounts.length) {
+      acctList.appendChild(el('p', { className: 'skeleton' }, `No accounts returned for ${persona.name} at LFI · ${currentLfi}. Try a different persona or LFI profile.`));
+      return;
+    }
+    const selected = state.j2SelectedAccounts.get(currentLfi) || new Set();
+    for (const acct of accounts) {
+      const isOn = selected.has(acct.AccountId);
+      const id = `j2acct-${currentLfi}-${acct.AccountId}`;
+      const ident = acct.AccountIdentifiers?.[0]?.Identification?.slice(0, 18) ?? acct.AccountId;
+      const cb = el('input', { type: 'checkbox', id, checked: isOn });
+      const row = el('label', { for: id, className: 'sca-account-row' + (isOn ? ' selected' : '') }, [
+        cb,
+        el('div', { className: 'sca-account-text' }, [
+          el('div', { className: 'sca-account-name' }, acct.Nickname || acct.AccountSubType || acct.AccountType || 'Account'),
+          el('div', { className: 'sca-account-meta' }, [
+            el('code', {}, ident + '…'),
+            ` · ${acct.AccountSubType || acct.AccountType || ''}`,
+          ]),
+        ]),
+      ]);
+      cb.addEventListener('change', () => {
+        const cur = state.j2SelectedAccounts.get(currentLfi) || new Set();
+        if (cb.checked) cur.add(acct.AccountId); else cur.delete(acct.AccountId);
+        state.j2SelectedAccounts.set(currentLfi, cur);
+        row.classList.toggle('selected', cb.checked);
+      });
+      acctList.appendChild(row);
+    }
+  }).catch((err) => {
+    acctList.replaceChildren();
+    acctList.appendChild(el('p', { className: 'skeleton', style: 'color:#a13;' }, `Couldn't load accounts: ${err.message}.`));
+  });
+}
+
+// 4d — Consent Manager confirmation. After all per-LFI SCAs complete, this
+// is the screen that confirms the consent grants registered centrally with
+// the Nebras Consent Manager. Renders a per-LFI table with the ConsentId,
+// expiration, permissions, accounts, and transaction window. The "View at
+// portal.openfinance.ae" link will open the Consent Manager modal once
+// Task #12 lands; for now it's a stub.
+function renderJ2ConsentConfirmed(body, persona) {
+  const isSme = (persona.segment || '').toLowerCase() === 'sme';
+  const tppName = isSme ? 'Khazaa BFM' : 'Khazaa PFM';
+
+  body.appendChild(el('div', { className: 'consent-confirmed-headline' }, [
+    el('span', { className: 'consent-confirmed-tick' }, '✓'),
+    el('div', {}, [
+      el('div', { className: 'consent-confirmed-title' }, 'Consent registered with the Nebras Consent Manager'),
+      el('div', { className: 'consent-confirmed-sub' },
+        `${state.j2ConsentIds.size} ConsentId${state.j2ConsentIds.size === 1 ? '' : 's'} active · ${tppName} can now read your authorised data via the API Hub.`),
+    ]),
+  ]));
+
+  const table = el('div', { className: 'consent-records-table' });
+  if (!state.j2ConsentIds.size) {
+    table.appendChild(el('p', { className: 'skeleton' }, 'No consents minted yet — go back to sub-step 4c.'));
+  } else {
+    for (const [lfi, cid] of state.j2ConsentIds.entries()) {
+      const prof = LFI_PROFILES.find((p) => p.key === lfi);
+      const accounts = state.j2SelectedAccounts.get(lfi) || new Set();
+      const acctCount = accounts.size;
+      const expiresAt = new Date(Date.now() + state.j2ExpirationDays * 86400000);
+      const row = el('div', { className: 'consent-record-row' }, [
+        el('div', { className: 'consent-record-head' }, [
+          el('span', { className: 'consent-record-lfi' }, prof?.name || lfi),
+          el('span', { className: 'consent-record-badge active' }, 'Active'),
+        ]),
+        el('dl', { className: 'consent-record-dl' }, [
+          el('dt', {}, 'ConsentId'),    el('dd', {}, el('code', {}, cid)),
+          el('dt', {}, 'Expires'),      el('dd', {}, expiresAt.toUTCString()),
+          el('dt', {}, 'Permissions'),  el('dd', {}, `${[...state.j2Permissions].length} of ${OF_PERMISSIONS.length} clusters`),
+          el('dt', {}, 'Accounts'),     el('dd', {}, `${acctCount} authorised`),
+          el('dt', {}, 'Tx window'),    el('dd', {}, `${state.j2TransactionMonths} months back`),
+        ]),
+      ]);
+      table.appendChild(row);
+    }
+  }
+  body.appendChild(table);
+
+  body.appendChild(el('div', { className: 'consent-confirmed-actions' }, [
+    el('a', {
+      href: '#',
+      className: 'consent-manager-link',
+    }, '→ View at portal.openfinance.ae · My Consents (Consent Manager modal lands in next commit)'),
+    el('div', { className: 'consent-confirmed-cta-hint' }, [
+      'Click ', el('strong', {}, 'Return to ' + tppName + ' →'),
+      ` to load your aggregated ${isSme ? 'BFM' : 'PFM'} view.`,
+    ]),
+  ]));
 }
 
 // J2 dashboard: PFM (Retail) or BFM (SME) end-state. Fetches the same persona's
@@ -2203,12 +2407,23 @@ function renderJ2Actions() {
     status.textContent = `${lfiCount} of ${state.j2Scope === 'multi' ? '2–4' : '1'} LFI profile${lfiCount === 1 ? '' : 's'} selected.`;
   } else if (state.j2Step === 4) {
     next.disabled = false;
+    const tppName = (persona?.segment || '').toLowerCase() === 'sme' ? 'Khazaa BFM' : 'Khazaa PFM';
+    const lfiKeys = [...state.j2SelectedLFIs];
     if (state.j2SubStep === 'tpp') {
       next.textContent = 'Continue with Al Tareq →';
-      status.textContent = `Sub-step 4a · ${(persona?.segment || '').toLowerCase() === 'sme' ? 'Khazaa BFM' : 'Khazaa PFM'} launchpad — TPP-side initiation.`;
+      status.textContent = `Sub-step 4a · ${tppName} launchpad — TPP-side initiation.`;
     } else if (state.j2SubStep === 'altareq') {
       next.textContent = `Continue (${[...state.j2Permissions].length} permissions, ${state.j2ExpirationDays}d) →`;
-      status.textContent = `Sub-step 4b · Al Tareq CAAP · ${state.j2SelectedLFIs.size} LFI${state.j2SelectedLFIs.size === 1 ? '' : 's'} requested.`;
+      status.textContent = `Sub-step 4b · Al Tareq CAAP · ${lfiKeys.length} LFI${lfiKeys.length === 1 ? '' : 's'} requested.`;
+    } else if (state.j2SubStep === 'sca') {
+      const currentLfi = lfiKeys[state.j2SCAIndex] || '?';
+      const prof = LFI_PROFILES.find((p) => p.key === currentLfi);
+      const isLast = state.j2SCAIndex >= lfiKeys.length - 1;
+      next.textContent = isLast ? `Confirm consent at ${prof?.name || currentLfi} →` : `Continue (${state.j2SCAIndex + 2} of ${lfiKeys.length}) →`;
+      status.textContent = `Sub-step 4c · SCA at ${prof?.name || currentLfi} (${state.j2SCAIndex + 1} / ${lfiKeys.length}).`;
+    } else if (state.j2SubStep === 'manager') {
+      next.textContent = `Return to ${tppName} →`;
+      status.textContent = `Sub-step 4d · Consent Manager · ${state.j2ConsentIds.size} ConsentId${state.j2ConsentIds.size === 1 ? '' : 's'} active.`;
     } else {
       next.textContent = 'Continue →';
       status.textContent = `Sub-step ${state.j2SubStep}.`;
@@ -2332,13 +2547,65 @@ function wireControls() {
   if (j2Next) j2Next.addEventListener('click', () => {
     if (state.j2Step < 4) { state.j2Step += 1; refresh(); return; }
     if (state.j2Step === 4) {
-      // Walk through J2_SUB_STEPS. From the last sub-step, advance to step 5.
       const keys = J2_SUB_STEPS.map((s) => s.key);
-      const i = keys.indexOf(state.j2SubStep);
+      const cur = state.j2SubStep;
+
+      // Special case 1: sca loop — Next mints a ConsentId for the current
+      // LFI and advances the index; if last LFI, moves to manager.
+      if (cur === 'sca') {
+        const lfiKeys = [...state.j2SelectedLFIs];
+        const i = state.j2SCAIndex;
+        const currentLfi = lfiKeys[i];
+        if (currentLfi) {
+          const cid = mintConsentId();
+          state.j2ConsentIds.set(currentLfi, cid);
+          // Append/replace consent record for this LFI
+          const expiresAt = new Date(Date.now() + state.j2ExpirationDays * 86400000).toISOString();
+          const accounts = state.j2SelectedAccounts.get(currentLfi) || new Set();
+          const record = {
+            source: 'j2',
+            tpp: (selectedPersona()?.segment || '').toLowerCase() === 'sme' ? 'Khazaa BFM' : 'Khazaa PFM',
+            lfi: currentLfi,
+            consentId: cid,
+            permissions: [...state.j2Permissions],
+            expiresAt,
+            accounts: [...accounts],
+            status: 'Active',
+          };
+          const existingIdx = state.consentRecords.findIndex((r) => r.source === 'j2' && r.lfi === currentLfi);
+          if (existingIdx >= 0) state.consentRecords[existingIdx] = record;
+          else state.consentRecords.push(record);
+        }
+        if (i + 1 < lfiKeys.length) {
+          state.j2SCAIndex = i + 1;
+          refresh();
+          return;
+        }
+        // Last LFI confirmed → advance to manager sub-step
+        state.j2SubStep = 'manager';
+        refresh();
+        return;
+      }
+
+      // Special case 2: altareq → sca transition starts the LFI loop fresh.
+      if (cur === 'altareq') {
+        state.j2SubStep = 'sca';
+        state.j2SCAIndex = 0;
+        // Clear any stale ConsentIds + per-LFI record state so the loop
+        // re-mints cleanly. (Re-entries after Back-and-forth still produce
+        // fresh ConsentIds.)
+        state.j2ConsentIds = new Map();
+        state.consentRecords = state.consentRecords.filter((r) => r.source !== 'j2');
+        refresh();
+        return;
+      }
+
+      // Default forward nav within the sub-step list, or jump out to step 5
+      // from the last sub-step (manager).
+      const i = keys.indexOf(cur);
       if (i === -1 || i >= keys.length - 1) {
         state.j2Approved = true;
         state.j2Step = 5;
-        // Reset sub-step so a re-entry starts at tpp again.
         state.j2SubStep = 'tpp';
         refresh();
         return;
@@ -2351,9 +2618,25 @@ function wireControls() {
   if (j2Back) j2Back.addEventListener('click', () => {
     if (state.j2Step === 4) {
       const keys = J2_SUB_STEPS.map((s) => s.key);
-      const i = keys.indexOf(state.j2SubStep);
+      const cur = state.j2SubStep;
+
+      // sca: back walks the LFI index down; from index 0, back returns to altareq.
+      if (cur === 'sca') {
+        if (state.j2SCAIndex > 0) { state.j2SCAIndex -= 1; refresh(); return; }
+        state.j2SubStep = 'altareq';
+        refresh();
+        return;
+      }
+      // manager: back goes to the last LFI's SCA screen.
+      if (cur === 'manager') {
+        state.j2SubStep = 'sca';
+        state.j2SCAIndex = Math.max(0, [...state.j2SelectedLFIs].length - 1);
+        refresh();
+        return;
+      }
+
+      const i = keys.indexOf(cur);
       if (i > 0) { state.j2SubStep = keys[i - 1]; refresh(); return; }
-      // At first sub-step: leave step 4 entirely.
       state.j2Step = 3;
       state.j2SubStep = 'tpp';
       refresh();

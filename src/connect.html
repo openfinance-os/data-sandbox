@@ -1984,6 +1984,157 @@
     border-top: 1px dashed var(--border);
   }
 
+  /* ─── J2 sub-step 4c: per-LFI SCA progress + account picker ────── */
+  .sca-progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    flex-wrap: wrap;
+  }
+  .sca-progress > span:first-child {
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 11px;
+    color: var(--accent);
+  }
+  .sca-progress-name { font-weight: 600; color: var(--text); }
+  .sca-progress-hint {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    flex-basis: 100%;
+  }
+  .sca-accounts { margin-top: 6px; }
+  .sca-accounts h4 { font-size: 15px; font-weight: 600; margin: 0 0 4px; }
+  .sca-account-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 4px;
+  }
+  .sca-account-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 8px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 5px;
+    background: var(--bg-card);
+    cursor: pointer;
+  }
+  .sca-account-row:hover { border-color: var(--accent); }
+  .sca-account-row.selected {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .sca-account-row input[type="checkbox"] { flex: 0 0 auto; margin: 0; }
+  .sca-account-text { flex: 1; min-width: 0; }
+  .sca-account-name { font-size: 13.5px; font-weight: 600; }
+  .sca-account-meta { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+  .sca-account-meta code {
+    font-size: 11px;
+    background: transparent;
+    border: none;
+    padding: 0;
+    color: var(--text-muted);
+  }
+
+  /* ─── J2 sub-step 4d: Consent Manager confirmation ─────────────── */
+  .consent-confirmed-headline {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    margin-bottom: 12px;
+  }
+  .consent-confirmed-tick {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    flex: 0 0 28px;
+  }
+  .consent-confirmed-title { font-size: 15px; font-weight: 700; }
+  .consent-confirmed-sub { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; line-height: 1.5; }
+
+  .consent-records-table {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .consent-record-row {
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 10px 14px 8px;
+    background: var(--bg-card);
+  }
+  .consent-record-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    gap: 8px;
+  }
+  .consent-record-lfi { font-weight: 700; font-size: 13.5px; }
+  .consent-record-badge {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 2px 7px;
+    border-radius: 3px;
+    font-weight: 700;
+  }
+  .consent-record-badge.active { background: #e3efe6; color: #2f6c4a; border: 1px solid #2f6c4a; }
+  .consent-record-badge.revoked { background: #fbe9e9; color: #a14242; border: 1px solid #a14242; }
+  .consent-record-dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 4px 12px;
+    margin: 0;
+    font-size: 12px;
+  }
+  .consent-record-dl dt {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .consent-record-dl dd { margin: 0; word-break: break-all; }
+  .consent-record-dl dd code { font-size: 11px; padding: 0 4px; }
+
+  .consent-confirmed-actions {
+    padding: 12px 0 0;
+    border-top: 1px dashed var(--border);
+  }
+  .consent-manager-link {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-decoration: underline;
+  }
+  .consent-confirmed-cta-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+
 </style>
 </head>
 <body>
