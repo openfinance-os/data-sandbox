@@ -225,8 +225,12 @@ function renderPermissionsList(selectedSet, onChange, opts = {}) {
   return wrap;
 }
 
-function renderConsentParamsPanel(params, onChange) {
+function renderConsentParamsPanel(params, onChange, opts = {}) {
   // params: { expirationDays, isSingleAuth, transactionMonths }
+  // opts:   { includeSingleAuth = true } — J1 hides the single-auth toggle
+  //         since bank-direct consent is always one consumer authorising one
+  //         account; multi-authoriser only meaningfully applies in J2's
+  //         regulated TPP flow (joint/corporate accounts).
   const wrap = el('div', { className: 'consent-params-panel', role: 'group', 'aria-label': 'Consent parameters' });
   wrap.appendChild(el('div', { className: 'consent-params-heading' }, 'Consent parameters'));
 
@@ -250,20 +254,22 @@ function renderConsentParamsPanel(params, onChange) {
   expRow.appendChild(expChoices);
   wrap.appendChild(expRow);
 
-  // IsSingleAuthorization
-  const singleAuthRow = el('div', { className: 'consent-params-row' });
-  singleAuthRow.appendChild(el('div', { className: 'consent-params-label' }, [
-    el('strong', {}, 'IsSingleAuthorization'),
-    el('span', { className: 'consent-params-help' }, 'When on, the consent must be approved by a single authoriser. For joint or corporate accounts, leave off to allow multi-auth.'),
-  ]));
-  const toggle = el('button', {
-    type: 'button',
-    className: 'consent-params-toggle' + (params.isSingleAuth ? ' on' : ''),
-    'aria-pressed': params.isSingleAuth ? 'true' : 'false',
-    onclick: () => onChange({ ...params, isSingleAuth: !params.isSingleAuth }),
-  }, params.isSingleAuth ? 'On' : 'Off');
-  singleAuthRow.appendChild(toggle);
-  wrap.appendChild(singleAuthRow);
+  // IsSingleAuthorization (J2 only by default)
+  if (opts.includeSingleAuth !== false) {
+    const singleAuthRow = el('div', { className: 'consent-params-row' });
+    singleAuthRow.appendChild(el('div', { className: 'consent-params-label' }, [
+      el('strong', {}, 'IsSingleAuthorization'),
+      el('span', { className: 'consent-params-help' }, 'When on, the consent must be approved by a single authoriser. For joint or corporate accounts, leave off to allow multi-auth.'),
+    ]));
+    const toggle = el('button', {
+      type: 'button',
+      className: 'consent-params-toggle' + (params.isSingleAuth ? ' on' : ''),
+      'aria-pressed': params.isSingleAuth ? 'true' : 'false',
+      onclick: () => onChange({ ...params, isSingleAuth: !params.isSingleAuth }),
+    }, params.isSingleAuth ? 'On' : 'Off');
+    singleAuthRow.appendChild(toggle);
+    wrap.appendChild(singleAuthRow);
+  }
 
   // TransactionFromDateTime
   const txRow = el('div', { className: 'consent-params-row' });
@@ -286,6 +292,32 @@ function renderConsentParamsPanel(params, onChange) {
   wrap.appendChild(txRow);
 
   return wrap;
+}
+
+// Sub-step indicator — small pill row used by both J1 step 3 and J2 step 4
+// to show progress through the consent journey's sub-steps. Clickable for
+// backward navigation only (forward nav is gated on actually completing
+// the prerequisite sub-step).
+function renderSubStepIndicator(steps, currentKey, onClick) {
+  const list = el('ol', { className: 'sub-step-indicator', role: 'list', 'aria-label': 'Sub-step progress' });
+  const curIdx = steps.findIndex((s) => s.key === currentKey);
+  for (let i = 0; i < steps.length; i++) {
+    const s = steps[i];
+    const isActive = s.key === currentKey;
+    const isDone = i < curIdx;
+    const item = el('li', {
+      className: 'sub-step-item' + (isActive ? ' active' : '') + (isDone ? ' done' : ''),
+    }, [
+      el('span', { className: 'sub-step-num' }, isDone ? '✓' : String(i + 1)),
+      el('span', { className: 'sub-step-label' }, s.label),
+    ]);
+    if (onClick && isDone) {
+      item.style.cursor = 'pointer';
+      item.addEventListener('click', () => onClick(s.key));
+    }
+    list.appendChild(item);
+  }
+  return list;
 }
 
 // ─── State ──────────────────────────────────────────────────────────
@@ -350,6 +382,8 @@ function serializeStateToParams() {
   if (state.selectedBankProfiles.size) params.set('banks', [...state.selectedBankProfiles].join(','));
   if (state.selectedInsuranceLines.size) params.set('lines', [...state.selectedInsuranceLines].join(','));
   if (state.step && state.step !== 1) params.set('step', String(state.step));
+  // J1 sub-step (only meaningful when view=j1 and step=3)
+  if (state.subStep && state.subStep !== 'discovery' && state.step === 3) params.set('substep', state.subStep);
   // J2 state — namespaced to avoid colliding with J1 params on shared URLs
   if (state.j2Step && state.j2Step !== 1) params.set('j2step', String(state.j2Step));
   if (state.j2Scope) params.set('j2scope', state.j2Scope);
@@ -404,6 +438,12 @@ function restoreStateFromUrl() {
   // no institutions, bounce to step 2.
   if (state.step > 1 && !selectedPersona()) state.step = 1;
   if (state.step > 2 && state.selectedBankProfiles.size + state.selectedInsuranceLines.size === 0) state.step = 2;
+  // J1 sub-step restore
+  const subStep = params.get('substep');
+  if (subStep === 'discovery' || subStep === 'sca' || subStep === 'consent' || subStep === 'token') {
+    state.subStep = subStep;
+    if (subStep !== 'discovery') any = true;
+  }
   // J2 state restore
   const j2Step = parseInt(params.get('j2step') || '1', 10);
   if (j2Step >= 1 && j2Step <= 5) {
@@ -680,65 +720,222 @@ function renderInstitutions() {
   body.appendChild(insGrid);
 }
 
+// J1 step 3 sub-flow ────────────────────────────────────────────────
+//
+// Replaces the old single-screen consent with a 4-sub-step journey that
+// mirrors what the MCP + OAuth handshake actually does end-to-end:
+//   3a discovery — the spec-mandated 401 → .well-known → /authorize chain
+//                  that runs before the user sees anything
+//   3b sca       — bank-side Strong Customer Authentication (Article 18)
+//   3c consent   — bank-own OAuth consent with the v2.1 Permissions taxonomy
+//                  and full consent parameters (ExpirationDateTime, etc.)
+//   3d token     — token exchange + bearer issued, "returning to Claude"
+//
+// The wizard's main Next/Back buttons walk through the sub-steps within
+// step 3, then advance to step 4 once 3d completes. URL state stays
+// readable: ?view=j1&step=3&substep=consent round-trips.
+
+const J1_SUB_STEPS = [
+  { key: 'discovery', label: 'Discovery' },
+  { key: 'sca',       label: 'Sign in (SCA)' },
+  { key: 'consent',   label: 'Consent' },
+  { key: 'token',     label: 'Token' },
+];
+
 function renderConsent() {
   const persona = selectedPersona();
   const body = document.getElementById('consent-body');
-  body.innerHTML = '';
+  body.replaceChildren();
   if (!persona) return;
 
-  const totalInst = state.selectedBankProfiles.size + state.selectedInsuranceLines.size;
-  const showBanking = state.selectedBankProfiles.size > 0;
-  const showInsurance = state.selectedInsuranceLines.size > 0;
-  const bankList = [...state.selectedBankProfiles].map((p) => `LFI · ${p}`).join('  ·  ');
-  const insList = [...state.selectedInsuranceLines].map((l) => INSURANCE_LINE_LABELS[l].name).join('  ·  ');
+  body.appendChild(renderSubStepIndicator(J1_SUB_STEPS, state.subStep, (key) => {
+    state.subStep = key;
+    refresh();
+  }));
 
-  // J1 framing: this is the BANK's own OAuth screen, not Al Tareq. URL,
-  // heading, and revocation pointer all sit with the bank — that's the
-  // load-bearing distinction between J1 (direct, bank-own consent) and
-  // J2 (regulated, Consent Manager as single source of truth).
-  const mock = el('div', { className: 'consent-mock', role: 'img', 'aria-label': 'Mock bank-own OAuth consent screen (Journey 1)' }, [
-    el('div', { className: 'browser-bar' }, [
-      el('span', { className: 'dots' }, [el('span'), el('span'), el('span')]),
-      el('span', { className: 'url' }, 'https://auth.your-bank-labs.example/authorize?client_id=claude&…'),
-    ]),
-  ]);
+  if (state.subStep === 'discovery') renderJ1Discovery(body);
+  else if (state.subStep === 'sca') renderJ1SCA(body);
+  else if (state.subStep === 'consent') renderJ1Consent(body);
+  else if (state.subStep === 'token') renderJ1Token(body);
+}
+
+// 3a — MCP discovery chain. Four real HTTP exchanges that the MCP client
+// runs before the user ever sees a consent screen. Each row visualises
+// one round-trip; the "Probe the live server" button fetches the actual
+// RFC 9728 / RFC 8414 documents from the Fly deploy and inlines them.
+function renderJ1Discovery(body) {
+  const wrap = el('div', { className: 'discovery-chain' });
+  wrap.appendChild(el('p', { className: 'discovery-intro' }, [
+    'When Claude first touches the sandbox MCP, the spec-mandated discovery chain runs. ',
+    'You don’t see it because Claude’s MCP client handles the handshake before bringing you to the consent screen. ',
+    'Each row below is one real HTTP exchange — click ',
+    el('strong', {}, 'Probe the live server'),
+    ' to populate the metadata rows from the production deploy at ',
+    el('code', {}, 'data-sandbox.fly.dev'), '.',
+  ]));
+
+  const rows = [
+    {
+      method: 'GET', path: '/mcp',
+      status: '401 Unauthorized', statusKind: 'warn',
+      headers: [
+        'WWW-Authenticate: Bearer realm="open-finance-sandbox",',
+        '                  authorization_uri="…/authorize",',
+        '                  resource_metadata="…/.well-known/oauth-protected-resource"',
+      ],
+      caption: 'Server signals that auth is required and points at metadata to bootstrap the flow.',
+    },
+    {
+      method: 'GET', path: '/.well-known/oauth-protected-resource',
+      status: '200 OK', statusKind: 'pos',
+      caption: 'RFC 9728 — declares the authorization server(s) the resource trusts.',
+      bodyId: 'rfc9728',
+    },
+    {
+      method: 'GET', path: '/.well-known/oauth-authorization-server',
+      status: '200 OK', statusKind: 'pos',
+      caption: 'RFC 8414 — declares /authorize and /token endpoints, supported scopes, PKCE methods.',
+      bodyId: 'rfc8414',
+    },
+    {
+      method: 'GET', path: '/authorize?client_id=…&code_challenge=…&code_challenge_method=S256',
+      status: '302 Found', statusKind: 'pos',
+      caption: 'PKCE S256 challenge sent. Server 302s to your bank’s SCA screen — that’s sub-step 3b.',
+    },
+  ];
+
+  for (const row of rows) {
+    const card = el('div', { className: 'discovery-row' }, [
+      el('div', { className: 'discovery-row-line' }, [
+        el('span', { className: 'discovery-method' }, row.method),
+        el('code', { className: 'discovery-path' }, row.path),
+        el('span', { className: 'discovery-arrow' }, '→'),
+        el('span', { className: 'discovery-status ' + row.statusKind }, row.status),
+      ]),
+      ...(row.headers ? [el('pre', { className: 'discovery-headers' }, row.headers.join('\n'))] : []),
+      ...(row.bodyId ? [el('pre', { className: 'discovery-body', id: `discovery-body-${row.bodyId}` }, '(click “Probe the live server” below to populate)')] : []),
+      el('p', { className: 'discovery-caption' }, row.caption),
+    ]);
+    wrap.appendChild(card);
+  }
+
+  const probeBtn = el('button', {
+    type: 'button',
+    className: 'btn primary',
+    style: 'margin-top:10px;',
+  }, 'Probe the live server →');
+  probeBtn.addEventListener('click', () => probeLiveServer(probeBtn));
+  wrap.appendChild(probeBtn);
+
+  body.appendChild(wrap);
+}
+
+async function probeLiveServer(btn) {
+  btn.disabled = true;
+  btn.textContent = 'Probing…';
+  const base = 'https://data-sandbox.fly.dev';
+  const targets = [
+    { id: 'rfc9728', url: `${base}/.well-known/oauth-protected-resource` },
+    { id: 'rfc8414', url: `${base}/.well-known/oauth-authorization-server` },
+  ];
+  let ok = 0;
+  for (const t of targets) {
+    const target = document.getElementById(`discovery-body-${t.id}`);
+    if (!target) continue;
+    try {
+      const res = await fetch(t.url);
+      const json = await res.json();
+      target.textContent = JSON.stringify(json, null, 2);
+      ok += 1;
+    } catch (err) {
+      target.textContent = `(fetch failed: ${err.message})`;
+    }
+  }
+  btn.textContent = ok === targets.length ? 'Live metadata loaded ✓' : 'Partial fetch (see panels)';
+}
+
+// 3b — Bank-side Strong Customer Authentication. Article 18 of CBUAE
+// Circular C 03/2025 mandates 2FA. Mock screen shows username + password
+// + 6-digit OTP (with a "use bank app" push-based alternate). All values
+// are decorative — Continue advances to the consent screen regardless.
+function renderJ1SCA(body) {
+  const persona = selectedPersona();
+  const userBase = persona ? persona.name.split('—')[0].trim().toLowerCase().replace(/\s+/g, '.').replace(/[^a-z.]/g, '') : 'you';
+  const username = `${userBase}@your-bank-labs.example`;
+  const mock = el('div', { className: 'sca-mock', role: 'img', 'aria-label': 'Mock bank Strong Customer Authentication screen' });
+  mock.appendChild(el('div', { className: 'browser-bar' }, [
+    el('span', { className: 'dots' }, [el('span'), el('span'), el('span')]),
+    el('span', { className: 'url' }, 'https://auth.your-bank-labs.example/sca?continue=…'),
+  ]));
+  const inner = el('div', { className: 'body' });
+  inner.appendChild(el('h4', {}, 'Sign in to your bank'));
+  inner.appendChild(el('p', { className: 'sub' }, [
+    'Strong Customer Authentication. Your bank verifies you with knowledge (password) + possession (one-time code) — Article 18, CBUAE C 03/2025. ',
+    'This is the bank’s own auth surface; Claude never sees these credentials.',
+  ]));
+  const form = el('div', { className: 'sca-form' });
+  form.appendChild(el('label', { for: 'sca-user' }, 'Username'));
+  form.appendChild(el('input', { type: 'text', id: 'sca-user', value: username, readonly: true }));
+  form.appendChild(el('label', { for: 'sca-pass', style: 'margin-top:10px;' }, 'Password'));
+  form.appendChild(el('input', { type: 'password', id: 'sca-pass', value: '••••••••••', readonly: true }));
+
+  const otpBlock = el('div', { className: 'sca-otp' });
+  otpBlock.appendChild(el('div', { className: 'sca-otp-heading' }, '2FA — enter the 6-digit code from your bank app'));
+  const otpInputs = el('div', { className: 'sca-otp-inputs' });
+  for (let i = 0; i < 6; i++) {
+    otpInputs.appendChild(el('input', { type: 'text', maxlength: 1, value: ['8','3','9','1','7','2'][i], readonly: true, 'aria-label': `OTP digit ${i + 1}` }));
+  }
+  otpBlock.appendChild(otpInputs);
+  otpBlock.appendChild(el('p', { className: 'sca-otp-alt' }, [
+    'or ', el('strong', {}, 'use your bank app'), ' to push-approve this sign-in — same regulatory category (Article 18), no code to type.',
+  ]));
+  form.appendChild(otpBlock);
+  form.appendChild(el('p', { className: 'sca-note' }, 'No real network call — values are decorative. Click ', el('strong', {}, 'Next →'), ' when ready.'));
+  inner.appendChild(form);
+  mock.appendChild(inner);
+  body.appendChild(mock);
+}
+
+// 3c — Bank-own OAuth consent. Reuses the consent-mock chrome but with the
+// real v2.1 Permissions taxonomy (toggleable, ReadAccountsBasic mandatory)
+// and consent parameters panel. Shows the ConsentId that will be minted
+// on Approve — bridges the OAuth and Open Finance vocabularies.
+function renderJ1Consent(body) {
+  const persona = selectedPersona();
+  if (!persona) return;
+  const mock = el('div', { className: 'consent-mock', role: 'img', 'aria-label': 'Mock bank-own OAuth consent screen (Journey 1)' });
+  mock.appendChild(el('div', { className: 'browser-bar' }, [
+    el('span', { className: 'dots' }, [el('span'), el('span'), el('span')]),
+    el('span', { className: 'url' }, 'https://auth.your-bank-labs.example/authorize?client_id=claude&code_challenge=…&scope=…'),
+  ]));
   const inner = el('div', { className: 'body' });
   inner.appendChild(el('h4', {}, 'Share with Claude · your bank’s labs MCP'));
   inner.appendChild(el('p', { className: 'sub' }, [
-    'OAuth 2.1 + PKCE. Claude will be able to read what you tick. You can stop sharing at any time in your bank’s ',
+    'OAuth 2.1 + PKCE. Pick the data clusters Claude can read. Revocation lives in your bank’s ',
     el('em', {}, 'Connected apps'),
-    ' page (not Al Tareq — this is the bank’s own consent surface).',
+    ' page — not Al Tareq (that’s J2).',
   ]));
-
   inner.appendChild(el('div', { className: 'persona-line' }, [
     el('div', { className: 'avatar', style: `background:${avatarColor(persona.id)};` }, initials(persona.name)),
     el('div', {}, [
       el('div', { className: 'pn' }, persona.name),
-      el('div', { className: 'pm' }, `${persona.domain}${persona.segment ? ` · ${persona.segment}` : ''} · ${totalInst} institution${totalInst === 1 ? '' : 's'} selected`),
+      el('div', { className: 'pm' }, `${persona.domain}${persona.segment ? ` · ${persona.segment}` : ''} · single LFI (bank-direct)`),
     ]),
   ]));
 
-  if (showBanking) {
-    inner.appendChild(el('div', { className: 'scope' }, [
-      el('span', { className: 'tick', 'aria-hidden': 'true' }, '✓'),
-      el('div', {}, [
-        el('strong', {}, SCOPE_LABELS.banking.title),
-        el('span', { className: 'scope-body' }, SCOPE_LABELS.banking.body),
-        el('div', { className: 'selected-insts' }, bankList),
-      ]),
-    ]));
-  }
-  if (showInsurance) {
-    inner.appendChild(el('div', { className: 'scope' }, [
-      el('span', { className: 'tick', 'aria-hidden': 'true' }, '✓'),
-      el('div', {}, [
-        el('strong', {}, SCOPE_LABELS.insurance.title),
-        el('span', { className: 'scope-body' }, SCOPE_LABELS.insurance.body),
-        el('div', { className: 'selected-insts' }, insList),
-      ]),
-    ]));
-  }
-  inner.appendChild(el('div', { className: 'scope unchecked' }, [
+  inner.appendChild(renderPermissionsList(
+    state.j1Permissions,
+    (next) => { state.j1Permissions = next; refresh(); },
+    { idPrefix: 'j1' },
+  ));
+
+  inner.appendChild(renderConsentParamsPanel(
+    { expirationDays: state.j1ExpirationDays, isSingleAuth: true, transactionMonths: 13 },
+    ({ expirationDays }) => { state.j1ExpirationDays = expirationDays; refresh(); },
+    { includeSingleAuth: false },
+  ));
+
+  inner.appendChild(el('div', { className: 'scope unchecked', style: 'margin-top:12px;' }, [
     el('span', { className: 'tick', 'aria-hidden': 'true' }),
     el('div', {}, [
       el('strong', {}, 'Service Initiation — payments'),
@@ -746,15 +943,52 @@ function renderConsent() {
     ]),
   ]));
 
+  inner.appendChild(el('div', { className: 'consent-id-preview' }, [
+    el('div', { className: 'consent-id-label' }, 'On approve, the bank will register:'),
+    el('code', {}, 'urn:openfinance:ae:consent:<fresh-uuid-on-approve>'),
+    el('div', { className: 'consent-id-help' }, 'A durable handle for the consent. The bank’s Connected apps page lists every active ConsentId; revocation takes a single tap there.'),
+  ]));
+
   const footnote = el('p', { className: 'footnote' }, [
-    'Sharing window ', el('strong', {}, '90 days'),
-    ' · Revoke any time in your bank’s ', el('em', {}, 'Connected apps'), '. ',
+    'Sharing window ', el('strong', {}, `${state.j1ExpirationDays} days`),
+    `. Transactions readable back ${[...state.j1Permissions].filter((k) => k.startsWith('ReadTransactions')).length ? '13 months' : '— (transactions permission off)'}. `,
     'Data is ', el('strong', {}, 'SYNTHETIC'), '. No real customer. No real institution.',
   ]);
   inner.appendChild(footnote);
 
   mock.appendChild(inner);
   body.appendChild(mock);
+}
+
+// 3d — Token exchange + return. Renders the artefacts that result from the
+// PKCE-validated /token POST: the access bearer, expiry, scope, and the
+// freshly minted ConsentId. The "Continue" button on the main wizard
+// advances to step 4 (the chat-back surface).
+function renderJ1Token(body) {
+  const cid = state.j1ConsentId || mintConsentId(); // safety — should be set by Next handler
+  state.j1ConsentId = cid;
+  const tokenTail = cid.slice(-12);
+  const wrap = el('div', { className: 'token-panel' });
+  wrap.appendChild(el('div', { className: 'token-headline' }, [
+    el('span', { className: 'token-check' }, '✓'),
+    el('strong', {}, 'Bearer issued — '),
+    el('span', {}, 'Claude’s MCP client just exchanged the authorization code for an access token using its private PKCE '),
+    el('code', {}, 'code_verifier'), '.',
+  ]));
+  wrap.appendChild(el('dl', { className: 'token-dl' }, [
+    el('dt', {}, 'ConsentId'),    el('dd', {}, el('code', {}, cid)),
+    el('dt', {}, 'access_token'), el('dd', {}, el('code', {}, `ofx_at_${tokenTail}…`)),
+    el('dt', {}, 'token_type'),   el('dd', {}, 'Bearer'),
+    el('dt', {}, 'expires_in'),   el('dd', {}, `3600 (1h TTL — re-issued automatically · ${state.j1ExpirationDays}-day sharing window)`),
+    el('dt', {}, 'scope'),        el('dd', {}, `${[...state.j1Permissions].length} permissions granted`),
+  ]));
+  wrap.appendChild(el('p', { className: 'token-note' }, [
+    'From here every ', el('code', {}, 'POST /mcp'), ' call carries ', el('code', {}, 'Authorization: Bearer …'),
+    '. The bearer is checked on every request, not just initialize. Click ',
+    el('strong', {}, 'Next →'),
+    ' to land on the chat surface.',
+  ]));
+  body.appendChild(wrap);
 }
 
 function renderConnected() {
@@ -1232,8 +1466,19 @@ function renderActions() {
     status.textContent = persona ? `${persona.name} · ${totalInst} selected.` : '';
   } else if (state.step === 3) {
     next.disabled = false;
-    next.textContent = 'Approve all (1 tap)';
-    status.textContent = 'Approving will simulate the OAuth handshake — no real network call.';
+    if (state.subStep === 'discovery') {
+      next.textContent = 'Continue to sign-in →';
+      status.textContent = 'Sub-step 3a · MCP discovery chain — the spec-mandated handshake before consent.';
+    } else if (state.subStep === 'sca') {
+      next.textContent = 'Continue to consent →';
+      status.textContent = 'Sub-step 3b · Strong Customer Authentication (Article 18).';
+    } else if (state.subStep === 'consent') {
+      next.textContent = 'Approve & mint ConsentId →';
+      status.textContent = `Sub-step 3c · ${[...state.j1Permissions].length} of ${OF_PERMISSIONS.length} permissions ticked.`;
+    } else if (state.subStep === 'token') {
+      next.textContent = 'Open chat →';
+      status.textContent = `Sub-step 3d · ConsentId ${state.j1ConsentId ? state.j1ConsentId.slice(-12) : '—'} issued.`;
+    }
   } else if (state.step === 4) {
     next.disabled = true;
     next.textContent = 'Back in chat ✓';
@@ -1859,9 +2104,58 @@ function wireControls() {
 
   document.getElementById('btn-next').addEventListener('click', () => {
     if (state.step < 3) { state.step += 1; refresh(); return; }
-    if (state.step === 3) { state.approved = true; state.step = 4; refresh(); return; }
+    if (state.step === 3) {
+      const order = ['discovery', 'sca', 'consent', 'token'];
+      const i = order.indexOf(state.subStep);
+      // From the last sub-step, the main Next advances to step 4 (chat).
+      if (i === -1 || i >= order.length - 1) {
+        state.approved = true;
+        state.step = 4;
+        // Reset subStep so a re-entry to step 3 starts at discovery again.
+        state.subStep = 'discovery';
+        refresh();
+        return;
+      }
+      const next = order[i + 1];
+      // Transition into 'token' = the actual consent grant moment. Mint a
+      // fresh ConsentId and append/replace the J1 consent record so the
+      // Consent Manager view (and the token panel itself) can render it.
+      if (next === 'token') {
+        state.j1ConsentId = mintConsentId();
+        state.approved = true;
+        const expiresAt = new Date(Date.now() + state.j1ExpirationDays * 86400000).toISOString();
+        const lfi = firstSelectedLfi();
+        const record = {
+          source: 'j1',
+          tpp: 'Claude · Anthropic',
+          lfi,
+          consentId: state.j1ConsentId,
+          permissions: [...state.j1Permissions],
+          expiresAt,
+          accounts: 'all',
+          status: 'Active',
+        };
+        // Replace any existing J1 record (re-grants after a back-and-forth
+        // produce a fresh ConsentId rather than stacking duplicates).
+        const existingIdx = state.consentRecords.findIndex((r) => r.source === 'j1');
+        if (existingIdx >= 0) state.consentRecords[existingIdx] = record;
+        else state.consentRecords.push(record);
+      }
+      state.subStep = next;
+      refresh();
+    }
   });
   document.getElementById('btn-back').addEventListener('click', () => {
+    if (state.step === 3) {
+      const order = ['discovery', 'sca', 'consent', 'token'];
+      const i = order.indexOf(state.subStep);
+      if (i > 0) { state.subStep = order[i - 1]; refresh(); return; }
+      // At 'discovery' (or unknown), back leaves step 3 entirely.
+      state.step = 2;
+      state.subStep = 'discovery';
+      refresh();
+      return;
+    }
     if (state.step > 1) { state.step -= 1; refresh(); }
   });
   document.getElementById('btn-restart').addEventListener('click', () => {

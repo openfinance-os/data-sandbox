@@ -1587,6 +1587,280 @@
     color: #fff;
   }
 
+  /* ─── Sub-step indicator (J1 step 3 + J2 step 4) ───────────────── */
+  .sub-step-indicator {
+    list-style: none;
+    margin: 0 0 14px;
+    padding: 6px 8px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .sub-step-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 12px;
+    font-size: 11.5px;
+    color: var(--text-muted);
+    background: transparent;
+    border: 1px solid transparent;
+  }
+  .sub-step-item.active {
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    border-color: var(--accent);
+  }
+  .sub-step-item.done {
+    background: var(--bg-card);
+    color: var(--text);
+    border-color: var(--border-strong);
+  }
+  .sub-step-item.done:hover { background: var(--accent-soft); }
+  .sub-step-num {
+    width: 16px; height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.18);
+  }
+  .sub-step-item.done .sub-step-num { background: #2f6c4a; color: #fff; }
+  .sub-step-item:not(.active):not(.done) .sub-step-num {
+    background: var(--bg-card);
+    border: 1px solid var(--border-strong);
+    color: var(--text-muted);
+  }
+
+  /* ─── J1 sub-step 3a: MCP discovery chain ─────────────────────── */
+  .discovery-chain { margin-top: 4px; }
+  .discovery-intro {
+    font-size: 13px;
+    color: var(--text);
+    margin: 0 0 12px;
+    line-height: 1.55;
+  }
+  .discovery-row {
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 10px 12px 8px;
+    margin-bottom: 8px;
+    background: var(--bg-card);
+  }
+  .discovery-row-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12px;
+  }
+  .discovery-method {
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 700;
+    font-size: 11px;
+  }
+  .discovery-path { background: transparent; border: none; padding: 0; color: var(--text); word-break: break-all; }
+  .discovery-arrow { color: var(--text-muted); }
+  .discovery-status {
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-weight: 600;
+    font-size: 11px;
+    margin-left: auto;
+  }
+  .discovery-status.pos { background: #e3efe6; color: #2f6c4a; }
+  .discovery-status.warn { background: #fdf1da; color: #b07b1f; }
+  .discovery-headers, .discovery-body {
+    margin: 6px 0 6px;
+    padding: 8px 10px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11px;
+    line-height: 1.45;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-all;
+    overflow-x: auto;
+    max-height: 220px;
+  }
+  .discovery-body { color: var(--text-muted); font-style: italic; }
+  .discovery-body:not(:empty) { color: var(--text); font-style: normal; }
+  .discovery-caption {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 4px 0 0;
+    line-height: 1.5;
+  }
+
+  /* ─── J1 sub-step 3b: SCA mock ─────────────────────────────────── */
+  .sca-mock {
+    border: 1px solid var(--border-strong);
+    background: var(--bg-card);
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 4px 0 8px;
+  }
+  .sca-mock .browser-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--bg-soft);
+    border-bottom: 1px solid var(--border);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11.5px;
+    color: var(--text-muted);
+  }
+  .sca-mock .browser-bar .dots { display: inline-flex; gap: 4px; }
+  .sca-mock .browser-bar .dots span {
+    display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+    background: var(--border-strong);
+  }
+  .sca-mock .browser-bar .url {
+    flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .sca-mock .body { padding: 20px 22px 18px; }
+  .sca-mock .body h4 { margin: 0 0 4px; font-size: 16px; font-weight: 600; }
+  .sca-mock .body .sub { font-size: 12.5px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5; }
+  .sca-form { display: flex; flex-direction: column; gap: 4px; }
+  .sca-form label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    font-weight: 700;
+  }
+  .sca-form input {
+    padding: 8px 10px;
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    background: var(--bg-soft);
+    font: inherit;
+    font-size: 13.5px;
+    color: var(--text);
+  }
+  .sca-otp {
+    margin-top: 16px;
+    padding: 14px 16px;
+    background: var(--bg-soft);
+    border: 1px dashed var(--border-strong);
+    border-radius: 5px;
+  }
+  .sca-otp-heading { font-size: 12.5px; font-weight: 600; margin-bottom: 8px; }
+  .sca-otp-inputs { display: flex; gap: 6px; }
+  .sca-otp-inputs input {
+    width: 36px;
+    height: 40px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 700;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    background: var(--bg-card);
+  }
+  .sca-otp-alt { font-size: 11.5px; color: var(--text-muted); margin: 8px 0 0; }
+  .sca-note {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin: 14px 0 0;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border);
+  }
+
+  /* ─── J1 sub-step 3c: ConsentId preview ────────────────────────── */
+  .consent-id-preview {
+    margin: 14px 0 4px;
+    padding: 12px 14px;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    border-radius: 5px;
+  }
+  .consent-id-preview .consent-id-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .consent-id-preview code {
+    font-size: 12.5px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-strong);
+    padding: 2px 6px;
+    border-radius: 3px;
+    display: inline-block;
+    word-break: break-all;
+  }
+  .consent-id-preview .consent-id-help {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin-top: 6px;
+    line-height: 1.5;
+  }
+
+  /* ─── J1 sub-step 3d: token panel ──────────────────────────────── */
+  .token-panel {
+    padding: 14px 16px;
+    border: 1px solid var(--accent);
+    background: var(--accent-soft);
+    border-radius: 6px;
+  }
+  .token-headline { font-size: 13.5px; line-height: 1.6; margin-bottom: 10px; }
+  .token-check {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 18px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .token-dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 6px 14px;
+    margin: 8px 0 10px;
+    padding: 10px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    font-size: 12.5px;
+  }
+  .token-dl dt {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11.5px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .token-dl dd {
+    margin: 0;
+    word-break: break-all;
+  }
+  .token-dl dd code {
+    font-size: 11.5px;
+    padding: 0 4px;
+  }
+  .token-note { font-size: 12.5px; line-height: 1.55; margin: 0; color: var(--text); }
+
 </style>
 </head>
 <body>
@@ -1810,14 +2084,15 @@
       </div>
     </div>
 
-    <!-- Step 3: consent — your bank's own OAuth, not Al Tareq (J1 framing) -->
+    <!-- Step 3: consent — bank-own OAuth, sub-flow: discovery → SCA → consent → token -->
     <div class="wizard-body" id="step-3" hidden>
       <p class="step-title">Step 3 of 4</p>
       <h2 class="step-h">Share with Claude</h2>
       <p class="step-sub">
-        Your bank's own OAuth consent screen — the same shape <code>--simulate-oauth</code>
-        renders today. Claude is asking to read your accounts, balances, transactions, and
-        insurance renewals for the next 90 days. Tap Approve to share, or Deny to back out.
+        Four sub-steps that show what actually happens when an MCP client wires a bank-direct
+        connector: the spec-mandated discovery handshake, the bank's own Strong Customer
+        Authentication, the OAuth consent screen (with the v2.1 Permissions taxonomy), and the
+        token exchange that hands Claude a bearer.
       </p>
       <div id="consent-body"></div>
     </div>
