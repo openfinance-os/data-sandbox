@@ -15,8 +15,9 @@
   "scripts": {
     "build:spec": "node tools/parse-spec.mjs",
     "build:data": "node tools/build-data.mjs",
+    "build:avatars": "node tools/build-avatars.mjs",
     "build:brand-registry": "node tools/build-brand-registry.mjs",
-    "build:site": "npm run build:spec && npm run build:data && node tools/build-fixture-package.mjs && node tools/build-brand-registry.mjs && node tools/build-fixture-package-py.mjs && node tools/stage-site.mjs",
+    "build:site": "npm run build:spec && npm run build:data && npm run build:avatars && node tools/build-fixture-package.mjs && node tools/build-brand-registry.mjs && node tools/build-fixture-package-py.mjs && node tools/stage-site.mjs",
     "build:fixtures": "npm run build:spec && node tools/build-fixture-package.mjs && node tools/build-brand-registry.mjs && node tools/build-fixture-package-py.mjs",
     "test:mcp": "npm run build:fixtures --silent && npm test --workspace @openfinance-os/sandbox-mcp --silent",
     "verify:spec-shape": "node tools/verify-spec-shape.mjs",

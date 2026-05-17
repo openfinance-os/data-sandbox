@@ -273,7 +273,7 @@ for (const [id, p] of Object.entries(personas)) {
 }
 
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
-fs.writeFileSync(OUT, JSON.stringify({ avatars }) + '\n');
+fs.writeFileSync(OUT, JSON.stringify({ avatars }));
 const count = Object.keys(avatars).length;
 console.log(
   `built ${count} avatars → ${path.relative(repoRoot, OUT)} ` +
