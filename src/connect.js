@@ -113,8 +113,12 @@ function formatAed(n) {
 
 // view: 'hub' (default landing — two cards + J3 contrast)
 //       'j1'  (Bank-direct MCP labs wizard — was the only view before this redesign)
-//       'j2'  (OF rails TPP via Al Tareq — placeholder in Phase A, wizard in Phase B)
+//       'j2'  (OF rails TPP via Al Tareq wizard — Phase B)
 // step:  1..4 inside the J1 wizard. Ignored when view !== 'j1'.
+// j2*:   J2 wizard state (5 steps: persona → scope → LFIs → Al Tareq consent → PFM/BFM)
+//        Kept independent of J1 state so users can walk both journeys without one
+//        wizard's progress clobbering the other. selectedPersonaId is shared — the
+//        same persona can drive both journeys.
 const state = {
   view: 'hub',
   step: 1,
@@ -124,6 +128,12 @@ const state = {
   selectedBankProfiles: new Set(),
   selectedInsuranceLines: new Set(),
   approved: false,
+  // J2 ──────────────────────────────────────────────────────────────
+  j2Step: 1,
+  j2Filter: 'all',                // 'all' | 'retail' | 'sme'
+  j2Scope: null,                  // 'single' | 'multi'
+  j2SelectedLFIs: new Set(),      // subset of LFI_PROFILES keys (rich/median/sparse)
+  j2Approved: false,
 };
 
 function selectedPersona() {
@@ -141,6 +151,10 @@ function serializeStateToParams() {
   if (state.selectedBankProfiles.size) params.set('banks', [...state.selectedBankProfiles].join(','));
   if (state.selectedInsuranceLines.size) params.set('lines', [...state.selectedInsuranceLines].join(','));
   if (state.step && state.step !== 1) params.set('step', String(state.step));
+  // J2 state — namespaced to avoid colliding with J1 params on shared URLs
+  if (state.j2Step && state.j2Step !== 1) params.set('j2step', String(state.j2Step));
+  if (state.j2Scope) params.set('j2scope', state.j2Scope);
+  if (state.j2SelectedLFIs.size) params.set('j2lfis', [...state.j2SelectedLFIs].join(','));
   return params;
 }
 
@@ -191,6 +205,27 @@ function restoreStateFromUrl() {
   // no institutions, bounce to step 2.
   if (state.step > 1 && !selectedPersona()) state.step = 1;
   if (state.step > 2 && state.selectedBankProfiles.size + state.selectedInsuranceLines.size === 0) state.step = 2;
+  // J2 state restore
+  const j2Step = parseInt(params.get('j2step') || '1', 10);
+  if (j2Step >= 1 && j2Step <= 5) {
+    state.j2Step = j2Step;
+    if (j2Step !== 1) any = true;
+  }
+  const j2Scope = params.get('j2scope');
+  if (j2Scope === 'single' || j2Scope === 'multi') {
+    state.j2Scope = j2Scope;
+    any = true;
+  }
+  const j2Lfis = params.get('j2lfis');
+  if (j2Lfis) {
+    state.j2SelectedLFIs = new Set(j2Lfis.split(',').filter((b) => LFI_PROFILES.some((p) => p.key === b)));
+    any = true;
+  }
+  // J2 step gating: bounce back if the prerequisite for a step isn't met.
+  if (state.j2Step > 1 && !selectedPersona()) state.j2Step = 1;
+  if (state.j2Step > 2 && !state.j2Scope) state.j2Step = 2;
+  if (state.j2Step > 3 && state.j2SelectedLFIs.size === 0) state.j2Step = 3;
+  if (state.j2Scope === 'multi' && state.j2SelectedLFIs.size === 1 && state.j2Step > 3) state.j2Step = 3;
   return any;
 }
 
@@ -274,6 +309,21 @@ function refresh() {
     else if (state.step === 3) renderConsent();
     else if (state.step === 4) renderConnected();
     renderActions();
+  } else if (state.view === 'j2') {
+    document.querySelectorAll('#j2-wizard-steps .step').forEach((node) => {
+      const s = Number(node.dataset.j2step);
+      node.classList.toggle('active', s === state.j2Step);
+      node.classList.toggle('done', s < state.j2Step);
+    });
+    for (const s of [1, 2, 3, 4, 5]) {
+      document.getElementById(`j2-step-${s}`).hidden = s !== state.j2Step;
+    }
+    if (state.j2Step === 1) renderJ2Persona();
+    else if (state.j2Step === 2) renderJ2Scope();
+    else if (state.j2Step === 3) renderJ2LFIs();
+    else if (state.j2Step === 4) renderJ2Consent();
+    else if (state.j2Step === 5) renderJ2Dashboard();
+    renderJ2Actions();
   }
   pushUrl();
 }
@@ -992,6 +1042,593 @@ function renderActions() {
   }
 }
 
+// ─── J2 wizard rendering ────────────────────────────────────────────
+//
+// Five steps that walk the user through a regulated TPP consent journey:
+// persona → single/multi scope → LFI picker → Al Tareq CAAP consent → PFM
+// (Retail) or BFM (SME) dashboard. Persona selection is shared with J1 via
+// state.selectedPersonaId; everything else lives in state.j2*.
+
+// Filter pipeline for J2's persona gallery. J2's dashboard at step 5 is a
+// banking PFM/BFM view, so we constrain to banking-domain personas (insurance
+// personas have no banking fixtures and would render empty cards in v1). The
+// retail/sme filter then slices on segment (SME personas carry segment="SME";
+// everything else is Retail).
+function j2FilteredPersonas() {
+  return state.personas.filter((p) => {
+    if (p.domain !== 'banking') return false;
+    if (state.j2Filter === 'all') return true;
+    const isSme = (p.segment || '').toLowerCase() === 'sme';
+    if (state.j2Filter === 'sme') return isSme;
+    if (state.j2Filter === 'retail') return !isSme;
+    return true;
+  });
+}
+
+function renderJ2Persona() {
+  // Sync the filter buttons with state.j2Filter on every render so URL or
+  // back-button-driven state changes show through to the active tab.
+  document.querySelectorAll('#j2-persona-filters button').forEach((b) => {
+    const on = b.dataset.j2filter === state.j2Filter;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  const grid = document.getElementById('j2-persona-grid');
+  grid.replaceChildren();
+  const filtered = j2FilteredPersonas();
+  for (const p of filtered) {
+    const card = el('button', {
+      type: 'button',
+      className: `persona-card${p.id === state.selectedPersonaId ? ' selected' : ''}`,
+      role: 'radio',
+      'aria-checked': p.id === state.selectedPersonaId ? 'true' : 'false',
+      dataset: { personaId: p.id },
+      onclick: () => { state.selectedPersonaId = p.id; refresh(); },
+    }, [
+      el('div', { className: 'avatar', style: `background:${avatarColor(p.id)};` }, initials(p.name)),
+      el('span', { className: 'pname' }, p.name),
+      el('span', { className: 'pmeta' }, `${(p.archetype || '').replace(/_/g, ' ')}${p.segment ? ` · ${p.segment}` : ''}`),
+      el('div', { className: 'ptags' }, [
+        el('span', { className: `tag domain-${p.domain}` }, p.domain),
+        ...(p.segment ? [el('span', { className: 'tag segment-sme' }, p.segment)] : []),
+        ...(p.multi_lfi_footprint ? [el('span', { className: 'tag' }, 'multi-LFI footprint')] : []),
+      ]),
+    ]);
+    grid.appendChild(card);
+  }
+  if (!filtered.length) {
+    grid.appendChild(el('p', { className: 'skeleton' }, 'No personas match this filter.'));
+  }
+}
+
+function renderJ2Scope() {
+  const persona = selectedPersona();
+  const grid = document.getElementById('j2-scope-grid');
+  grid.replaceChildren();
+
+  // Suggest multi-LFI when the persona's manifest has a footprint that
+  // explicitly maps primary/secondary/tertiary banking relationships. The
+  // recommendation is a UX nudge; the user can still pick either.
+  const suggestsMulti = !!persona?.multi_lfi_footprint;
+
+  const options = [
+    {
+      key: 'single',
+      title: 'Single LFI',
+      pill: 'Most TPPs today',
+      body: 'The TPP requests consent from one LFI at a time. Same Al Tareq rails as multi; just one bank in the bundle. Closest to the v1 Nebras sandbox shape.',
+      meta: 'One Authorization Server endpoint · one consent grant · one bearer scope.',
+      recommended: !suggestsMulti,
+    },
+    {
+      key: 'multi',
+      title: 'Multi-LFI',
+      pill: 'Headline OF capability',
+      body: 'One CAAP consent journey, multiple LFIs authorized in one tap. The user sees per-LFI scopes and grants them together. End-state is an aggregated cross-LFI dashboard.',
+      meta: suggestsMulti
+        ? `This persona has a multi_lfi_footprint manifest — designed for this path.`
+        : 'Works for any persona; pick 2–4 LFI profiles to simulate a portfolio.',
+      recommended: suggestsMulti,
+    },
+  ];
+
+  for (const opt of options) {
+    const selected = state.j2Scope === opt.key;
+    const card = el('button', {
+      type: 'button',
+      className: `scope-card${selected ? ' selected' : ''}`,
+      'aria-pressed': selected ? 'true' : 'false',
+      onclick: () => {
+        state.j2Scope = opt.key;
+        // Switching to single-LFI mode trims the selection down to at most
+        // one profile so step 3 doesn't surface a stale multi-pick.
+        if (opt.key === 'single' && state.j2SelectedLFIs.size > 1) {
+          const keep = state.j2SelectedLFIs.has('median') ? 'median' : [...state.j2SelectedLFIs][0];
+          state.j2SelectedLFIs = new Set([keep]);
+        }
+        refresh();
+      },
+    }, [
+      el('div', { className: 'sc-head' }, [
+        el('span', { className: 'sc-title' }, opt.title + (opt.recommended ? ' (suggested)' : '')),
+        el('span', { className: 'sc-pill' }, opt.pill),
+      ]),
+      el('div', { className: 'sc-body' }, opt.body),
+      el('div', { className: 'sc-meta' }, opt.meta),
+    ]);
+    grid.appendChild(card);
+  }
+}
+
+function renderJ2LFIs() {
+  const persona = selectedPersona();
+  const body = document.getElementById('j2-lfi-body');
+  body.replaceChildren();
+  if (!persona) return;
+
+  const sub = document.getElementById('j2-step-3-sub');
+  const multi = state.j2Scope === 'multi';
+  sub.textContent = multi
+    ? `${persona.name} — pick 2 to 4 anonymous LFI profiles. Each profile stands in for a regulated LFI authorized in the same consent grant. Per PRD NG5, profiles are never bound to real bank names.`
+    : `${persona.name} — pick one anonymous LFI profile (the TPP requests consent from a single LFI through Al Tareq).`;
+
+  const header = el('h4', {}, multi ? 'Pick 2–4 LFI profiles' : 'Pick one LFI profile');
+  body.appendChild(header);
+  const grid = el('div', { className: 'inst-grid' });
+  for (const prof of LFI_PROFILES) {
+    const selected = state.j2SelectedLFIs.has(prof.key);
+    const disabledByCap = multi && !selected && state.j2SelectedLFIs.size >= 4;
+    const card = el('button', {
+      type: 'button',
+      className: `inst-card${selected ? ' selected' : ''}${disabledByCap ? ' cross-domain' : ''}`,
+      'aria-pressed': selected ? 'true' : 'false',
+      disabled: disabledByCap,
+      onclick: () => {
+        if (multi) {
+          if (state.j2SelectedLFIs.has(prof.key)) state.j2SelectedLFIs.delete(prof.key);
+          else if (state.j2SelectedLFIs.size < 4) state.j2SelectedLFIs.add(prof.key);
+        } else {
+          // Single mode: radio behaviour — replace, never accumulate.
+          state.j2SelectedLFIs = new Set([prof.key]);
+        }
+        refresh();
+      },
+    }, [
+      el('div', { className: 'ihead' }, [
+        el('span', { className: 'iname' }, prof.name),
+        el('span', { className: `ibadge ${prof.key}` }, prof.key),
+      ]),
+      el('div', { className: 'ibody' }, prof.body),
+      el('div', { className: 'iendpoints' }, '12 v2.1 endpoints · OFTF mTLS · FAPI 2.0'),
+    ]);
+    grid.appendChild(card);
+  }
+  body.appendChild(grid);
+
+  if (persona.multi_lfi_footprint) {
+    const advisory = el('div', { className: 'footprint-advisory' });
+    advisory.appendChild(el('strong', {}, 'Real-world plausible UAE LFIs for this persona'));
+    advisory.appendChild(el('span', {}, 'Descriptive — from persona manifest, never bound to a populate-rate profile (NG5 / D-14).'));
+    for (const role of ['primary', 'secondary', 'tertiary']) {
+      const r = persona.multi_lfi_footprint[role];
+      if (!r) continue;
+      advisory.appendChild(el('div', { className: 'candidate-role' }, `${role} · ${r.role.replace(/_/g, ' ')}`));
+      const row = el('div', { className: 'candidate-row' });
+      for (const cand of (r.plausible_lfi_candidates || [])) {
+        row.appendChild(el('span', { className: 'cand' }, cand));
+      }
+      advisory.appendChild(row);
+    }
+    body.appendChild(advisory);
+  }
+}
+
+function renderJ2Consent() {
+  const persona = selectedPersona();
+  const body = document.getElementById('j2-consent-body');
+  body.replaceChildren();
+  if (!persona) return;
+
+  const isSme = (persona.segment || '').toLowerCase() === 'sme';
+  const tppName = isSme ? 'Khazaa BFM' : 'Khazaa PFM';
+  const tppRole = 'Regulated TPP · Data Sharing Provider · UAE OF licensed';
+
+  const consent = el('div', { className: 'altareq-consent', role: 'img', 'aria-label': 'Mock Al Tareq CAAP consent screen (Journey 2)' });
+  consent.appendChild(el('div', { className: 'browser-bar' }, [
+    el('span', { className: 'dots' }, [el('span'), el('span'), el('span')]),
+    el('span', { className: 'url' }, 'https://caap.altareq.openfinanceuae.ae/authorize?client_id=khazaa&request=…'),
+  ]));
+  consent.appendChild(el('div', { className: 'ribbon' }, [
+    el('span', {}, 'Al Tareq · Consent and Authorization Application Platform'),
+    el('span', { className: 'ribbon-meta' }, 'FAPI 2.0 · OFTF mTLS · Operated by Nebras'),
+  ]));
+
+  const inner = el('div', { className: 'body' });
+  inner.appendChild(el('h4', {}, 'Authorize data sharing'));
+  inner.appendChild(el('p', { className: 'sub' }, [
+    el('strong', {}, tppName),
+    ` is requesting consent to read your Open Finance data at ${state.j2SelectedLFIs.size} LFI${state.j2SelectedLFIs.size === 1 ? '' : 's'} for the next 90 days.`,
+  ]));
+
+  inner.appendChild(el('div', { className: 'tpp-info' }, [
+    el('div', { className: 'tpp-icon', 'aria-hidden': 'true' }, 'K'),
+    el('div', {}, [
+      el('div', { className: 'tpp-name' }, tppName),
+      el('div', { className: 'tpp-role' }, tppRole),
+    ]),
+  ]));
+
+  // Per-LFI consent groupings — one per authorized profile. Each shows the
+  // scopes Khazaa is asking for at that LFI; the user grants them together
+  // in one CAAP transaction (the load-bearing difference from J1 and J3).
+  const scopes = SCOPE_LABELS.banking.body;
+  for (const key of state.j2SelectedLFIs) {
+    const prof = LFI_PROFILES.find((p) => p.key === key);
+    if (!prof) continue;
+    const block = el('div', { className: 'per-lfi' });
+    block.appendChild(el('div', { className: 'lfi-head' }, [
+      el('span', { className: 'lfi-label' }, prof.name),
+      el('span', { className: 'lfi-badge' }, prof.key),
+    ]));
+    block.appendChild(el('div', { className: 'lfi-scopes' }, [
+      el('strong', {}, 'Bank Data Sharing — '),
+      scopes,
+    ]));
+    inner.appendChild(block);
+  }
+
+  inner.appendChild(el('p', { className: 'footnote' }, [
+    'Sharing window ', el('strong', {}, '90 days'),
+    '. Revoke any time at ',
+    el('em', {}, 'portal.openfinance.ae · My Consents'),
+    ' (Nebras Consent Manager — the single source of truth for every TPP consent under UAE Open Finance, regardless of LFI). ',
+    'Data is ', el('strong', {}, 'SYNTHETIC'), '. No real customer. No real institution.',
+  ]));
+
+  consent.appendChild(inner);
+  body.appendChild(consent);
+}
+
+// J2 dashboard: PFM (Retail) or BFM (SME) end-state. Fetches the same persona's
+// banking bundle at every selected LFI profile and aggregates: total balance
+// across LFIs, accounts list with per-LFI badges, fixed commitments rolled up,
+// transaction timeline (last 90 days) interleaved by date.
+async function renderJ2Dashboard() {
+  const persona = selectedPersona();
+  const body = document.getElementById('j2-dashboard-body');
+  body.replaceChildren();
+  if (!persona) return;
+
+  const isSme = (persona.segment || '').toLowerCase() === 'sme';
+  document.getElementById('j2-step-5-h').textContent = isSme ? 'Aggregated BFM view' : 'Aggregated PFM view';
+  document.getElementById('j2-step-5-sub').textContent = isSme
+    ? `Khazaa BFM rolls up the consented data across ${state.j2SelectedLFIs.size} LFI${state.j2SelectedLFIs.size === 1 ? '' : 's'}. Every figure is computed deterministically from real v2.1 fixture data.`
+    : `Khazaa PFM aggregates the consented data across ${state.j2SelectedLFIs.size} LFI${state.j2SelectedLFIs.size === 1 ? '' : 's'}. Every figure is computed deterministically from real v2.1 fixture data.`;
+
+  if (!persona.default_seed) {
+    body.appendChild(el('p', { className: 'skeleton', style: 'color:var(--warn-border);' },
+      `No default_seed for this persona — run \`npm run build:fixtures && npm run build:site\` first.`));
+    return;
+  }
+
+  body.appendChild(el('p', { className: 'skeleton' }, `Loading consented data across ${state.j2SelectedLFIs.size} LFI${state.j2SelectedLFIs.size === 1 ? '' : 's'}…`));
+
+  try {
+    const perLfi = await Promise.all([...state.j2SelectedLFIs].map(async (lfi) => {
+      const base = `../fixtures/v1/bundles/${persona.id}/${lfi}/seed-${persona.default_seed}`;
+      const acctEnv = await fetchJson(`${base}/accounts.json`);
+      if (!acctEnv) return { lfi, accounts: [], perAccount: [] };
+      const accounts = acctEnv.Data?.Account ?? [];
+      const perAccount = await Promise.all(accounts.map(async (acct) => {
+        const id = acct.AccountId;
+        const [bal, tx, so, dd] = await Promise.all([
+          fetchJson(`${base}/accounts__${id}__balances.json`),
+          fetchJson(`${base}/accounts__${id}__transactions.json`),
+          fetchJson(`${base}/accounts__${id}__standing-orders.json`),
+          fetchJson(`${base}/accounts__${id}__direct-debits.json`),
+        ]);
+        return { account: acct, balances: bal, transactions: tx, standingOrders: so, directDebits: dd };
+      }));
+      return { lfi, accountsEnvelope: acctEnv, accounts, perAccount };
+    }));
+
+    body.replaceChildren();
+    body.appendChild(isSme ? renderBfmDashboard(persona, perLfi) : renderPfmDashboard(persona, perLfi));
+
+    // Watermark line — one per consented LFI, so the reader can verify the
+    // dashboard's numbers trace back to the real fixture corpus.
+    const wm = el('div', { className: 'j2-dash-watermark' });
+    for (const { lfi, accountsEnvelope } of perLfi) {
+      if (accountsEnvelope?._watermark) {
+        wm.appendChild(el('div', {}, `LFI ${lfi}: ${accountsEnvelope._watermark}`));
+      }
+    }
+    body.appendChild(wm);
+  } catch (err) {
+    body.replaceChildren();
+    body.appendChild(el('p', { className: 'skeleton', style: 'color:#a13;' },
+      `Couldn't load the fixtures: ${err.message}. Run \`npm run build:fixtures && npm run build:site\`, then serve from \`_site\`.`));
+  }
+}
+
+function aggregateJ2Insights(perLfi) {
+  // Aggregate balances, recurring outflows, and a 90-day transaction stream
+  // across every consented LFI. The same spec-defined paths the J1 wizard
+  // uses (Data.Account[], Data.Balance[], Data.Transaction[], …) — just
+  // unioned and tagged with which LFI each row came from.
+  let totalAed = 0;
+  const accountsRolled = [];
+  const commitments = [];
+  const allTx = [];
+
+  for (const { lfi, perAccount } of perLfi) {
+    for (const a of perAccount) {
+      const balances = a.balances?.Data?.Balance ?? [];
+      const pick = balances.find((b) => b.Type === 'InterimAvailable')
+                || balances.find((b) => b.Type === 'InterimBooked')
+                || balances[0];
+      let bal = null, ccy = null;
+      if (pick && pick.Amount?.Currency) {
+        const amt = parseFloat(pick.Amount.Amount);
+        bal = pick.CreditDebitIndicator === 'Credit' ? amt : -amt;
+        ccy = pick.Amount.Currency;
+        if (ccy === 'AED') totalAed += bal;
+      }
+      accountsRolled.push({
+        lfi,
+        name: a.account.Nickname || a.account.AccountSubType || a.account.AccountType || a.account.AccountId,
+        subtype: a.account.AccountSubType || '',
+        balance: bal,
+        currency: ccy || '—',
+      });
+      for (const so of (a.standingOrders?.Data?.StandingOrder ?? [])) {
+        const amt = so.FirstPaymentAmount?.Amount ?? so.NextPaymentAmount?.Amount ?? '—';
+        const ccyC = so.FirstPaymentAmount?.Currency ?? so.NextPaymentAmount?.Currency ?? '';
+        commitments.push({
+          lfi,
+          label: so.Reference || so.CreditorAccount?.Name || 'Standing order',
+          amount: amt,
+          currency: ccyC,
+          frequency: so.Frequency || '',
+          kind: 'SO',
+        });
+      }
+      for (const dd of (a.directDebits?.Data?.DirectDebit ?? [])) {
+        commitments.push({
+          lfi,
+          label: dd.Name || dd.MandateIdentification || 'Direct debit',
+          amount: dd.PreviousPaymentAmount?.Amount || '—',
+          currency: dd.PreviousPaymentAmount?.Currency || '',
+          frequency: 'DD',
+          kind: 'DD',
+        });
+      }
+      for (const t of (a.transactions?.Data?.Transaction ?? [])) {
+        allTx.push({ ...t, _lfi: lfi });
+      }
+    }
+  }
+
+  allTx.sort((a, b) => (b.BookingDateTime || '').localeCompare(a.BookingDateTime || ''));
+  const cutoffMs = Date.now() - 90 * 24 * 3600 * 1000;
+  const recentTx = allTx.filter((t) => Date.parse(t.BookingDateTime || '') > cutoffMs).slice(0, 80);
+
+  return { totalAed, accountsRolled, commitments, recentTx };
+}
+
+function renderPfmDashboard(persona, perLfi) {
+  const ins = aggregateJ2Insights(perLfi);
+  const dash = el('div', { className: 'pfm-dashboard' });
+
+  // Customer card
+  dash.appendChild(el('div', { className: 'dash-card' }, [
+    el('h3', {}, 'Customer'),
+    el('div', { className: 'stat' }, persona.name),
+    el('div', { className: 'stat-sub' }, `${(persona.archetype || '').replace(/_/g, ' ')} · Retail · ${state.j2SelectedLFIs.size} LFI${state.j2SelectedLFIs.size === 1 ? '' : 's'} consented`),
+  ]));
+
+  // Cross-LFI total balance
+  dash.appendChild(el('div', { className: 'dash-card' }, [
+    el('h3', {}, 'Total balance (AED, cross-LFI)'),
+    el('div', { className: 'stat' }, formatAed(ins.totalAed)),
+    el('div', { className: 'stat-sub' }, `Across ${ins.accountsRolled.length} accounts · non-AED accounts listed separately`),
+  ]));
+
+  // Accounts — per-LFI badges
+  const acctList = el('ul', {});
+  for (const a of ins.accountsRolled) {
+    acctList.appendChild(el('li', {}, [
+      el('div', { className: 'row' }, [
+        el('span', {}, [a.name, el('span', { className: 'lfi-badge' }, a.lfi)]),
+        el('span', { className: 'right' }, a.balance != null ? `${a.currency} ${formatNumber(a.balance)}` : '—'),
+      ]),
+      el('div', { className: 'stat-sub' }, a.subtype),
+    ]));
+  }
+  if (!ins.accountsRolled.length) acctList.appendChild(el('li', { className: 'stat-sub' }, 'No accounts returned.'));
+  dash.appendChild(el('div', { className: 'dash-card' }, [el('h3', {}, 'Accounts'), acctList]));
+
+  // Fixed commitments rolled up
+  const soList = el('ul', {});
+  if (!ins.commitments.length) {
+    soList.appendChild(el('li', { className: 'stat-sub' }, 'No standing orders or direct debits for this persona.'));
+  } else {
+    for (const c of ins.commitments.slice(0, 10)) {
+      soList.appendChild(el('li', {}, [
+        el('div', { className: 'row' }, [
+          el('span', {}, [c.label, el('span', { className: 'lfi-badge' }, c.lfi)]),
+          el('span', { className: 'right' }, `${c.currency} ${c.amount}`),
+        ]),
+        el('div', { className: 'stat-sub' }, `${c.kind} · ${c.frequency}`),
+      ]));
+    }
+  }
+  dash.appendChild(el('div', { className: 'dash-card' }, [el('h3', {}, 'Fixed commitments'), soList]));
+
+  // Timeline (full width)
+  dash.appendChild(renderJ2Timeline(ins.recentTx));
+  return dash;
+}
+
+function renderBfmDashboard(persona, perLfi) {
+  // BFM view: receivables (positive cashflow lines), payables (commitments),
+  // 90-day cashflow forecast (last 30 net inflow as proxy), multi-outlet
+  // rollup if persona is multi-LFI.
+  const ins = aggregateJ2Insights(perLfi);
+
+  // Last-30-day net inflow per LFI as cashflow indicator
+  const cutoff30 = Date.now() - 30 * 24 * 3600 * 1000;
+  const byLfi = new Map();
+  for (const t of ins.recentTx) {
+    const when = Date.parse(t.BookingDateTime || '');
+    if (when < cutoff30) continue;
+    if (t.Amount?.Currency !== 'AED') continue;
+    const amt = parseFloat(t.Amount.Amount);
+    const signed = t.CreditDebitIndicator === 'Credit' ? amt : -amt;
+    byLfi.set(t._lfi, (byLfi.get(t._lfi) || 0) + signed);
+  }
+  let netInflow30 = 0;
+  for (const v of byLfi.values()) netInflow30 += v;
+
+  let inflow30 = 0, outflow30 = 0;
+  for (const t of ins.recentTx) {
+    const when = Date.parse(t.BookingDateTime || '');
+    if (when < cutoff30) continue;
+    if (t.Amount?.Currency !== 'AED') continue;
+    const amt = parseFloat(t.Amount.Amount);
+    if (t.CreditDebitIndicator === 'Credit') inflow30 += amt; else outflow30 += amt;
+  }
+
+  const dash = el('div', { className: 'bfm-dashboard' });
+
+  // SME entity card
+  dash.appendChild(el('div', { className: 'dash-card' }, [
+    el('h3', {}, 'SME entity'),
+    el('div', { className: 'stat' }, persona.name),
+    el('div', { className: 'stat-sub' }, `${(persona.archetype || '').replace(/_/g, ' ')} · SME · ${state.j2SelectedLFIs.size} LFI${state.j2SelectedLFIs.size === 1 ? '' : 's'} consented`),
+  ]));
+
+  // Cross-LFI working capital
+  dash.appendChild(el('div', { className: 'dash-card' }, [
+    el('h3', {}, 'Working capital (AED, cross-LFI)'),
+    el('div', { className: 'stat' }, formatAed(ins.totalAed)),
+    el('div', { className: 'stat-sub' }, `Across ${ins.accountsRolled.length} accounts at ${byLfi.size || state.j2SelectedLFIs.size} LFI${(byLfi.size || state.j2SelectedLFIs.size) === 1 ? '' : 's'}`),
+  ]));
+
+  // Receivables — 30-day inflow
+  dash.appendChild(el('div', { className: 'dash-card' }, [
+    el('h3', {}, 'Receivables · 30d'),
+    el('div', { className: 'stat pos' }, formatAed(inflow30)),
+    el('div', { className: 'stat-sub' }, `Total credits across all consented accounts`),
+  ]));
+
+  // Payables — 30-day outflow + committed
+  dash.appendChild(el('div', { className: 'dash-card' }, [
+    el('h3', {}, 'Payables · 30d + committed'),
+    el('div', { className: 'stat neg' }, formatAed(outflow30)),
+    el('div', { className: 'stat-sub' }, `${ins.commitments.length} standing instruction${ins.commitments.length === 1 ? '' : 's'} on file`),
+  ]));
+
+  // Per-LFI cashflow rollup (span 2)
+  const perLfiUl = el('ul', {});
+  for (const [lfi, net] of byLfi.entries()) {
+    perLfiUl.appendChild(el('li', {}, [
+      el('div', { className: 'row' }, [
+        el('span', {}, [`LFI ${lfi}`, el('span', { className: 'lfi-badge' }, lfi)]),
+        el('span', { className: `right ${net >= 0 ? 'pos' : 'neg'}` },
+          `${net >= 0 ? '+' : ''}${formatAed(net)}`),
+      ]),
+      el('div', { className: 'stat-sub' }, 'Net AED flow · last 30 days'),
+    ]));
+  }
+  if (!byLfi.size) perLfiUl.appendChild(el('li', { className: 'stat-sub' }, 'No AED transactions in the last 30 days.'));
+  dash.appendChild(el('div', { className: 'dash-card span-2' }, [
+    el('h3', {}, 'Per-LFI cashflow · 30d (net AED)'),
+    perLfiUl,
+  ]));
+
+  dash.appendChild(renderJ2Timeline(ins.recentTx));
+  return dash;
+}
+
+function renderJ2Timeline(recentTx) {
+  const card = el('div', { className: 'dash-card span-2' }, [el('h3', {}, 'Transactions — last 90 days (cross-LFI)')]);
+  const tl = el('div', { className: 'dash-timeline' });
+  if (!recentTx.length) {
+    tl.appendChild(el('div', { className: 'stat-sub' }, 'No transactions in the last 90 days across the consented LFIs.'));
+    card.appendChild(tl);
+    return card;
+  }
+  let lastMonth = '';
+  for (const t of recentTx) {
+    const month = (t.BookingDateTime || '').slice(0, 7);
+    if (month !== lastMonth) {
+      tl.appendChild(el('div', { className: 'dash-timeline-month' }, month));
+      lastMonth = month;
+    }
+    const isCredit = t.CreditDebitIndicator === 'Credit';
+    const sign = isCredit ? '+' : '−';
+    const amt = `${sign} ${formatNumber(t.Amount?.Amount)} ${t.Amount?.Currency || ''}`;
+    const li = el('li', { style: 'border-top:1px dashed var(--border); padding:6px 0; list-style:none;' }, [
+      el('div', { className: 'row' }, [
+        el('span', {}, [
+          t.TransactionInformation || t.MerchantDetails?.MerchantName || 'Transaction',
+          el('span', { className: 'lfi-badge' }, t._lfi),
+        ]),
+        el('span', { className: `right ${isCredit ? 'pos' : 'neg'}` }, amt),
+      ]),
+      el('div', { className: 'stat-sub' }, `${(t.BookingDateTime || '').slice(0, 10)} · ${t.ProprietaryBankTransactionCode?.Code || ''}`),
+    ]);
+    tl.appendChild(li);
+  }
+  card.appendChild(tl);
+  return card;
+}
+
+function formatNumber(n) {
+  const x = Number(n);
+  if (!Number.isFinite(x)) return '—';
+  return x.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function renderJ2Actions() {
+  const persona = selectedPersona();
+  const next = document.getElementById('j2-btn-next');
+  const back = document.getElementById('j2-btn-back');
+  const restart = document.getElementById('j2-btn-restart');
+  const status = document.getElementById('j2-wizard-status');
+  if (!next || !back || !status) return;
+
+  back.disabled = state.j2Step <= 1;
+  restart.hidden = state.j2Step !== 5;
+
+  const lfiCount = state.j2SelectedLFIs.size;
+  const minLfi = state.j2Scope === 'multi' ? 2 : 1;
+
+  if (state.j2Step === 1) {
+    next.disabled = !persona;
+    next.textContent = persona ? `Continue as ${persona.name.split('—')[0].trim()} →` : 'Pick a persona →';
+    status.textContent = persona ? `Selected: ${persona.name}.` : 'Pick a persona to continue.';
+  } else if (state.j2Step === 2) {
+    next.disabled = !state.j2Scope;
+    next.textContent = state.j2Scope ? `Continue (${state.j2Scope}) →` : 'Pick scope →';
+    status.textContent = state.j2Scope ? `${state.j2Scope === 'multi' ? 'Multi-LFI' : 'Single-LFI'} scope.` : 'Single LFI or multi-LFI?';
+  } else if (state.j2Step === 3) {
+    const ready = lfiCount >= minLfi;
+    next.disabled = !ready;
+    next.textContent = ready ? `Open Al Tareq consent (${lfiCount} LFI${lfiCount === 1 ? '' : 's'}) →` : `Pick ${state.j2Scope === 'multi' ? '2–4 profiles' : 'one profile'}`;
+    status.textContent = `${lfiCount} of ${state.j2Scope === 'multi' ? '2–4' : '1'} LFI profile${lfiCount === 1 ? '' : 's'} selected.`;
+  } else if (state.j2Step === 4) {
+    next.disabled = false;
+    next.textContent = 'Approve all (1 tap)';
+    status.textContent = 'Approving will simulate the regulated CAAP consent grant — no real network call.';
+  } else if (state.j2Step === 5) {
+    next.disabled = true;
+    next.textContent = 'Aggregated ✓';
+    status.textContent = `Khazaa ${(persona?.segment || '').toLowerCase() === 'sme' ? 'BFM' : 'PFM'} is now aggregating ${persona?.name?.split('—')[0]?.trim() || persona?.name}'s consented data.`;
+  }
+}
+
 // ─── Wiring ────────────────────────────────────────────────────────
 
 function wireControls() {
@@ -1040,6 +1677,47 @@ function wireControls() {
     node.addEventListener('click', () => {
       const target = Number(node.dataset.step);
       if (target < state.step) { state.step = target; refresh(); }
+    });
+  });
+
+  // ── J2 wizard controls ─────────────────────────────────────────────
+  document.querySelectorAll('#j2-persona-filters button').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      state.j2Filter = btn.dataset.j2filter;
+      renderJ2Persona();
+    });
+  });
+
+  const j2Next = document.getElementById('j2-btn-next');
+  if (j2Next) j2Next.addEventListener('click', () => {
+    if (state.j2Step < 4) { state.j2Step += 1; refresh(); return; }
+    if (state.j2Step === 4) { state.j2Approved = true; state.j2Step = 5; refresh(); return; }
+  });
+  const j2Back = document.getElementById('j2-btn-back');
+  if (j2Back) j2Back.addEventListener('click', () => {
+    if (state.j2Step > 1) { state.j2Step -= 1; refresh(); }
+  });
+  const j2Restart = document.getElementById('j2-btn-restart');
+  if (j2Restart) j2Restart.addEventListener('click', () => {
+    state.j2Step = 1;
+    state.j2Scope = null;
+    state.j2SelectedLFIs = new Set();
+    state.j2Approved = false;
+    refresh();
+  });
+  document.querySelectorAll('#j2-wizard-steps .step').forEach((node) => {
+    node.addEventListener('click', () => {
+      const target = Number(node.dataset.j2step);
+      // Backwards-nav is always allowed; forward-nav only when the
+      // prerequisite for that step is met.
+      if (target < state.j2Step) { state.j2Step = target; refresh(); return; }
+      if (target === state.j2Step) return;
+      if (target === 2 && !selectedPersona()) return;
+      if (target === 3 && !state.j2Scope) return;
+      const minLfi = state.j2Scope === 'multi' ? 2 : 1;
+      if (target === 4 && state.j2SelectedLFIs.size < minLfi) return;
+      if (target === 5 && state.j2SelectedLFIs.size < minLfi) return;
+      state.j2Step = target; refresh();
     });
   });
 }

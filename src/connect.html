@@ -1184,6 +1184,231 @@
     font-style: italic;
     font-size: 13px;
   }
+
+  /* ─── J2: scope picker (single vs multi LFI) ────────────────────── */
+
+  .scope-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 6px;
+  }
+  @media (max-width: 680px) { .scope-grid { grid-template-columns: 1fr; } }
+  .scope-card {
+    text-align: left;
+    padding: 16px 18px 14px;
+    background: var(--bg-card);
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    color: var(--text);
+  }
+  .scope-card:hover { border-color: var(--accent); }
+  .scope-card.selected {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .scope-card .sc-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .scope-card .sc-title { font-weight: 600; font-size: 15px; }
+  .scope-card .sc-pill {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 7px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+  }
+  .scope-card .sc-body { font-size: 12.5px; color: var(--text); line-height: 1.5; }
+  .scope-card .sc-meta {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin-top: 8px;
+  }
+
+  /* ─── J2: Al Tareq CAAP consent screen (distinct from J1's bank-own) — */
+
+  .altareq-consent {
+    border: 1px solid var(--border-strong);
+    background: var(--bg-card);
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 4px 0 8px;
+  }
+  .altareq-consent .browser-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--bg-soft);
+    border-bottom: 1px solid var(--border);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11.5px;
+    color: var(--text-muted);
+  }
+  .altareq-consent .browser-bar .dots { display: inline-flex; gap: 4px; }
+  .altareq-consent .browser-bar .dots span {
+    display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+    background: var(--border-strong);
+  }
+  .altareq-consent .browser-bar .url {
+    flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .altareq-consent .ribbon {
+    background: linear-gradient(90deg, #2d5d4f 0%, #4b6c52 50%, #2d5d4f 100%);
+    color: #fff;
+    padding: 6px 14px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .altareq-consent .ribbon .ribbon-meta { font-weight: 400; opacity: 0.92; text-transform: none; letter-spacing: 0; font-size: 10.5px; }
+  .altareq-consent .body { padding: 20px 22px 18px; }
+  .altareq-consent .body h4 { margin: 0 0 4px; font-size: 16px; font-weight: 600; }
+  .altareq-consent .body .sub { font-size: 12.5px; color: var(--text-muted); margin-bottom: 14px; }
+  .altareq-consent .tpp-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    margin-bottom: 12px;
+  }
+  .altareq-consent .tpp-info .tpp-icon {
+    width: 36px; height: 36px;
+    border-radius: 6px;
+    background: var(--accent);
+    color: #fff;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700;
+    flex: 0 0 36px;
+  }
+  .altareq-consent .tpp-info .tpp-name { font-size: 13px; font-weight: 600; }
+  .altareq-consent .tpp-info .tpp-role { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .altareq-consent .per-lfi {
+    border-top: 1px solid var(--border);
+    padding: 12px 0 10px;
+  }
+  .altareq-consent .per-lfi:first-of-type { border-top: none; }
+  .altareq-consent .per-lfi .lfi-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .altareq-consent .per-lfi .lfi-label { font-weight: 600; font-size: 13px; }
+  .altareq-consent .per-lfi .lfi-badge {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 1px 6px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    background: var(--bg-soft);
+  }
+  .altareq-consent .per-lfi .lfi-scopes {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+  .altareq-consent .footnote {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border);
+  }
+  .altareq-consent .footnote a { color: var(--accent); text-decoration: underline; }
+
+  /* ─── J2: PFM / BFM dashboard ───────────────────────────────────── */
+
+  .pfm-dashboard, .bfm-dashboard {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 4px;
+  }
+  @media (max-width: 720px) {
+    .pfm-dashboard, .bfm-dashboard { grid-template-columns: 1fr; }
+  }
+  .dash-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+  }
+  .dash-card.span-2 { grid-column: 1 / -1; }
+  .dash-card h3 {
+    margin: 0 0 8px;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    font-weight: 700;
+  }
+  .dash-card .stat { font-size: 22px; font-weight: 600; }
+  .dash-card .stat-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .dash-card ul { list-style: none; padding: 0; margin: 0; }
+  .dash-card li {
+    padding: 6px 0;
+    border-top: 1px dashed var(--border);
+    font-size: 13px;
+  }
+  .dash-card li:first-child { border-top: none; }
+  .dash-card .row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: baseline;
+  }
+  .dash-card .row .right { text-align: right; }
+  .dash-card .lfi-badge {
+    display: inline-block;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 1px 5px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .dash-card .pos { color: #2f6c4a; }
+  .dash-card .neg { color: #a14242; }
+  .dash-timeline {
+    max-height: 240px;
+    overflow-y: auto;
+  }
+  .dash-timeline-month {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+    margin-top: 4px;
+  }
+  .j2-dash-watermark {
+    font-size: 10.5px;
+    color: var(--text-muted);
+    margin-top: 10px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    line-height: 1.5;
+  }
+
 </style>
 </head>
 <body>
@@ -1512,16 +1737,96 @@ MCP_SIMULATE_OAUTH=1 npx -y @openfinance-os/sandbox-mcp --transport http</code><
       Manager as the single source of truth. The end-state is a holistic PFM (Retail) or BFM
       (SME) view aggregated across the consented LFIs.
     </p>
-    <div class="j2-placeholder">
-      <h3>Wizard arrives in the next iteration</h3>
-      <p>
-        Phase B of this redesign will add the 5-step J2 flow: persona → single/multi scope →
-        LFI selection → Al Tareq CAAP consent screen → PFM/BFM dashboard. Until then, the
-        <a href="../examples/tpp-budgeting-demo/index.html">worked TPP budgeting demo</a> is
-        the closest existing surface: it consumes the same v2.1 fixtures over raw HTTPS the
-        way a regulated TPP app would.
-      </p>
-    </div>
+
+    <section class="wizard" id="j2-wizard" aria-label="Open Finance TPP consent journey simulator">
+      <ol class="wizard-steps" id="j2-wizard-steps">
+        <li class="step active" data-j2step="1"><span class="num">1</span><span class="label">Persona</span></li>
+        <li class="step" data-j2step="2"><span class="num">2</span><span class="label">Scope</span></li>
+        <li class="step" data-j2step="3"><span class="num">3</span><span class="label">LFIs</span></li>
+        <li class="step" data-j2step="4"><span class="num">4</span><span class="label">Al Tareq consent</span></li>
+        <li class="step" data-j2step="5"><span class="num">5</span><span class="label">PFM / BFM</span></li>
+      </ol>
+
+      <!-- J2 Step 1: persona pick (banking-domain only — PFM/BFM is a banking view) -->
+      <div class="wizard-body" id="j2-step-1">
+        <p class="step-title">Step 1 of 5</p>
+        <h2 class="step-h">Pick a customer profile</h2>
+        <p class="step-sub">
+          The TPP is acting on behalf of this person or SME. Only banking-domain personas are
+          shown here — PFM and BFM dashboards are banking views in v1. Retail personas drive
+          the PFM dashboard at the end; SME personas (look for the <code>SME</code> tag) drive
+          the BFM dashboard. SME personas with a <code>multi_lfi_footprint</code> work best for
+          the multi-LFI scope path.
+        </p>
+        <div class="persona-filters" id="j2-persona-filters" role="tablist" aria-label="Filter personas by domain">
+          <button type="button" data-j2filter="all" class="active" role="tab" aria-selected="true">All</button>
+          <button type="button" data-j2filter="retail" role="tab" aria-selected="false">Retail (PFM)</button>
+          <button type="button" data-j2filter="sme" role="tab" aria-selected="false">SME (BFM)</button>
+        </div>
+        <div class="persona-grid" id="j2-persona-grid" role="radiogroup" aria-label="Synthetic persona gallery">
+          <p class="skeleton">Loading personas…</p>
+        </div>
+      </div>
+
+      <!-- J2 Step 2: scope (single vs multi LFI) -->
+      <div class="wizard-body" id="j2-step-2" hidden>
+        <p class="step-title">Step 2 of 5</p>
+        <h2 class="step-h">Single LFI or multi-LFI?</h2>
+        <p class="step-sub">
+          Both rides ride the OF rails — Al Tareq CAAP, FAPI 2.0, Consent Manager as single
+          source of truth. The difference is how many LFIs the user authorizes in one consent
+          journey.
+        </p>
+        <div class="scope-grid" id="j2-scope-grid"></div>
+      </div>
+
+      <!-- J2 Step 3: LFI picker (anonymous profiles) -->
+      <div class="wizard-body" id="j2-step-3" hidden>
+        <p class="step-title">Step 3 of 5</p>
+        <h2 class="step-h">Pick LFI(s)</h2>
+        <p class="step-sub" id="j2-step-3-sub">
+          Anonymous populate-rate bands per PRD <abbr title="Non-Goal 5">NG5</abbr> — Rich
+          (every optional field set), Median (typical UAE-market posture), or Sparse
+          (minimum-conformant). Each band stands in for an LFI with that data posture.
+        </p>
+        <div id="j2-lfi-body" class="institutions-block">
+          <p class="skeleton">Pick a persona first.</p>
+        </div>
+      </div>
+
+      <!-- J2 Step 4: Al Tareq CAAP consent screen -->
+      <div class="wizard-body" id="j2-step-4" hidden>
+        <p class="step-title">Step 4 of 5</p>
+        <h2 class="step-h">Al Tareq consent</h2>
+        <p class="step-sub">
+          The regulated Consent and Authorization Application Platform (CAAP) screen the user
+          would see. One TPP request, one consent surface — even when the request spans multiple
+          LFIs. Approving here authorizes every selected LFI in one tap; revocation lives
+          centrally at the Nebras Consent Manager.
+        </p>
+        <div id="j2-consent-body"></div>
+      </div>
+
+      <!-- J2 Step 5: PFM (Retail) or BFM (SME) dashboard -->
+      <div class="wizard-body" id="j2-step-5" hidden>
+        <p class="step-title">Step 5 of 5</p>
+        <h2 class="step-h" id="j2-step-5-h">Aggregated view</h2>
+        <p class="step-sub" id="j2-step-5-sub">
+          A holistic view of the consented data, aggregated across every authorized LFI. Every
+          figure below is computed deterministically from real v2.1 fixture data.
+        </p>
+        <div id="j2-dashboard-body"></div>
+      </div>
+
+      <div class="wizard-actions">
+        <span class="meta" id="j2-wizard-status">Pick a persona to continue.</span>
+        <div class="button-row">
+          <button type="button" class="btn ghost" id="j2-btn-restart" hidden>Start over</button>
+          <button type="button" class="btn" id="j2-btn-back" disabled>← Back</button>
+          <button type="button" class="btn primary" id="j2-btn-next" disabled>Next →</button>
+        </div>
+      </div>
+    </section>
   </section>
 
   <section>
