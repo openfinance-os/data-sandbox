@@ -2064,16 +2064,113 @@ function renderJ2ConsentConfirmed(body, persona) {
   }
   body.appendChild(table);
 
+  const cmLink = el('a', { href: '#', className: 'consent-manager-link' },
+    '→ View at portal.openfinance.ae · My Consents');
+  cmLink.addEventListener('click', (ev) => {
+    ev.preventDefault();
+    openConsentManager();
+  });
   body.appendChild(el('div', { className: 'consent-confirmed-actions' }, [
-    el('a', {
-      href: '#',
-      className: 'consent-manager-link',
-    }, '→ View at portal.openfinance.ae · My Consents (Consent Manager modal lands in next commit)'),
+    cmLink,
     el('div', { className: 'consent-confirmed-cta-hint' }, [
       'Click ', el('strong', {}, 'Return to ' + tppName + ' →'),
-      ` to load your aggregated ${isSme ? 'BFM' : 'PFM'} view.`,
+      ` to load your aggregated ${isSme ? 'BFM' : 'PFM'} view, or open the Consent Manager above to inspect or revoke each grant.`,
     ]),
   ]));
+}
+
+// ─── Consent Manager modal (Task #12) ──────────────────────────────
+//
+// portal.openfinance.ae · My Consents — the central registry every UAE OF
+// TPP consent lands in. Opens from J2 step 4d's "View at portal" link.
+// Lists every consent record minted this session (J1 + J2) with a Revoke
+// button per record. Revocation flips status to 'Revoked' and persists in
+// state.consentRecords; the J2 dashboard empties out when no Active J2
+// consents remain.
+
+function openConsentManager() {
+  const modal = document.getElementById('consent-manager-modal');
+  if (!modal) return;
+  renderConsentManagerView();
+  modal.hidden = false;
+  // Stash the previously focused element so we can restore on close.
+  modal.dataset.previousFocus = (document.activeElement && document.activeElement.id) || '';
+  const close = document.getElementById('consent-manager-close');
+  if (close) close.focus();
+}
+
+function closeConsentManager() {
+  const modal = document.getElementById('consent-manager-modal');
+  if (!modal) return;
+  modal.hidden = true;
+  // Trigger a refresh so any consents-dependent UI (J2 dashboard empty state)
+  // picks up revocations made inside the modal.
+  refresh();
+  const prevId = modal.dataset.previousFocus;
+  if (prevId) {
+    const prev = document.getElementById(prevId);
+    if (prev) prev.focus();
+  }
+}
+
+function renderConsentManagerView() {
+  const body = document.getElementById('consent-manager-body');
+  if (!body) return;
+  body.replaceChildren();
+
+  if (!state.consentRecords.length) {
+    body.appendChild(el('div', { className: 'cm-empty' },
+      'No consents minted yet. Walk through J1 or J2 to register a consent — it’ll show up here.'));
+    return;
+  }
+
+  // Sort records: Active first, then by source (J2 before J1).
+  const sorted = [...state.consentRecords].sort((a, b) => {
+    if (a.status !== b.status) return a.status === 'Active' ? -1 : 1;
+    if (a.source !== b.source) return a.source === 'j2' ? -1 : 1;
+    return 0;
+  });
+
+  for (const rec of sorted) {
+    const prof = LFI_PROFILES.find((p) => p.key === rec.lfi);
+    const acctSummary = Array.isArray(rec.accounts)
+      ? `${rec.accounts.length} authorised`
+      : String(rec.accounts || '—');
+    const row = el('div', { className: 'cm-record' + (rec.status === 'Revoked' ? ' revoked' : '') });
+    row.appendChild(el('div', { className: 'cm-record-head' }, [
+      el('div', {}, [
+        el('span', { className: 'cm-record-title' }, `${rec.tpp} → ${prof?.name || rec.lfi}`),
+        el('span', { className: 'cm-record-source' }, rec.source.toUpperCase()),
+      ]),
+      el('span', { className: 'consent-record-badge ' + (rec.status === 'Revoked' ? 'revoked' : 'active') }, rec.status),
+    ]));
+    row.appendChild(el('dl', { className: 'cm-record-dl' }, [
+      el('dt', {}, 'ConsentId'),    el('dd', {}, el('code', {}, rec.consentId)),
+      el('dt', {}, 'Expires'),      el('dd', {}, new Date(rec.expiresAt).toUTCString()),
+      el('dt', {}, 'Permissions'),  el('dd', {}, `${(rec.permissions || []).length} of ${OF_PERMISSIONS.length} clusters`),
+      el('dt', {}, 'Accounts'),     el('dd', {}, acctSummary),
+      el('dt', {}, 'Source'),       el('dd', {}, rec.source === 'j2' ? 'Al Tareq CAAP · Nebras Consent Manager' : 'Bank-own OAuth · Connected apps (not OF rails)'),
+    ]));
+    if (rec.status === 'Active') {
+      const revokeBtn = el('button', {
+        type: 'button',
+        className: 'cm-revoke-btn',
+      }, 'Revoke');
+      revokeBtn.addEventListener('click', () => {
+        rec.status = 'Revoked';
+        // For J2 records, also drop the ConsentId from the active map so
+        // the dashboard / confirmation views know nothing's active for
+        // that LFI anymore.
+        if (rec.source === 'j2') state.j2ConsentIds.delete(rec.lfi);
+        // For J1, clear j1ConsentId so the token panel reflects revocation
+        // if the user navigates back.
+        if (rec.source === 'j1' && state.j1ConsentId === rec.consentId) state.j1ConsentId = null;
+        renderConsentManagerView();
+      });
+      row.appendChild(el('div', { className: 'cm-record-actions' }, revokeBtn));
+    }
+    body.appendChild(row);
+  }
 }
 
 // J2 dashboard: PFM (Retail) or BFM (SME) end-state. Fetches the same persona's
@@ -2088,6 +2185,28 @@ async function renderJ2Dashboard() {
 
   const isSme = (persona.segment || '').toLowerCase() === 'sme';
   document.getElementById('j2-step-5-h').textContent = isSme ? 'Aggregated BFM view' : 'Aggregated PFM view';
+
+  // If every J2 consent was revoked via the Consent Manager modal, the TPP
+  // has no live data-sharing grant — every /accounts call would 401. Render
+  // the empty state instead of fetching.
+  const activeJ2 = state.consentRecords.filter((r) => r.source === 'j2' && r.status === 'Active');
+  if (state.j2Approved && activeJ2.length === 0 && state.consentRecords.some((r) => r.source === 'j2')) {
+    document.getElementById('j2-step-5-sub').textContent = 'All J2 consents revoked at the Consent Manager — the TPP can no longer read your data.';
+    const tppName = isSme ? 'Khazaa BFM' : 'Khazaa PFM';
+    body.appendChild(el('div', { className: 'j2-revoked-empty' }, [
+      el('h3', {}, `${tppName} is locked out`),
+      el('p', {}, [
+        'Every ConsentId minted for this session has been revoked at portal.openfinance.ae · My Consents. ',
+        'In production, the TPP\'s next ',
+        el('code', {}, 'GET /accounts'),
+        ' call would return ',
+        el('code', {}, '401 invalid_consent'),
+        '. To re-grant: back up to step 4 (Al Tareq) and walk the consent flow again.',
+      ]),
+    ]));
+    return;
+  }
+
   document.getElementById('j2-step-5-sub').textContent = isSme
     ? `Khazaa BFM rolls up the consented data across ${state.j2SelectedLFIs.size} LFI${state.j2SelectedLFIs.size === 1 ? '' : 's'}. Every figure is computed deterministically from real v2.1 fixture data.`
     : `Khazaa PFM aggregates the consented data across ${state.j2SelectedLFIs.size} LFI${state.j2SelectedLFIs.size === 1 ? '' : 's'}. Every figure is computed deterministically from real v2.1 fixture data.`;
@@ -2438,6 +2557,19 @@ function renderJ2Actions() {
 // ─── Wiring ────────────────────────────────────────────────────────
 
 function wireControls() {
+  // Consent Manager modal controls — close button, backdrop click, ESC key.
+  const cmClose = document.getElementById('consent-manager-close');
+  if (cmClose) cmClose.addEventListener('click', closeConsentManager);
+  const cmClose2 = document.getElementById('consent-manager-close-2');
+  if (cmClose2) cmClose2.addEventListener('click', closeConsentManager);
+  const cmBackdrop = document.getElementById('consent-manager-backdrop');
+  if (cmBackdrop) cmBackdrop.addEventListener('click', closeConsentManager);
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Escape') return;
+    const modal = document.getElementById('consent-manager-modal');
+    if (modal && !modal.hidden) closeConsentManager();
+  });
+
   // Hub → journey card clicks. Both buttons drop the user into their
   // respective journey container. The J1 wizard rehydrates from existing
   // state (persona / step) so a back-trip from the hub doesn't reset it.

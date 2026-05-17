@@ -2135,6 +2135,179 @@
     margin-top: 6px;
   }
 
+  /* ─── Consent Manager modal (Task #12) ─────────────────────────── */
+  .consent-manager-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .consent-manager-modal[hidden] { display: none !important; }
+  .consent-manager-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(20, 20, 18, 0.5);
+    backdrop-filter: blur(2px);
+  }
+  .consent-manager-card {
+    position: relative;
+    background: var(--bg);
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    max-width: 640px;
+    width: 100%;
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.18);
+  }
+  .consent-manager-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(90deg, var(--accent) 0%, #4b6c52 100%);
+    color: #fff;
+    border-radius: 8px 8px 0 0;
+  }
+  .consent-manager-brand {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    opacity: 0.92;
+    margin-bottom: 4px;
+  }
+  .consent-manager-title {
+    font-size: 18px;
+    margin: 0;
+    font-weight: 700;
+    color: #fff;
+  }
+  .consent-manager-close {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: #fff;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1;
+    padding: 0;
+  }
+  .consent-manager-close:hover { background: rgba(255,255,255,0.25); }
+  .consent-manager-intro {
+    padding: 14px 22px 0;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+  .consent-manager-body {
+    padding: 14px 22px 8px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 80px;
+  }
+  .consent-manager-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 22px 16px;
+    border-top: 1px solid var(--border);
+    gap: 12px;
+  }
+
+  .cm-record {
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 12px 14px 10px;
+    margin-bottom: 8px;
+    background: var(--bg-card);
+  }
+  .cm-record.revoked { opacity: 0.55; background: var(--bg-soft); }
+  .cm-record-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .cm-record-title { font-size: 13.5px; font-weight: 700; }
+  .cm-record-source {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 1px 6px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    margin-left: 6px;
+  }
+  .cm-record-dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 4px 12px;
+    margin: 0 0 8px;
+    font-size: 12px;
+  }
+  .cm-record-dl dt {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .cm-record-dl dd { margin: 0; word-break: break-all; }
+  .cm-record-dl dd code { font-size: 11px; padding: 0 4px; }
+  .cm-record-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 8px;
+    border-top: 1px dashed var(--border);
+  }
+  .cm-revoke-btn {
+    padding: 5px 12px;
+    border-radius: 4px;
+    border: 1px solid #a14242;
+    background: transparent;
+    color: #a14242;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .cm-revoke-btn:hover { background: #fbe9e9; }
+  .cm-record.revoked .cm-revoke-btn,
+  .cm-record.revoked .cm-record-actions { display: none; }
+  .cm-empty {
+    padding: 24px 16px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-style: italic;
+  }
+
+  /* ─── J2 dashboard revoked empty state ─────────────────────────── */
+  .j2-revoked-empty {
+    padding: 28px 24px;
+    text-align: center;
+    border: 1px dashed var(--border-strong);
+    background: var(--bg-soft);
+    border-radius: 6px;
+  }
+  .j2-revoked-empty h3 {
+    font-size: 16px;
+    margin: 0 0 8px;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--text);
+  }
+  .j2-revoked-empty p { font-size: 13px; color: var(--text-muted); margin: 0; }
+
 </style>
 </head>
 <body>
@@ -2567,6 +2740,33 @@ MCP_SIMULATE_OAUTH=1 npx -y @openfinance-os/sandbox-mcp --transport http</code><
     </dl>
   </section>
 </main>
+
+<!-- ============================================================== -->
+<!-- Consent Manager modal — opened from J2 step 4d's portal link    -->
+<!-- ============================================================== -->
+
+<div id="consent-manager-modal" class="consent-manager-modal" hidden role="dialog" aria-modal="true" aria-labelledby="cm-title">
+  <div class="consent-manager-backdrop" id="consent-manager-backdrop"></div>
+  <div class="consent-manager-card">
+    <div class="consent-manager-header">
+      <div>
+        <div class="consent-manager-brand">portal.openfinance.ae · Nebras Consent Manager</div>
+        <h2 class="consent-manager-title" id="cm-title">My Consents</h2>
+      </div>
+      <button type="button" class="consent-manager-close" id="consent-manager-close" aria-label="Close">×</button>
+    </div>
+    <div class="consent-manager-intro">
+      The single source of truth for every TPP consent under UAE Open Finance. Revocation here
+      wipes the consent grant server-side and 401s every subsequent TPP data-sharing call. J1
+      consents (bank-direct, not under OF rails) live in your bank's own <em>Connected apps</em>
+      page; they're listed here for the sandbox session only.
+    </div>
+    <div class="consent-manager-body" id="consent-manager-body"></div>
+    <div class="consent-manager-footer">
+      <button type="button" class="btn" id="consent-manager-close-2">Close</button>
+    </div>
+  </div>
+</div>
 
 <footer class="footer" role="contentinfo">
   <span>SYNTHETIC · Open Finance Data Sandbox · OpenFinance-OS Commons · Standards v2.1 @ <span id="footer-sha">unknown</span></span>
