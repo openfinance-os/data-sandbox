@@ -344,6 +344,7 @@ const state = {
   subStep: 'discovery',
   j1Permissions: new Set(OF_PERMISSIONS.map((p) => p.key)),
   j1ExpirationDays: 90,
+  j1TransactionMonths: 13,        // Standards v2.1 maximum
   j1ConsentId: null,
   // J2 ──────────────────────────────────────────────────────────────
   j2Step: 1,
@@ -1021,8 +1022,12 @@ function renderJ1Consent(body) {
   ));
 
   inner.appendChild(renderConsentParamsPanel(
-    { expirationDays: state.j1ExpirationDays, isSingleAuth: true, transactionMonths: 13 },
-    ({ expirationDays }) => { state.j1ExpirationDays = expirationDays; refresh(); },
+    { expirationDays: state.j1ExpirationDays, isSingleAuth: true, transactionMonths: state.j1TransactionMonths },
+    ({ expirationDays, transactionMonths }) => {
+      state.j1ExpirationDays = expirationDays;
+      state.j1TransactionMonths = transactionMonths;
+      refresh();
+    },
     { includeSingleAuth: false },
   ));
 
@@ -1042,7 +1047,7 @@ function renderJ1Consent(body) {
 
   const footnote = el('p', { className: 'footnote' }, [
     'Sharing window ', el('strong', {}, `${state.j1ExpirationDays} days`),
-    `. Transactions readable back ${[...state.j1Permissions].filter((k) => k.startsWith('ReadTransactions')).length ? '13 months' : '— (transactions permission off)'}. `,
+    `. Transactions readable back ${[...state.j1Permissions].filter((k) => k.startsWith('ReadTransactions')).length ? `${state.j1TransactionMonths} months` : '— (transactions permission off)'}. `,
     'Data is ', el('strong', {}, 'SYNTHETIC'), '. No real customer. No real institution.',
   ]);
   inner.appendChild(footnote);
@@ -2306,7 +2311,15 @@ async function renderJ2Dashboard() {
       const base = `../fixtures/v1/bundles/${persona.id}/${lfi}/seed-${persona.default_seed}`;
       const acctEnv = await fetchJson(`${base}/accounts.json`);
       if (!acctEnv) return { lfi, accounts: [], perAccount: [] };
-      const accounts = acctEnv.Data?.Account ?? [];
+      // Respect the per-LFI account picker from step 4c — the consent
+      // grant binds to specific AccountIds, so the dashboard must only
+      // surface what the user actually authorised. If j2SelectedAccounts
+      // has no entry for this LFI (deep-link / pre-picker state), fall
+      // back to all accounts so the dashboard isn't mysteriously empty.
+      const consentedIds = state.j2SelectedAccounts.get(lfi);
+      const accounts = (acctEnv.Data?.Account ?? []).filter((a) =>
+        !consentedIds || consentedIds.size === 0 || consentedIds.has(a.AccountId)
+      );
       const perAccount = await Promise.all(accounts.map(async (acct) => {
         const id = acct.AccountId;
         const [bal, tx, so, dd] = await Promise.all([
@@ -2748,6 +2761,7 @@ function wireControls() {
     state.j1ConsentId = null;
     state.j1Permissions = new Set(OF_PERMISSIONS.map((p) => p.key));
     state.j1ExpirationDays = 90;
+    state.j1TransactionMonths = 13;
     state.consentRecords = state.consentRecords.filter((r) => r.source !== 'j1');
     refresh();
   });
