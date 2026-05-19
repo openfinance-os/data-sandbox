@@ -114,6 +114,7 @@ multi_insurer_footprint:
         - "Sukoon Insurance"
         - "Orient Insurance"
         - "AXA Gulf"
+      cross_domain_link: salary                  # auto loan at salary primary (ADCB)
     - line: home
       key: home-mortgage
       insurer_default: Median

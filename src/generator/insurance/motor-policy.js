@@ -48,9 +48,15 @@ function generateAdditionalDrivers({ count, names, rng }) {
   return out;
 }
 
-function generateCarFinance({ persona, banks, rng }) {
+function generateCarFinance({ persona, banks, rng, preferredBank }) {
   if (!persona.finance?.has_finance) return null;
-  const bank = banks.banks[Math.floor(rng() * banks.banks.length)];
+  // Phase 2.2 — multi-domain personas can declare a cross_domain_link
+  // from the motor insurer slot to a banking slot (typically the salary
+  // slot where the car loan sits). When set, the car-finance BankName
+  // resolves to that banking slot's deterministic bank pick so the
+  // motor-insurance and banking views agree on which bank holds the
+  // loan. Falls back to the random pool draw otherwise.
+  const bank = preferredBank ?? banks.banks[Math.floor(rng() * banks.banks.length)];
   return {
     BankName: bank.name,
     FinanceAmount: aed(persona.finance.amount_aed),
@@ -58,7 +64,7 @@ function generateCarFinance({ persona, banks, rng }) {
   };
 }
 
-export function generateMotorProduct({ persona, names, banks, rng, now }) {
+export function generateMotorProduct({ persona, names, banks, rng, now, preferredFinanceBank }) {
   const startOffset = persona.policy.start_date_offset_days;
   const startDate = isoDate(now, -startOffset);
   // Purchase predates start by a few days deterministically.
@@ -121,7 +127,7 @@ export function generateMotorProduct({ persona, names, banks, rng, now }) {
   });
   if (drivers.length > 0) product.AdditionalDrivers = drivers;
 
-  const carFinance = generateCarFinance({ persona, banks, rng });
+  const carFinance = generateCarFinance({ persona, banks, rng, preferredBank: preferredFinanceBank });
   if (carFinance) product.CarFinance = carFinance;
 
   return product;

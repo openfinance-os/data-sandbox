@@ -388,6 +388,41 @@ export function listRoleSlotKeys(persona) {
 }
 
 /**
+ * Phase 2.2 — resolve the deterministic bank for a named slot in a
+ * persona's banking footprint. Used by cross-domain code paths (e.g.
+ * a home-insurance generator wanting the persona's mortgage_lender
+ * slot's bank for `Mortgage.BankName`) to keep the linkage consistent
+ * with what the banking pipeline will emit.
+ *
+ * Returns the bank object from `counterpartyBanksPool`, or null if the
+ * slot doesn't exist or its candidates don't resolve in the pool.
+ */
+export function pickFootprintSlotBank(persona, slotKey, counterpartyBanksPool) {
+  const slot = findSlotByKey(persona?.multi_lfi_footprint, slotKey);
+  if (!slot) return null;
+  return pickRoleBank(persona.persona_id, slotKey, slot, counterpartyBanksPool);
+}
+
+/**
+ * Phase 2.2 — find the `cross_domain_link` (a banking slot key) declared
+ * by a persona's `multi_insurer_footprint.slots[]` for a given insurance
+ * line. Returns the slot key string, or null if no link is declared.
+ *
+ *   line: 'home' → looks for the first multi_insurer_footprint.slots[]
+ *                  entry with line==='home' and a cross_domain_link set.
+ */
+export function findInsuranceCrossDomainLink(persona, line) {
+  const slots = persona?.multi_insurer_footprint?.slots;
+  if (!Array.isArray(slots)) return null;
+  for (const s of slots) {
+    if (s?.line === line && typeof s?.cross_domain_link === 'string') {
+      return s.cross_domain_link;
+    }
+  }
+  return null;
+}
+
+/**
  * Slice 7 — primary-side anchor IBAN for cross-LFI mirror transactions.
  *
  * For personas with `multi_lfi_footprint`, the primary bundle's first
