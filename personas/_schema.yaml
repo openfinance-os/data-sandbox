@@ -162,3 +162,21 @@ multi_lfi_footprint:                           # optional; D-14
       lfi_default: <enum: Rich|Median|Sparse>
       plausible_lfi_candidates:
         - <bank_name_string>
+
+multi_insurer_footprint:                       # optional; Phase 2.2.
+  # Same shape as the banking slots[], but for insurance carriers. Each
+  # slot binds one insurance line (motor/home/health/etc.) to a candidate
+  # set of real UAE insurers. Used by multi-domain retail personas
+  # holding policies across several carriers.
+  slots:
+    - line: <enum: motor|home|health|life|travel|renters|employment>
+      key: <kebab id; e.g. "motor-primary", "home-mortgage">
+      insurer_default: <enum: Rich|Median|Sparse>     # anonymous
+      plausible_insurer_candidates:                   # real UAE insurer
+        - <insurer_name_string>                       # names allowed here
+      cross_domain_link: <multi_lfi_footprint slot.key reference>?
+                                                     # optional — anchors
+                                                     # this insurance slot
+                                                     # to a banking slot
+                                                     # (e.g. home insurance
+                                                     # to mortgage_lender).

@@ -1,9 +1,11 @@
 # Synthetic health-insurance payor counterparties. Used as customer-inflow
 # counterparties for healthcare-clinic SMEs whose receivables are 30–60-day
-# insurer reimbursements net of co-pay. All names are fictional. Naming-
-# pattern intent: evoke Daman / NextCare / MetLife / Nas / AXA Gulf / Now
-# Health insurer-payor flows without naming any real insurer. EXP-07:
-# only place these counterparty names may originate.
+# insurer reimbursements net of co-pay. All names are fictional. The names
+# evoke the look-and-feel of UAE health-insurance payor relationships
+# without naming any real insurer (NG5 / D-14 / EXP-07: this is the only
+# place these counterparty names may originate). For the real-UAE-insurer
+# pool used as a candidate set in multi_insurer_footprint, see
+# synthetic-identity-pool/counterparty-insurers/uae-real.yaml.
 pool_id: insurer_payors
 description: Synthetic health-insurance payor counterparties (clinic insurance receivables).
 counterparties:
