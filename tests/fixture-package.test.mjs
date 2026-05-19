@@ -33,20 +33,20 @@ if (!FIXTURES_BUILT) {
     expect(pkg.publishConfig.access).toBe('public');
   });
 
-  it('manifest.json indexes 18 banking + 9 insurance + 1 multi-domain personas × 3 LFIs', () => {
+  it('manifest.json indexes 18 banking + 9 insurance + 3 multi-domain personas × 3 LFIs', () => {
     const m = JSON.parse(fs.readFileSync(path.join(PKG_DIR, 'manifest.json'), 'utf8'));
     expect(m.package).toBe('@openfinance-os/sandbox-fixtures');
     expect(m.specVersion).toBe('v2.1');
     expect(m.specSha.length).toBeGreaterThan(20);
     expect(m.domains).toEqual(expect.arrayContaining(['banking', 'insurance']));
-    expect(Object.keys(m.personas).length).toBe(28);
-    expect(Object.keys(m.fixtures).length).toBe(84); // 28 × 3
+    expect(Object.keys(m.personas).length).toBe(30);
+    expect(Object.keys(m.fixtures).length).toBe(90); // 30 × 3
     const byDomain = { banking: 0, insurance: 0, multi: 0 };
     for (const info of Object.values(m.personas)) {
       expect(info.domain).toBeDefined();
       byDomain[info.domain] = (byDomain[info.domain] ?? 0) + 1;
     }
-    expect(byDomain).toEqual({ banking: 18, insurance: 9, multi: 1 });
+    expect(byDomain).toEqual({ banking: 18, insurance: 9, multi: 3 });
     for (const [key, fx] of Object.entries(m.fixtures)) {
       expect(key).toMatch(/^[a-z_]+\|(rich|median|sparse)\|\d+$/);
       // Every fixture entry has a non-empty endpoints map.
@@ -60,10 +60,10 @@ if (!FIXTURES_BUILT) {
     const personas = m.listPersonas();
     expect(personas).toContain('salaried_expat_mid');
     expect(personas).toContain('motor_comprehensive_mid');
-    expect(personas.length).toBe(28);
+    expect(personas.length).toBe(30);
     // Multi-domain personas appear in both banking and insurance filters.
-    expect(m.listPersonas({ domain: 'banking' }).length).toBe(19);  // 18 + 1 multi
-    expect(m.listPersonas({ domain: 'insurance' }).length).toBe(10); // 9 + 1 multi
+    expect(m.listPersonas({ domain: 'banking' }).length).toBe(21);  // 18 + 3 multi
+    expect(m.listPersonas({ domain: 'insurance' }).length).toBe(12); // 9 + 3 multi
     const sara = m.loadFixture({
       persona: 'salaried_expat_mid',
       lfi: 'median',
@@ -101,7 +101,7 @@ if (!FIXTURES_BUILT) {
   it('loadEnrichment returns a complete sidecar for every banking persona', async () => {
     const m = await import(path.join(PKG_DIR, 'index.mjs'));
     const bankingIds = m.listPersonas({ domain: 'banking' });
-    expect(bankingIds.length).toBe(19); // 18 single-banking + 1 multi-domain
+    expect(bankingIds.length).toBe(21); // 18 single-banking + 3 multi-domain
     for (const personaId of bankingIds) {
       const sidecar = m.loadEnrichment({ persona: personaId });
       expect(sidecar.schema).toBe('openfinance-os/data-sandbox/enrichment/v1');

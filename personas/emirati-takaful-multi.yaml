@@ -1,0 +1,260 @@
+persona_id: emirati_takaful_multi
+domains: [banking, insurance]
+name: "Emirati Takaful Multi-Banker — Four-Bank Sharia-First"
+archetype: emirati_takaful_multi_bank
+default_seed: 77115
+segment: Retail
+stress_coverage:
+  # Phase 2.2 — an Emirati multi-banker whose insurance is takaful-only
+  # across motor/home/life. Tests the Takaful license flag on every
+  # multi_insurer_footprint slot AND the islamic_deposit banking role
+  # paired with a takaful-only carrier set.
+  - emirati_sharia_first_takaful_multi_bank
+
+demographics:
+  nationality_pool: emirati
+  age_band: 40-55
+  emirate: abu_dhabi
+
+income:
+  primary_employer_pool: tech_freezone
+  monthly_amount_aed: 85000
+  pay_day: 27
+  variability: low
+  flag_payroll: true
+
+accounts:
+  # ── Salary primary (FAB equivalent) ───────────────────────────────
+  - type: CurrentAccount
+    at_slot: salary
+    currency: AED
+    age_months: 144
+  - type: CreditCard
+    at_slot: salary
+    currency: AED
+    age_months: 108
+    credit_limit_aed: 75000
+  # ── Islamic deposit (DIB equivalent) ──────────────────────────────
+  - type: Savings
+    at_slot: islamic-deposit
+    currency: AED
+    age_months: 72
+  - type: CreditCard
+    at_slot: islamic-deposit
+    currency: AED
+    age_months: 48
+    credit_limit_aed: 40000
+  # ── Everyday-card secondary (ENBD equivalent) ─────────────────────
+  - type: CurrentAccount
+    at_slot: everyday-card
+    currency: AED
+    age_months: 84
+  - type: CreditCard
+    at_slot: everyday-card
+    currency: AED
+    age_months: 60
+    credit_limit_aed: 50000
+  # ── Mortgage-lender (ADIB equivalent) ─────────────────────────────
+  - type: CurrentAccount
+    at_slot: mortgage-lender
+    currency: AED
+    age_months: 96
+  - type: Mortgage
+    at_slot: mortgage-lender
+    currency: AED
+    age_months: 84
+
+multi_lfi_footprint:
+  slots:
+    - key: salary
+      role: salary_primary
+      lfi_default: Median
+      plausible_lfi_candidates:
+        - "First Abu Dhabi Bank"
+        - "Abu Dhabi Commercial Bank"
+    - key: islamic-deposit
+      role: islamic_deposit
+      lfi_default: Median
+      plausible_lfi_candidates:
+        - "Dubai Islamic Bank"
+        - "Abu Dhabi Islamic Bank"
+        - "Sharjah Islamic Bank"
+    - key: everyday-card
+      role: secondary_card
+      lfi_default: Median
+      plausible_lfi_candidates:
+        - "Emirates NBD"
+        - "Commercial Bank of Dubai"
+    - key: mortgage-lender
+      role: mortgage_lender
+      lfi_default: Rich
+      plausible_lfi_candidates:
+        - "Abu Dhabi Islamic Bank"
+        - "Dubai Islamic Bank"
+
+multi_insurer_footprint:
+  slots:
+    - line: motor
+      key: motor-takaful
+      insurer_default: Median
+      plausible_insurer_candidates:
+        - "Salama Islamic Arab Insurance"
+        - "Methaq Takaful"
+        - "Watania Takaful"
+    - line: home
+      key: home-takaful
+      insurer_default: Median
+      plausible_insurer_candidates:
+        - "Salama Islamic Arab Insurance"
+        - "Noor Takaful"
+        - "Orient UNB Takaful"
+      cross_domain_link: mortgage-lender
+    - line: life
+      key: life-takaful
+      insurer_default: Rich
+      plausible_insurer_candidates:
+        - "Methaq Takaful"
+        - "Salama Islamic Arab Insurance"
+
+insurance:
+  lines: [motor, home, life]
+
+# Motor — Takaful comprehensive
+vehicle:
+  make: Nissan
+  model: Patrol
+  year: 2023
+  body_type: SUV
+  passenger_capacity: 7
+  valuation_aed: 320000
+  registration_emirate: AbuDhabi
+policy:
+  type: Comprehensive
+  takaful: true
+  excess_aed: 3000
+  start_date_offset_days: 90
+  channel: Broker
+finance:
+  has_finance: false
+additional_drivers:
+  count: 1
+claims:
+  history_months: 24
+  claims_in_period: 0
+  approved_claims: 0
+  total_gross_aed: 0
+
+# Home — Takaful, mortgage at islamic mortgage-lender
+home:
+  property:
+    type_of_property: Villa
+    ownership_status: OwnerWithMortgage
+    address_emirate: AbuDhabi
+    number_of_floors: 2
+    number_of_rooms: 6
+    year_of_construction: 2015
+  property_value:
+    market_value_aed: 5800000
+    appraisal_value_aed: 5700000
+    purchase_price_aed: 4800000
+  mortgage:
+    has_mortgage: true
+    bank_pool: counterparty_banks_uae_real
+    balance_aed: 2700000
+    monthly_payment_aed: 21000
+  policy:
+    excess_aed: 5000
+    start_date_offset_days: 60
+    channel: Bank
+    takaful: true
+  claims:
+    history_months: 24
+    claims_in_period: 0
+    approved_claims: 0
+    total_gross_aed: 0
+
+# Life — Takaful, mortgage-protection cover linked to the Islamic mortgage
+life:
+  policy:
+    cover_type: Sole
+    type_of_life_insurance: DecreasingTermInsurance
+    insurance_purpose: MortgageCover
+    sum_assured_aed: 2700000
+    term_years: 18
+    takaful: true
+    start_date_offset_days: 60
+    channel: Bank
+    product_name: Family Takaful — Mortgage Protection
+  finance:
+    has_finance: true
+    bank_pool: counterparty_banks_uae_real
+  claims:
+    history_months: 24
+    claims_in_period: 0
+    approved_claims: 0
+    total_gross_aed: 0
+
+fixed_commitments:
+  - kind: standing_order
+    purpose: mortgage_payment
+    at_slot: mortgage-lender
+    amount_aed: 21000
+    schedule: monthly_1
+  - kind: standing_order
+    purpose: islamic_deposit_topup
+    at_slot: islamic-deposit
+    amount_aed: 8000
+    schedule: monthly_27
+  - kind: direct_debit
+    purpose: credit_card_repayment_card_everyday
+    at_slot: everyday-card
+    amount_aed_band: [4000, 9000]
+    schedule: monthly_10
+  - kind: direct_debit
+    purpose: utilities_adwea
+    at_slot: salary
+    amount_aed_band: [1100, 2400]
+    schedule: monthly_5
+  - kind: direct_debit
+    purpose: home_insurance_premium
+    at_slot: mortgage-lender
+    amount_aed_band: [3200, 4200]
+    schedule: monthly_22
+  - kind: direct_debit
+    purpose: motor_insurance_premium
+    at_slot: salary
+    amount_aed_band: [450, 700]
+    schedule: monthly_22
+  - kind: direct_debit
+    purpose: life_insurance_premium
+    at_slot: salary
+    amount_aed_band: [800, 1200]
+    schedule: monthly_22
+
+spend_profile:
+  groceries_aed_per_month_band: [2800, 4500]
+  fuel_aed_per_month_band: [1100, 1800]
+  dining_per_month_count_band: [12, 24]
+
+fx_activity: false
+cash_deposit_activity: false
+
+distress_signals:
+  nsf_events_per_year_band: [0, 0]
+
+narrative: |
+  Emirati senior professional in Abu Dhabi (AED 85k/mo WPS payroll)
+  whose banking and insurance footprints are both Sharia-first. Banking
+  spans four LFIs: salary primary at a Tier-1 conventional bank, an
+  Islamic deposit / takaful-card relationship at a Tier-1 Islamic bank,
+  a secondary mainstream relationship for an everyday card, and an
+  Islamic mortgage at a separate Islamic bank's mortgage-lender slot.
+  Insurance is takaful-only across motor, home, and life — life cover
+  is decreasing-term mortgage-protection sized to the Islamic mortgage
+  balance. Cross-domain link from the home cover to the mortgage-lender
+  slot keeps the BankName visibly aligned with the Islamic mortgage
+  bank. The persona's load-bearing stress is sharia-first multi-bank
+  aggregation: a TPP underwriting view must respect the islamic_deposit
+  role's distinct savings vehicle AND match the mortgage-protection
+  life cover's decreasing-balance sum-assured to the actual mortgage
+  outstanding.

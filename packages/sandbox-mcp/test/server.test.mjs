@@ -92,15 +92,18 @@ describe('sandbox-mcp server', () => {
     expect(names).toEqual([...EXPECTED_TOOLS].sort());
   });
 
-  it('list_personas returns all 28 personas across both domains by default', async () => {
+  it('list_personas returns all 30 personas across both domains by default', async () => {
     const r = await client.callTool({ name: 'list_personas', arguments: {} });
     const payload = JSON.parse(textOf(r));
-    // 18 banking + 9 insurance + 1 multi-domain (retail_multi_banker)
-    expect(payload.count).toBe(28);
+    // 18 banking + 9 insurance + 3 multi-domain
+    // (retail_multi_banker, emirati_takaful_multi, hnw_intl_multi)
+    expect(payload.count).toBe(30);
     const ids = payload.personas.map((p) => p.id);
     expect(ids).toContain('salaried_expat_mid');
     expect(ids).toContain('motor_comprehensive_mid');
     expect(ids).toContain('retail_multi_banker');
+    expect(ids).toContain('emirati_takaful_multi');
+    expect(ids).toContain('hnw_intl_multi');
     expect(payload.domain).toBe('all');
     // Every entry surfaces its domain (single string or 'multi') so the
     // LLM can route to the right tools.
@@ -114,7 +117,7 @@ describe('sandbox-mcp server', () => {
     const banking = JSON.parse(
       textOf(await client.callTool({ name: 'list_personas', arguments: { domain: 'banking' } })),
     );
-    expect(banking.count).toBe(19); // 18 single-banking + 1 multi-domain
+    expect(banking.count).toBe(21); // 18 single-banking + 3 multi-domain
     expect(banking.personas.every(
       (p) => p.domain === 'banking' || p.domain === 'multi',
     )).toBe(true);
@@ -122,7 +125,7 @@ describe('sandbox-mcp server', () => {
     const insurance = JSON.parse(
       textOf(await client.callTool({ name: 'list_personas', arguments: { domain: 'insurance' } })),
     );
-    expect(insurance.count).toBe(10); // 9 single-insurance + 1 multi-domain
+    expect(insurance.count).toBe(12); // 9 single-insurance + 3 multi-domain
     expect(insurance.personas.every(
       (p) => p.domain === 'insurance' || p.domain === 'multi',
     )).toBe(true);

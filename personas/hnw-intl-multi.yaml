@@ -1,0 +1,290 @@
+persona_id: hnw_intl_multi
+domains: [banking, insurance]
+name: "HNW International Multi-Banker — USD/AED + Offshore"
+archetype: hnw_international_multi_bank
+default_seed: 33108
+segment: Retail
+stress_coverage:
+  # Phase 2.2 — high-net-worth expat with FX-active offshore footprint,
+  # international mortgage, and a four-line insurance set covering
+  # motor/home/life/travel. Tests trade_finance + international_branch
+  # role co-existence on a RETAIL persona (the SME enum members work
+  # on retail too) plus multi-currency account mixing in slots.
+  - hnw_offshore_fx_multi_lfi_consolidation
+
+demographics:
+  nationality_pool: expat_arab
+  age_band: 45-58
+  emirate: dubai
+
+income:
+  primary_employer_pool: tech_freezone
+  monthly_amount_aed: 140000
+  pay_day: 25
+  variability: low
+  flag_payroll: true
+
+accounts:
+  # ── Salary primary (Mashreq equivalent) ───────────────────────────
+  - type: CurrentAccount
+    at_slot: salary
+    currency: AED
+    age_months: 120
+  - type: CreditCard
+    at_slot: salary
+    currency: AED
+    age_months: 96
+    credit_limit_aed: 150000
+  # ── Offshore international (Standard Chartered equivalent) ────────
+  - type: CurrentAccount
+    at_slot: offshore
+    currency: USD
+    age_months: 60
+  - type: Savings
+    at_slot: offshore
+    currency: USD
+    age_months: 48
+  # ── Digital sidekick (Wio equivalent) ─────────────────────────────
+  - type: CurrentAccount
+    at_slot: digital
+    currency: AED
+    age_months: 24
+  - type: CreditCard
+    at_slot: digital
+    currency: AED
+    age_months: 18
+    credit_limit_aed: 35000
+  # ── Mortgage-lender (HSBC equivalent) ─────────────────────────────
+  - type: CurrentAccount
+    at_slot: mortgage-lender
+    currency: AED
+    age_months: 96
+  - type: Mortgage
+    at_slot: mortgage-lender
+    currency: AED
+    age_months: 72
+
+multi_lfi_footprint:
+  slots:
+    - key: salary
+      role: salary_primary
+      lfi_default: Median
+      plausible_lfi_candidates:
+        - "Mashreq Bank"
+        - "Emirates NBD"
+    - key: offshore
+      role: trade_finance
+      lfi_default: Rich
+      plausible_lfi_candidates:
+        - "Standard Chartered Bank"
+        - "HSBC Bank Middle East"
+        - "Citibank N.A."
+    - key: digital
+      role: digital_sidekick
+      lfi_default: Sparse
+      plausible_lfi_candidates:
+        - "Wio Bank"
+        - "Zand Bank"
+    - key: mortgage-lender
+      role: international_branch
+      lfi_default: Rich
+      plausible_lfi_candidates:
+        - "HSBC Bank Middle East"
+        - "Standard Chartered Bank"
+
+multi_insurer_footprint:
+  slots:
+    - line: motor
+      key: motor-premium
+      insurer_default: Median
+      plausible_insurer_candidates:
+        - "AXA Gulf"
+        - "Sukoon Insurance"
+        - "Orient Insurance"
+    - line: home
+      key: home-premium
+      insurer_default: Rich
+      plausible_insurer_candidates:
+        - "AXA Gulf"
+        - "Sukoon Insurance"
+      cross_domain_link: mortgage-lender
+    - line: life
+      key: life-protection
+      insurer_default: Rich
+      plausible_insurer_candidates:
+        - "Sukoon Insurance"
+        - "AXA Gulf"
+    - line: travel
+      key: travel-worldwide
+      insurer_default: Rich
+      plausible_insurer_candidates:
+        - "AXA Gulf"
+        - "Sukoon Insurance"
+
+insurance:
+  lines: [motor, home, life, travel]
+
+# Motor — premium comprehensive on a luxury SUV
+vehicle:
+  make: BMW
+  model: X7
+  year: 2024
+  body_type: SUV
+  passenger_capacity: 7
+  valuation_aed: 580000
+  registration_emirate: Dubai
+policy:
+  type: Comprehensive
+  takaful: false
+  excess_aed: 5000
+  start_date_offset_days: 120
+  channel: Broker
+finance:
+  has_finance: false
+additional_drivers:
+  count: 2
+claims:
+  history_months: 24
+  claims_in_period: 1
+  approved_claims: 1
+  total_gross_aed: 18500
+
+# Home — premium villa with international-branch mortgage
+home:
+  property:
+    type_of_property: Villa
+    ownership_status: OwnerWithMortgage
+    address_emirate: Dubai
+    number_of_floors: 3
+    number_of_rooms: 7
+    year_of_construction: 2019
+  property_value:
+    market_value_aed: 9500000
+    appraisal_value_aed: 9200000
+    purchase_price_aed: 8000000
+  mortgage:
+    has_mortgage: true
+    bank_pool: counterparty_banks_uae_real
+    balance_aed: 4500000
+    monthly_payment_aed: 32000
+  policy:
+    excess_aed: 10000
+    start_date_offset_days: 60
+    channel: Broker
+    takaful: false
+  claims:
+    history_months: 24
+    claims_in_period: 0
+    approved_claims: 0
+    total_gross_aed: 0
+
+# Life — level-term protection, family-protection purpose
+life:
+  policy:
+    cover_type: Joint
+    type_of_life_insurance: LevelTermInsurance
+    insurance_purpose: FamilyProtection
+    sum_assured_aed: 5000000
+    term_years: 20
+    takaful: false
+    start_date_offset_days: 90
+    channel: Broker
+    product_name: Premier Term Life
+  claims:
+    history_months: 24
+    claims_in_period: 0
+    approved_claims: 0
+    total_gross_aed: 0
+
+# Travel — annual worldwide family policy with senior cover
+travel:
+  policy:
+    trip_duration_days: 30
+    multi_trip: true
+    purpose: Business
+    travelling_with: Family
+    destination_region: Worldwide
+    cover_limit_aed: 100000
+    medical_limit_aed: 5000000
+    excess_aed: 500
+    takaful: false
+    product_name: Travel Annual Worldwide Premier
+    start_date_offset_days: 100
+    channel: Broker
+  adults: 2
+  children: 2
+  seniors: 1
+  claims:
+    history_months: 24
+    claims_in_period: 1
+    approved_claims: 1
+    total_gross_aed: 6800
+
+fixed_commitments:
+  - kind: standing_order
+    purpose: mortgage_payment
+    at_slot: mortgage-lender
+    amount_aed: 32000
+    schedule: monthly_1
+  - kind: standing_order
+    purpose: offshore_sweep_usd_savings
+    at_slot: offshore
+    amount_aed: 25000
+    schedule: monthly_27
+  - kind: direct_debit
+    purpose: credit_card_repayment_card_digital
+    at_slot: digital
+    amount_aed_band: [1200, 3500]
+    schedule: monthly_12
+  - kind: direct_debit
+    purpose: utilities_dewa
+    at_slot: salary
+    amount_aed_band: [1800, 3200]
+    schedule: monthly_5
+  - kind: direct_debit
+    purpose: home_insurance_premium
+    at_slot: mortgage-lender
+    amount_aed_band: [5200, 7800]
+    schedule: monthly_22
+  - kind: direct_debit
+    purpose: motor_insurance_premium
+    at_slot: salary
+    amount_aed_band: [1200, 1800]
+    schedule: monthly_22
+  - kind: direct_debit
+    purpose: life_insurance_premium
+    at_slot: salary
+    amount_aed_band: [2400, 3200]
+    schedule: monthly_22
+  - kind: direct_debit
+    purpose: travel_insurance_premium
+    at_slot: salary
+    amount_aed_band: [350, 550]
+    schedule: monthly_22
+
+spend_profile:
+  groceries_aed_per_month_band: [4500, 8000]
+  fuel_aed_per_month_band: [2200, 3500]
+  dining_per_month_count_band: [18, 35]
+
+fx_activity: true
+cash_deposit_activity: false
+
+distress_signals:
+  nsf_events_per_year_band: [0, 0]
+
+narrative: |
+  HNW expat-Arab professional in Dubai (AED 140k/mo WPS payroll plus
+  offshore USD inflows) running a four-LFI footprint. Salary primary
+  at a Tier-1 mainstream bank holds the day-to-day AED CurrentAccount
+  + a premium-tier consumer card. The offshore slot at a foreign-branch
+  bank carries the USD CurrentAccount and USD Savings — Series-A
+  liquidity / family-office reserves. Digital sidekick for FX-aware
+  spending. International-branch mortgage on a Dubai villa, with home
+  cover bundled at that slot via cross_domain_link. Insurance footprint
+  covers four lines (motor / home / life / travel) — life is
+  family-protection joint-life level-term, sized for the household
+  wealth. The persona's load-bearing stress is consolidating offshore
+  USD savings + AED operating + mortgage + insurance into one
+  underwriting view; only Open Finance aggregation across all four
+  LFIs surfaces the full picture.

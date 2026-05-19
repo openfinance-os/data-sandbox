@@ -280,26 +280,24 @@ export function projectPersonaForRole(persona, slotKey, bank) {
   if (hasAtSlotTags) {
     const slotAccounts = sourceAccounts.filter((a) => a.at_slot === slotKey);
     if (slotAccounts.length > 0) {
-      let foundFirstCurrent = false;
-      projectedAccounts = slotAccounts.map((acc, i) => {
-        const isFirstCurrent = acc.type === 'CurrentAccount' && !foundFirstCurrent;
-        if (isFirstCurrent) foundFirstCurrent = true;
-        return {
-          ...acc,
-          _bankOverride: bank,
-          // First CurrentAccount holds the cross-LFI self-IBAN that
-          // matches the primary bundle's self-to-<slotKey> beneficiary;
-          // other products in the slot get derived-but-distinct IBANs
-          // so each Account record has a unique identifier.
-          _ibanOverride: isFirstCurrent
-            ? anchorIban
-            : deriveCrossLfiSelfIban(
-                persona.persona_id,
-                `${slotKey}__product_${i}`,
-                bank,
-              ),
-        };
-      });
+      // First account in the slot — whatever its AccountSubType — gets
+      // the cross-LFI self-IBAN that matches the primary bundle's
+      // self-to-<slotKey> beneficiary. Slots without a CurrentAccount
+      // (e.g. an islamic_deposit slot whose primary product is a
+      // Savings) anchor on whichever account is declared first. Other
+      // products get derived-but-distinct IBANs so each Account record
+      // has a unique identifier.
+      projectedAccounts = slotAccounts.map((acc, i) => ({
+        ...acc,
+        _bankOverride: bank,
+        _ibanOverride: i === 0
+          ? anchorIban
+          : deriveCrossLfiSelfIban(
+              persona.persona_id,
+              `${slotKey}__product_${i}`,
+              bank,
+            ),
+      }));
     }
   }
   if (!projectedAccounts) {

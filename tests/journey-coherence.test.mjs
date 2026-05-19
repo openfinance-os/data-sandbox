@@ -51,8 +51,8 @@ if (!FIXTURES_BUILT) {
     return ds.includes('banking');
   });
 
-  it('the banking test matrix covers 19 personas × 3 LFIs (18 banking + 1 multi-domain)', () => {
-    expect(fixtureEntries.length).toBe(57);
+  it('the banking test matrix covers 21 personas × 3 LFIs (18 banking + 3 multi-domain)', () => {
+    expect(fixtureEntries.length).toBe(63);
   });
 
   for (const [key, fx] of fixtureEntries) {
