@@ -664,8 +664,12 @@ function renderPersonaGallery() {
   grid.innerHTML = '';
   const filtered = state.personas.filter((p) => {
     if (state.filter === 'all') return true;
-    if (state.filter === 'banking') return p.domain === 'banking';
-    if (state.filter === 'insurance') return p.domain === 'insurance';
+    // Phase 2.2 — multi-domain personas (domain === 'multi') match
+    // 'banking', 'insurance', AND the dedicated 'multi' filter, since
+    // they span both domains.
+    if (state.filter === 'banking') return p.domain === 'banking' || p.domain === 'multi';
+    if (state.filter === 'insurance') return p.domain === 'insurance' || p.domain === 'multi';
+    if (state.filter === 'multi') return p.domain === 'multi';
     if (state.filter === 'sme') return (p.segment || '').toLowerCase() === 'sme';
     return true;
   });
@@ -694,25 +698,73 @@ function renderPersonaGallery() {
   }
 }
 
+// Phase 2.2 — normalise a persona's multi_lfi_footprint to a slots[]
+// array regardless of whether it was declared in the legacy
+// {primary, secondary, tertiary} shape or the new slots[] shape. Each
+// returned entry carries `key`, `role`, `lfi_default`, and
+// `plausible_lfi_candidates`.
+function footprintSlots(persona) {
+  const fp = persona?.multi_lfi_footprint;
+  if (!fp) return [];
+  if (Array.isArray(fp.slots)) {
+    return fp.slots.filter(Boolean).map((s, i) => ({
+      key: s.key ?? (i === 0 ? 'primary' : `slot-${i + 1}`),
+      role: s.role,
+      lfi_default: s.lfi_default,
+      plausible_lfi_candidates: s.plausible_lfi_candidates || [],
+    }));
+  }
+  const out = [];
+  for (const key of ['primary', 'secondary', 'tertiary']) {
+    if (fp[key] == null) continue;
+    out.push({
+      key,
+      role: fp[key].role,
+      lfi_default: fp[key].lfi_default,
+      plausible_lfi_candidates: fp[key].plausible_lfi_candidates || [],
+    });
+  }
+  return out;
+}
+
+// Phase 2.2 — does this persona have banking-side fixtures? Pure
+// banking + multi-domain personas do; pure insurance personas don't.
+function hasBankingFixtures(persona) {
+  return persona.domain === 'banking' || persona.domain === 'multi';
+}
+function hasInsuranceFixtures(persona) {
+  return persona.domain === 'insurance' || persona.domain === 'multi';
+}
+
 // Defaults pre-tick only what the persona's bundle actually contains.
 // Cross-domain options are visible-but-empty so the user can simulate
 // multi-domain consent without misleading them about fixture coverage.
 function resetInstitutionSelection(persona) {
   state.selectedBankProfiles = new Set();
   state.selectedInsuranceLines = new Set();
-  if (persona.domain === 'banking') {
-    if (persona.multi_lfi_footprint) {
-      for (const role of ['primary', 'secondary', 'tertiary']) {
-        const r = persona.multi_lfi_footprint[role];
-        if (r && r.lfi_default) state.selectedBankProfiles.add(r.lfi_default.toLowerCase());
+  if (hasBankingFixtures(persona)) {
+    const slots = footprintSlots(persona);
+    if (slots.length > 0) {
+      for (const s of slots) {
+        if (s.lfi_default) state.selectedBankProfiles.add(s.lfi_default.toLowerCase());
       }
     } else {
       state.selectedBankProfiles.add('median');
     }
   }
-  if (persona.domain === 'insurance') {
-    const line = inferInsuranceLine(persona);
-    if (line) state.selectedInsuranceLines.add(line);
+  if (hasInsuranceFixtures(persona)) {
+    // Pure-insurance persona: one inferred line. Multi-domain persona:
+    // every line declared in insurance.lines[] (defaults to all that
+    // appear in multi_insurer_footprint).
+    if (persona.domain === 'multi') {
+      const slots = persona.multi_insurer_footprint?.slots ?? [];
+      for (const s of slots) {
+        if (s?.line) state.selectedInsuranceLines.add(s.line);
+      }
+    } else {
+      const line = inferInsuranceLine(persona);
+      if (line) state.selectedInsuranceLines.add(line);
+    }
   }
 }
 
@@ -733,7 +785,7 @@ function renderInstitutions() {
     `(<strong>${escapeHtml(persona.domain)}</strong>).`;
 
   // ─── Bank Data Sharing block (always shown) ───
-  const bankHeader = el('h4', {}, persona.domain === 'banking'
+  const bankHeader = el('h4', {}, hasBankingFixtures(persona)
     ? 'Bank Data Sharing — populate-rate profiles'
     : 'Bank Data Sharing — populate-rate profiles (no fixtures for this persona)');
   body.appendChild(bankHeader);
@@ -742,7 +794,7 @@ function renderInstitutions() {
     const selected = state.selectedBankProfiles.has(prof.key);
     const card = el('button', {
       type: 'button',
-      className: `inst-card${selected ? ' selected' : ''}${persona.domain !== 'banking' ? ' cross-domain' : ''}`,
+      className: `inst-card${selected ? ' selected' : ''}${!hasBankingFixtures(persona) ? ' cross-domain' : ''}`,
       'aria-pressed': selected ? 'true' : 'false',
       onclick: () => {
         if (state.selectedBankProfiles.has(prof.key)) state.selectedBankProfiles.delete(prof.key);
@@ -761,17 +813,16 @@ function renderInstitutions() {
   }
   body.appendChild(bankGrid);
 
-  if (persona.multi_lfi_footprint) {
+  const slots = footprintSlots(persona);
+  if (slots.length > 0) {
     const advisory = el('div', { className: 'footprint-advisory' });
     advisory.appendChild(el('strong', {}, 'Real-world plausible UAE LFIs for this persona'));
-    advisory.appendChild(el('span', {}, 'Descriptive of the SME\'s likely relationships per persona manifest — not bound to any populate-rate profile (NG5 / D-14).'));
-    for (const role of ['primary', 'secondary', 'tertiary']) {
-      const r = persona.multi_lfi_footprint[role];
-      if (!r) continue;
-      const roleLabel = `${role} · ${r.role.replace(/_/g, ' ')}`;
+    advisory.appendChild(el('span', {}, 'Descriptive of the persona\'s likely relationships per the persona manifest — not bound to any populate-rate profile (NG5 / D-14).'));
+    for (const s of slots) {
+      const roleLabel = `${s.key} · ${(s.role || '').replace(/_/g, ' ')}`;
       advisory.appendChild(el('div', { className: 'candidate-role' }, roleLabel));
       const row = el('div', { className: 'candidate-row' });
-      for (const cand of (r.plausible_lfi_candidates || [])) {
+      for (const cand of s.plausible_lfi_candidates) {
         row.appendChild(el('span', { className: 'cand' }, cand));
       }
       advisory.appendChild(row);
@@ -780,19 +831,29 @@ function renderInstitutions() {
   }
 
   // ─── Insurance Data Sharing block (always shown) ───
-  const insHeader = el('h4', {}, persona.domain === 'insurance'
+  const insHeader = el('h4', {}, hasInsuranceFixtures(persona)
     ? 'Insurance Data Sharing — applicable lines'
     : 'Insurance Data Sharing — applicable lines (no fixtures for this persona)');
   body.appendChild(insHeader);
   const insGrid = el('div', { className: 'inst-grid' });
   const personaLine = inferInsuranceLine(persona);
+  // Phase 2.2 — multi-domain personas can declare insurance.lines[]
+  // covering several lines; treat all of them as "persona-owned" (no
+  // cross-domain shading).
+  const personaLineSet = new Set();
+  if (persona.domain === 'multi') {
+    const insSlots = persona.multi_insurer_footprint?.slots ?? [];
+    for (const s of insSlots) if (s?.line) personaLineSet.add(s.line);
+  } else if (persona.domain === 'insurance' && personaLine) {
+    personaLineSet.add(personaLine);
+  }
   for (const lineKey of INSURANCE_LINES) {
     const meta = INSURANCE_LINE_LABELS[lineKey];
     const selected = state.selectedInsuranceLines.has(lineKey);
-    const isPersonaLine = persona.domain === 'insurance' && personaLine === lineKey;
+    const isPersonaLine = personaLineSet.has(lineKey);
     const card = el('button', {
       type: 'button',
-      className: `inst-card${selected ? ' selected' : ''}${!isPersonaLine && persona.domain !== 'banking' ? ' cross-domain' : ''}`,
+      className: `inst-card${selected ? ' selected' : ''}${!isPersonaLine && !hasInsuranceFixtures(persona) ? ' cross-domain' : ''}`,
       'aria-pressed': selected ? 'true' : 'false',
       onclick: () => {
         if (state.selectedInsuranceLines.has(lineKey)) state.selectedInsuranceLines.delete(lineKey);
@@ -1161,8 +1222,15 @@ function renderConnected() {
 
 async function runLiveFetch(persona, lfi, container) {
   try {
-    if (persona.domain === 'banking') await renderBankingChat(persona, lfi, container);
-    else await renderInsuranceChat(persona, container);
+    // Phase 2.2 — multi-domain personas (domain === 'multi') carry
+    // banking fixtures, so the banking chat is the right primary
+    // surface for J1; a follow-up could split this into a tabbed
+    // banking + insurance view.
+    if (persona.domain === 'banking' || persona.domain === 'multi') {
+      await renderBankingChat(persona, lfi, container);
+    } else {
+      await renderInsuranceChat(persona, container);
+    }
   } catch (err) {
     container.replaceChildren();
     container.appendChild(el('p', { className: 'skeleton', style: 'color:#a13;' },
@@ -1590,13 +1658,15 @@ function renderActions() {
 // state.selectedPersonaId; everything else lives in state.j2*.
 
 // Filter pipeline for J2's persona gallery. J2's dashboard at step 5 is a
-// banking PFM/BFM view, so we constrain to banking-domain personas (insurance
-// personas have no banking fixtures and would render empty cards in v1). The
-// retail/sme filter then slices on segment (SME personas carry segment="SME";
-// everything else is Retail).
+// banking PFM/BFM view, so we constrain to personas that have banking data —
+// single-domain banking personas + Phase 2.2 multi-domain personas
+// (domain === 'multi', which carry both banking + insurance fixtures).
+// Pure insurance personas have no banking fixtures and would render empty
+// cards in v1. The retail/sme filter then slices on segment (SME personas
+// carry segment="SME"; everything else is Retail).
 function j2FilteredPersonas() {
   return state.personas.filter((p) => {
-    if (p.domain !== 'banking') return false;
+    if (p.domain !== 'banking' && p.domain !== 'multi') return false;
     if (state.j2Filter === 'all') return true;
     const isSme = (p.segment || '').toLowerCase() === 'sme';
     if (state.j2Filter === 'sme') return isSme;
