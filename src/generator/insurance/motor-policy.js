@@ -56,7 +56,12 @@ function generateCarFinance({ persona, banks, rng, preferredBank }) {
   // resolves to that banking slot's deterministic bank pick so the
   // motor-insurance and banking views agree on which bank holds the
   // loan. Falls back to the random pool draw otherwise.
-  const bank = preferredBank ?? banks.banks[Math.floor(rng() * banks.banks.length)];
+  //
+  // The random draw runs unconditionally (and is discarded when
+  // preferredBank is set) so RNG state is identical regardless of
+  // whether a cross_domain_link is declared — EXP-05 trap-fix.
+  const fallbackBank = banks.banks[Math.floor(rng() * banks.banks.length)];
+  const bank = preferredBank ?? fallbackBank;
   return {
     BankName: bank.name,
     FinanceAmount: aed(persona.finance.amount_aed),

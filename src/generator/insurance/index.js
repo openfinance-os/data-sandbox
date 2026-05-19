@@ -473,12 +473,18 @@ function buildHomeBundle({ persona, lfi, seed, pools, now }) {
   // without the cross-domain link declared.
   let mortgageBankName = null;
   if (persona.home?.mortgage?.has_mortgage) {
+    // Always advance the RNG with a random pool draw FIRST, then
+    // prefer the cross-domain-linked bank when declared. Otherwise the
+    // RNG state diverges between personas with vs. without a
+    // cross_domain_link, and retro-adding the link to an existing
+    // persona silently shifts every downstream draw (insurance policy
+    // id, IBAN, quote) — EXP-05 trap.
+    const fallbackBankName = pickRandomBankName(p.banks, rng);
     const linkedSlotKey = findInsuranceCrossDomainLink(persona, 'home');
-    let linkedBank = null;
-    if (linkedSlotKey) {
-      linkedBank = pickFootprintSlotBank(persona, linkedSlotKey, p.banks);
-    }
-    mortgageBankName = linkedBank?.name ?? pickRandomBankName(p.banks, rng);
+    const linkedBank = linkedSlotKey
+      ? pickFootprintSlotBank(persona, linkedSlotKey, p.banks)
+      : null;
+    mortgageBankName = linkedBank?.name ?? fallbackBankName;
     persona = {
       ...persona,
       home: {

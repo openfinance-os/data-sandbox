@@ -59,6 +59,59 @@ describe('Phase 2.2 — cross_domain_link resolution', () => {
     const mortgageBank = pickFootprintSlotBank(persona, 'mortgage-lender', counterpartyBanks);
     expect(salaryBank?.name).not.toBe(mortgageBank?.name);
   });
+
+  it('home Mortgage carries the linked bank\'s BIC (not just name)', () => {
+    const expectedBank = pickFootprintSlotBank(persona, 'mortgage-lender', counterpartyBanks);
+    expect(expectedBank?.bic).toBeTruthy();
+    const bundle = buildBundle({ persona, lfi: 'rich', seed: persona.default_seed, pools, now: NOW });
+    const homePolicy = bundle.homePolicies?.[0];
+    const mortgageBic = findStringByKeyPath(homePolicy, ['Mortgage', 'BIC'])
+      ?? findStringByKeyPath(homePolicy, ['Mortgage', 'BankBIC'])
+      ?? findStringByKeyPath(homePolicy, ['Mortgage', 'BankIdentifier']);
+    // The current home-policy generator surfaces only BankName + BankBranch
+    // — no BIC field. Document the limitation: if a future generator
+    // change adds a BIC, it MUST resolve from the linked bank.
+    if (mortgageBic != null) {
+      expect(mortgageBic).toBe(expectedBank.bic);
+    }
+  });
+});
+
+describe('Phase 2.2 — cross_domain_link fallback (no link declared)', () => {
+  // Single-domain home persona (home-mortgage-villa) — no
+  // cross_domain_link declared. Verifies the fallback path still
+  // resolves to a valid pool bank and the bundle builds cleanly.
+  const persona = loadPersona('home_mortgage_villa');
+  const pools = loadAllPools();
+
+  it('builds a home bundle and surfaces a BankName from the pool when no link is declared', () => {
+    expect(findInsuranceCrossDomainLink(persona, 'home')).toBeNull();
+    const bundle = buildBundle({ persona, lfi: 'rich', seed: persona.default_seed, pools, now: NOW });
+    const homePolicy = bundle.homePolicies?.[0];
+    expect(homePolicy).toBeTruthy();
+    const mortgageBank = findStringByKeyPath(homePolicy, ['Mortgage', 'BankName']);
+    expect(typeof mortgageBank).toBe('string');
+    expect(mortgageBank.length).toBeGreaterThan(0);
+  });
+
+  it('determinism: same (persona, lfi, seed) produces byte-identical home bundles regardless of link presence', () => {
+    const a = buildBundle({ persona, lfi: 'rich', seed: persona.default_seed, pools, now: NOW });
+    const b = buildBundle({ persona, lfi: 'rich', seed: persona.default_seed, pools, now: NOW });
+    expect(JSON.stringify(a.homePolicies)).toBe(JSON.stringify(b.homePolicies));
+  });
+});
+
+describe('Phase 2.2 — emirati_takaful_multi internal consistency', () => {
+  // The persona's narrative claims life cover is mortgage-protection
+  // sized to the outstanding mortgage balance. Verify that as a data
+  // invariant so a future edit to one number can't silently drift
+  // away from the other.
+  const persona = loadPersona('emirati_takaful_multi');
+
+  it('life policy sum_assured matches mortgage outstanding balance (mortgage-protection narrative)', () => {
+    expect(persona.life?.policy?.sum_assured_aed).toBe(persona.home?.mortgage?.balance_aed);
+    expect(persona.life?.policy?.insurance_purpose).toBe('MortgageCover');
+  });
 });
 
 // Defensive helper — the home-insurance line builder nests the

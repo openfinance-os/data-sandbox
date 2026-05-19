@@ -149,7 +149,7 @@ describe('insurance spec validation — endpoints × persona × LFI', () => {
       case '/motor-insurance-policies/{InsurancePolicyId}/payment-details': {
         const policy = bundle.motorPolicies[0];
         return {
-          Data: bundle.paymentDetails,
+          Data: bundle.motorPaymentDetails ?? bundle.paymentDetails,
           Links: baseLinks(`motor-insurance-policies/${policy.InsurancePolicyId}/payment-details`),
           Meta: baseMeta(),
         };
@@ -179,7 +179,7 @@ describe('insurance spec validation — endpoints × persona × LFI', () => {
       case '/home-insurance-policies/{InsurancePolicyId}/payment-details': {
         const policy = bundle.homePolicies[0];
         return {
-          Data: bundle.paymentDetails,
+          Data: bundle.homePaymentDetails ?? bundle.paymentDetails,
           Links: baseLinks(`home-insurance-policies/${policy.InsurancePolicyId}/payment-details`),
           Meta: baseMeta(),
         };
@@ -209,7 +209,7 @@ describe('insurance spec validation — endpoints × persona × LFI', () => {
       case '/health-insurance-policies/{InsurancePolicyId}/payment-details': {
         const policy = bundle.healthPolicies[0];
         return {
-          Data: bundle.paymentDetails,
+          Data: bundle.healthPaymentDetails ?? bundle.paymentDetails,
           Links: baseLinks(`health-insurance-policies/${policy.InsurancePolicyId}/payment-details`),
           Meta: baseMeta(),
         };
@@ -239,7 +239,7 @@ describe('insurance spec validation — endpoints × persona × LFI', () => {
       case '/life-insurance-policies/{InsurancePolicyId}/payment-details': {
         const policy = bundle.lifePolicies[0];
         return {
-          Data: bundle.paymentDetails,
+          Data: bundle.lifePaymentDetails ?? bundle.paymentDetails,
           Links: baseLinks(`life-insurance-policies/${policy.InsurancePolicyId}/payment-details`),
           Meta: baseMeta(),
         };
@@ -269,7 +269,7 @@ describe('insurance spec validation — endpoints × persona × LFI', () => {
       case '/travel-insurance-policies/{InsurancePolicyId}/payment-details': {
         const policy = bundle.travelPolicies[0];
         return {
-          Data: bundle.paymentDetails,
+          Data: bundle.travelPaymentDetails ?? bundle.paymentDetails,
           Links: baseLinks(`travel-insurance-policies/${policy.InsurancePolicyId}/payment-details`),
           Meta: baseMeta(),
         };
@@ -299,7 +299,7 @@ describe('insurance spec validation — endpoints × persona × LFI', () => {
       case '/renters-insurance-policies/{InsurancePolicyId}/payment-details': {
         const policy = bundle.rentersPolicies[0];
         return {
-          Data: bundle.paymentDetails,
+          Data: bundle.rentersPaymentDetails ?? bundle.paymentDetails,
           Links: baseLinks(`renters-insurance-policies/${policy.InsurancePolicyId}/payment-details`),
           Meta: baseMeta(),
         };
@@ -329,7 +329,7 @@ describe('insurance spec validation — endpoints × persona × LFI', () => {
       case '/employment-insurance-policies/{InsurancePolicyId}/payment-details': {
         const policy = bundle.employmentPolicies[0];
         return {
-          Data: bundle.paymentDetails,
+          Data: bundle.employmentPaymentDetails ?? bundle.paymentDetails,
           Links: baseLinks(`employment-insurance-policies/${policy.InsurancePolicyId}/payment-details`),
           Meta: baseMeta(),
         };

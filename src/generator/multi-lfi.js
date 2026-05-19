@@ -192,7 +192,13 @@ export function pickFootprintBankForPurpose(persona, purpose, counterpartyBanksP
  * candidate matches, returns null and the role is silently skipped —
  * a manifest with malformed candidate names won't crash the build.
  */
-function pickRoleBank(personaId, role, slot, counterpartyBanksPool) {
+// IMPORTANT: the second argument is the SLOT KEY (e.g. 'secondary',
+// 'mortgage-lender', 'salary'), NOT the role enum value (e.g.
+// 'salary_primary', 'mortgage_lender'). Every caller passes slot.key
+// — the PRNG seed must remain the slot identifier so cross-bundle
+// IBAN identity holds (the slot key is the URL segment, the role is
+// the functional category).
+function pickRoleBank(personaId, slotKey, slot, counterpartyBanksPool) {
   const candidates = slot?.plausible_lfi_candidates ?? [];
   if (candidates.length === 0) return null;
   // Filter to candidates that exist in the counterparty-bank pool.
@@ -205,7 +211,7 @@ function pickRoleBank(personaId, role, slot, counterpartyBanksPool) {
     .map((name) => counterpartyBanksPool.banks.find((b) => b.name === name))
     .filter(Boolean);
   if (inPool.length === 0) return null;
-  const rng = makePrng(personaId, 'cross-lfi-role-bank', role);
+  const rng = makePrng(personaId, 'cross-lfi-role-bank', slotKey);
   const idx = rngInt(rng, 0, inPool.length);
   return inPool[idx];
 }
@@ -243,6 +249,16 @@ function pickRoleBank(personaId, role, slot, counterpartyBanksPool) {
  * default (AED) unless the role implies USD (trade_finance).
  */
 export function projectPersonaForRole(persona, slotKey, bank) {
+  // ROLE_TO_ACCOUNT_TYPE is consulted ONLY on the legacy single-account
+  // projection path — i.e. when the persona has no at_slot tags on its
+  // accounts. For Phase 2.2 multi-product personas (every account
+  // tagged), the projected role-bundle accounts come straight from the
+  // persona's `accounts` filtered by `at_slot`, ignoring this table.
+  // `mortgage_lender: CurrentAccount` therefore reflects what to emit
+  // when a persona declares the role WITHOUT at_slot tags — the
+  // realistic "primary deposit account at the mortgage bank", not the
+  // mortgage product itself (the persona would declare a Mortgage in
+  // accounts[] separately to model that).
   const ROLE_TO_ACCOUNT_TYPE = {
     operating: 'CurrentAccount',
     trade_finance: 'CurrentAccount',
