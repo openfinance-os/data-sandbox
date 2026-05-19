@@ -113,9 +113,16 @@ if (!FIXTURES_BUILT) {
 
     it(`${rkey} — primary bundle has 24 XLFI outflows targeting this slot (TransactionId-keyed; field-redaction-stable)`, () => {
       const primaryTx = readEnv(primary.endpoints[`/accounts/${primaryAccountId}/transactions`]);
-      const slotTag = rfx.slot === 'secondary' ? 's2' : 's3';
+      // Phase 2.2 — slot suffix is derived from slot index, not name. Use
+      // TransactionReference (XLFI-<SLOT3>-NN) which encodes the slot key
+      // directly. Legacy SME slots: 'secondary' → 'SEC', 'tertiary' → 'TER'.
+      // Phase 2.2 custom keys: 'everyday-card' → 'EVE', 'digital' → 'DIG',
+      // 'mortgage-lender' → 'MOR'.
+      const refPrefix = `XLFI-${rfx.slot.slice(0, 3).toUpperCase()}-`;
       const xlfiToSlot = (primaryTx.Data.Transaction ?? []).filter(
-        (t) => isXlfi(t) && t.TransactionId.includes(`-xlfi-${slotTag}-`) && t.TransactionId.endsWith('-out'),
+        (t) => isXlfi(t)
+          && (t.TransactionReference?.startsWith(refPrefix) || t.TransactionInformation?.includes(`XLFI SWEEP TO ${rfx.slot.toUpperCase()}`))
+          && t.TransactionId.endsWith('-out'),
       );
       expect(xlfiToSlot.length).toBe(24);
       for (const t of xlfiToSlot) {
@@ -143,10 +150,12 @@ if (!FIXTURES_BUILT) {
       const primaryTx = readEnv(primary.endpoints[`/accounts/${primaryAccountId}/transactions`]);
       const roleAccountId = rfx.accountIds[0];
       const roleTx = readEnv(rfx.endpoints[`/accounts/${roleAccountId}/transactions`]);
-      const slotTag = rfx.slot === 'secondary' ? 's2' : 's3';
 
+      const refPrefix = `XLFI-${rfx.slot.slice(0, 3).toUpperCase()}-`;
       const xlfiOut = (primaryTx.Data.Transaction ?? []).filter(
-        (t) => isXlfi(t) && t.TransactionId.includes(`-xlfi-${slotTag}-`) && t.TransactionId.endsWith('-out'),
+        (t) => isXlfi(t)
+          && (t.TransactionReference?.startsWith(refPrefix) || t.TransactionInformation?.includes(`XLFI SWEEP TO ${rfx.slot.toUpperCase()}`))
+          && t.TransactionId.endsWith('-out'),
       );
       const xlfiIn = (roleTx.Data.Transaction ?? []).filter(
         (t) => isXlfi(t) && t.TransactionId.endsWith('-in'),
@@ -174,9 +183,11 @@ if (!FIXTURES_BUILT) {
         const roleIban = roleAccounts.Data.Account[0].AccountIdentifiers[0].Identification;
 
         const primaryTx = readEnv(primary.endpoints[`/accounts/${primaryAccountId}/transactions`]);
-        const slotTag = rfx.slot === 'secondary' ? 's2' : 's3';
+        const refPrefix = `XLFI-${rfx.slot.slice(0, 3).toUpperCase()}-`;
         const xlfiOut = (primaryTx.Data.Transaction ?? []).filter(
-          (t) => isXlfi(t) && t.TransactionId.includes(`-xlfi-${slotTag}-`) && t.TransactionId.endsWith('-out'),
+          (t) => isXlfi(t)
+            && (t.TransactionReference?.startsWith(refPrefix) || t.TransactionInformation?.includes(`XLFI SWEEP TO ${rfx.slot.toUpperCase()}`))
+            && t.TransactionId.endsWith('-out'),
         );
         for (const t of xlfiOut) {
           expect(t.CreditorAccount?.[0]?.Identification).toBe(roleIban);

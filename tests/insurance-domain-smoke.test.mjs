@@ -11,12 +11,22 @@
 
 import { describe, it, expect } from 'vitest';
 import { buildBundle } from '../src/generator/index.js';
-import { loadPersonasByDomain, loadAllPools } from '../tools/load-fixtures.mjs';
+import {
+  loadPersonasByDomain,
+  loadAllPools,
+  personaDomains,
+} from '../tools/load-fixtures.mjs';
 
 const LINES = ['motor', 'home', 'health', 'life', 'travel', 'renters', 'employment'];
 const LFIS = ['Rich', 'Median', 'Sparse'];
 
-const personas = Object.values(loadPersonasByDomain('insurance'));
+// Single-line insurance personas only. Multi-domain personas
+// (domains:[banking,insurance]) declare `insurance.lines:[]` and are
+// exercised by tests/multi-domain-bundle.test.mjs — they would fail
+// the line + domain assertions below because buildBundle returns a
+// composite bundle, not the single-line shape this suite expects.
+const personas = Object.values(loadPersonasByDomain('insurance'))
+  .filter((p) => personaDomains(p).length === 1);
 const pools = loadAllPools();
 
 describe('insurance domain smoke', () => {

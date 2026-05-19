@@ -65,11 +65,19 @@ let totalBytes = 0;
 
 async function emitPersona(personaId, persona, domain) {
   const seed = persona.default_seed ?? 1;
+  // Phase 2.2 — multi-domain personas declare `domains: [banking, insurance]`;
+  // single-domain personas keep `domain: <string>`. Surface both shapes in
+  // the manifest so npm / PyPI / MCP consumers can filter on either.
+  const personaDomainList = Array.isArray(persona.domains) && persona.domains.length > 0
+    ? persona.domains
+    : [persona.domain ?? domain];
+  const personaDomainLabel = personaDomainList.length > 1 ? 'multi' : personaDomainList[0];
   manifest.personas[personaId] = {
     name: persona.name,
     archetype: persona.archetype,
     default_seed: seed,
-    domain,
+    domain: personaDomainLabel,
+    domains: personaDomainList,
     stress_coverage: persona.stress_coverage ?? [],
     // D-14: surface a compact view of the persona's plausible multi-LFI
     // footprint so MCP / npm / PyPI consumers can discover the multi-bank
@@ -77,6 +85,8 @@ async function emitPersona(personaId, persona, domain) {
     // the anonymous Rich/Median/Sparse populate-rate label and the
     // candidate-bank list (NG5/D-14 allow-site).
     multi_lfi_footprint: persona.multi_lfi_footprint ?? null,
+    // Phase 2.2 — same shape, for insurance carriers.
+    multi_insurer_footprint: persona.multi_insurer_footprint ?? null,
   };
   fs.writeFileSync(
     path.join(OUT, 'personas', `${personaId}.json`),
@@ -362,7 +372,14 @@ const SPEC_FILE_BY_DOMAIN = {
 export function listPersonas(opts = {}) {
   const ids = Object.keys(manifest.personas);
   if (!opts.domain) return ids;
-  return ids.filter((id) => manifest.personas[id]?.domain === opts.domain);
+  // Phase 2.2 — multi-domain personas (domains:[banking, insurance])
+  // appear in BOTH banking and insurance filters.
+  return ids.filter((id) => {
+    const info = manifest.personas[id];
+    if (!info) return false;
+    const ds = Array.isArray(info.domains) ? info.domains : [info.domain ?? 'banking'];
+    return ds.includes(opts.domain);
+  });
 }
 export function getPersonaInfo(personaId) {
   return manifest.personas[personaId] ?? null;
@@ -587,7 +604,13 @@ const SPEC_FILE_BY_DOMAIN = { banking: 'spec.json', insurance: 'spec.insurance.j
 function listPersonas(opts) {
   const ids = Object.keys(manifest.personas);
   if (!opts || !opts.domain) return ids;
-  return ids.filter(function (id) { return manifest.personas[id] && manifest.personas[id].domain === opts.domain; });
+  // Phase 2.2 — multi-domain personas appear in BOTH banking and insurance filters.
+  return ids.filter(function (id) {
+    const info = manifest.personas[id];
+    if (!info) return false;
+    const ds = Array.isArray(info.domains) ? info.domains : [info.domain || 'banking'];
+    return ds.indexOf(opts.domain) !== -1;
+  });
 }
 function getPersonaInfo(personaId) { return manifest.personas[personaId] || null; }
 function listEndpoints(personaId, lfi) {
