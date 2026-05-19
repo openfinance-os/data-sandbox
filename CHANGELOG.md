@@ -5,6 +5,63 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follo
 
 ## [Unreleased]
 
+### Added — Phase 2.2: retail multi-LFI + multi-domain flagship persona (`retail_multi_banker`)
+
+The "Connect-journeys hero" persona — a salaried UAE expat customer whose
+realistic banking footprint spans **four LFIs** (salary primary + everyday-card
+secondary + digital sidekick + international-branch mortgage lender) AND whose
+insurance footprint spans **three carriers** (motor + home + travel). Total
+debt service (mortgage + auto loan + 3 cards) is only legible to a TPP via
+Open Finance aggregation across all four banks — no single LFI sees the full
+picture. The exact persona shape the J2 (TPP + Al Tareq) consent flow and the
+EXP-18 Underwriting Scenario Panel are built for.
+
+Landing the persona required four architectural extensions to the generator
++ schema, each shipped behind a back-compat adapter so all 27 prior personas
+keep producing byte-identical fixtures:
+
+- **N-slot `multi_lfi_footprint`** — `slots: [...]` array replaces the fixed
+  `primary` / `secondary` / `tertiary` triad. `normalizeFootprint()` in
+  `src/generator/multi-lfi.js` canonicalises both shapes; the legacy triad is
+  walked in fixed primary→secondary→tertiary order so SME role-bundle codes
+  (x2/s2, x3/s3) stay byte-stable. New `role` enum members for retail slots:
+  `salary_primary`, `secondary_card`, `digital_sidekick`, `international_branch`,
+  `mortgage_lender` (added to `spec/lfi-roles.yaml`).
+- **Multi-product per LFI via `at_slot`** — each `accounts[]` entry can tag
+  `at_slot: <slot.key>` to anchor it to a specific footprint slot. The primary
+  bundle filters to the primary slot's accounts; role bundles emit ALL accounts
+  tagged at the projected slot (e.g. a CurrentAccount + a CreditCard at a
+  secondary LFI). First CurrentAccount in each slot keeps the cross-LFI
+  self-IBAN; other products derive distinct mod-97-valid IBANs from
+  `${slotKey}__product_${i}`. Untagged personas (SME) fall back to the legacy
+  single-account projection unchanged.
+- **Multi-domain personas via `domains: [banking, insurance]`** —
+  `buildMultiDomainBundle` in `src/generator/index.js` runs both pipelines for
+  the same `(persona, lfi, seed)` and merges into one composite bundle.
+  Banking and insurance both seed from
+  `makePrng(persona_id, 'generator', seed)`, so the first PRNG draw on each
+  side is the name → display names align across both halves naturally.
+  `envelopesFromBundle` emits both endpoint families at the same persona path;
+  `loadPersonasByDomain` matches against the persona's full declared domain set
+  so multi-domain personas appear in BOTH banking and insurance filters.
+- **`multi_insurer_footprint` + insurer-name lint** — mirrors the banking
+  pattern for insurance carriers. New
+  `synthetic-identity-pool/counterparty-insurers/uae-real.yaml` lists 17 real
+  UAE insurers tagged by lines (motor / home / health / life / travel / health
+  / takaful). `tools/lint-no-institution-leak.mjs` denylist extended; allowed
+  sites are the new pool plus
+  `multi_insurer_footprint.slots[].plausible_insurer_candidates` in persona
+  manifests. Bare "Salama" is intentionally excluded from the denylist —
+  collides with the Arabic given name سلامة in the emirati names pool. The
+  persona schema's `cross_domain_link` field anchors an insurance slot to a
+  banking slot (e.g. home cover bundled with the mortgage-lender slot).
+
+All ~1934 vitest tests + 98 MCP tests + 7 lints pass. `npm run build:fixtures`
+now reports `28 personas (18 banking + 1 multi + 9 insurance)`. Determinism
+(EXP-05) preserved across the multi-domain compose. EXP-10 spec validation
+holds for all 28 personas × 3 LFIs × 12 banking + 30 insurance endpoints.
+NG5 / D-14 invariants preserved by the lint extension.
+
 ### Changed — connector journey reshaped from "Claude for Small Business" to "Plaid + ChatGPT"
 
 The PR-52 connector deliverable was framed section-for-section on Anthropic's [Claude for Small Business](https://www.anthropic.com/news/claude-for-small-business) launch — toggle-install bundle table, 15 ready-made TPP skills, AI Fluency course, 4D framework, 10-stop GCC workshop tour. That shape reads as enterprise B2B chrome when the actual capability is consumer-direct: a person connects their UAE bank to Claude in a chat and Claude answers questions grounded in their real accounts. This commit pivots the framing to the [Plaid + ChatGPT integration](https://plaid.com/blog/chatgpt-personal-finance-plaid/) shape — consumer-direct, permission-managed, revocable.
