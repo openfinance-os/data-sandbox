@@ -321,11 +321,16 @@ export function projectPersonaForRole(persona, slotKey, bank) {
     // resolve consistently across primary and role bundles. The account
     // index restarts at 1 so the AccountId fits in the 40-char maxLength.
     accounts: projectedAccounts,
-    // No fixed commitments / cash-flow at the role bundle — the role-LFI
-    // sees only its slice of the persona's banking life. The primary
-    // bundle remains the source-of-truth for SOs, DDs, full transaction
-    // history.
-    fixed_commitments: [],
+    // Phase 2.2 — when the persona declares at_slot on its
+    // fixed_commitments, pass through only the ones matching THIS
+    // slot so each role bundle hosts its own SOs/DDs (e.g. the
+    // mortgage-lender slot's role bundle shows the mortgage_payment
+    // standing order). Legacy SME personas (no at_slot tags on
+    // commitments) clear fixed_commitments here — preserves the
+    // pre-2.2 "role bundle has no SOs/DDs" behaviour.
+    fixed_commitments: (persona.fixed_commitments ?? []).some((c) => c.at_slot != null)
+      ? (persona.fixed_commitments ?? []).filter((c) => c.at_slot === slotKey)
+      : [],
     cash_flow: undefined,
     // Role bundle has no merchant retail spend either — those land at the
     // operating LFI.

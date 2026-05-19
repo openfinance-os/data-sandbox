@@ -214,6 +214,37 @@ for (const file of listManifests()) {
     }
   }
 
+  // Phase 2.2 — fixed_commitments[].at_slot (same shape as accounts).
+  // Same all-or-nothing rule and same slot-key reference check.
+  if (Array.isArray(m.fixed_commitments)) {
+    let taggedCount = 0;
+    for (let i = 0; i < m.fixed_commitments.length; i++) {
+      const c = m.fixed_commitments[i] ?? {};
+      if (c.at_slot != null) {
+        taggedCount += 1;
+        if (typeof c.at_slot !== 'string') {
+          bad(file, `fixed_commitments[${i}].at_slot must be a string`);
+        } else if (declaredSlotKeys.size === 0) {
+          bad(
+            file,
+            `fixed_commitments[${i}].at_slot=${JSON.stringify(c.at_slot)} but persona declares no multi_lfi_footprint slots`,
+          );
+        } else if (!declaredSlotKeys.has(c.at_slot)) {
+          bad(
+            file,
+            `fixed_commitments[${i}].at_slot=${JSON.stringify(c.at_slot)} doesn't match any declared footprint slot key (have: {${[...declaredSlotKeys].join('|')}})`,
+          );
+        }
+      }
+    }
+    if (taggedCount > 0 && taggedCount < m.fixed_commitments.length) {
+      bad(
+        file,
+        `fixed_commitments mix tagged + untagged at_slot — when using at_slot, every entry must carry a tag (have ${taggedCount}/${m.fixed_commitments.length} tagged)`,
+      );
+    }
+  }
+
   const sigs = m?.organisation?.signatories;
   if (Array.isArray(sigs)) {
     for (let i = 0; i < sigs.length; i++) {

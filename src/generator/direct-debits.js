@@ -7,8 +7,20 @@ import { rngInt } from '../prng.js';
 export function generateDirectDebits({ persona, accounts, rng, now }) {
   const out = [];
   const currentAccounts = accounts.filter((a) => a._meta.kind === 'CurrentAccount');
+  // Phase 2.2 — per-slot commitment routing (same shape as
+  // generateStandingOrders). If any fixed_commitment declares at_slot,
+  // every commitment is routed via its slot; otherwise the legacy
+  // "all commitments on every CA" behaviour holds.
+  const hasAtSlotCommitments = (persona.fixed_commitments ?? []).some(
+    (c) => c.at_slot != null,
+  );
   for (const acc of currentAccounts) {
-    const dds = (persona.fixed_commitments ?? []).filter((c) => c.kind === 'direct_debit');
+    const accSlot = acc._meta?.slotKey ?? null;
+    const dds = (persona.fixed_commitments ?? []).filter((c) => {
+      if (c.kind !== 'direct_debit') return false;
+      if (hasAtSlotCommitments) return c.at_slot === accSlot;
+      return true;
+    });
     dds.forEach((c, i) => {
       const amount = c.amount_aed ?? rngInt(rng, c.amount_aed_band[0], c.amount_aed_band[1] + 1);
       out.push({

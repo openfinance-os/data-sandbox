@@ -107,6 +107,13 @@ fixed_commitments:
     amount_aed: <int?>
     amount_aed_band: <[int, int]?>
     schedule: <monthly_<day>|weekly_<weekday>|annual_<month_<day>>>
+    at_slot: <slot.key>?       # Phase 2.2 — when present, the SO/DD
+                               # originates from that slot's CurrentAccount
+                               # (e.g. mortgage_payment at_slot: mortgage-lender
+                               # → the mortgage-lender slot's CurrentAccount in
+                               # the role bundle, not the salary primary).
+                               # All-or-nothing: enforced by
+                               # lint-persona-spec-conformance.
 spend_profile:
   groceries_aed_per_month_band: <[int, int]?>
   fuel_aed_per_month_band: <[int, int]?>

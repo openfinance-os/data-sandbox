@@ -97,6 +97,13 @@ export function generateAccounts({ persona, identity, rng, pools, now }) {
         creditLimitAed: spec.credit_limit_aed,
         openingBalance: opening,
         servicerName: bank.name,
+        // Phase 2.2 — anchors the account to its multi_lfi_footprint slot
+        // so standing-order / direct-debit generation can match
+        // slot-tagged commitments to the right host CurrentAccount.
+        // For untagged personas (SME) this stays undefined; for
+        // multi-LFI personas projecting a role bundle, every account
+        // inherits the projected slot's key.
+        slotKey: spec.at_slot ?? persona._projectedRoleSlot ?? null,
       },
     };
   });

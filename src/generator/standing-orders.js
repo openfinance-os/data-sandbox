@@ -12,8 +12,21 @@ import { pickFootprintBankForPurpose } from './multi-lfi.js';
 export function generateStandingOrders({ persona, accounts, rng, pools, now }) {
   const out = [];
   const currentAccounts = accounts.filter((a) => a._meta.kind === 'CurrentAccount');
+  // Phase 2.2 — per-slot commitment routing. If ANY fixed_commitment
+  // declares at_slot, all routing flows through it: each commitment
+  // appears only on the CurrentAccount whose slotKey matches the
+  // commitment's at_slot. Untagged personas (SME) keep the legacy
+  // behaviour: every commitment appears on every CurrentAccount.
+  const hasAtSlotCommitments = (persona.fixed_commitments ?? []).some(
+    (c) => c.at_slot != null,
+  );
   for (const acc of currentAccounts) {
-    const sos = (persona.fixed_commitments ?? []).filter((c) => c.kind === 'standing_order');
+    const accSlot = acc._meta?.slotKey ?? null;
+    const sos = (persona.fixed_commitments ?? []).filter((c) => {
+      if (c.kind !== 'standing_order') return false;
+      if (hasAtSlotCommitments) return c.at_slot === accSlot;
+      return true;
+    });
     sos.forEach((c, i) => {
       const day = parseScheduleDay(c.schedule);
       if (day == null) return;
