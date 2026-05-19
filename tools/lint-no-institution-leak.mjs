@@ -10,7 +10,9 @@
 //          transactions / standing orders / beneficiaries — descriptive of
 //          the persona's relationships, not of any LFI's data quality.)
 //     - personas/*.yaml under multi_lfi_footprint.{primary,secondary,
-//       tertiary}.plausible_lfi_candidates
+//       tertiary}.plausible_lfi_candidates  (legacy D-14 shape)
+//     - personas/*.yaml under multi_lfi_footprint.slots[].plausible_lfi_candidates
+//       (Phase 2.2+ shape — N-slot array)
 //         (a candidate set with no populate-rate binding.)
 //
 //   FORBIDDEN sites (everything else under personas/, synthetic-identity-pool/,
@@ -139,17 +141,35 @@ function scanPersonaManifest(file, rel) {
   }
 
   function isCandidateArrayPath(segs) {
-    // segs ends in plausible_lfi_candidates and the parent is one of the
-    // three slots under multi_lfi_footprint.
+    // Accept two shapes:
+    //   Legacy (D-14):
+    //     multi_lfi_footprint.{primary|secondary|tertiary}.plausible_lfi_candidates
+    //   Phase 2.2+:
+    //     multi_lfi_footprint.slots.<idx>.plausible_lfi_candidates
     if (segs.length < 3) return false;
     const last = segs[segs.length - 1];
-    const slot = segs[segs.length - 2];
-    const head = segs[segs.length - 3];
-    return (
-      last === 'plausible_lfi_candidates' &&
-      ['primary', 'secondary', 'tertiary'].includes(slot) &&
-      head === 'multi_lfi_footprint'
-    );
+    if (last !== 'plausible_lfi_candidates') return false;
+    // Legacy: ...multi_lfi_footprint.<slot>.plausible_lfi_candidates
+    if (segs.length >= 3) {
+      const slot = segs[segs.length - 2];
+      const head = segs[segs.length - 3];
+      if (
+        ['primary', 'secondary', 'tertiary'].includes(slot) &&
+        head === 'multi_lfi_footprint'
+      ) return true;
+    }
+    // New: ...multi_lfi_footprint.slots.<idx>.plausible_lfi_candidates
+    if (segs.length >= 4) {
+      const idx = segs[segs.length - 2];
+      const slotsKey = segs[segs.length - 3];
+      const head = segs[segs.length - 4];
+      if (
+        /^\d+$/.test(idx) &&
+        slotsKey === 'slots' &&
+        head === 'multi_lfi_footprint'
+      ) return true;
+    }
+    return false;
   }
 
   walkNode(doc, []);

@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildBundle } from '../src/generator/index.js';
-import { buildRoleBundle } from '../src/generator/multi-lfi.js';
+import { buildRoleBundle, normalizeFootprint } from '../src/generator/multi-lfi.js';
 import { envelopesFromBundle } from '../src/ui/export.js';
 import { loadPersonasByDomain, loadAllPools, repoRoot } from './load-fixtures.mjs';
 import {
@@ -204,8 +204,14 @@ async function emitPersona(personaId, persona, domain) {
     // The primary bundle stays at the historical path (D-11 forward-
     // compat). Insurance personas don't carry a footprint.
     if (domain === 'banking' && persona.multi_lfi_footprint) {
-      for (const slotKey of ['secondary', 'tertiary']) {
-        if (!persona.multi_lfi_footprint[slotKey]) continue;
+      // Phase 2.2: iterate the normalised slots[] (skipping slots[0],
+      // the primary). For legacy {primary, secondary, tertiary}
+      // footprints the slot keys remain 'secondary' / 'tertiary' so
+      // existing manifest entries + URLs stay byte-identical.
+      const normFp = normalizeFootprint(persona.multi_lfi_footprint);
+      const roleSlots = normFp ? normFp.slots.slice(1) : [];
+      for (const slot of roleSlots) {
+        const slotKey = slot.key;
         const roleBundle = await buildRoleBundle({ persona, slot: slotKey, lfi, seed, pools, now });
         if (!roleBundle) continue;
         const roleEnvelopes = envelopesFromBundle(roleBundle, ctx);
@@ -233,7 +239,7 @@ async function emitPersona(personaId, persona, domain) {
           }
         }
         manifest.roleFixtures[`${personaId}|${slotKey}|${lfi}|${seed}`] = {
-          personaId, slot: slotKey, role: persona.multi_lfi_footprint[slotKey].role,
+          personaId, slot: slotKey, role: slot.role,
           lfi, seed, domain,
           accountIds: roleAccountIds,
           endpoints: aliasRoleEndpoints,
