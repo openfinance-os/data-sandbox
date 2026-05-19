@@ -119,14 +119,24 @@ function listManifests() {
     .map((f) => path.join(PERSONAS_DIR, f));
 }
 
+function resolveDomainsForLint(m) {
+  if (Array.isArray(m.domains) && m.domains.length > 0) return m.domains;
+  return [m.domain ?? 'banking'];
+}
+
 for (const file of listManifests()) {
   const m = yaml.load(fs.readFileSync(file, 'utf8'));
   if (!m) continue;
 
-  // Every persona must declare a recognised domain.
-  checkEnum(file, 'domain', m.domain, VALID_DOMAIN);
+  // Every persona must declare a recognised domain (or domains[]).
+  const personaDomains = resolveDomainsForLint(m);
+  for (const d of personaDomains) {
+    checkEnum(file, `domains[${d}]`, d, VALID_DOMAIN);
+  }
+  const isInsurance = personaDomains.includes('insurance');
+  const isBanking = personaDomains.includes('banking');
 
-  if (m.domain === 'insurance') {
+  if (isInsurance) {
     // line is a manifest-level discriminator (defaults to 'motor' for
     // back-compat per personas/_schema.insurance.yaml). Validate when
     // present.
@@ -140,10 +150,12 @@ for (const file of listManifests()) {
     if (effectiveLine === 'motor' && m.policy?.type != null) {
       checkEnum(file, 'policy.type', m.policy.type, MOTOR_POLICY_TYPE);
     }
-    continue;
   }
 
-  if (m.domain !== 'banking') continue;
+  // Banking-side checks run for any persona that declares the banking
+  // domain — single-domain `domain: banking` or multi-domain
+  // `domains: [banking, ...]`.
+  if (!isBanking) continue;
 
   // segment ⊆ AccountType ∩ PartyCategory (the spec's two enums are identical
   // here — Retail|SME|Corporate — and the persona's segment drives both).

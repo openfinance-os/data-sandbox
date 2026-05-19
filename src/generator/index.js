@@ -126,11 +126,76 @@ function extendedPools(indexedPools) {
   return out;
 }
 
+/**
+ * Resolve the persona's declared domain(s). Single-domain personas
+ * carry `domain:` (string); Phase 2.2+ multi-domain personas declare
+ * `domains:` (array). Returns an array.
+ */
+function resolveDomains(persona) {
+  if (Array.isArray(persona?.domains) && persona.domains.length > 0) {
+    return persona.domains;
+  }
+  return [persona?.domain ?? 'banking'];
+}
+
 export function buildBundle(args) {
-  const domain = args.persona?.domain ?? 'banking';
-  if (domain === 'banking') return buildBankingBundle(args);
-  if (domain === 'insurance') return buildInsuranceBundle(args);
-  throw new Error(`unknown persona domain: ${domain}`);
+  const domains = resolveDomains(args.persona);
+  if (domains.length === 1) {
+    const domain = domains[0];
+    if (domain === 'banking') return buildBankingBundle(args);
+    if (domain === 'insurance') return buildInsuranceBundle(args);
+    throw new Error(`unknown persona domain: ${domain}`);
+  }
+  return buildMultiDomainBundle({ ...args, domains });
+}
+
+/**
+ * Phase 2.2 — multi-domain persona dispatcher. Runs the banking
+ * pipeline AND the insurance pipeline (once per declared line) for the
+ * same (persona, lfi, seed), then merges the resulting bundles into a
+ * single flat object so `envelopesFromBundle` (export.js) can emit both
+ * endpoint families.
+ *
+ * Determinism: both pipelines seed their main RNG with the same
+ * (persona_id, 'generator', seed) tuple — the first draw on each side
+ * is the name, so the persona's display name is identical across all
+ * banking + insurance line halves. Cross-pipeline RNG state is
+ * independent thereafter.
+ *
+ * Multi-line insurance: persona.insurance.lines = [motor, home, ...]
+ * runs buildInsuranceBundle once per line, accumulating each line's
+ * consent record so the /insurance-consents list endpoint shows the
+ * full set.
+ */
+function buildMultiDomainBundle({ persona, lfi, seed, pools, now = DEFAULT_NOW, domains }) {
+  let bundle = {
+    persona: persona.persona_id,
+    name: persona.name,
+    domains: [...domains],
+  };
+
+  if (domains.includes('banking')) {
+    const bankingBundle = buildBankingBundle({ persona, lfi, seed, pools, now });
+    bundle = { ...bundle, ...bankingBundle };
+  }
+
+  if (domains.includes('insurance')) {
+    const lines = persona.insurance?.lines ?? (persona.line ? [persona.line] : []);
+    const accumulatedConsents = [];
+    for (const line of lines) {
+      const linePersona = { ...persona, line };
+      const lineBundle = buildInsuranceBundle({ persona: linePersona, lfi, seed, pools, now });
+      // Strip identity + consents before merge so banking's identity
+      // remains the canonical top-level value and consents accumulate
+      // across all declared lines.
+      const { identity: _ignoreInsuranceIdentity, consents, ...rest } = lineBundle;
+      if (consents) accumulatedConsents.push(...consents);
+      bundle = { ...bundle, ...rest };
+    }
+    if (accumulatedConsents.length > 0) bundle.consents = accumulatedConsents;
+  }
+
+  return bundle;
 }
 
 function buildBankingBundle({ persona, lfi, seed, pools, now = DEFAULT_NOW }) {

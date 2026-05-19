@@ -41,6 +41,19 @@ const insuranceBaseLinks = (resource) => ({
  * spec-validation tests assert against the AJV-compiled schema.
  */
 export function envelopesFromBundle(bundle, ctx) {
+  // Phase 2.2 — multi-domain bundles carry a `domains` array and have
+  // both banking and insurance fields populated. Emit both envelope
+  // sets so all endpoints land at the same persona path.
+  if (Array.isArray(bundle.domains) && bundle.domains.length > 1) {
+    const envelopes = {};
+    if (bundle.domains.includes('banking')) {
+      Object.assign(envelopes, bankingEnvelopesFromBundle(bundle, ctx));
+    }
+    if (bundle.domains.includes('insurance')) {
+      Object.assign(envelopes, insuranceEnvelopesFromBundle(bundle, ctx));
+    }
+    return envelopes;
+  }
   if (bundle.domain === 'insurance') {
     return insuranceEnvelopesFromBundle(bundle, ctx);
   }
@@ -173,24 +186,29 @@ function insuranceEnvelopesFromBundle(bundle, ctx) {
     quoteKey: 'employmentQuote',
     pathPrefix: 'employment-insurance',
   });
-  // Insurance Consents — every insurance bundle carries one consent
-  // record covering its own line. The list endpoint returns the array;
-  // the detail endpoint returns the same single record (resolved + as
-  // a templated key for callers that don't know the synthetic id).
+  // Insurance Consents — every insurance bundle carries at least one
+  // consent record. Single-line bundles carry one; multi-line
+  // (multi-domain) bundles accumulate one per line. The list endpoint
+  // returns the full array; every consent gets its own resolved-id
+  // detail endpoint, and the FIRST consent additionally backs the
+  // templated `/insurance-consents/{ConsentId}` path for callers that
+  // don't know the synthetic id.
   if (bundle.consents?.length > 0) {
-    const consent = bundle.consents[0];
     envelopes['/insurance-consents'] = wrapInsurance(
       { Data: bundle.consents },
       'insurance-consents',
       ctx
     );
-    envelopes[`/insurance-consents/${consent.ConsentId}`] = wrapInsurance(
-      { Data: consent },
-      `insurance-consents/${consent.ConsentId}`,
-      ctx
-    );
+    for (const consent of bundle.consents) {
+      envelopes[`/insurance-consents/${consent.ConsentId}`] = wrapInsurance(
+        { Data: consent },
+        `insurance-consents/${consent.ConsentId}`,
+        ctx
+      );
+    }
+    const firstConsent = bundle.consents[0];
     envelopes['/insurance-consents/{ConsentId}'] =
-      envelopes[`/insurance-consents/${consent.ConsentId}`];
+      envelopes[`/insurance-consents/${firstConsent.ConsentId}`];
   }
   return envelopes;
 }

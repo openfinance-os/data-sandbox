@@ -179,8 +179,17 @@ async function emitPersona(personaId, persona, domain) {
     const quoteId = motorQuoteId ?? homeQuoteId ?? healthQuoteId ?? lifeQuoteId
       ?? travelQuoteId ?? rentersQuoteId ?? employmentQuoteId;
     const consentIds = bundle.consents?.map((c) => c.ConsentId) ?? [];
+    // For multi-domain personas the bundle carries a `domains` array;
+    // single-domain bundles use the `domain` field set by the generator
+    // dispatcher. Store both for downstream consumers (MCP / npm) so
+    // they can filter on `domain` (back-compat) or `domains` (Phase 2.2+).
+    const bundleDomains = Array.isArray(bundle.domains)
+      ? bundle.domains
+      : [bundle.domain ?? domain];
     manifest.fixtures[`${personaId}|${lfi}|${seed}`] = {
-      personaId, lfi, seed, domain,
+      personaId, lfi, seed,
+      domain: bundleDomains[0],
+      domains: bundleDomains,
       line: bundle.line ?? null,
       accountIds,
       policyIds,
@@ -249,10 +258,20 @@ async function emitPersona(personaId, persona, domain) {
   }
 }
 
+// Phase 2.2: multi-domain personas appear in BOTH bankingPersonas and
+// insurancePersonas (loadPersonasByDomain matches against the persona's
+// declared domain set). Emit them ONCE — buildBundle returns a composite
+// bundle with both banking + insurance fields, and envelopesFromBundle
+// produces both endpoint families. The banking iteration runs first so
+// the role-bundle emitter inside emitPersona triggers for multi-domain
+// personas with multi_lfi_footprint.
+const emitted = new Set();
 for (const [personaId, persona] of Object.entries(bankingPersonas)) {
   await emitPersona(personaId, persona, 'banking');
+  emitted.add(personaId);
 }
 for (const [personaId, persona] of Object.entries(insurancePersonas)) {
+  if (emitted.has(personaId)) continue; // multi-domain already emitted
   await emitPersona(personaId, persona, 'insurance');
 }
 
