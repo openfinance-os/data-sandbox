@@ -6,7 +6,7 @@
 
 import { rngInt } from '../prng.js';
 import { drawIban, drawCounterpartyBank } from './identity.js';
-import { derivePrimaryAccountIban } from './multi-lfi.js';
+import { derivePrimaryAccountIban, normalizeFootprint } from './multi-lfi.js';
 
 const SUBTYPE_BY_KIND = {
   CurrentAccount: 'CurrentAccount',
@@ -30,11 +30,25 @@ export function generateAccounts({ persona, identity, rng, pools, now }) {
   // generator. Identifies the FIRST CurrentAccount index up front so
   // the per-account loop can short-circuit cleanly.
   const sourcePersona = persona._sourcePersona ?? persona;
-  const wantsPrimaryAnchor = !!sourcePersona.multi_lfi_footprint && !persona._projectedRoleSlot;
+  const isProjection = persona._projectedRoleSlot != null;
+  const wantsPrimaryAnchor = !!sourcePersona.multi_lfi_footprint && !isProjection;
+
+  // Phase 2.2 — multi-product per LFI. When a persona tags its accounts
+  // with `at_slot`, the primary bundle only emits accounts at the
+  // primary slot (slots[0].key). Untagged accounts (SME personas) pass
+  // through unchanged — they're all considered primary-slot members.
+  const sourceAccounts = persona.accounts ?? [];
+  const hasAtSlotTags = sourceAccounts.some((a) => a.at_slot != null);
+  const fp = normalizeFootprint(sourcePersona.multi_lfi_footprint);
+  const primarySlotKey = fp?.slots[0]?.key;
+  const filteredAccounts = (!isProjection && hasAtSlotTags && primarySlotKey)
+    ? sourceAccounts.filter((a) => a.at_slot === primarySlotKey)
+    : sourceAccounts;
+
   const firstCurrentIdx = wantsPrimaryAnchor
-    ? persona.accounts.findIndex((s) => s.type === 'CurrentAccount')
+    ? filteredAccounts.findIndex((s) => s.type === 'CurrentAccount')
     : -1;
-  const accounts = persona.accounts.map((spec, idx) => {
+  const accounts = filteredAccounts.map((spec, idx) => {
     // Phase D Slice 5: a role-bundle's projected persona pre-pins the
     // bank + IBAN per account (so the secondary/tertiary bundle's
     // IBAN matches the cross-LFI self-IBAN already surfaced as a

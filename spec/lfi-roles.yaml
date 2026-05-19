@@ -79,3 +79,64 @@ roles:
       - sme_ecommerce
       - sme_saas
       - retail_tech_savvy
+
+  # Phase 2.2 retail multi-LFI roles. These exist because a salaried
+  # multi-banker's slots play different functional jobs than an SME's
+  # operating/trade/escrow set — and the lint's role-consistency checks
+  # (trade_finance ↔ FX, acquiring ↔ merchant inflows) shouldn't fire on
+  # a retail persona using these slots.
+
+  - id: salary_primary
+    description: |
+      The retail customer's "main" LFI — WPS salary credit lands here.
+      Typically hosts the day-to-day CurrentAccount plus one or more
+      cards / auto-loan products with the same LFI. Most fixed-commitment
+      DDs (utilities, card repayments, mortgage SO to a separate LFI)
+      originate from this account.
+    typical_for:
+      - retail_salaried
+      - retail_emirati
+
+  - id: secondary_card
+    description: |
+      A secondary mainstream-bank relationship the customer maintains
+      alongside the salary-primary — typically a CurrentAccount + a
+      consumer credit card, used as a parallel card-spend stack or for
+      relationship pricing on FX / lounge access. Distinct from
+      digital_sidekick because the LFI is a Tier-1 conventional bank,
+      not a digital-only.
+    typical_for:
+      - retail_salaried
+      - retail_emirati
+
+  - id: digital_sidekick
+    description: |
+      The retail equivalent of `digital_challenger`. A digital-only bank
+      (Wio, Zand, Mbank) held alongside a Tier-1 salary_primary for FX,
+      savings pots, or a digital-card stack. Lower transaction volume
+      than the primary; often a Sparse / Median LFI default.
+    typical_for:
+      - retail_salaried
+      - retail_tech_savvy
+
+  - id: international_branch
+    description: |
+      Foreign-bank UAE branch (HSBC, Standard Chartered, Citibank) held
+      for international correspondent reasons — mortgage product, USD
+      account for offshore investments, parent-bank loyalty. Often
+      paired with the mortgage_lender role below.
+    typical_for:
+      - retail_salaried_expat
+      - retail_hnw
+
+  - id: mortgage_lender
+    description: |
+      The LFI that holds the customer's home loan, plus the
+      CurrentAccount the mortgage is serviced from. Almost always
+      bundled with international_branch or salary_primary; this role
+      exists separately because the cross-domain link to a home-
+      insurance policy attaches here.
+    typical_for:
+      - retail_salaried_expat
+      - retail_hnw
+      - retail_emirati

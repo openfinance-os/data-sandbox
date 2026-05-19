@@ -152,11 +152,53 @@ for (const file of listManifests()) {
     checkEnum(file, 'segment', m.segment, PARTY_CATEGORY);
   }
 
+  // Resolve declared slot keys so we can validate accounts[].at_slot
+  // against them. Empty set means the persona has no footprint slots,
+  // in which case any at_slot value is a violation (orphan tag).
+  const declaredSlotKeys = new Set();
+  const fpRaw = m?.multi_lfi_footprint;
+  if (fpRaw && typeof fpRaw === 'object') {
+    if (Array.isArray(fpRaw.slots)) {
+      for (const s of fpRaw.slots) {
+        if (s?.key) declaredSlotKeys.add(s.key);
+      }
+    } else {
+      for (const k of ['primary', 'secondary', 'tertiary']) {
+        if (fpRaw[k] != null) declaredSlotKeys.add(k);
+      }
+    }
+  }
+
   if (Array.isArray(m.accounts)) {
+    let taggedCount = 0;
     for (let i = 0; i < m.accounts.length; i++) {
       const a = m.accounts[i] ?? {};
       checkEnum(file, `accounts[${i}].type`, a.type, ACCOUNT_SUBTYPE);
       checkEnum(file, `accounts[${i}].account_type`, a.account_type, ACCOUNT_TYPE);
+      if (a.at_slot != null) {
+        taggedCount += 1;
+        if (typeof a.at_slot !== 'string') {
+          bad(file, `accounts[${i}].at_slot must be a string`);
+        } else if (declaredSlotKeys.size === 0) {
+          bad(
+            file,
+            `accounts[${i}].at_slot=${JSON.stringify(a.at_slot)} but persona declares no multi_lfi_footprint slots — drop the tag or add a footprint`,
+          );
+        } else if (!declaredSlotKeys.has(a.at_slot)) {
+          bad(
+            file,
+            `accounts[${i}].at_slot=${JSON.stringify(a.at_slot)} doesn't match any declared footprint slot key (have: {${[...declaredSlotKeys].join('|')}})`,
+          );
+        }
+      }
+    }
+    // Enforce all-or-nothing: if any account is tagged, all must be —
+    // mixed states silently misroute accounts to the wrong slot.
+    if (taggedCount > 0 && taggedCount < m.accounts.length) {
+      bad(
+        file,
+        `accounts mix tagged + untagged at_slot — when using at_slot, every account must carry a tag (have ${taggedCount}/${m.accounts.length} tagged)`,
+      );
     }
   }
 
@@ -169,19 +211,31 @@ for (const file of listManifests()) {
     }
   }
 
-  // multi_lfi_footprint (D-14): role drawn from spec/lfi-roles.yaml,
-  // lfi_default drawn from {Rich,Median,Sparse}. plausible_lfi_candidates
-  // is a free string list (named UAE banks allowed per D-14).
+  // multi_lfi_footprint (D-14 + Phase 2.2): role drawn from
+  // spec/lfi-roles.yaml, lfi_default drawn from {Rich,Median,Sparse}.
+  // plausible_lfi_candidates is a free string list (named UAE banks
+  // allowed per D-14). Accepts two shapes — the legacy
+  // {primary, secondary, tertiary} triad and the Phase 2.2 slots[]
+  // array — and lints each slot uniformly.
   const footprint = m?.multi_lfi_footprint;
   if (footprint && typeof footprint === 'object') {
     const declaredRoles = new Set();
-    for (const slot of ['primary', 'secondary', 'tertiary']) {
-      const v = footprint[slot];
-      if (v == null) continue;
-      checkEnum(file, `multi_lfi_footprint.${slot}.role`, v.role, LFI_ROLES);
-      checkEnum(file, `multi_lfi_footprint.${slot}.lfi_default`, v.lfi_default, LFI_DEFAULTS);
+    const slotEntries = [];
+    if (Array.isArray(footprint.slots)) {
+      footprint.slots.forEach((v, i) => {
+        if (v != null) slotEntries.push({ label: `slots[${i}]`, slot: v });
+      });
+    } else {
+      for (const label of ['primary', 'secondary', 'tertiary']) {
+        const v = footprint[label];
+        if (v != null) slotEntries.push({ label, slot: v });
+      }
+    }
+    for (const { label, slot: v } of slotEntries) {
+      checkEnum(file, `multi_lfi_footprint.${label}.role`, v.role, LFI_ROLES);
+      checkEnum(file, `multi_lfi_footprint.${label}.lfi_default`, v.lfi_default, LFI_DEFAULTS);
       if (v.plausible_lfi_candidates != null && !Array.isArray(v.plausible_lfi_candidates)) {
-        bad(file, `multi_lfi_footprint.${slot}.plausible_lfi_candidates must be an array of strings`);
+        bad(file, `multi_lfi_footprint.${label}.plausible_lfi_candidates must be an array of strings`);
       }
       if (v.role) declaredRoles.add(v.role);
     }

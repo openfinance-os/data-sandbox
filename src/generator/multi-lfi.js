@@ -267,21 +267,60 @@ export function projectPersonaForRole(persona, slotKey, bank) {
   // matching how buildCrossLfiSelfBeneficiaries derives the primary
   // bundle's self-to-<slotKey> beneficiary IBAN — that's how the cross-
   // bundle reference loop closes.
-  const iban = deriveCrossLfiSelfIban(persona.persona_id, slotKey, bank);
-  return {
-    ...persona,
-    // The projected persona keeps the same persona_id so PartyId etc.
-    // resolve consistently across primary and role bundles. The account
-    // index restarts at 1 so the AccountId fits in the 40-char maxLength.
-    accounts: [
+  const anchorIban = deriveCrossLfiSelfIban(persona.persona_id, slotKey, bank);
+
+  // Phase 2.2 — multi-product per LFI. If the persona has any account
+  // tagged with `at_slot`, project ALL accounts whose at_slot matches
+  // this slotKey (e.g. a CurrentAccount + a CreditCard at the same
+  // secondary LFI). Otherwise fall back to the legacy single-account
+  // heuristic so SME personas still produce byte-identical role bundles.
+  const sourceAccounts = persona.accounts ?? [];
+  const hasAtSlotTags = sourceAccounts.some((a) => a.at_slot != null);
+  let projectedAccounts;
+  if (hasAtSlotTags) {
+    const slotAccounts = sourceAccounts.filter((a) => a.at_slot === slotKey);
+    if (slotAccounts.length > 0) {
+      let foundFirstCurrent = false;
+      projectedAccounts = slotAccounts.map((acc, i) => {
+        const isFirstCurrent = acc.type === 'CurrentAccount' && !foundFirstCurrent;
+        if (isFirstCurrent) foundFirstCurrent = true;
+        return {
+          ...acc,
+          _bankOverride: bank,
+          // First CurrentAccount holds the cross-LFI self-IBAN that
+          // matches the primary bundle's self-to-<slotKey> beneficiary;
+          // other products in the slot get derived-but-distinct IBANs
+          // so each Account record has a unique identifier.
+          _ibanOverride: isFirstCurrent
+            ? anchorIban
+            : deriveCrossLfiSelfIban(
+                persona.persona_id,
+                `${slotKey}__product_${i}`,
+                bank,
+              ),
+        };
+      });
+    }
+  }
+  if (!projectedAccounts) {
+    // Legacy single-account projection (SME path).
+    projectedAccounts = [
       {
         type: accountType,
         currency,
         age_months: 36,
         _bankOverride: bank,
-        _ibanOverride: iban,
+        _ibanOverride: anchorIban,
       },
-    ],
+    ];
+  }
+
+  return {
+    ...persona,
+    // The projected persona keeps the same persona_id so PartyId etc.
+    // resolve consistently across primary and role bundles. The account
+    // index restarts at 1 so the AccountId fits in the 40-char maxLength.
+    accounts: projectedAccounts,
     // No fixed commitments / cash-flow at the role bundle — the role-LFI
     // sees only its slice of the persona's banking life. The primary
     // bundle remains the source-of-truth for SOs, DDs, full transaction

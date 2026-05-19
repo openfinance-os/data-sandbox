@@ -92,6 +92,15 @@ accounts:
     currency: <ISO 4217>
     age_months: <int>
     credit_limit_aed: <int?>   # only on CreditCard
+    at_slot: <slot.key>?       # Phase 2.2 — required only for personas
+                               # that hold accounts at >1 LFI. Anchors
+                               # each account to one of the slots declared
+                               # in multi_lfi_footprint.slots[]. Tagged
+                               # accounts at non-primary slots appear in
+                               # the corresponding role bundle at
+                               # `bundles/<persona>/<slot.key>/<lfi>/`.
+                               # All-or-nothing: enforced by
+                               # lint-persona-spec-conformance.
 fixed_commitments:
   - kind: <standing_order|direct_debit>
     purpose: <string>
