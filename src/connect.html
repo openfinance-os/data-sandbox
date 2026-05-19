@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="description" content="Walk through what it looks like for a person to connect their UAE bank to Claude in a chat: one-tap consent, a 1-hour bearer, and Claude answering questions grounded in real v2.1 fixture data. Modelled on the Plaid + ChatGPT integration." />
-<title>Connect your UAE bank to Claude — Open Finance Data Sandbox</title>
+<meta name="description" content="Three connection journeys for UAE Open Finance: a bank's own MCP-direct labs path, the regulated Al Tareq TPP flow (single or multi-LFI), and the off-rails Plaid pattern that Article 15 specifically forecloses. All three return the same v2.1 data contract — only the consent journey varies." />
+<title>Connection journeys — Open Finance Data Sandbox</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Crect width=%2716%27 height=%2716%27 rx=%273%27 fill=%27%236E548F%27/%3E%3Ctext x=%278%27 y=%2712%27 font-family=%27system-ui,sans-serif%27 font-size=%2710%27 font-weight=%27700%27 text-anchor=%27middle%27 fill=%27%23fff%27%3E%C2%A4%3C/text%3E%3C/svg%3E" />
 <link rel="stylesheet" href="styles.css" />
 <style>
@@ -100,6 +100,290 @@
   }
   .hero h1 { margin-top: 8px; font-size: 26px; }
   .hero .lead { font-size: 15px; max-width: 680px; }
+
+  /* ─── Hub: two journey cards above the fold ──────────────────────── */
+
+  .journey-hub { margin: 16px 0 22px; }
+  .journey-hub .hub-hero {
+    margin: 0 0 18px;
+    padding: 22px 24px 18px;
+    background: linear-gradient(135deg, var(--accent-soft), var(--bg-card));
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+  }
+  .journey-hub .hub-hero h1 { font-size: 26px; margin: 8px 0 10px; letter-spacing: -0.01em; }
+  .journey-hub .hub-hero .lead { font-size: 15px; max-width: 680px; }
+  .journey-hub .hub-hero .lead.secondary {
+    font-size: 13.5px;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+
+  .journey-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  @media (max-width: 680px) {
+    .journey-cards { grid-template-columns: 1fr; }
+  }
+  .journey-card {
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    padding: 18px 20px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    color: var(--text);
+    transition: border-color 0.12s, box-shadow 0.12s, transform 0.12s;
+  }
+  .journey-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 1px 0 var(--accent-soft);
+    transform: translateY(-1px);
+  }
+  .journey-card:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .journey-card .jc-eyebrow {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .journey-card .jc-icon {
+    font-size: 22px;
+    line-height: 1;
+    margin-bottom: 8px;
+    display: inline-block;
+  }
+  .journey-card .jc-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 6px;
+    letter-spacing: -0.01em;
+  }
+  .journey-card .jc-body {
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--text);
+    margin: 0 0 12px;
+  }
+  .journey-card .jc-meta {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+  .journey-card .jc-meta .pill {
+    display: inline-block;
+    padding: 2px 7px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    margin-right: 4px;
+    font-size: 11px;
+  }
+  .journey-card .jc-cta {
+    margin-top: auto;
+    font-weight: 600;
+    color: var(--accent);
+    font-size: 14px;
+  }
+
+  /* ─── J3 contrast section: static, no CTA, lower visual weight ────── */
+
+  .j3-contrast {
+    margin: 8px 0 26px;
+    padding: 20px 22px 18px;
+    background: var(--bg-soft);
+    border: 1px dashed var(--border-strong);
+    border-radius: 8px;
+  }
+  .j3-contrast .j3-eyebrow {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .j3-contrast h2 {
+    font-size: 17px;
+    margin: 0 0 12px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+  }
+  .j3-contrast h2 .badge-warn {
+    display: inline-block;
+    margin-left: 8px;
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 7px;
+    background: var(--warn-bg, #fff7d4);
+    border: 1px solid var(--warn-border, #d6c374);
+    border-radius: 3px;
+    color: var(--text);
+    vertical-align: middle;
+  }
+  .j3-contrast .j3-diagram {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin: 12px 0 16px;
+  }
+  @media (max-width: 720px) {
+    .j3-contrast .j3-diagram { grid-template-columns: 1fr; }
+  }
+  .j3-contrast .j3-pane {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 12px 10px;
+    font-size: 12.5px;
+  }
+  .j3-contrast .j3-pane.compliant { border-color: #2f6c4a; }
+  .j3-contrast .j3-pane.warn { border-color: #a14242; }
+  .j3-contrast .j3-pane.amber { border-color: #b07b1f; }
+  .j3-contrast .j3-pane .pane-label {
+    font-weight: 700;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 8px;
+  }
+  .j3-contrast .j3-pane.warn .pane-label { color: #a14242; }
+  .j3-contrast .j3-pane.amber .pane-label { color: #b07b1f; }
+  .j3-contrast .j3-pane.compliant .pane-label { color: #2f6c4a; }
+  .j3-contrast .j3-pane svg { width: 100%; height: auto; display: block; margin-bottom: 8px; }
+  .j3-contrast .j3-pane .pane-body { font-size: 12px; color: var(--text); line-height: 1.5; }
+  .j3-contrast .j3-explainer p {
+    font-size: 13.5px;
+    line-height: 1.6;
+    margin: 0 0 8px;
+  }
+  .j3-contrast .j3-explainer p:last-child { margin-bottom: 0; }
+  .j3-contrast .j3-explainer blockquote {
+    margin: 6px 0;
+    padding: 8px 12px;
+    border-left: 3px solid var(--border-strong);
+    background: var(--bg-card);
+    font-size: 13px;
+    color: var(--text);
+    font-style: italic;
+  }
+
+  /* ─── Journey container (wraps a journey's wizard + supporting copy) — */
+
+  .journey-container[hidden] { display: none !important; }
+  .journey-back {
+    font-size: 12px;
+    margin: 8px 0 14px;
+  }
+  .journey-back a { color: var(--text-muted); }
+  .journey-eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin: 0 0 4px;
+    font-weight: 600;
+  }
+  .journey-title {
+    font-size: 22px;
+    margin: 0 0 6px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .journey-pitch {
+    font-size: 14px;
+    color: var(--text);
+    margin: 0 0 18px;
+    max-width: 700px;
+  }
+
+  /* ─── "Or do this for real in Claude" sidebar (J1 step 4) ─────────── */
+
+  .for-real-card {
+    margin-top: 14px;
+    padding: 16px 18px 14px;
+    border: 1px solid var(--accent);
+    background: var(--accent-soft);
+    border-radius: 6px;
+  }
+  .for-real-card .label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .for-real-card h4 {
+    font-size: 15px;
+    margin: 0 0 10px;
+    font-weight: 600;
+  }
+  .for-real-card ol {
+    margin: 8px 0 8px 18px;
+    padding: 0;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .for-real-card ol li { margin-bottom: 4px; }
+  .for-real-card code {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-strong);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+  .for-real-card .url-copy {
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12.5px;
+    word-break: break-all;
+  }
+  .for-real-card .docs-link {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 12.5px;
+  }
+
+  /* ─── J2 placeholder card (Phase A — wizard arrives in Phase B) ───── */
+
+  .j2-placeholder {
+    padding: 28px 24px;
+    border: 1px dashed var(--border-strong);
+    background: var(--bg-soft);
+    border-radius: 6px;
+    text-align: center;
+  }
+  .j2-placeholder h3 {
+    font-size: 16px;
+    margin: 0 0 8px;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--text);
+  }
+  .j2-placeholder p {
+    font-size: 13.5px;
+    color: var(--text-muted);
+    margin: 0 auto;
+    max-width: 520px;
+  }
 
   /* ─── Wizard ─────────────────────────────────────────────────────── */
 
@@ -900,6 +1184,1130 @@
     font-style: italic;
     font-size: 13px;
   }
+
+  /* ─── J2: scope picker (single vs multi LFI) ────────────────────── */
+
+  .scope-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 6px;
+  }
+  @media (max-width: 680px) { .scope-grid { grid-template-columns: 1fr; } }
+  .scope-card {
+    text-align: left;
+    padding: 16px 18px 14px;
+    background: var(--bg-card);
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    color: var(--text);
+  }
+  .scope-card:hover { border-color: var(--accent); }
+  .scope-card.selected {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .scope-card .sc-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .scope-card .sc-title { font-weight: 600; font-size: 15px; }
+  .scope-card .sc-pill {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 7px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+  }
+  .scope-card .sc-body { font-size: 12.5px; color: var(--text); line-height: 1.5; }
+  .scope-card .sc-meta {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin-top: 8px;
+  }
+
+  /* ─── J2: Al Tareq CAAP consent screen (distinct from J1's bank-own) — */
+
+  .altareq-consent {
+    border: 1px solid var(--border-strong);
+    background: var(--bg-card);
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 4px 0 8px;
+  }
+  .altareq-consent .browser-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--bg-soft);
+    border-bottom: 1px solid var(--border);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11.5px;
+    color: var(--text-muted);
+  }
+  .altareq-consent .browser-bar .dots { display: inline-flex; gap: 4px; }
+  .altareq-consent .browser-bar .dots span {
+    display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+    background: var(--border-strong);
+  }
+  .altareq-consent .browser-bar .url {
+    flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .altareq-consent .ribbon {
+    background: linear-gradient(90deg, #2d5d4f 0%, #4b6c52 50%, #2d5d4f 100%);
+    color: #fff;
+    padding: 6px 14px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .altareq-consent .ribbon .ribbon-meta { font-weight: 400; opacity: 0.92; text-transform: none; letter-spacing: 0; font-size: 10.5px; }
+  .altareq-consent .body { padding: 20px 22px 18px; }
+  .altareq-consent .body h4 { margin: 0 0 4px; font-size: 16px; font-weight: 600; }
+  .altareq-consent .body .sub { font-size: 12.5px; color: var(--text-muted); margin-bottom: 14px; }
+  .altareq-consent .tpp-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    margin-bottom: 12px;
+  }
+  .altareq-consent .tpp-info .tpp-icon {
+    width: 36px; height: 36px;
+    border-radius: 6px;
+    background: var(--accent);
+    color: #fff;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700;
+    flex: 0 0 36px;
+  }
+  .altareq-consent .tpp-info .tpp-name { font-size: 13px; font-weight: 600; }
+  .altareq-consent .tpp-info .tpp-role { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .altareq-consent .per-lfi {
+    border-top: 1px solid var(--border);
+    padding: 12px 0 10px;
+  }
+  .altareq-consent .per-lfi:first-of-type { border-top: none; }
+  .altareq-consent .per-lfi .lfi-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .altareq-consent .per-lfi .lfi-label { font-weight: 600; font-size: 13px; }
+  .altareq-consent .per-lfi .lfi-badge {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 1px 6px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    background: var(--bg-soft);
+  }
+  .altareq-consent .per-lfi .lfi-scopes {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+  .altareq-consent .footnote {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border);
+  }
+  .altareq-consent .footnote a { color: var(--accent); text-decoration: underline; }
+
+  /* ─── J2: PFM / BFM dashboard ───────────────────────────────────── */
+
+  .pfm-dashboard, .bfm-dashboard {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 4px;
+  }
+  @media (max-width: 720px) {
+    .pfm-dashboard, .bfm-dashboard { grid-template-columns: 1fr; }
+  }
+  .dash-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+  }
+  .dash-card.span-2 { grid-column: 1 / -1; }
+  .dash-card h3 {
+    margin: 0 0 8px;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    font-weight: 700;
+  }
+  .dash-card .stat { font-size: 22px; font-weight: 600; }
+  .dash-card .stat-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .dash-card ul { list-style: none; padding: 0; margin: 0; }
+  .dash-card li {
+    padding: 6px 0;
+    border-top: 1px dashed var(--border);
+    font-size: 13px;
+  }
+  .dash-card li:first-child { border-top: none; }
+  .dash-card .row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: baseline;
+  }
+  .dash-card .row .right { text-align: right; }
+  .dash-card .lfi-badge {
+    display: inline-block;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 1px 5px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .dash-card .pos { color: #2f6c4a; }
+  .dash-card .neg { color: #a14242; }
+  .dash-timeline {
+    max-height: 240px;
+    overflow-y: auto;
+  }
+  .dash-timeline-month {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+    margin-top: 4px;
+  }
+  .j2-dash-watermark {
+    font-size: 10.5px;
+    color: var(--text-muted);
+    margin-top: 10px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    line-height: 1.5;
+  }
+
+  /* ─── Phase C — Consent-flow primitives ────────────────────────── */
+  /* Shared by J1 step 3 (bank-own OAuth consent) and J2 step 4b      */
+  /* (Al Tareq CAAP consent). Source of truth is OF_PERMISSIONS in    */
+  /* connect.js — never hand-author permission names in HTML.         */
+
+  .permissions-list {
+    margin: 14px 0 4px;
+    padding: 14px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+  }
+  .permissions-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .permissions-heading strong { font-size: 13.5px; }
+  .permissions-help {
+    font-size: 11.5px;
+    color: var(--text-muted);
+  }
+  .permissions-cluster {
+    margin-top: 10px;
+  }
+  .permissions-cluster:first-of-type { margin-top: 4px; }
+  .permissions-cluster-name {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .permissions-items {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 12px;
+  }
+  @media (max-width: 720px) { .permissions-items { grid-template-columns: 1fr; } }
+  .permissions-item {
+    display: flex;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    align-items: flex-start;
+  }
+  .permissions-item:hover { background: var(--bg-soft); }
+  .permissions-item.mandatory {
+    cursor: default;
+    background: var(--bg-soft);
+  }
+  .permissions-item input[type="checkbox"] {
+    margin-top: 3px;
+    flex: 0 0 auto;
+  }
+  .permissions-item-text { flex: 1; min-width: 0; }
+  .permissions-item-label {
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .permissions-item-body {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    line-height: 1.45;
+    margin-top: 1px;
+  }
+  .permissions-item-key {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 10.5px;
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin-top: 2px;
+    display: block;
+  }
+  .permissions-required {
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: var(--mandatory-bg, #1d4a3e);
+    color: var(--mandatory-fg, #fff);
+    font-weight: 700;
+  }
+
+  .consent-params-panel {
+    margin: 14px 0 6px;
+    padding: 14px 16px 12px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+  }
+  .consent-params-heading {
+    font-size: 13.5px;
+    font-weight: 600;
+    padding-bottom: 8px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  .consent-params-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    padding: 8px 0;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .consent-params-row:first-of-type { border-top: none; padding-top: 4px; }
+  .consent-params-label {
+    flex: 1;
+    min-width: 200px;
+  }
+  .consent-params-label strong {
+    font-size: 12.5px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    display: block;
+  }
+  .consent-params-help {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    line-height: 1.45;
+    display: block;
+    margin-top: 2px;
+  }
+  .consent-params-choices {
+    display: inline-flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .consent-params-chip {
+    padding: 4px 10px;
+    border-radius: 14px;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-card);
+    color: var(--text);
+    font-size: 12px;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .consent-params-chip:hover { border-color: var(--accent); }
+  .consent-params-chip.selected {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .consent-params-toggle {
+    padding: 4px 14px;
+    border-radius: 14px;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-card);
+    color: var(--text);
+    font-size: 12px;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    min-width: 64px;
+  }
+  .consent-params-toggle.on {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  /* ─── Sub-step indicator (J1 step 3 + J2 step 4) ───────────────── */
+  .sub-step-indicator {
+    list-style: none;
+    margin: 0 0 14px;
+    padding: 6px 8px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .sub-step-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 12px;
+    font-size: 11.5px;
+    color: var(--text-muted);
+    background: transparent;
+    border: 1px solid transparent;
+  }
+  .sub-step-item.active {
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    border-color: var(--accent);
+  }
+  .sub-step-item.done {
+    background: var(--bg-card);
+    color: var(--text);
+    border-color: var(--border-strong);
+  }
+  .sub-step-item.done:hover { background: var(--accent-soft); }
+  .sub-step-num {
+    width: 16px; height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.18);
+  }
+  .sub-step-item.done .sub-step-num { background: #2f6c4a; color: #fff; }
+  .sub-step-item:not(.active):not(.done) .sub-step-num {
+    background: var(--bg-card);
+    border: 1px solid var(--border-strong);
+    color: var(--text-muted);
+  }
+
+  /* ─── J1 sub-step 3a: MCP discovery chain ─────────────────────── */
+  .discovery-chain { margin-top: 4px; }
+  .discovery-intro {
+    font-size: 13px;
+    color: var(--text);
+    margin: 0 0 12px;
+    line-height: 1.55;
+  }
+  .discovery-row {
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 10px 12px 8px;
+    margin-bottom: 8px;
+    background: var(--bg-card);
+  }
+  .discovery-row-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12px;
+  }
+  .discovery-method {
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 700;
+    font-size: 11px;
+  }
+  .discovery-path { background: transparent; border: none; padding: 0; color: var(--text); word-break: break-all; }
+  .discovery-arrow { color: var(--text-muted); }
+  .discovery-status {
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-weight: 600;
+    font-size: 11px;
+    margin-left: auto;
+  }
+  .discovery-status.pos { background: #e3efe6; color: #2f6c4a; }
+  .discovery-status.warn { background: #fdf1da; color: #b07b1f; }
+  .discovery-headers, .discovery-body {
+    margin: 6px 0 6px;
+    padding: 8px 10px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11px;
+    line-height: 1.45;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-all;
+    overflow-x: auto;
+    max-height: 220px;
+  }
+  .discovery-body { color: var(--text-muted); font-style: italic; }
+  .discovery-body:not(:empty) { color: var(--text); font-style: normal; }
+  .discovery-caption {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 4px 0 0;
+    line-height: 1.5;
+  }
+
+  /* ─── J1 sub-step 3b: SCA mock ─────────────────────────────────── */
+  .sca-mock {
+    border: 1px solid var(--border-strong);
+    background: var(--bg-card);
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 4px 0 8px;
+  }
+  .sca-mock .browser-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--bg-soft);
+    border-bottom: 1px solid var(--border);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11.5px;
+    color: var(--text-muted);
+  }
+  .sca-mock .browser-bar .dots { display: inline-flex; gap: 4px; }
+  .sca-mock .browser-bar .dots span {
+    display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+    background: var(--border-strong);
+  }
+  .sca-mock .browser-bar .url {
+    flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .sca-mock .body { padding: 20px 22px 18px; }
+  .sca-mock .body h4 { margin: 0 0 4px; font-size: 16px; font-weight: 600; }
+  .sca-mock .body .sub { font-size: 12.5px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5; }
+  .sca-form { display: flex; flex-direction: column; gap: 4px; }
+  .sca-form label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    font-weight: 700;
+  }
+  .sca-form input {
+    padding: 8px 10px;
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    background: var(--bg-soft);
+    font: inherit;
+    font-size: 13.5px;
+    color: var(--text);
+  }
+  .sca-otp {
+    margin-top: 16px;
+    padding: 14px 16px;
+    background: var(--bg-soft);
+    border: 1px dashed var(--border-strong);
+    border-radius: 5px;
+  }
+  .sca-otp-heading { font-size: 12.5px; font-weight: 600; margin-bottom: 8px; }
+  .sca-otp-inputs { display: flex; gap: 6px; }
+  .sca-otp-inputs input {
+    width: 36px;
+    height: 40px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 700;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    background: var(--bg-card);
+  }
+  .sca-otp-alt { font-size: 11.5px; color: var(--text-muted); margin: 8px 0 0; }
+  .sca-note {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin: 14px 0 0;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border);
+  }
+
+  /* ─── J1 sub-step 3c: ConsentId preview ────────────────────────── */
+  .consent-id-preview {
+    margin: 14px 0 4px;
+    padding: 12px 14px;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    border-radius: 5px;
+  }
+  .consent-id-preview .consent-id-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .consent-id-preview code {
+    font-size: 12.5px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-strong);
+    padding: 2px 6px;
+    border-radius: 3px;
+    display: inline-block;
+    word-break: break-all;
+  }
+  .consent-id-preview .consent-id-help {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin-top: 6px;
+    line-height: 1.5;
+  }
+
+  /* ─── J1 sub-step 3d: token panel ──────────────────────────────── */
+  .token-panel {
+    padding: 14px 16px;
+    border: 1px solid var(--accent);
+    background: var(--accent-soft);
+    border-radius: 6px;
+  }
+  .token-headline { font-size: 13.5px; line-height: 1.6; margin-bottom: 10px; }
+  .token-check {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 18px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .token-dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 6px 14px;
+    margin: 8px 0 10px;
+    padding: 10px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    font-size: 12.5px;
+  }
+  .token-dl dt {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11.5px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .token-dl dd {
+    margin: 0;
+    word-break: break-all;
+  }
+  .token-dl dd code {
+    font-size: 11.5px;
+    padding: 0 4px;
+  }
+  .token-note { font-size: 12.5px; line-height: 1.55; margin: 0; color: var(--text); }
+
+  /* ─── J2 sub-step 4a: TPP launchpad (Khazaa app mock) ──────────── */
+  .tpp-launchpad {
+    border: 1px solid var(--border-strong);
+    background: var(--bg-card);
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 4px 0 8px;
+  }
+  .tpp-launchpad-chrome {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: var(--bg-soft);
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .tpp-chrome-dot {
+    display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+    background: var(--border-strong);
+  }
+  .tpp-chrome-app {
+    margin-left: 8px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-weight: 600;
+  }
+  .tpp-launchpad-body { padding: 22px 24px 20px; }
+  .tpp-launchpad-brand {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .tpp-icon-large {
+    width: 56px; height: 56px;
+    border-radius: 12px;
+    background: var(--accent);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: 700;
+    flex: 0 0 56px;
+  }
+  .tpp-launchpad-name { font-size: 18px; font-weight: 700; }
+  .tpp-launchpad-tagline { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
+  .tpp-launchpad-h {
+    font-size: 17px;
+    font-weight: 600;
+    margin: 0 0 8px;
+    letter-spacing: -0.005em;
+  }
+  .tpp-launchpad-lede {
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--text);
+    margin: 0 0 14px;
+  }
+  .tpp-launchpad-steps {
+    counter-reset: tpp-step;
+    list-style: none;
+    padding: 0;
+    margin: 0 0 14px;
+  }
+  .tpp-launchpad-steps li {
+    counter-increment: tpp-step;
+    padding: 10px 12px 10px 38px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-bottom: 6px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    position: relative;
+  }
+  .tpp-launchpad-steps li::before {
+    content: counter(tpp-step);
+    position: absolute;
+    left: 12px;
+    top: 10px;
+    width: 18px; height: 18px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 50%;
+    font-size: 10.5px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .tpp-licence-stub {
+    padding: 10px 12px;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    margin: 12px 0 0;
+  }
+  .tpp-licence-label {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .tpp-licence-body { font-size: 12px; line-height: 1.55; color: var(--text); }
+  .tpp-licence-body code {
+    font-size: 11.5px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-strong);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+  .tpp-launchpad-note {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin: 12px 0 0;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border);
+  }
+
+  /* ─── J2 sub-step 4c: per-LFI SCA progress + account picker ────── */
+  .sca-progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    flex-wrap: wrap;
+  }
+  .sca-progress > span:first-child {
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 11px;
+    color: var(--accent);
+  }
+  .sca-progress-name { font-weight: 600; color: var(--text); }
+  .sca-progress-hint {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    flex-basis: 100%;
+  }
+  .sca-accounts { margin-top: 6px; }
+  .sca-accounts h4 { font-size: 15px; font-weight: 600; margin: 0 0 4px; }
+  .sca-account-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 4px;
+  }
+  .sca-account-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 8px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 5px;
+    background: var(--bg-card);
+    cursor: pointer;
+  }
+  .sca-account-row:hover { border-color: var(--accent); }
+  .sca-account-row.selected {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .sca-account-row input[type="checkbox"] { flex: 0 0 auto; margin: 0; }
+  .sca-account-text { flex: 1; min-width: 0; }
+  .sca-account-name { font-size: 13.5px; font-weight: 600; }
+  .sca-account-meta { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+  .sca-account-meta code {
+    font-size: 11px;
+    background: transparent;
+    border: none;
+    padding: 0;
+    color: var(--text-muted);
+  }
+
+  /* ─── J2 sub-step 4d: Consent Manager confirmation ─────────────── */
+  .consent-confirmed-headline {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    margin-bottom: 12px;
+  }
+  .consent-confirmed-tick {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    flex: 0 0 28px;
+  }
+  .consent-confirmed-title { font-size: 15px; font-weight: 700; }
+  .consent-confirmed-sub { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; line-height: 1.5; }
+
+  .consent-records-table {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .consent-record-row {
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 10px 14px 8px;
+    background: var(--bg-card);
+  }
+  .consent-record-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    gap: 8px;
+  }
+  .consent-record-lfi { font-weight: 700; font-size: 13.5px; }
+  .consent-record-badge {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 2px 7px;
+    border-radius: 3px;
+    font-weight: 700;
+  }
+  .consent-record-badge.active { background: #e3efe6; color: #2f6c4a; border: 1px solid #2f6c4a; }
+  .consent-record-badge.revoked { background: #fbe9e9; color: #a14242; border: 1px solid #a14242; }
+  .consent-record-dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 4px 12px;
+    margin: 0;
+    font-size: 12px;
+  }
+  .consent-record-dl dt {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .consent-record-dl dd { margin: 0; word-break: break-all; }
+  .consent-record-dl dd code { font-size: 11px; padding: 0 4px; }
+
+  .consent-confirmed-actions {
+    padding: 12px 0 0;
+    border-top: 1px dashed var(--border);
+  }
+  .consent-manager-link {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-decoration: underline;
+  }
+  .consent-confirmed-cta-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+
+  /* ─── Consent Manager modal (Task #12) ─────────────────────────── */
+  .consent-manager-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .consent-manager-modal[hidden] { display: none !important; }
+  .consent-manager-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(20, 20, 18, 0.5);
+    backdrop-filter: blur(2px);
+  }
+  .consent-manager-card {
+    position: relative;
+    background: var(--bg);
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    max-width: 640px;
+    width: 100%;
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.18);
+  }
+  .consent-manager-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(90deg, var(--accent) 0%, #4b6c52 100%);
+    color: #fff;
+    border-radius: 8px 8px 0 0;
+  }
+  .consent-manager-brand {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    opacity: 0.92;
+    margin-bottom: 4px;
+  }
+  .consent-manager-title {
+    font-size: 18px;
+    margin: 0;
+    font-weight: 700;
+    color: #fff;
+  }
+  .consent-manager-close {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: #fff;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1;
+    padding: 0;
+  }
+  .consent-manager-close:hover { background: rgba(255,255,255,0.25); }
+  .consent-manager-intro {
+    padding: 14px 22px 0;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+  .consent-manager-body {
+    padding: 14px 22px 8px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 80px;
+  }
+  .consent-manager-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 22px 16px;
+    border-top: 1px solid var(--border);
+    gap: 12px;
+  }
+
+  .cm-record {
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 12px 14px 10px;
+    margin-bottom: 8px;
+    background: var(--bg-card);
+  }
+  .cm-record.revoked { opacity: 0.55; background: var(--bg-soft); }
+  .cm-record-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .cm-record-title { font-size: 13.5px; font-weight: 700; }
+  .cm-record-source {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 1px 6px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    margin-left: 6px;
+  }
+  .cm-record-dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 4px 12px;
+    margin: 0 0 8px;
+    font-size: 12px;
+  }
+  .cm-record-dl dt {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .cm-record-dl dd { margin: 0; word-break: break-all; }
+  .cm-record-dl dd code { font-size: 11px; padding: 0 4px; }
+  .cm-record-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 8px;
+    border-top: 1px dashed var(--border);
+  }
+  .cm-revoke-btn {
+    padding: 5px 12px;
+    border-radius: 4px;
+    border: 1px solid #a14242;
+    background: transparent;
+    color: #a14242;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .cm-revoke-btn:hover { background: #fbe9e9; }
+  .cm-record.revoked .cm-revoke-btn,
+  .cm-record.revoked .cm-record-actions { display: none; }
+  .cm-empty {
+    padding: 24px 16px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-style: italic;
+  }
+
+  /* ─── J2 dashboard revoked empty state ─────────────────────────── */
+  .j2-revoked-empty {
+    padding: 28px 24px;
+    text-align: center;
+    border: 1px dashed var(--border-strong);
+    background: var(--bg-soft);
+    border-radius: 6px;
+  }
+  .j2-revoked-empty h3 {
+    font-size: 16px;
+    margin: 0 0 8px;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--text);
+  }
+  .j2-revoked-empty p { font-size: 13px; color: var(--text-muted); margin: 0; }
+
 </style>
 </head>
 <body>
@@ -913,21 +2321,168 @@
 <main class="connect-shell">
   <p class="back-link"><a href="index.html">← Back to the sandbox</a></p>
 
-  <section class="hero">
-    <span class="status-pill" aria-label="Simulation status">Walkthrough · Synthetic sandbox</span>
-    <p class="eyebrow">Connect</p>
-    <h1>Your UAE bank to Claude</h1>
-    <p class="lead">
-      Answers grounded in your real accounts. One-tap consent, a 1-hour bearer, and Claude can
-      read what you tick — accounts, balances, transactions, insurance renewals. Stop sharing
-      any time at the UAE Open Finance Authority's <em>My Consents</em> page.
-    </p>
-    <p class="lead" style="font-size:13.5px;color:var(--text-muted);max-width:680px;">
-      Modelled on the <a href="https://plaid.com/blog/chatgpt-personal-finance-plaid/" target="_blank" rel="noopener noreferrer">Plaid + ChatGPT integration</a>
-      and projected onto this repo's synthetic UAE Open Finance v2.1 sandbox. Walk the four
-      steps below; nothing here is endorsed by Anthropic, CBUAE, Nebras, or any UAE LFI.
-    </p>
+  <!-- ============================================================== -->
+  <!-- HUB — two tryable journey cards (J1 + J2)                       -->
+  <!-- ============================================================== -->
+
+  <section class="journey-hub" id="hub">
+    <div class="hub-hero">
+      <span class="status-pill" aria-label="Simulation status">Walkthrough · Synthetic sandbox</span>
+      <p class="eyebrow">Connect</p>
+      <h1>How AI assistants reach your bank data</h1>
+      <p class="lead">
+        Three shapes a connection can take in (or alongside) UAE Open Finance. All three return the
+        <strong>same v2.1 data contract</strong> — only the consent journey varies. Two are tryable
+        below; the third is shown for context as the pattern UAE Open Finance was designed to replace.
+      </p>
+      <p class="lead secondary">
+        Nothing here is endorsed by Anthropic, CBUAE, Nebras, or any UAE LFI. Every persona is
+        synthetic; bank profiles are anonymous Rich/Median/Sparse populate-rate bands, never real
+        UAE bank names (PRD NG5 / D-14).
+      </p>
+    </div>
+
+    <div class="journey-cards" role="list" aria-label="Pick a connection journey">
+      <button type="button" class="journey-card" id="open-j1" data-journey="j1" role="listitem" aria-describedby="j1-desc">
+        <span class="jc-eyebrow">Journey 1 · Single-entity</span>
+        <span class="jc-icon" aria-hidden="true">🏦</span>
+        <h3 class="jc-title">Bank-direct (MCP labs)</h3>
+        <p class="jc-body" id="j1-desc">
+          What if your bank ran a labs MCP endpoint exposing the same OF v2.1 data shape directly to
+          its own retail or SME customer — no TPP, no Al Tareq? The bank's own OAuth handles consent.
+        </p>
+        <div class="jc-meta">
+          <span class="pill">Retail or SME</span>
+          <span class="pill">OAuth 2.1 + PKCE</span>
+          <span class="pill">OF v2.1 data</span>
+        </div>
+        <span class="jc-cta" aria-hidden="true">Try this →</span>
+      </button>
+
+      <button type="button" class="journey-card" id="open-j2" data-journey="j2" role="listitem" aria-describedby="j2-desc">
+        <span class="jc-eyebrow">Journey 2 · OF rails</span>
+        <span class="jc-icon" aria-hidden="true">🔗</span>
+        <h3 class="jc-title">TPP via Al Tareq</h3>
+        <p class="jc-body" id="j2-desc">
+          A regulated TPP — or an agent acting as TPP — aggregates one or many LFIs through the Al
+          Tareq CAAP consent flow and returns a holistic PFM (Retail) or BFM (SME) view.
+        </p>
+        <div class="jc-meta">
+          <span class="pill">Single or multi LFI</span>
+          <span class="pill">FAPI 2.0</span>
+          <span class="pill">PFM / BFM</span>
+        </div>
+        <span class="jc-cta" aria-hidden="true">Try this →</span>
+      </button>
+    </div>
   </section>
+
+  <!-- ============================================================== -->
+  <!-- J3 CONTRAST — static. No CTA. Always visible.                  -->
+  <!-- ============================================================== -->
+
+  <section class="j3-contrast" id="j3-contrast" aria-labelledby="j3-heading">
+    <p class="j3-eyebrow">For context · what UAE Open Finance replaced</p>
+    <h2 id="j3-heading">
+      Off-rails aggregator (Plaid-pattern)
+      <span class="badge-warn" aria-label="Not a compliant UAE path">Not compliant in UAE</span>
+    </h2>
+
+    <div class="j3-diagram" role="img" aria-label="Three-pane comparison: screen-scrape, partner-deal, and the regulated Al Tareq path">
+      <div class="j3-pane warn">
+        <div class="pane-label">⚠ Screen-scraping</div>
+        <svg viewBox="0 0 180 90" aria-hidden="true">
+          <rect x="6" y="34" width="34" height="22" rx="3" fill="#fff" stroke="#a14242" stroke-width="1.2"/>
+          <text x="23" y="48" text-anchor="middle" font-size="9" fill="#a14242" font-family="system-ui">User</text>
+          <line x1="40" y1="45" x2="68" y2="45" stroke="#a14242" stroke-width="1.2" stroke-dasharray="3,2"/>
+          <text x="54" y="40" text-anchor="middle" font-size="7" fill="#a14242" font-family="system-ui">creds</text>
+          <rect x="68" y="30" width="44" height="30" rx="3" fill="#fbe9e9" stroke="#a14242" stroke-width="1.2"/>
+          <text x="90" y="42" text-anchor="middle" font-size="8" fill="#a14242" font-family="system-ui">Scraper</text>
+          <text x="90" y="52" text-anchor="middle" font-size="7" fill="#a14242" font-family="system-ui">(no consent)</text>
+          <line x1="112" y1="45" x2="140" y2="45" stroke="#a14242" stroke-width="1.2"/>
+          <rect x="140" y="34" width="34" height="22" rx="3" fill="#fff" stroke="#a14242" stroke-width="1.2"/>
+          <text x="157" y="48" text-anchor="middle" font-size="8" fill="#a14242" font-family="system-ui">Bank UI</text>
+        </svg>
+        <div class="pane-body">User hands their internet-banking credentials to an aggregator that logs in as them and reads the screen. The bank never sees an authorization step.</div>
+      </div>
+      <div class="j3-pane amber">
+        <div class="pane-label">⚠ Partner back-channel</div>
+        <svg viewBox="0 0 180 90" aria-hidden="true">
+          <rect x="6" y="34" width="34" height="22" rx="3" fill="#fff" stroke="#b07b1f" stroke-width="1.2"/>
+          <text x="23" y="48" text-anchor="middle" font-size="9" fill="#b07b1f" font-family="system-ui">User</text>
+          <line x1="40" y1="45" x2="68" y2="45" stroke="#b07b1f" stroke-width="1.2"/>
+          <rect x="68" y="30" width="44" height="30" rx="3" fill="#fdf1da" stroke="#b07b1f" stroke-width="1.2"/>
+          <text x="90" y="42" text-anchor="middle" font-size="8" fill="#b07b1f" font-family="system-ui">Aggregator</text>
+          <text x="90" y="52" text-anchor="middle" font-size="7" fill="#b07b1f" font-family="system-ui">(partner deal)</text>
+          <line x1="112" y1="45" x2="140" y2="45" stroke="#b07b1f" stroke-width="1.2" stroke-dasharray="3,2"/>
+          <text x="126" y="40" text-anchor="middle" font-size="7" fill="#b07b1f" font-family="system-ui">private API</text>
+          <rect x="140" y="34" width="34" height="22" rx="3" fill="#fff" stroke="#b07b1f" stroke-width="1.2"/>
+          <text x="157" y="48" text-anchor="middle" font-size="8" fill="#b07b1f" font-family="system-ui">Bank</text>
+        </svg>
+        <div class="pane-body">Aggregator and bank arrange a back-channel feed via a commercial deal. Less risky than scraping, but no consent broker — the user has no central registry to inspect or revoke.</div>
+      </div>
+      <div class="j3-pane compliant">
+        <div class="pane-label">✓ Al Tareq (Journey 2)</div>
+        <svg viewBox="0 0 180 90" aria-hidden="true">
+          <rect x="6" y="34" width="30" height="22" rx="3" fill="#fff" stroke="#2f6c4a" stroke-width="1.2"/>
+          <text x="21" y="48" text-anchor="middle" font-size="9" fill="#2f6c4a" font-family="system-ui">User</text>
+          <line x1="36" y1="45" x2="60" y2="45" stroke="#2f6c4a" stroke-width="1.2"/>
+          <rect x="60" y="30" width="38" height="30" rx="3" fill="#e3efe6" stroke="#2f6c4a" stroke-width="1.4"/>
+          <text x="79" y="42" text-anchor="middle" font-size="8" fill="#2f6c4a" font-family="system-ui">Al Tareq</text>
+          <text x="79" y="52" text-anchor="middle" font-size="7" fill="#2f6c4a" font-family="system-ui">(CAAP)</text>
+          <line x1="98" y1="45" x2="120" y2="45" stroke="#2f6c4a" stroke-width="1.2"/>
+          <rect x="120" y="22" width="50" height="14" rx="2" fill="#fff" stroke="#2f6c4a" stroke-width="1.2"/>
+          <text x="145" y="32" text-anchor="middle" font-size="7.5" fill="#2f6c4a" font-family="system-ui">LFI A</text>
+          <rect x="120" y="38" width="50" height="14" rx="2" fill="#fff" stroke="#2f6c4a" stroke-width="1.2"/>
+          <text x="145" y="48" text-anchor="middle" font-size="7.5" fill="#2f6c4a" font-family="system-ui">LFI B</text>
+          <rect x="120" y="54" width="50" height="14" rx="2" fill="#fff" stroke="#2f6c4a" stroke-width="1.2"/>
+          <text x="145" y="64" text-anchor="middle" font-size="7.5" fill="#2f6c4a" font-family="system-ui">LFI C</text>
+        </svg>
+        <div class="pane-body">User authorizes a TPP through Al Tareq's CAAP. Consent Manager is the single source of truth. Every LFI sees a regulated request; the user has one place to inspect and revoke.</div>
+      </div>
+    </div>
+
+    <div class="j3-explainer">
+      <p>
+        In markets without open finance, multi-institution aggregation works the way Plaid built it in
+        the US: customers paste their bank credentials into a third party that logs in as them, or a
+        commercial partner deal opens a back-channel feed. It works — and it's how a lot of consumer
+        fintech got off the ground — but the user has no consent broker, no scope picker, and no central
+        revocation portal.
+      </p>
+      <p>
+        UAE Open Finance is built to close that gap. Article 15 of CBUAE Circular C 03/2025 is explicit:
+      </p>
+      <blockquote>
+        Licensees must […] establish dedicated interface via API Hub for secure access. […] [The following
+        are] prohibited: data scraping or similar extraction activities; interception of digital
+        connections via reverse engineering.
+      </blockquote>
+      <p>
+        That's why <strong>Journey 1 is not Journey 3</strong>, even though both bypass a third-party
+        consent broker. J1 is a bank serving its <em>own</em> customer with its <em>own</em> data — not
+        "Data Sharing" in the regulated sense, so Article 15's prohibitions don't apply. J3 is a third
+        party reaching <em>across</em> institutions without the regulated rails. That's the line UAE OF
+        draws.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- JOURNEY 1 — Bank-direct (MCP labs)                              -->
+  <!-- Reuses the existing 4-step wizard; copy revised for J1 framing.  -->
+  <!-- ============================================================== -->
+
+  <section class="journey-container" id="journey-j1" hidden aria-labelledby="j1-title">
+    <p class="journey-back"><a href="#hub" id="back-from-j1">← Back to all journeys</a></p>
+    <p class="journey-eyebrow">Journey 1 · Bank-direct (MCP labs)</p>
+    <h2 class="journey-title" id="j1-title">Your bank's own connector — to Claude</h2>
+    <p class="journey-pitch">
+      A simulation of what an LFI's own MCP endpoint could look like if it exposed the OF v2.1 data
+      contract directly to its retail or SME customers. The consent screen below is the bank's own
+      OAuth — no Al Tareq, no Nebras. The same OAuth 2.1 + PKCE flow powers the live
+      <code>--simulate-oauth</code> mode of the sandbox's MCP server.
+    </p>
 
   <!-- ============================================================== -->
   <!-- WIZARD                                                          -->
@@ -966,24 +2521,25 @@
       <p class="step-title">Step 2 of 4</p>
       <h2 class="step-h">Pick the bank you hold with</h2>
       <p class="step-sub" id="step-2-sub">
-        Connecting via the UAE Open Finance Authority. Tap the bank you actually hold a
-        relationship with; the sandbox surfaces each one as an anonymised populate-rate band
-        (Rich · Median · Sparse) per PRD <abbr title="Non-Goal 5">NG5</abbr> — never as a named
-        real bank. Same shape as Plaid Link's institution picker.
+        Pretend this is your bank's own labs MCP. Pick the populate-rate band you want to simulate
+        — Rich (every optional field set), Median (typical UAE-market posture), or Sparse
+        (minimum-conformant). The sandbox uses anonymous bands per PRD
+        <abbr title="Non-Goal 5">NG5</abbr> — never a named real bank.
       </p>
       <div id="institutions-body" class="institutions-block">
         <p class="skeleton">Pick a persona to see their applicable institutions.</p>
       </div>
     </div>
 
-    <!-- Step 3: consent -->
+    <!-- Step 3: consent — bank-own OAuth, sub-flow: discovery → SCA → consent → token -->
     <div class="wizard-body" id="step-3" hidden>
       <p class="step-title">Step 3 of 4</p>
       <h2 class="step-h">Share with Claude</h2>
       <p class="step-sub">
-        The UAE Open Finance Authority consent screen Claude would surface. Claude is asking
-        to read your accounts, balances, transactions, and insurance renewals for the next
-        90 days. Tap Approve to share, or Deny to back out.
+        Four sub-steps that show what actually happens when an MCP client wires a bank-direct
+        connector: the spec-mandated discovery handshake, the bank's own Strong Customer
+        Authentication, the OAuth consent screen (with the v2.1 Permissions taxonomy), and the
+        token exchange that hands Claude a bearer.
       </p>
       <div id="consent-body"></div>
     </div>
@@ -1009,61 +2565,168 @@
     </div>
   </section>
 
-  <!-- ============================================================== -->
-  <!-- SUPPORTING CONTENT (post-wizard)                                -->
-  <!-- ============================================================== -->
+    <!-- ============================================================ -->
+    <!-- J1 SUPPORTING CONTENT (post-wizard)                            -->
+    <!-- ============================================================ -->
 
-  <section>
-    <h2>How to revoke</h2>
-    <p>
-      The consent screen pointed at <em>portal.openfinance.ae · My Consents</em> — the UAE
-      Open Finance Authority's mock revoke page. In v1 of this sandbox it's a pointer, not
-      a working URL; the journey it implies is the same one
-      <a href="https://my.plaid.com" target="_blank" rel="noopener noreferrer">Plaid Portal</a>
-      models: every connection I've authorized, what data each one can read, when I gave
-      permission, and a one-click <em>stop sharing</em> that wipes the bearer server-side
-      and 401s every subsequent call.
-    </p>
-    <p>
-      Until that page is real, the local equivalent is
-      <code>DELETE /mcp</code> with <code>Mcp-Session-Id</code> — the sandbox-mcp server
-      destroys the session and forces re-authentication on the next call.
-    </p>
-  </section>
+    <section>
+      <h2>How to revoke (J1)</h2>
+      <p>
+        Because J1's consent is the bank's own OAuth — not Al Tareq — revocation lives in the
+        <em>bank's</em> labs portal, not the regulator's Consent Manager. Locally, the equivalent
+        is <code>DELETE /mcp</code> with <code>Mcp-Session-Id</code> — the sandbox-mcp server
+        destroys the session and the next tool call gets a 401.
+      </p>
+      <p>
+        In a real LFI deployment, this would be a "Connected apps" / "Active sessions" page in
+        the bank's mobile or web app, with one-click <em>stop sharing</em> per connector. The
+        UAE OF Consent Manager is not in this loop — that's J2's territory.
+      </p>
+    </section>
 
-  <section>
-    <h2>Try the journey for real</h2>
-    <p>
-      The wizard above is a UI mock. To exercise the actual OAuth handshake — 401 challenge,
-      RFC 9728 + RFC 8414 metadata, PKCE-validated <code>/token</code> exchange, bearer-gated
-      <code>/mcp</code> — start the MCP server with the opt-in simulation flag:
-    </p>
-    <pre><code># Anonymous — the production default per PRD D-13
+    <section id="try-for-real">
+      <h2>Try this journey for real in Claude</h2>
+      <p>
+        The wizard above is a UI mock; the actual OAuth handshake — 401 challenge, RFC 9728 +
+        RFC 8414 metadata, PKCE-validated <code>/token</code> exchange, bearer-gated <code>/mcp</code>
+        — is already live at <a href="https://data-sandbox.fly.dev/mcp" target="_blank" rel="noopener noreferrer"><code>https://data-sandbox.fly.dev/mcp</code></a>.
+        Add it as a custom connector in <strong>Claude.ai → Customize → Connectors → Add custom
+        connector</strong>, paste the URL, and chat as if the sandbox were your bank's labs MCP.
+      </p>
+      <pre><code># Or run your own instance locally
 npx -y @openfinance-os/sandbox-mcp --transport http --port 8787
 
-# Opt-in OAuth simulation
+# Opt-in OAuth simulation (J1 consent screen end-to-end)
 npx -y @openfinance-os/sandbox-mcp --transport http --port 8787 --simulate-oauth
 # or:
 MCP_SIMULATE_OAUTH=1 npx -y @openfinance-os/sandbox-mcp --transport http</code></pre>
-    <p>
-      A short design memo for this page lives at
-      <a href="https://github.com/openfinance-os/data-sandbox/blob/main/CLAUDE_PERSONAL_BANKING.md" target="_blank" rel="noopener noreferrer"><code>CLAUDE_PERSONAL_BANKING.md</code></a>;
-      the OAuth simulation lives at
-      <a href="https://github.com/openfinance-os/data-sandbox/blob/main/packages/sandbox-mcp/src/transports/oauth-simulation.mjs" target="_blank" rel="noopener noreferrer"><code>packages/sandbox-mcp/src/transports/oauth-simulation.mjs</code></a>.
-    </p>
-  </section>
+      <p>
+        Helpful links:
+        <a href="https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp" target="_blank" rel="noopener noreferrer">Claude custom-connector help</a>
+        · <a href="https://github.com/openfinance-os/data-sandbox/blob/main/CLAUDE_PERSONAL_BANKING.md" target="_blank" rel="noopener noreferrer"><code>CLAUDE_PERSONAL_BANKING.md</code></a>
+        · <a href="https://github.com/openfinance-os/data-sandbox/blob/main/packages/sandbox-mcp/src/transports/oauth-simulation.mjs" target="_blank" rel="noopener noreferrer"><code>oauth-simulation.mjs</code></a>
+      </p>
+    </section>
 
-  <section>
-    <h2>Status &amp; scope</h2>
-    <p>
-      This page is a <strong>simulation, not a roadmap</strong>. Nothing here changes the load-bearing
-      invariants of the sandbox: spec-driven field metadata (EXP-01), no real customer data
-      (NG4 / EXP-07), no institution-specific operational detail (NG5 / D-14), deterministic
-      generation (EXP-05), Standards baseline v2.1 only (D-01), and no separate contributor
-      branding (NG6). Real UAE bank names appear only in the SME advisory panel pulled from
-      each persona's <code>multi_lfi_footprint.plausible_lfi_candidates</code> — never bound
-      to a populate-rate profile.
+    <section>
+      <h2>Status &amp; scope (applies to all journeys)</h2>
+      <p>
+        These pages are <strong>simulations, not a roadmap</strong>. Nothing here changes the load-bearing
+        invariants of the sandbox: spec-driven field metadata (EXP-01), no real customer data
+        (NG4 / EXP-07), no institution-specific operational detail (NG5 / D-14), deterministic
+        generation (EXP-05), Standards baseline v2.1 only (D-01), and no separate contributor
+        branding (NG6). Real UAE bank names appear only in the SME advisory panel pulled from
+        each persona's <code>multi_lfi_footprint.plausible_lfi_candidates</code> — never bound
+        to a populate-rate profile.
+      </p>
+    </section>
+  </section> <!-- /journey-j1 -->
+
+  <!-- ============================================================== -->
+  <!-- JOURNEY 2 — OF rails (TPP via Al Tareq)                         -->
+  <!-- Phase A: placeholder. Wizard arrives in Phase B.                -->
+  <!-- ============================================================== -->
+
+  <section class="journey-container" id="journey-j2" hidden aria-labelledby="j2-title">
+    <p class="journey-back"><a href="#hub" id="back-from-j2">← Back to all journeys</a></p>
+    <p class="journey-eyebrow">Journey 2 · OF rails (TPP via Al Tareq)</p>
+    <h2 class="journey-title" id="j2-title">Regulated multi-LFI aggregation</h2>
+    <p class="journey-pitch">
+      A TPP — or an agent acting as TPP — walks the user through the Al Tareq CAAP consent
+      flow to authorize access at one or many LFIs at once. FAPI 2.0, mTLS via OFTF, Consent
+      Manager as the single source of truth. The end-state is a holistic PFM (Retail) or BFM
+      (SME) view aggregated across the consented LFIs.
     </p>
+
+    <section class="wizard" id="j2-wizard" aria-label="Open Finance TPP consent journey simulator">
+      <ol class="wizard-steps" id="j2-wizard-steps">
+        <li class="step active" data-j2step="1"><span class="num">1</span><span class="label">Persona</span></li>
+        <li class="step" data-j2step="2"><span class="num">2</span><span class="label">Scope</span></li>
+        <li class="step" data-j2step="3"><span class="num">3</span><span class="label">LFIs</span></li>
+        <li class="step" data-j2step="4"><span class="num">4</span><span class="label">Al Tareq consent</span></li>
+        <li class="step" data-j2step="5"><span class="num">5</span><span class="label">PFM / BFM</span></li>
+      </ol>
+
+      <!-- J2 Step 1: persona pick (banking-domain only — PFM/BFM is a banking view) -->
+      <div class="wizard-body" id="j2-step-1">
+        <p class="step-title">Step 1 of 5</p>
+        <h2 class="step-h">Pick a customer profile</h2>
+        <p class="step-sub">
+          The TPP is acting on behalf of this person or SME. Only banking-domain personas are
+          shown here — PFM and BFM dashboards are banking views in v1. Retail personas drive
+          the PFM dashboard at the end; SME personas (look for the <code>SME</code> tag) drive
+          the BFM dashboard. SME personas with a <code>multi_lfi_footprint</code> work best for
+          the multi-LFI scope path.
+        </p>
+        <div class="persona-filters" id="j2-persona-filters" role="tablist" aria-label="Filter personas by domain">
+          <button type="button" data-j2filter="all" class="active" role="tab" aria-selected="true">All</button>
+          <button type="button" data-j2filter="retail" role="tab" aria-selected="false">Retail (PFM)</button>
+          <button type="button" data-j2filter="sme" role="tab" aria-selected="false">SME (BFM)</button>
+        </div>
+        <div class="persona-grid" id="j2-persona-grid" role="radiogroup" aria-label="Synthetic persona gallery">
+          <p class="skeleton">Loading personas…</p>
+        </div>
+      </div>
+
+      <!-- J2 Step 2: scope (single vs multi LFI) -->
+      <div class="wizard-body" id="j2-step-2" hidden>
+        <p class="step-title">Step 2 of 5</p>
+        <h2 class="step-h">Single LFI or multi-LFI?</h2>
+        <p class="step-sub">
+          Both rides ride the OF rails — Al Tareq CAAP, FAPI 2.0, Consent Manager as single
+          source of truth. The difference is how many LFIs the user authorizes in one consent
+          journey.
+        </p>
+        <div class="scope-grid" id="j2-scope-grid"></div>
+      </div>
+
+      <!-- J2 Step 3: LFI picker (anonymous profiles) -->
+      <div class="wizard-body" id="j2-step-3" hidden>
+        <p class="step-title">Step 3 of 5</p>
+        <h2 class="step-h">Pick LFI(s)</h2>
+        <p class="step-sub" id="j2-step-3-sub">
+          Anonymous populate-rate bands per PRD <abbr title="Non-Goal 5">NG5</abbr> — Rich
+          (every optional field set), Median (typical UAE-market posture), or Sparse
+          (minimum-conformant). Each band stands in for an LFI with that data posture.
+        </p>
+        <div id="j2-lfi-body" class="institutions-block">
+          <p class="skeleton">Pick a persona first.</p>
+        </div>
+      </div>
+
+      <!-- J2 Step 4: Al Tareq CAAP consent screen -->
+      <div class="wizard-body" id="j2-step-4" hidden>
+        <p class="step-title">Step 4 of 5</p>
+        <h2 class="step-h">Al Tareq consent</h2>
+        <p class="step-sub">
+          The regulated Consent and Authorization Application Platform (CAAP) screen the user
+          would see. One TPP request, one consent surface — even when the request spans multiple
+          LFIs. Approving here authorizes every selected LFI in one tap; revocation lives
+          centrally at the Nebras Consent Manager.
+        </p>
+        <div id="j2-consent-body"></div>
+      </div>
+
+      <!-- J2 Step 5: PFM (Retail) or BFM (SME) dashboard -->
+      <div class="wizard-body" id="j2-step-5" hidden>
+        <p class="step-title">Step 5 of 5</p>
+        <h2 class="step-h" id="j2-step-5-h">Aggregated view</h2>
+        <p class="step-sub" id="j2-step-5-sub">
+          A holistic view of the consented data, aggregated across every authorized LFI. Every
+          figure below is computed deterministically from real v2.1 fixture data.
+        </p>
+        <div id="j2-dashboard-body"></div>
+      </div>
+
+      <div class="wizard-actions">
+        <span class="meta" id="j2-wizard-status">Pick a persona to continue.</span>
+        <div class="button-row">
+          <button type="button" class="btn ghost" id="j2-btn-restart" hidden>Start over</button>
+          <button type="button" class="btn" id="j2-btn-back" disabled>← Back</button>
+          <button type="button" class="btn primary" id="j2-btn-next" disabled>Next →</button>
+        </div>
+      </div>
+    </section>
   </section>
 
   <section>
@@ -1077,6 +2740,33 @@ MCP_SIMULATE_OAUTH=1 npx -y @openfinance-os/sandbox-mcp --transport http</code><
     </dl>
   </section>
 </main>
+
+<!-- ============================================================== -->
+<!-- Consent Manager modal — opened from J2 step 4d's portal link    -->
+<!-- ============================================================== -->
+
+<div id="consent-manager-modal" class="consent-manager-modal" hidden role="dialog" aria-modal="true" aria-labelledby="cm-title">
+  <div class="consent-manager-backdrop" id="consent-manager-backdrop"></div>
+  <div class="consent-manager-card">
+    <div class="consent-manager-header">
+      <div>
+        <div class="consent-manager-brand">portal.openfinance.ae · Nebras Consent Manager</div>
+        <h2 class="consent-manager-title" id="cm-title">My Consents</h2>
+      </div>
+      <button type="button" class="consent-manager-close" id="consent-manager-close" aria-label="Close">×</button>
+    </div>
+    <div class="consent-manager-intro">
+      The single source of truth for every TPP consent under UAE Open Finance. Revocation here
+      wipes the consent grant server-side and 401s every subsequent TPP data-sharing call. J1
+      consents (bank-direct, not under OF rails) live in your bank's own <em>Connected apps</em>
+      page; they're listed here for the sandbox session only.
+    </div>
+    <div class="consent-manager-body" id="consent-manager-body"></div>
+    <div class="consent-manager-footer">
+      <button type="button" class="btn" id="consent-manager-close-2">Close</button>
+    </div>
+  </div>
+</div>
 
 <footer class="footer" role="contentinfo">
   <span>SYNTHETIC · Open Finance Data Sandbox · OpenFinance-OS Commons · Standards v2.1 @ <span id="footer-sha">unknown</span></span>

@@ -1,9 +1,14 @@
-# Connect your UAE bank to Claude
+# Connection journeys — Journey 1: bank-direct (MCP labs)
 
 Status: simulation against the synthetic sandbox in this repo.
 Audience: anyone building a consumer-facing AI assistant on UAE Open Finance v2.1.
 
-This is what it looks like for a person to connect their UAE bank to Claude in a chat and start getting answers grounded in their real accounts. It's modelled on the [Plaid + ChatGPT integration](https://plaid.com/blog/chatgpt-personal-finance-plaid/) pattern — consumer-direct, permission-managed, revocable — and projected onto the UAE Open Finance Standards v2.1 surface that the rest of this repo already serves.
+This is one of three connection journeys the sandbox teaches on its `/connect` page. **Journey 1** is the *bank-direct* path: what if your bank ran a labs MCP endpoint exposing the same OF v2.1 data shape directly to its own retail or SME customer — no TPP, no Al Tareq? The consent below is the bank's own OAuth, not the regulator's Consent Manager.
+
+- **Journey 2** (separate flow, not covered here): the regulated TPP path through Al Tareq CAAP, FAPI 2.0, and the Nebras Consent Manager — single or multi-LFI aggregation, with revocation centralized at the regulator. See `/connect → OF rails`.
+- **Journey 3** (contrast only): the off-rails Plaid-style aggregator pattern, specifically foreclosed in UAE by Article 15 of CBUAE Circular C 03/2025.
+
+The load-bearing invariant: **all three return the same v2.1 data contract**. Only the consent journey varies. That's what makes the bank-direct labs path here faithful to UAE Open Finance even though it never enters Al Tareq — the data shape is the regulated standard, just delivered through a non-regulated consent surface.
 
 Nothing here is endorsed by Anthropic, CBUAE, Nebras, or any UAE LFI. The data is synthetic — every payload carries a `_watermark`. The OAuth journey is opt-in simulation behind `--simulate-oauth`; the production deploy at `https://data-sandbox.fly.dev/mcp` stays anonymous-by-default per PRD D-13.
 
@@ -11,14 +16,15 @@ Nothing here is endorsed by Anthropic, CBUAE, Nebras, or any UAE LFI. The data i
 
 ## 1. What I see
 
-I'm chatting with Claude. I ask something a chat assistant has never been able to answer: *"Can you see my main account?"* Claude says no, but offers to connect — one tap and it can read what I share. A consent screen opens.
+I'm chatting with Claude. I ask something a chat assistant has never been able to answer: *"Can you see my main account?"* Claude says no, but offers to connect — one tap and it can read what I share. My bank's own OAuth consent screen opens.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  Share with Claude · UAE Open Finance Authority                 │
+│  Share with Claude · your bank's labs MCP                       │
 │  ────────────────────────────────────────────────────────────── │
-│  Claude will be able to read what you tick. You can stop        │
-│  sharing at any time at portal.openfinance.ae · My Consents.    │
+│  OAuth 2.1 + PKCE. Claude will be able to read what you tick.   │
+│  You can stop sharing at any time in your bank's Connected      │
+│  apps page (not Al Tareq — this is the bank's own surface).     │
 │                                                                 │
 │  ☑ Bank Data Sharing  — accounts · balances · transactions ·    │
 │                         standing orders · direct debits ·       │
@@ -36,13 +42,19 @@ I'm chatting with Claude. I ask something a chat assistant has never been able t
 
 I tap Approve. The browser redirects back to Claude. I'm in the chat again and Claude tells me what it can now answer.
 
-## 2. How consent works
+## 2. How consent works (J1) — 4 sub-steps
 
-Under the hood: Claude's MCP client hit `/mcp` without a bearer and got a `401` with a `WWW-Authenticate: Bearer realm="open-finance-sandbox", authorization_uri=…, resource_metadata=…` challenge. The `resource_metadata` URL is an RFC 9728 document that points Claude at the authorization server's RFC 8414 metadata; together those two documents tell Claude where to send me for consent. Claude opened `/authorize` with a PKCE S256 challenge bound to a verifier it keeps private — same shape Plaid Link uses with the institution's OAuth flow.
+The `/connect` page now walks the J1 consent journey in four sub-steps that mirror what the MCP + OAuth handshake actually does end-to-end. Each sub-step is its own rendered screen with its own sub-step indicator at the top of step 3.
 
-When I tapped Approve, the server signed a single-use authorization code and 302-redirected to Claude's callback. Claude exchanged the code for a one-hour opaque bearer at `/token`, supplying the verifier so the server could prove I'm the same user who started the flow. From here every `/mcp` call carries the bearer; the gate is on every request, not just initialize.
+**3a — MCP discovery chain.** Claude's MCP client hits `/mcp` without a bearer and gets back a `401` with a `WWW-Authenticate: Bearer realm="open-finance-sandbox", authorization_uri=…, resource_metadata=…` challenge. From there it fetches `/.well-known/oauth-protected-resource` (RFC 9728 — declares the authorization servers the resource trusts) and `/.well-known/oauth-authorization-server` (RFC 8414 — declares `/authorize` and `/token` endpoints, supported scopes, PKCE methods). Then it opens `/authorize` with a PKCE S256 challenge bound to a verifier it keeps private. The page visualises all four exchanges as rows; a "Probe the live server" button fetches the actual metadata from `https://data-sandbox.fly.dev` and inlines it.
 
-The sandbox's bearer is a UUID with a 1-hour TTL. A real Nebras-Open-Finance bearer would carry the same 90-day sharing window the consent screen advertises, with revocation at any time wiping the token server-side.
+**3b — Bank-side Strong Customer Authentication.** Article 18 of CBUAE Circular C 03/2025 mandates 2FA. The mock screen shows username + password + 6-digit OTP, with a "use your bank app" push-based alternate (same regulatory category). This is the bank's own auth surface — Claude never sees these credentials.
+
+**3c — Bank-own OAuth consent.** Same OAuth-consent chrome as before, but now carries the full v2.1 Permissions taxonomy (toggleable, `ReadAccountsBasic` disabled-checked because it's mandatory per the Standards) and a Consent parameters panel (`ExpirationDateTime` chips 30/90/180/365 days, `TransactionFromDateTime` window 3/6/13 months — `IsSingleAuthorization` is omitted for J1 since bank-direct is always one consumer). On Approve the runtime mints a UAE-OF-flavoured ConsentId (`urn:openfinance:ae:consent:<uuid>`) and appends a record to the session's consent registry.
+
+**3d — Token exchange + return.** The page renders the artefacts that result from the PKCE-validated `POST /token`: the freshly-minted ConsentId, an `access_token` (synthesised, opaque), `token_type: Bearer`, `expires_in: 3600`, and the scope (count of permissions granted). From here every `POST /mcp` call carries `Authorization: Bearer …` — the bearer is checked on every request, not just initialize.
+
+The sandbox's bearer is a UUID with a 1-hour TTL; the 90-day sharing window the consent screen advertises is the maximum re-issuance window before the user needs to re-consent. Revocation lives in the bank's own "Connected apps" page — the regulator's Consent Manager isn't in this loop (that's Journey 2's territory). The session-level Consent Manager modal in the sandbox lists J1 consents alongside J2 ones for pedagogical completeness, but the source field makes the regulatory distinction explicit.
 
 ## 3. What Claude can answer
 
@@ -65,11 +77,13 @@ These are five real exchanges against the `salaried_expat_mid` persona (Sara —
 
 The answers are deterministic for any `(persona, lfi, seed)` triple. That makes them safe to demo, to test against, and to put in a sandbox-flavoured screenshot without any chance of leaking a real person's data.
 
-## 4. How I revoke
+## 4. How I revoke (J1)
 
-The consent screen pointed at `portal.openfinance.ae · My Consents` — that's the UAE Open Finance Authority's mock revoke page. In v1 of this sandbox it's a pointer, not a working URL; the journey it implies is the same one Plaid Portal models: every connection I've authorized, what data each one can read, when I gave permission, and a one-click "stop sharing" that wipes the bearer server-side and 401s every subsequent call.
+Because J1's consent is the bank's own OAuth — not Al Tareq — revocation lives in the *bank's* "Connected apps" page, not the regulator's Consent Manager. In a real LFI deployment, that would be a screen in the bank's mobile or web app listing every connected MCP client, what data each one can read, when consent was given, and a one-click "stop sharing" that wipes the bearer server-side and 401s every subsequent call.
 
 Until that page is real, the local equivalent is `DELETE /mcp` with `Mcp-Session-Id` — the sandbox-mcp server destroys the session and forces re-authentication on the next call.
+
+For Journey 2's revocation flow — through the regulated Al Tareq Consent Manager, which is the single source of truth for any TPP-mediated consent — see the `/connect → OF rails` walkthrough.
 
 ## 5. Regulatory context
 
