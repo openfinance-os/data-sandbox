@@ -1,0 +1,88 @@
+persona_id: returning_expat
+domain: banking
+name: "Anjali — Returning Expat (Dormancy Gap, Restarted Salary)"
+archetype: returning_expat_dormant_then_active
+default_seed: 35691
+segment: Retail
+stress_coverage:
+  # An expat who left UAE, kept her accounts open through the gap,
+  # and is now ~10 months into a return posting. The accounts are
+  # long-tenured (~96 months), but the transaction history splits
+  # cleanly: dormant inflows for the middle ~36 months, full
+  # WPS-payroll-driven shape on resume. Tests whether a TPP's
+  # tenure-as-a-proxy-for-stability assumption misreads a long-
+  # tenure account whose recent volume is actually thin.
+  - returning_expat_dormancy_gap_in_history
+
+demographics:
+  nationality_pool: expat_indian
+  age_band: 36-45
+  emirate: dubai
+
+income:
+  primary_employer_pool: tech_freezone
+  monthly_amount_aed: 38000
+  pay_day: 26
+  variability: low
+  flag_payroll: true
+
+accounts:
+  - type: CurrentAccount
+    currency: AED
+    age_months: 96
+  - type: Savings
+    currency: AED
+    age_months: 84
+  - type: CreditCard
+    currency: AED
+    age_months: 72
+    credit_limit_aed: 55000
+
+fixed_commitments:
+  - kind: standing_order
+    purpose: rent_payment
+    amount_aed: 9500
+    schedule: monthly_27
+  - kind: direct_debit
+    purpose: utilities_dewa
+    amount_aed_band: [500, 950]
+    schedule: monthly_5
+  - kind: direct_debit
+    purpose: credit_card_repayment
+    amount_aed_band: [4500, 11000]
+    schedule: monthly_10
+  - kind: direct_debit
+    purpose: international_remittance_home
+    amount_aed_band: [2500, 5000]
+    schedule: monthly_28
+  - kind: direct_debit
+    purpose: kids_school_fees
+    amount_aed: 5500
+    schedule: monthly_5
+
+spend_profile:
+  groceries_aed_per_month_band: [1600, 3000]
+  fuel_aed_per_month_band: [500, 900]
+  dining_per_month_count_band: [8, 18]
+
+fx_activity: true
+cash_deposit_activity: false
+
+distress_signals:
+  nsf_events_per_year_band: [0, 1]
+
+narrative: |
+  Anjali is a 36–45yo expat-Indian professional in Dubai who left the
+  UAE in 2020 (~36 months overseas), kept her 8-year-old
+  CurrentAccount + Savings + CreditCard open through the gap, and is
+  now ~10 months into a return posting at a Free-Zone tech employer
+  (AED 38k/mo WPS payroll). The account tenure is long (96 / 84 / 72
+  months) but the transaction shape is dormant-then-active: ~36
+  months in the middle of the history with no salary inflow, sparse
+  utility DDs, no credit-card spend; the trailing ~10 months back to
+  full WPS-payroll + rent SO + kids' school fees + remittances. The
+  persona's load-bearing stress is the tenure-as-stability bias —
+  a TPP underwriting flow that reads "account opened 2017, age 96
+  months" and infers eight years of continuous salary will overstate
+  affordability. Only a transaction-level read across the dormancy
+  window catches the gap.
