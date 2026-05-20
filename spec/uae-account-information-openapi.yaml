@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: UAE Account Information API
   description: '## UAE Open Finance Account Information API Specification'
-  version: v2.1
+  version: v2.1-errata2
 servers:
   - url: /open-finance/account-information/v2.1
 tags:
@@ -4567,10 +4567,22 @@ components:
     TrustFrameworkCode:
       type: string
       enum:
-        - Undefined
+        - FI
       description: >-
         Identifies the trust framework used for verification. This consists of a set of rules and standards and sets out
         requirements so that organisations know what ‘good’ identity verification looks like.
+
+
+        Permitted values:
+
+
+        * `FI` — the LFI (Financial Institution) has carried out verification of the customer details based on its own
+        processes adhering to UAE legislation for KYC and AML.
+
+
+        Mirrors `CbuaeVerifiedClaim.verification.trustFramework` in the Ozone Connect Bank Data Sharing API so that the
+        value emitted by an LFI can be passed through to the TPP-facing surface without translation.
+
 
         Trust Frameworks:
         [https://bitbucket.org/openid/ekyc-ida/wiki/identifiers](https://bitbucket.org/openid/ekyc-ida/wiki/identifiers)
@@ -5865,7 +5877,7 @@ components:
             Permissions:
               type: array
               items:
-                $ref: '#/components/schemas/AEBankDataSharingConsentPermissionCodesItem'
+                $ref: '#/components/schemas/AEBankDataSharingConsentPermissionCodes'
               minItems: 1
             ExpirationDateTime:
               $ref: '#/components/schemas/AEPushedAuthorizationRequests.AEConsentExpirationDateTime'
@@ -5979,32 +5991,30 @@ components:
 
 
         All date-time fields in responses must include the timezone, for example: 2023-04-05T10:43:07+00:00
-    AEBankDataSharingConsentPermissionCodesItem:
-      type: array
-      items:
-        type: string
-        enum:
-          - ReadAccountsBasic
-          - ReadAccountsDetail
-          - ReadBalances
-          - ReadBeneficiariesBasic
-          - ReadBeneficiariesDetail
-          - ReadFXTransactionsBasic
-          - ReadFXTransactionsDetail
-          - ReadFXRemittanceCharges
-          - ReadTransactionsBasic
-          - ReadTransactionsDetail
-          - ReadProduct
-          - ReadScheduledPaymentsBasic
-          - ReadScheduledPaymentsDetail
-          - ReadDirectDebits
-          - ReadStandingOrdersBasic
-          - ReadStandingOrdersDetail
-          - ReadStatements
-          - ReadPartyUser
-          - ReadPartyUserIdentity
-          - ReadParty
-          - ReadProductFinanceRates
+    AEBankDataSharingConsentPermissionCodes:
+      type: string
+      enum:
+        - ReadAccountsBasic
+        - ReadAccountsDetail
+        - ReadBalances
+        - ReadBeneficiariesBasic
+        - ReadBeneficiariesDetail
+        - ReadFXTransactionsBasic
+        - ReadFXTransactionsDetail
+        - ReadFXRemittanceCharges
+        - ReadTransactionsBasic
+        - ReadTransactionsDetail
+        - ReadProduct
+        - ReadScheduledPaymentsBasic
+        - ReadScheduledPaymentsDetail
+        - ReadDirectDebits
+        - ReadStandingOrdersBasic
+        - ReadStandingOrdersDetail
+        - ReadStatements
+        - ReadPartyUser
+        - ReadPartyUserIdentity
+        - ReadParty
+        - ReadProductFinanceRates
       description: The permission codes available to the TPP for Bank Data Sharing and agreed with the User.
     AEBankDataSharing.AEExternalAccountSubTypeCode:
       type: string

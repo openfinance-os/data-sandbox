@@ -50,8 +50,7 @@ export const RECIPE_DEFAULTS = Object.freeze({
 // Non-plain-object inputs (strings, numbers, arrays) are treated as empty —
 // spreading a string would otherwise leak character-indexed keys.
 export function canonicalise(recipe) {
-  const safe =
-    recipe && typeof recipe === 'object' && !Array.isArray(recipe) ? recipe : {};
+  const safe = recipe && typeof recipe === 'object' && !Array.isArray(recipe) ? recipe : {};
   const merged = { ...RECIPE_DEFAULTS, ...safe };
   const out = {};
   for (const k of Object.keys(merged).sort()) {
@@ -89,14 +88,16 @@ function bytesToUtf8(bytes) {
 function base64urlEncode(bytes) {
   let bin = '';
   for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-  const b64 = typeof btoa !== 'undefined' ? btoa(bin) : Buffer.from(bin, 'binary').toString('base64');
+  const b64 =
+    typeof btoa !== 'undefined' ? btoa(bin) : Buffer.from(bin, 'binary').toString('base64');
   return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
 function base64urlDecode(s) {
   const pad = (4 - (s.length % 4)) % 4;
   const b64 = (s + '='.repeat(pad)).replace(/-/g, '+').replace(/_/g, '/');
-  const bin = typeof atob !== 'undefined' ? atob(b64) : Buffer.from(b64, 'base64').toString('binary');
+  const bin =
+    typeof atob !== 'undefined' ? atob(b64) : Buffer.from(b64, 'base64').toString('binary');
   const bytes = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
   return bytes;

@@ -63,12 +63,9 @@ function isWithinTrailing12Months(tx, now) {
  */
 export function lowVolumeGuard(transactions, now) {
   const inWindow = transactions.filter((t) => isWithinTrailing12Months(t, now));
-  const distinctMonths = new Set(
-    inWindow.map((t) => t.BookingDateTime.slice(0, 7)),
-  ).size;
+  const distinctMonths = new Set(inWindow.map((t) => t.BookingDateTime.slice(0, 7))).size;
   const triggered =
-    inWindow.length < ZERO_VOLUME_GUARD.tx
-    || distinctMonths < ZERO_VOLUME_GUARD.distinctMonths;
+    inWindow.length < ZERO_VOLUME_GUARD.tx || distinctMonths < ZERO_VOLUME_GUARD.distinctMonths;
   return {
     triggered,
     txCount: inWindow.length,
@@ -94,9 +91,14 @@ export function computeImpliedIncome(transactions, now) {
     .filter((t) => t.CreditDebitIndicator === 'Credit' && t.Status === 'Booked');
 
   // Primary: Flags includes 'Payroll'
-  const payrollCredits = inWindow.filter((t) => Array.isArray(t.Flags) && t.Flags.includes('Payroll'));
+  const payrollCredits = inWindow.filter(
+    (t) => Array.isArray(t.Flags) && t.Flags.includes('Payroll'),
+  );
   if (payrollCredits.length >= 6) {
-    const sumAed = payrollCredits.reduce((acc, t) => acc + toAed(parseFloat(t.Amount.Amount), t.Amount.Currency), 0);
+    const sumAed = payrollCredits.reduce(
+      (acc, t) => acc + toAed(parseFloat(t.Amount.Amount), t.Amount.Currency),
+      0,
+    );
     return {
       value: sumAed / 12,
       currency: 'AED',
@@ -128,7 +130,10 @@ export function computeImpliedIncome(transactions, now) {
     if (!bestDay || txns.length > bestDay.txns.length) bestDay = { day, txns };
   }
   if (bestDay) {
-    const sumAed = bestDay.txns.reduce((acc, t) => acc + toAed(parseFloat(t.Amount.Amount), t.Amount.Currency), 0);
+    const sumAed = bestDay.txns.reduce(
+      (acc, t) => acc + toAed(parseFloat(t.Amount.Amount), t.Amount.Currency),
+      0,
+    );
     return {
       value: sumAed / 12,
       currency: 'AED',
@@ -158,7 +163,10 @@ export function computeImpliedIncome(transactions, now) {
     if (!bestCp || txns.length > bestCp.txns.length) bestCp = { cp, txns };
   }
   if (bestCp) {
-    const sumAed = bestCp.txns.reduce((acc, t) => acc + toAed(parseFloat(t.Amount.Amount), t.Amount.Currency), 0);
+    const sumAed = bestCp.txns.reduce(
+      (acc, t) => acc + toAed(parseFloat(t.Amount.Amount), t.Amount.Currency),
+      0,
+    );
     return {
       value: sumAed / 12,
       currency: 'AED',
@@ -268,7 +276,10 @@ export function computeNsfCount(transactions, now) {
 export function computeUnderwriting(bundle, now = new Date()) {
   const guard = lowVolumeGuard(bundle.transactions ?? [], now);
   const income = computeImpliedIncome(bundle.transactions ?? [], now);
-  const commitments = computeFixedCommitments(bundle.standingOrders ?? [], bundle.directDebits ?? []);
+  const commitments = computeFixedCommitments(
+    bundle.standingOrders ?? [],
+    bundle.directDebits ?? [],
+  );
   const dbr = guard.triggered
     ? { value: null, reason: 'Suppressed — low-volume guard triggered (see top of panel).' }
     : computeDBR(income, commitments);
@@ -277,4 +288,4 @@ export function computeUnderwriting(bundle, now = new Date()) {
 }
 
 export const UNDERWRITING_FOOTNOTE =
-  'Generic / illustrative. Not tied to any specific institution\'s underwriting policy. Adjust to your own policy when applying.';
+  "Generic / illustrative. Not tied to any specific institution's underwriting policy. Adjust to your own policy when applying.";

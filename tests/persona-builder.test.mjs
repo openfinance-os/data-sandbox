@@ -134,13 +134,10 @@ describe('expandRecipe — Workstream B', () => {
 
   it('throws on unknown pool refs', () => {
     expect(() =>
-      expandRecipe({ segment: 'Retail', name_pool: 'pool_does_not_exist' }, pools)
+      expandRecipe({ segment: 'Retail', name_pool: 'pool_does_not_exist' }, pools),
     ).toThrow(/unknown/);
     expect(() =>
-      expandRecipe(
-        { segment: 'SME', legal_name_pool: 'no_such_org_pool' },
-        pools
-      )
+      expandRecipe({ segment: 'SME', legal_name_pool: 'no_such_org_pool' }, pools),
     ).toThrow(/unknown/);
   });
 

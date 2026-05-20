@@ -11,17 +11,9 @@
 
 import { makePrng } from '../../prng.js';
 import { generateInsuranceIdentity, genUuid, isoDate } from './identity.js';
-import {
-  generateMotorProduct,
-  generateClaims,
-  generatePremium,
-} from './motor-policy.js';
+import { generateMotorProduct, generateClaims, generatePremium } from './motor-policy.js';
 import { generateMotorQuote } from './motor-quote.js';
-import {
-  generateHomeProduct,
-  generateHomeClaims,
-  generateHomePremium,
-} from './home-policy.js';
+import { generateHomeProduct, generateHomeClaims, generateHomePremium } from './home-policy.js';
 import { generateHomeQuote } from './home-quote.js';
 import {
   generateHealthProduct,
@@ -30,11 +22,7 @@ import {
   generateHealthPremium,
 } from './health-policy.js';
 import { generateHealthQuote } from './health-quote.js';
-import {
-  generateLifeProduct,
-  generateLifeClaims,
-  generateLifePremium,
-} from './life-policy.js';
+import { generateLifeProduct, generateLifeClaims, generateLifePremium } from './life-policy.js';
 import { generateLifeQuote } from './life-quote.js';
 import {
   generateTravelProduct,
@@ -65,10 +53,7 @@ import {
   makeBundleIdentity,
   pickRandomBankName,
 } from './_shared.js';
-import {
-  findInsuranceCrossDomainLink,
-  pickFootprintSlotBank,
-} from '../multi-lfi.js';
+import { findInsuranceCrossDomainLink, pickFootprintSlotBank } from '../multi-lfi.js';
 
 const DEFAULT_NOW = new Date(Date.UTC(2026, 3, 1, 0, 0, 0));
 
@@ -78,7 +63,7 @@ function resolvePools(persona, indexedPools) {
   const namePool = indexedPools.namesByPoolId[persona.demographics.nationality_pool];
   if (!namePool) {
     throw new Error(
-      `name pool '${persona.demographics.nationality_pool}' not found for persona ${persona.persona_id}`
+      `name pool '${persona.demographics.nationality_pool}' not found for persona ${persona.persona_id}`,
     );
   }
   // Per-line bank-pool refs: motor.finance, home.mortgage, life.finance.
@@ -89,9 +74,7 @@ function resolvePools(persona, indexedPools) {
     DEFAULT_BANKS_POOL;
   const banks = indexedPools.counterpartyBanksByCategory[banksPoolId];
   if (!banks) {
-    throw new Error(
-      `banks pool '${banksPoolId}' not found for persona ${persona.persona_id}`
-    );
+    throw new Error(`banks pool '${banksPoolId}' not found for persona ${persona.persona_id}`);
   }
   return { names: namePool, banks };
 }
@@ -179,7 +162,14 @@ function buildMotorBundle({ persona, lfi, seed, pools, now }) {
 
   const insurancePolicyId = genUuid(rng);
 
-  const motorPolicyDetail = makePolicyDetail({ insurancePolicyId, policyHolder, identity, product, claims, premium });
+  const motorPolicyDetail = makePolicyDetail({
+    insurancePolicyId,
+    policyHolder,
+    identity,
+    product,
+    claims,
+    premium,
+  });
 
   const motorPolicySummary = makePolicySummary({
     insurancePolicyId,
@@ -238,8 +228,20 @@ function buildHealthBundle({ persona, lfi, seed, pools, now }) {
 
   const insurancePolicyId = genUuid(rng);
 
-  const healthPolicyDetail = makePolicyDetail({ insurancePolicyId, policyHolder, identity, product, claims, premium });
-  const healthPolicySummary = makePolicySummary({ insurancePolicyId, policyNumber, startDate, endDate });
+  const healthPolicyDetail = makePolicyDetail({
+    insurancePolicyId,
+    policyHolder,
+    identity,
+    product,
+    claims,
+    premium,
+  });
+  const healthPolicySummary = makePolicySummary({
+    insurancePolicyId,
+    policyNumber,
+    startDate,
+    endDate,
+  });
 
   const bankName = pickRandomBankName(p.banks, rng);
   const accountIban = genUaeIban(rng);
@@ -283,8 +285,20 @@ function buildRentersBundle({ persona, lfi, seed, pools, now }) {
 
   const insurancePolicyId = genUuid(rng);
 
-  const rentersPolicyDetail = makePolicyDetail({ insurancePolicyId, policyHolder, identity, product, claims, premium });
-  const rentersPolicySummary = makePolicySummary({ insurancePolicyId, policyNumber, startDate, endDate });
+  const rentersPolicyDetail = makePolicyDetail({
+    insurancePolicyId,
+    policyHolder,
+    identity,
+    product,
+    claims,
+    premium,
+  });
+  const rentersPolicySummary = makePolicySummary({
+    insurancePolicyId,
+    policyNumber,
+    startDate,
+    endDate,
+  });
 
   const bankName = pickRandomBankName(p.banks, rng);
   const accountIban = genUaeIban(rng);
@@ -315,7 +329,11 @@ function buildEmploymentBundle({ persona, lfi, seed, pools, now }) {
   // but the employment-line PolicyHolder Address shape and Employment
   // block diverge from the shared AEInsuranceCustomerQuoteProperties used
   // by motor/home/life/renters. Splice in the line-specific overrides.
-  const { name, policyHolder: basePolicyHolder, identity } = generateInsuranceIdentity({
+  const {
+    name,
+    policyHolder: basePolicyHolder,
+    identity,
+  } = generateInsuranceIdentity({
     persona,
     names: p.names,
     rng,
@@ -337,8 +355,20 @@ function buildEmploymentBundle({ persona, lfi, seed, pools, now }) {
 
   const insurancePolicyId = genUuid(rng);
 
-  const employmentPolicyDetail = makePolicyDetail({ insurancePolicyId, policyHolder, identity, product, claims, premium });
-  const employmentPolicySummary = makePolicySummary({ insurancePolicyId, policyNumber, startDate, endDate });
+  const employmentPolicyDetail = makePolicyDetail({
+    insurancePolicyId,
+    policyHolder,
+    identity,
+    product,
+    claims,
+    premium,
+  });
+  const employmentPolicySummary = makePolicySummary({
+    insurancePolicyId,
+    policyNumber,
+    startDate,
+    endDate,
+  });
 
   const bankName = pickRandomBankName(p.banks, rng);
   const accountIban = genUaeIban(rng);
@@ -383,8 +413,20 @@ function buildTravelBundle({ persona, lfi, seed, pools, now }) {
 
   const insurancePolicyId = genUuid(rng);
 
-  const travelPolicyDetail = makePolicyDetail({ insurancePolicyId, policyHolder, identity, product, claims, premium });
-  const travelPolicySummary = makePolicySummary({ insurancePolicyId, policyNumber, startDate, endDate });
+  const travelPolicyDetail = makePolicyDetail({
+    insurancePolicyId,
+    policyHolder,
+    identity,
+    product,
+    claims,
+    premium,
+  });
+  const travelPolicySummary = makePolicySummary({
+    insurancePolicyId,
+    policyNumber,
+    startDate,
+    endDate,
+  });
 
   const bankName = pickRandomBankName(p.banks, rng);
   const accountIban = genUaeIban(rng);
@@ -441,12 +483,25 @@ function buildLifeBundle({ persona, lfi, seed, pools, now }) {
 
   const insurancePolicyId = genUuid(rng);
 
-  const lifePolicyDetail = makePolicyDetail({ insurancePolicyId, policyHolder, identity, product, claims, premium });
-  const lifePolicySummary = makePolicySummary({ insurancePolicyId, policyNumber, startDate, endDate });
+  const lifePolicyDetail = makePolicyDetail({
+    insurancePolicyId,
+    policyHolder,
+    identity,
+    product,
+    claims,
+    premium,
+  });
+  const lifePolicySummary = makePolicySummary({
+    insurancePolicyId,
+    policyNumber,
+    startDate,
+    endDate,
+  });
 
   // Use the FinanceAgainstPolicy bank when present (mortgage-protection
   // narrative), otherwise draw a counterparty bank.
-  const bankName = product.FinanceAgainstPolicy?.FinanceProvider ?? pickRandomBankName(p.banks, rng);
+  const bankName =
+    product.FinanceAgainstPolicy?.FinanceProvider ?? pickRandomBankName(p.banks, rng);
   const accountIban = genUaeIban(rng);
   const paymentDetails = makePaymentDetails({ accountIban, name, bankName });
 
@@ -522,8 +577,20 @@ function buildHomeBundle({ persona, lfi, seed, pools, now }) {
 
   const insurancePolicyId = genUuid(rng);
 
-  const homePolicyDetail = makePolicyDetail({ insurancePolicyId, policyHolder, identity, product, claims, premium });
-  const homePolicySummary = makePolicySummary({ insurancePolicyId, policyNumber, startDate, endDate });
+  const homePolicyDetail = makePolicyDetail({
+    insurancePolicyId,
+    policyHolder,
+    identity,
+    product,
+    claims,
+    premium,
+  });
+  const homePolicySummary = makePolicySummary({
+    insurancePolicyId,
+    policyNumber,
+    startDate,
+    endDate,
+  });
 
   const bankName = mortgageBankName ?? pickRandomBankName(p.banks, rng);
   const accountIban = genUaeIban(rng);

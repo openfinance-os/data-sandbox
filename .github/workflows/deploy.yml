@@ -10,8 +10,11 @@ permissions:
   pages: write
   id-token: write
 
+# Don't interrupt a Pages deploy mid-flight; queue follow-ups instead.
+# Scope per ref so manual `workflow_dispatch` runs on branches don't
+# block the main-branch production deploy.
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:

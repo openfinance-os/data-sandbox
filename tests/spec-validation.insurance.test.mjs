@@ -75,7 +75,7 @@ describe('insurance spec validation — endpoints × persona × LFI', () => {
   const personas = loadPersonasByDomain('insurance');
   const pools = loadAllPools();
   const validators = Object.fromEntries(
-    Object.entries(parsed.endpoints).map(([p, e]) => [p, compileSchema(spec, e.schemaRef)])
+    Object.entries(parsed.endpoints).map(([p, e]) => [p, compileSchema(spec, e.schemaRef)]),
   );
 
   // Per-line endpoint sets — each persona only emits envelopes for its line.
@@ -125,10 +125,7 @@ describe('insurance spec validation — endpoints × persona × LFI', () => {
   };
 
   // Insurance Consents endpoints (2) — every insurance persona emits these.
-  const CONSENT_ENDPOINTS = [
-    '/insurance-consents',
-    '/insurance-consents/{ConsentId}',
-  ];
+  const CONSENT_ENDPOINTS = ['/insurance-consents', '/insurance-consents/{ConsentId}'];
 
   function envelopeFor(endpoint, bundle) {
     switch (endpoint) {
@@ -300,7 +297,9 @@ describe('insurance spec validation — endpoints × persona × LFI', () => {
         const policy = bundle.rentersPolicies[0];
         return {
           Data: bundle.rentersPaymentDetails ?? bundle.paymentDetails,
-          Links: baseLinks(`renters-insurance-policies/${policy.InsurancePolicyId}/payment-details`),
+          Links: baseLinks(
+            `renters-insurance-policies/${policy.InsurancePolicyId}/payment-details`,
+          ),
           Meta: baseMeta(),
         };
       }
@@ -330,7 +329,9 @@ describe('insurance spec validation — endpoints × persona × LFI', () => {
         const policy = bundle.employmentPolicies[0];
         return {
           Data: bundle.employmentPaymentDetails ?? bundle.paymentDetails,
-          Links: baseLinks(`employment-insurance-policies/${policy.InsurancePolicyId}/payment-details`),
+          Links: baseLinks(
+            `employment-insurance-policies/${policy.InsurancePolicyId}/payment-details`,
+          ),
           Meta: baseMeta(),
         };
       }
@@ -368,10 +369,10 @@ describe('insurance spec validation — endpoints × persona × LFI', () => {
     // Phase 2.2 — multi-domain personas declare `insurance.lines: []`
     // covering several lines at once; single-line personas use the
     // legacy `line:` discriminator (defaulting to motor).
-    const lines = Array.isArray(persona.insurance?.lines)
-      && persona.insurance.lines.length > 0
-      ? persona.insurance.lines
-      : [persona.line ?? 'motor'];
+    const lines =
+      Array.isArray(persona.insurance?.lines) && persona.insurance.lines.length > 0
+        ? persona.insurance.lines
+        : [persona.line ?? 'motor'];
     // Each persona's bundle covers all its declared lines' 4 endpoints
     // PLUS the 2 cross-line consent endpoints (every insurance bundle
     // carries one consent record per line; the list returns the array).
@@ -388,7 +389,7 @@ describe('insurance spec validation — endpoints × persona × LFI', () => {
         if (!ok) {
           console.error(
             `${pid} ${lfi} ${endpoint} errors:`,
-            JSON.stringify(validate.errors?.slice(0, 5), null, 2)
+            JSON.stringify(validate.errors?.slice(0, 5), null, 2),
           );
         }
         expect(ok, `${pid} ${lfi} ${endpoint}`).toBe(true);

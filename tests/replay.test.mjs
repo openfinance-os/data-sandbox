@@ -29,7 +29,7 @@ describe('replay determinism — EXP-05', () => {
       const a = buildBundle({ persona, lfi, seed: 4729, pools });
       const b = buildBundle({ persona, lfi, seed: 4729, pools });
       expect(JSON.stringify(a)).toBe(JSON.stringify(b));
-    }
+    },
   );
 
   it('different seeds produce different bundles', () => {
@@ -55,7 +55,7 @@ describe('replay determinism — Insurance domain (motor MVP)', () => {
       const a = buildBundle({ persona, lfi, seed: 4729, pools });
       const b = buildBundle({ persona, lfi, seed: 4729, pools });
       expect(JSON.stringify(a)).toBe(JSON.stringify(b));
-    }
+    },
   );
 
   it('different seeds produce different bundles', () => {

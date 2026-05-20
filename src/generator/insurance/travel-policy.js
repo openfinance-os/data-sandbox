@@ -100,7 +100,7 @@ export function generateTravelProduct({ persona, names, rng, now }) {
   ];
 
   const companionsCount = t.companions?.length ?? 0;
-  const adults = t.adults ?? (1 + companionsCount);
+  const adults = t.adults ?? 1 + companionsCount;
   const children = t.children ?? 0;
   const seniors = t.seniors ?? 0;
 

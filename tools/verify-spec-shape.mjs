@@ -54,4 +54,6 @@ for (const p of REQUIRED_PATHS) {
   }
 }
 
-console.log(`verify-spec-shape OK — openapi=${spec.openapi}, version=${spec.info.version}, paths=${Object.keys(spec.paths).length}`);
+console.log(
+  `verify-spec-shape OK — openapi=${spec.openapi}, version=${spec.info.version}, paths=${Object.keys(spec.paths).length}`,
+);

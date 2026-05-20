@@ -15,7 +15,7 @@ import {
   realLfisGuidance,
   bandForFieldName,
 } from './shared/spec-helpers.js';
-import { decodeFromUrl, encodeEmbed, encodeFixtureUrl, encodePermalink, CUSTOM_PERSONA_SLUG } from './url.js';
+import { decodeFromUrl, encodeEmbed, encodeFixtureUrl, CUSTOM_PERSONA_SLUG } from './url.js';
 import { expandRecipe } from './persona-builder/expand.js';
 import { decodeRecipe, encodeRecipe, RECIPE_DEFAULTS } from './persona-builder/recipe.js';
 import { mountPersonaBuilder } from './ui/persona-builder-ui.js';
@@ -95,7 +95,7 @@ const state = {
   // PR #5 — Underwriting Summary is the default landing for banking
   // bundles. URL-pinned endpoints override this in init() per EXP-17.
   endpoint: UNDERWRITING_PSEUDO,
-  view: 'rendered',                     // 'rendered' | 'raw'  (orthogonal to compareMode)
+  view: 'rendered', // 'rendered' | 'raw'  (orthogonal to compareMode)
   bundle: null,
   selectedAccountId: null,
   // EXP-11: filter / sort state for the /transactions view.
@@ -160,13 +160,21 @@ const state = {
 // here at module load is stable. Field card is mounted first because
 // the Find box's "jump to field" path depends on its openFieldCard.
 const { openFieldCard } = createFieldCard({
-  state, el, endpointFieldsByName, rowsForActiveEndpoint, setPaneCollapsed,
+  state,
+  el,
+  endpointFieldsByName,
+  rowsForActiveEndpoint,
+  setPaneCollapsed,
 });
 const { attachHoverPreview } = createHoverPreview({
-  state, el, endpointFieldsByName,
+  state,
+  el,
+  endpointFieldsByName,
 });
 const { copyEmbedSnippet, buildEmbedSnippet } = createEmbedSnippet({
-  state, OVERVIEW_PSEUDO, UNDERWRITING_PSEUDO,
+  state,
+  OVERVIEW_PSEUDO,
+  UNDERWRITING_PSEUDO,
 });
 // PR-14 perf — find-box lazy wrapper. Dynamic-import on first
 // invocation; reuse the resolved instance thereafter. Keeps the
@@ -179,8 +187,14 @@ const findBox = (() => {
     if (!loading) {
       loading = import('./ui/find-box.js').then(({ createFindBox }) => {
         inner = createFindBox({
-          state, el, humanArchetype, rebuildAndRender, clearTxState,
-          renderNavigator, renderPayload, openFieldCard,
+          state,
+          el,
+          humanArchetype,
+          rebuildAndRender,
+          clearTxState,
+          renderNavigator,
+          renderPayload,
+          openFieldCard,
         });
         return inner;
       });
@@ -191,17 +205,27 @@ const findBox = (() => {
   // ⌘K spam can't race against itself.
   return {
     open() {
-      if (inner) { inner.openFind(); return; }
+      if (inner) {
+        inner.openFind();
+        return;
+      }
       ensure().then((p) => p.openFind());
     },
-    close() { inner?.closeFind(); },
+    close() {
+      inner?.closeFind();
+    },
   };
 })();
 const openFind = () => findBox.open();
 const closeFind = () => findBox.close();
 const { startTour } = createTour({
-  state, el, setPersona, emptyTxFilter,
-  renderNavigator, renderPayload, renderCoverage,
+  state,
+  el,
+  setPersona,
+  emptyTxFilter,
+  renderNavigator,
+  renderPayload,
+  renderCoverage,
   onClose: () => demoteTourButton(),
 });
 
@@ -218,10 +242,17 @@ function demoteTourButton() {
   btn.setAttribute('title', 'Replay the 5-step guided tour');
 }
 const { renderCompareView } = createCompareView({
-  state, el, stripInternal, personaAvatarEl,
+  state,
+  el,
+  stripInternal,
+  personaAvatarEl,
 });
 const { renderTxFilterBar, applyFilter, applySort, toggleSort } = createTxFilter({
-  state, el, renderPayload, emptyTxFilter, updateUrl: pushPermalink,
+  state,
+  el,
+  renderPayload,
+  emptyTxFilter,
+  updateUrl: pushPermalink,
 });
 const { renderMonthlySummary } = createMonthlySummary({ el, formatAmount });
 // PR-15 — lazy insurance wrapper. The factory loads on the first
@@ -237,7 +268,10 @@ const renderInsuranceBundle = (() => {
     if (!loading) {
       loading = import('./ui/insurance.js').then(({ createInsurance }) => {
         inner = createInsurance({
-          state, el, syncControls, pushPermalink,
+          state,
+          el,
+          syncControls,
+          pushPermalink,
         }).renderInsuranceBundle;
         return inner;
       });
@@ -245,12 +279,20 @@ const renderInsuranceBundle = (() => {
     return loading;
   }
   return () => {
-    if (inner) { inner(); return; }
+    if (inner) {
+      inner();
+      return;
+    }
     ensure().then((fn) => fn());
   };
 })();
 const { renderUnderwritingStrip, renderUnderwritingPanel } = createUnderwriting({
-  state, el, formatAmount, renderNavigator, renderPayload, UNDERWRITING_PSEUDO,
+  state,
+  el,
+  formatAmount,
+  renderNavigator,
+  renderPayload,
+  UNDERWRITING_PSEUDO,
   openFieldCard,
 });
 
@@ -264,18 +306,27 @@ const exportPopover = (() => {
   let inner = null;
   let loading = null;
   const deps = () => ({
-    state, el, track, copyToClipboard,
-    exportActiveJson:    () => exportActiveJson(),
-    exportActiveCsv:     () => exportActiveCsv(),
-    exportTarball:       () => exportTarball(),
-    embedIframeSnippet:  () => buildEmbedSnippet(),
-    activeFixtureUrl:    () => {
-      const origin = window.location.origin + window.location.pathname.replace(/\/index\.html$/, '').replace(/\/$/, '');
+    state,
+    el,
+    track,
+    copyToClipboard,
+    exportActiveJson: () => exportActiveJson(),
+    exportActiveCsv: () => exportActiveCsv(),
+    exportTarball: () => exportTarball(),
+    embedIframeSnippet: () => buildEmbedSnippet(),
+    activeFixtureUrl: () => {
+      const origin =
+        window.location.origin +
+        window.location.pathname.replace(/\/index\.html$/, '').replace(/\/$/, '');
       return encodeFixtureUrl({
-        origin, personaId: state.personaId, lfi: state.lfi, seed: state.seed,
-        endpoint: state.endpoint === OVERVIEW_PSEUDO || state.endpoint === UNDERWRITING_PSEUDO
-          ? '/accounts'
-          : state.endpoint,
+        origin,
+        personaId: state.personaId,
+        lfi: state.lfi,
+        seed: state.seed,
+        endpoint:
+          state.endpoint === OVERVIEW_PSEUDO || state.endpoint === UNDERWRITING_PSEUDO
+            ? '/accounts'
+            : state.endpoint,
       });
     },
     activeJsonString: () => {
@@ -294,8 +345,10 @@ const exportPopover = (() => {
   function ensure() {
     if (inner) return inner;
     if (!loading) {
-      loading = import('./ui/export-popover.js')
-        .then(({ createExportPopover }) => { inner = createExportPopover(deps()); return inner; });
+      loading = import('./ui/export-popover.js').then(({ createExportPopover }) => {
+        inner = createExportPopover(deps());
+        return inner;
+      });
     }
     return loading;
   }
@@ -305,11 +358,18 @@ const exportPopover = (() => {
   // dblclick still opens-then-closes by design.
   return {
     open() {
-      if (inner) { inner.open(); return; }
+      if (inner) {
+        inner.open();
+        return;
+      }
       ensure().then((p) => p.open());
     },
-    close() { inner?.close(); },
-    get isOpen() { return inner ? inner.isOpen : false; },
+    close() {
+      inner?.close();
+    },
+    get isOpen() {
+      return inner ? inner.isOpen : false;
+    },
   };
 })();
 
@@ -413,7 +473,7 @@ async function init() {
   state.spec = await specRes.json();
 
   state.activePersonas = Object.fromEntries(
-    Object.entries(state.data.personas).filter(([, p]) => p.domain === state.domain)
+    Object.entries(state.data.personas).filter(([, p]) => p.domain === state.domain),
   );
 
   // Workstream B — materialise a custom persona from the URL recipe param,
@@ -422,11 +482,7 @@ async function init() {
   // the 'custom' key lets the rest of the app behave identically to a
   // curated persona. The recipe itself stays in state.recipe so
   // pushPermalink can re-encode it on share / URL update.
-  if (
-    state.domain === 'banking' &&
-    url.personaId === CUSTOM_PERSONA_SLUG &&
-    url.recipe
-  ) {
+  if (state.domain === 'banking' && url.personaId === CUSTOM_PERSONA_SLUG && url.recipe) {
     try {
       const recipe = decodeRecipe(url.recipe);
       const customPersona = expandRecipe(recipe, state.data.pools);
@@ -438,9 +494,10 @@ async function init() {
     }
   }
 
-  state.personaId = url.personaId && state.activePersonas[url.personaId]
-    ? url.personaId
-    : Object.keys(state.activePersonas)[0];
+  state.personaId =
+    url.personaId && state.activePersonas[url.personaId]
+      ? url.personaId
+      : Object.keys(state.activePersonas)[0];
   state.lfi = url.lfi;
   state.seed = url.seed;
   // EXP-17: honour the URL's pinned endpoint when it's recognised by the
@@ -451,9 +508,10 @@ async function init() {
     const isSpecEndpoint = url.endpoint && ENDPOINTS.some((e) => e.path === url.endpoint);
     if (isPseudo || isSpecEndpoint) state.endpoint = url.endpoint;
   } else {
-    state.endpoint = url.endpoint && state.spec.endpoints[url.endpoint]
-      ? url.endpoint
-      : specEntry.defaultEndpoint || Object.keys(state.spec.endpoints)[0];
+    state.endpoint =
+      url.endpoint && state.spec.endpoints[url.endpoint]
+        ? url.endpoint
+        : specEntry.defaultEndpoint || Object.keys(state.spec.endpoints)[0];
   }
 
   document.getElementById('footer-sha').textContent = (state.spec.pinSha || 'unknown').slice(0, 7);
@@ -589,11 +647,12 @@ function personaAvatarEl(id, persona, size) {
     // first two chars when only one word is available.
     const head = (name ?? '').split(/\s+[—–-]\s+/)[0].trim();
     const words = head.split(/\s+/).filter(Boolean);
-    const initials = words.length >= 2
-      ? (words[0][0] + words[words.length - 1][0]).toUpperCase()
-      : words[0]
-        ? words[0].slice(0, 2).toUpperCase()
-        : '?';
+    const initials =
+      words.length >= 2
+        ? (words[0][0] + words[words.length - 1][0]).toUpperCase()
+        : words[0]
+          ? words[0].slice(0, 2).toUpperCase()
+          : '?';
     wrap.classList.add('persona-avatar-fallback');
     wrap.appendChild(el('span', { class: 'persona-avatar-initials', text: initials }));
   }
@@ -672,8 +731,12 @@ function buildPersonaList() {
     visibleCount += 1;
 
     const isCustom = id === CUSTOM_PERSONA_SLUG;
-    const cardBody = el('div', { class: 'persona-card-body' },
-      el('div', { class: 'persona-name' },
+    const cardBody = el(
+      'div',
+      { class: 'persona-card-body' },
+      el(
+        'div',
+        { class: 'persona-name' },
         document.createTextNode(p.name),
         isCustom ? el('span', { class: 'custom-badge', text: 'Custom (not curated)' }) : null,
       ),
@@ -686,7 +749,10 @@ function buildPersonaList() {
     // disclosure below, keeping the default card view compact.
     const families = jtbdFamiliesForPersona(p);
     if (families.length > 0) {
-      const jtbdRow = el('div', { class: 'persona-jtbd', attrs: { 'aria-label': 'Scenario families' } });
+      const jtbdRow = el('div', {
+        class: 'persona-jtbd',
+        attrs: { 'aria-label': 'Scenario families' },
+      });
       for (const fam of families) {
         const active = state.jtbdFilter === fam.key;
         const chip = el('button', {
@@ -716,16 +782,23 @@ function buildPersonaList() {
     // "More about this persona" disclosure — prose narrative, best-for
     // signal, and the fine-grained stress chips. Collapsed by default.
     const bestFor = bestForLine(p);
-    const hasMore = Boolean(p.narrative) || Boolean(bestFor) || (Array.isArray(p.stress_coverage) && p.stress_coverage.length > 0);
+    const hasMore =
+      Boolean(p.narrative) ||
+      Boolean(bestFor) ||
+      (Array.isArray(p.stress_coverage) && p.stress_coverage.length > 0);
     if (hasMore) {
       const details = el('details', { class: 'persona-more' });
       const summary = el('summary', { class: 'persona-more-summary' });
       summary.appendChild(document.createTextNode('More about this persona'));
       details.appendChild(summary);
       if (bestFor) details.appendChild(el('div', { class: 'persona-best', text: bestFor }));
-      if (p.narrative) details.appendChild(el('div', { class: 'persona-narrative', text: p.narrative.trim() }));
+      if (p.narrative)
+        details.appendChild(el('div', { class: 'persona-narrative', text: p.narrative.trim() }));
       if (Array.isArray(p.stress_coverage) && p.stress_coverage.length > 0) {
-        const chips = el('div', { class: 'persona-stress', attrs: { 'aria-label': 'Stress coverage' } });
+        const chips = el('div', {
+          class: 'persona-stress',
+          attrs: { 'aria-label': 'Stress coverage' },
+        });
         for (const term of p.stress_coverage) {
           const isActive = term === state.stressFilter;
           const chip = el('span', {
@@ -746,7 +819,10 @@ function buildPersonaList() {
           };
           chip.addEventListener('click', onChipActivate);
           chip.addEventListener('keydown', (ev) => {
-            if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); onChipActivate(ev); }
+            if (ev.key === 'Enter' || ev.key === ' ') {
+              ev.preventDefault();
+              onChipActivate(ev);
+            }
           });
           chips.appendChild(chip);
         }
@@ -789,10 +865,12 @@ function buildPersonaList() {
   }
 
   if (visibleCount === 0) {
-    list.appendChild(el('div', {
-      class: 'persona-empty',
-      text: 'No personas cover this stress term yet. Clear the filter to see the full library.',
-    }));
+    list.appendChild(
+      el('div', {
+        class: 'persona-empty',
+        text: 'No personas cover this stress term yet. Clear the filter to see the full library.',
+      }),
+    );
   }
   // Re-sync the active card's visual state after a re-render.
   for (const card of document.querySelectorAll('.persona-card')) {
@@ -902,7 +980,9 @@ function wirePaneCollapse() {
   // alone — we only auto-collapse, never auto-expand.
   applyNarrowViewportDefault();
   const mql = window.matchMedia(`(max-width: ${NARROW_PANE_BREAKPOINT_PX - 1}px)`);
-  const onChange = (e) => { if (e.matches) applyNarrowViewportDefault(); };
+  const onChange = (e) => {
+    if (e.matches) applyNarrowViewportDefault();
+  };
   if (mql.addEventListener) mql.addEventListener('change', onChange);
   else if (mql.addListener) mql.addListener(onChange);
 }
@@ -1005,7 +1085,10 @@ function attachEventHandlers() {
       e.preventDefault();
       exportPopover.open();
     } else if (e.key === 'Escape') {
-      if (exportPopover.isOpen) { exportPopover.close(); return; }
+      if (exportPopover.isOpen) {
+        exportPopover.close();
+        return;
+      }
       if (document.getElementById('find-overlay')) closeFind();
     }
   });
@@ -1242,21 +1325,34 @@ function renderBundleError(err, persona) {
   body.replaceChildren(
     el(
       'div',
-      { class: 'bundle-error', attrs: { role: 'alert', style: 'padding:16px;border:1px solid #c33;background:#fee;color:#600;border-radius:6px;margin:12px' } },
+      {
+        class: 'bundle-error',
+        attrs: {
+          role: 'alert',
+          style:
+            'padding:16px;border:1px solid #c33;background:#fee;color:#600;border-radius:6px;margin:12px',
+        },
+      },
       el('strong', { text: 'Couldn’t build this bundle.' }),
       el('p', { text: `${state.personaId} · ${state.lfi} · seed ${state.seed}` }),
-      el('pre', { text: message, attrs: { style: 'white-space:pre-wrap;background:#fff;padding:8px;border-radius:4px;border:1px solid #fbb' } }),
+      el('pre', {
+        text: message,
+        attrs: {
+          style:
+            'white-space:pre-wrap;background:#fff;padding:8px;border-radius:4px;border:1px solid #fbb',
+        },
+      }),
       el(
         'p',
         {},
         el('a', {
           text: 'Report this on GitHub →',
           attrs: { href: issueUrl, target: '_blank', rel: 'noopener noreferrer' },
-        })
-      )
-    )
+        }),
+      ),
+    ),
   );
-  // eslint-disable-next-line no-console
+
   console.error('buildBundle failed', err);
 }
 
@@ -1289,7 +1385,7 @@ async function switchDomain(newDomain) {
   state.spec = await specRes.json();
   state.domain = newDomain;
   state.activePersonas = Object.fromEntries(
-    Object.entries(state.data.personas).filter(([, p]) => p.domain === newDomain)
+    Object.entries(state.data.personas).filter(([, p]) => p.domain === newDomain),
   );
   state.personaId = Object.keys(state.activePersonas)[0];
   state.navAccountCollapsed.clear();
@@ -1367,9 +1463,10 @@ function renderCoverage() {
       class: `coverage-band${b.total === 0 ? ' is-empty' : ''}`,
       attrs: {
         'data-band': band,
-        title: b.total === 0
-          ? `${band} band: no curated probes yet (Phase 1 starter — widens as the spec parser feeds bands directly).`
-          : `${band} band — ${b.populated} of ${b.total} populated (${b.pct}%). ${MEDIAN_HINT[band] ?? ''}`,
+        title:
+          b.total === 0
+            ? `${band} band: no curated probes yet (Phase 1 starter — widens as the spec parser feeds bands directly).`
+            : `${band} band — ${b.populated} of ${b.total} populated (${b.pct}%). ${MEDIAN_HINT[band] ?? ''}`,
       },
     });
     wrap.appendChild(el('span', { class: 'band-label', text: band[0] }));
@@ -1386,16 +1483,16 @@ function renderCoverage() {
 // the readable label stays the source of truth and screen readers see
 // the label text (icons are aria-hidden).
 const ENDPOINT_ICONS = Object.freeze({
-  '/accounts/{AccountId}':                    '☰',
-  '/accounts/{AccountId}/balances':           '⚖',
-  '/accounts/{AccountId}/transactions':       '⇄',
-  '/accounts/{AccountId}/standing-orders':    '↻',
-  '/accounts/{AccountId}/direct-debits':      '⇊',
-  '/accounts/{AccountId}/beneficiaries':      '⌂',
+  '/accounts/{AccountId}': '☰',
+  '/accounts/{AccountId}/balances': '⚖',
+  '/accounts/{AccountId}/transactions': '⇄',
+  '/accounts/{AccountId}/standing-orders': '↻',
+  '/accounts/{AccountId}/direct-debits': '⇊',
+  '/accounts/{AccountId}/beneficiaries': '⌂',
   '/accounts/{AccountId}/scheduled-payments': '⏱',
-  '/accounts/{AccountId}/parties':            '⚑',
-  '/accounts/{AccountId}/product':            '◑',
-  '/accounts/{AccountId}/statements':         '▤',
+  '/accounts/{AccountId}/parties': '⚑',
+  '/accounts/{AccountId}/product': '◑',
+  '/accounts/{AccountId}/statements': '▤',
 });
 
 function renderNavigator() {
@@ -1422,7 +1519,7 @@ function renderNavigator() {
           renderPayload();
           track('endpoint_nav', { endpoint: ep, domain: state.domain });
         },
-      })
+      }),
     );
   }
   nav.appendChild(bundleSection);
@@ -1468,7 +1565,7 @@ function renderNavigator() {
             renderPayload();
             track('endpoint_nav', { endpoint: ep, domain: state.domain });
           },
-        })
+        }),
       );
     }
     nav.appendChild(wrap);
@@ -1493,7 +1590,9 @@ function navButton({ endpoint, accountId, active, onSelect }) {
   // readers fall through to the label.
   const icon = ENDPOINT_ICONS[endpoint];
   if (icon) {
-    btn.appendChild(el('span', { class: 'nav-endpoint-icon', text: icon, attrs: { 'aria-hidden': 'true' } }));
+    btn.appendChild(
+      el('span', { class: 'nav-endpoint-icon', text: icon, attrs: { 'aria-hidden': 'true' } }),
+    );
   }
   // Pseudo-endpoints (overview, underwriting summary) get friendlier labels
   // so they read clearly as derived views rather than spec wire endpoints.
@@ -1549,7 +1648,9 @@ function rowsForActiveEndpoint() {
     case '/accounts/{AccountId}/beneficiaries':
       return acc ? state.bundle.beneficiaries.filter((x) => x._accountId === acc.AccountId) : [];
     case '/accounts/{AccountId}/scheduled-payments':
-      return acc ? state.bundle.scheduledPayments.filter((x) => x._accountId === acc.AccountId) : [];
+      return acc
+        ? state.bundle.scheduledPayments.filter((x) => x._accountId === acc.AccountId)
+        : [];
     case '/accounts/{AccountId}/product':
       return acc ? state.bundle.product.filter((x) => x._accountId === acc.AccountId) : [];
     case '/accounts/{AccountId}/parties':
@@ -1580,14 +1681,18 @@ function renderPayload() {
     const body = document.getElementById('payload-body');
     if (body) {
       body.replaceChildren();
-      body.appendChild(el('div', {
-        class: 'payload-error',
-        attrs: { role: 'alert' },
-      },
-        el('strong', { text: 'Failed to render payload.' }),
-        el('p', { text: 'See the browser console for details.' }),
-        el('pre', { text: String(err && err.stack ? err.stack : err) }),
-      ));
+      body.appendChild(
+        el(
+          'div',
+          {
+            class: 'payload-error',
+            attrs: { role: 'alert' },
+          },
+          el('strong', { text: 'Failed to render payload.' }),
+          el('p', { text: 'See the browser console for details.' }),
+          el('pre', { text: String(err && err.stack ? err.stack : err) }),
+        ),
+      );
     }
   }
 }
@@ -1604,6 +1709,11 @@ function renderPayloadUnsafe() {
   // branch and route to the preview-JSON inspector here so any toggle
   // handler can safely re-render an insurance bundle.
   if (state.domain && state.domain !== 'banking') {
+    // TODO: latent bug — renderPreviewBundle is not defined anywhere in the codebase.
+    // Insurance bundles hit this branch and will throw a ReferenceError. Likely intended to
+    // be renderInsuranceBundle (src/ui/insurance.js) or a similar helper. Surfaced by the
+    // eslint rollout in the CI/CD pipeline pass; left as-is so the fix lands in its own PR.
+    // eslint-disable-next-line no-undef
     renderPreviewBundle();
     return;
   }
@@ -1661,8 +1771,10 @@ function renderPayloadUnsafe() {
   }
 
   if (allRows.length === 0) {
-    const wrap = el('div', { class: 'payload-rendered' },
-      el('p', { text: 'No records.', attrs: { style: 'color:var(--text-muted)' } })
+    const wrap = el(
+      'div',
+      { class: 'payload-rendered' },
+      el('p', { text: 'No records.', attrs: { style: 'color:var(--text-muted)' } }),
     );
     body.appendChild(wrap);
     return;
@@ -1677,11 +1789,13 @@ function renderPayloadUnsafe() {
     body.appendChild(renderUnderwritingStrip());
     const nsfCount = allRows.filter((t) => t.Status === 'Rejected').length;
     if (nsfCount > 0) {
-      body.appendChild(el('div', {
-        class: 'distress-summary',
-        attrs: { role: 'status' },
-        text: `${nsfCount} rejected debit${nsfCount === 1 ? '' : 's'} in the trailing 12 months — highlighted below.`,
-      }));
+      body.appendChild(
+        el('div', {
+          class: 'distress-summary',
+          attrs: { role: 'status' },
+          text: `${nsfCount} rejected debit${nsfCount === 1 ? '' : 's'} in the trailing 12 months — highlighted below.`,
+        }),
+      );
     }
     // Monthly summary — Sara's anchor JTBD ("two years of transactions").
     // Aggregates from the unfiltered set so the user sees the underlying
@@ -1692,20 +1806,24 @@ function renderPayloadUnsafe() {
   // blocks the Phase 1 generator doesn't populate (Charges, FinanceRates,
   // RewardsBenefits, AssetBacked).
   if (state.endpoint === '/accounts/{AccountId}/product') {
-    body.appendChild(el('div', {
-      class: 'product-hint',
-      text: 'v2.1 defines additional optional blocks for /product (Charges, FinanceRates, DepositRates, AssetBacked, RewardsBenefits) that the Phase 1 generator does not populate. v1.5 widens the generator to cover them — track via the field card spec links.',
-    }));
+    body.appendChild(
+      el('div', {
+        class: 'product-hint',
+        text: 'v2.1 defines additional optional blocks for /product (Charges, FinanceRates, DepositRates, AssetBacked, RewardsBenefits) that the Phase 1 generator does not populate. v1.5 widens the generator to cover them — track via the field card spec links.',
+      }),
+    );
   }
 
   let rows = isTransactions ? applyFilter(allRows) : allRows;
   if (isTransactions) rows = applySort(rows);
 
   if (rows.length === 0) {
-    body.appendChild(el('p', {
-      text: 'No transactions match the active filter.',
-      attrs: { style: 'color:var(--text-muted);padding:8px 12px' },
-    }));
+    body.appendChild(
+      el('p', {
+        text: 'No transactions match the active filter.',
+        attrs: { style: 'color:var(--text-muted);padding:8px 12px' },
+      }),
+    );
     return;
   }
 
@@ -1739,11 +1857,13 @@ function renderPayloadUnsafe() {
   if (state.piiOnly) {
     for (const k of [...allKeys]) if (!isPii(k)) allKeys.delete(k);
     if (allKeys.size === 0) {
-      body.appendChild(el('div', {
-        class: 'pii-empty',
-        attrs: { role: 'status' },
-        text: 'No PII fields under this endpoint. Personal data lives mostly on /accounts (identifiers, holder name) and /parties — switch to one of those endpoints, or untick "PII only" to see the full payload.',
-      }));
+      body.appendChild(
+        el('div', {
+          class: 'pii-empty',
+          attrs: { role: 'status' },
+          text: 'No PII fields under this endpoint. Personal data lives mostly on /accounts (identifiers, holder name) and /parties — switch to one of those endpoints, or untick "PII only" to see the full payload.',
+        }),
+      );
       return;
     }
   }
@@ -1754,7 +1874,9 @@ function renderPayloadUnsafe() {
   const linkedColumn = jumpFrom != null;
   const matchCountByRow = new Map();
   if (linkedColumn) {
-    const accTx = (state.bundle.transactions ?? []).filter((t) => t._accountId === state.selectedAccountId);
+    const accTx = (state.bundle.transactions ?? []).filter(
+      (t) => t._accountId === state.selectedAccountId,
+    );
     for (const r of visible) {
       const n = accTx.filter((t) => jumpFrom.match(t, r)).length;
       matchCountByRow.set(r, n);
@@ -1764,7 +1886,9 @@ function renderPayloadUnsafe() {
   // Sticky leftmost column is most useful on /transactions (the only really
   // wide table). Apply selectively rather than to every endpoint.
   const stickyColClass = isTransactions ? ' has-sticky-col' : '';
-  const wrap = el('div', { class: `payload-rendered${stickyColClass}${linkedColumn ? ' has-linked-col' : ''}` });
+  const wrap = el('div', {
+    class: `payload-rendered${stickyColClass}${linkedColumn ? ' has-linked-col' : ''}`,
+  });
   const table = el('table');
   const headRow = el('tr');
   for (const k of allKeys) {
@@ -1779,13 +1903,20 @@ function renderPayloadUnsafe() {
     if (f) {
       const badge = statusBadge(f.status);
       th.appendChild(
-        el('span', { class: `pill ${badge.shape}`, text: badge.label, attrs: { 'aria-label': badge.text } })
+        el('span', {
+          class: `pill ${badge.shape}`,
+          text: badge.label,
+          attrs: { 'aria-label': badge.text },
+        }),
       );
     }
     const fieldBtn = el('button', {
       class: 'field-name',
       text: k,
-      onClick: (e) => { e.stopPropagation(); openFieldCard(k); },
+      onClick: (e) => {
+        e.stopPropagation();
+        openFieldCard(k);
+      },
     });
     // Hover preview — fast affordance per EXP-14 (within ~100 ms). Click
     // still pins the full card in the right pane.
@@ -1793,7 +1924,14 @@ function renderPayloadUnsafe() {
     th.appendChild(fieldBtn);
     if (isPii(k)) {
       th.appendChild(
-        el('span', { class: 'pii-badge', text: 'PII', attrs: { title: 'Contains PII — PDPL handling controls required (see field card).', 'aria-label': 'Personal data — PDPL applies' } })
+        el('span', {
+          class: 'pii-badge',
+          text: 'PII',
+          attrs: {
+            title: 'Contains PII — PDPL handling controls required (see field card).',
+            'aria-label': 'Personal data — PDPL applies',
+          },
+        }),
       );
     }
     // Real-LFIs guidance as a column-header subtitle — the soul of the
@@ -1802,15 +1940,24 @@ function renderPayloadUnsafe() {
     // fields' "Always present per spec" is already implied by the M pill.
     if (f && f.status !== 'mandatory') {
       const band = bandForFieldName(k, state.endpoint, state.spec);
-      th.appendChild(el('span', {
-        class: 'col-guidance',
-        text: realLfisGuidance(f, band),
-      }));
+      th.appendChild(
+        el('span', {
+          class: 'col-guidance',
+          text: realLfisGuidance(f, band),
+        }),
+      );
     }
     headRow.appendChild(th);
   }
   if (linkedColumn) {
-    const linkedTh = el('th', { class: 'th-linked', attrs: { scope: 'col', title: 'Linked transactions — count of /transactions rows that match each record on this endpoint (EXP-12).' } });
+    const linkedTh = el('th', {
+      class: 'th-linked',
+      attrs: {
+        scope: 'col',
+        title:
+          'Linked transactions — count of /transactions rows that match each record on this endpoint (EXP-12).',
+      },
+    });
     linkedTh.appendChild(el('span', { class: 'pill pill-linked', text: '→' }));
     linkedTh.appendChild(el('span', { class: 'field-name', text: 'Linked tx' }));
     headRow.appendChild(linkedTh);
@@ -1831,7 +1978,14 @@ function renderPayloadUnsafe() {
         const meta = `${f.type}${f.format ? ' · ' + f.format : ''}${Array.isArray(f.enum) ? ` · enum (${f.enum.length})` : ''}`;
         td.appendChild(el('span', { class: 'fr-meta', text: meta }));
         if (Array.isArray(f.enum) && f.enum.length > 0) {
-          td.appendChild(el('span', { class: 'fr-guidance', text: f.enum.slice(0, 6).join(', ') + (f.enum.length > 6 ? `, …(+${f.enum.length - 6})` : '') }));
+          td.appendChild(
+            el('span', {
+              class: 'fr-guidance',
+              text:
+                f.enum.slice(0, 6).join(', ') +
+                (f.enum.length > 6 ? `, …(+${f.enum.length - 6})` : ''),
+            }),
+          );
         }
       } else {
         td.textContent = '—';
@@ -1847,10 +2001,9 @@ function renderPayloadUnsafe() {
     // NSF / distressed rows — Status=Rejected gets a visual marker so AML
     // and underwriting workflows can scan for them.
     const isRejected = r.Status === 'Rejected';
-    const trClasses = [
-      isHighlight && 'tx-highlight',
-      isRejected && 'tx-rejected',
-    ].filter(Boolean).join(' ') || null;
+    const trClasses =
+      [isHighlight && 'tx-highlight', isRejected && 'tx-rejected'].filter(Boolean).join(' ') ||
+      null;
     const tr = el('tr', { class: trClasses });
     for (const k of allKeys) {
       const v = stripped[k];
@@ -1906,9 +2059,10 @@ function renderPayloadUnsafe() {
         class: `linked-btn${n === 0 ? ' is-empty' : ''}`,
         attrs: {
           type: 'button',
-          title: n > 0
-            ? `Jump to /transactions filtered by ${jumpFrom.label(r)} — ${n} match${n === 1 ? '' : 'es'} highlighted.`
-            : `Jump to /transactions filtered by ${jumpFrom.label(r)} — no matches under this LFI / seed (a real signal: under Sparse the filter token may not survive redaction). The banner explains what you'd see if matches existed.`,
+          title:
+            n > 0
+              ? `Jump to /transactions filtered by ${jumpFrom.label(r)} — ${n} match${n === 1 ? '' : 'es'} highlighted.`
+              : `Jump to /transactions filtered by ${jumpFrom.label(r)} — no matches under this LFI / seed (a real signal: under Sparse the filter token may not survive redaction). The banner explains what you'd see if matches existed.`,
         },
         text: n > 0 ? `→ ${n} matching tx` : '→ no matches',
         onClick: (e) => {
@@ -1936,15 +2090,17 @@ function renderPayloadUnsafe() {
       el('p', {
         text: `…${rows.length - visible.length} more rows. Use Raw JSON to see the full set.`,
         attrs: { style: 'color:var(--text-muted);margin-top:8px' },
-      })
+      }),
     );
   }
 
   if (isTransactions) {
-    wrap.appendChild(el('p', {
-      class: 'tx-filter-summary',
-      text: `${rows.length} of ${allRows.length} transactions${rows.length > visible.length ? ` (showing first ${visible.length})` : ''}.`,
-    }));
+    wrap.appendChild(
+      el('p', {
+        class: 'tx-filter-summary',
+        text: `${rows.length} of ${allRows.length} transactions${rows.length > visible.length ? ` (showing first ${visible.length})` : ''}.`,
+      }),
+    );
   }
 
   body.appendChild(wrap);
@@ -1953,18 +2109,23 @@ function renderPayloadUnsafe() {
 // ---- Cold-landing welcome cards — route by JTBD bucket ------------------------------------
 
 function renderWelcomeCards() {
-  const wrap = el('div', { class: 'welcome-cards', attrs: { role: 'region', 'aria-label': 'Welcome — three ways to use this' } });
+  const wrap = el('div', {
+    class: 'welcome-cards',
+    attrs: { role: 'region', 'aria-label': 'Welcome — three ways to use this' },
+  });
   const head = el('div', { class: 'welcome-head' });
   head.appendChild(el('span', { class: 'welcome-eyebrow', text: 'Welcome' }));
-  head.appendChild(el('button', {
-    class: 'welcome-dismiss',
-    attrs: { type: 'button', 'aria-label': 'Dismiss welcome' },
-    text: '×',
-    onClick: () => {
-      state.welcomeDismissed = true;
-      renderPayload();
-    },
-  }));
+  head.appendChild(
+    el('button', {
+      class: 'welcome-dismiss',
+      attrs: { type: 'button', 'aria-label': 'Dismiss welcome' },
+      text: '×',
+      onClick: () => {
+        state.welcomeDismissed = true;
+        renderPayload();
+      },
+    }),
+  );
   wrap.appendChild(head);
   wrap.appendChild(el('h3', { class: 'welcome-title', text: 'Three ways to use the sandbox' }));
 
@@ -1973,37 +2134,43 @@ function renderWelcomeCards() {
   // Bucket 1 — explore the data (default flow). Closes the welcome and
   // jumps the active endpoint to /transactions on the first account so
   // the user lands on the highest-signal surface.
-  grid.appendChild(welcomeCard({
-    label: 'Explore the data',
-    body: 'Walk a synthetic UAE customer end-to-end. Switch the LFI profile to see how field coverage drops; click any field name for spec-grounded guidance.',
-    cta: 'Open Sara → Transactions',
-    onClick: () => {
-      state.welcomeDismissed = true;
-      state.endpoint = '/accounts/{AccountId}/transactions';
-      state.selectedAccountId = state.bundle.accounts?.[0]?.AccountId ?? null;
-      clearTxState();
-      renderNavigator();
-      renderPayload();
-    },
-  }));
+  grid.appendChild(
+    welcomeCard({
+      label: 'Explore the data',
+      body: 'Walk a synthetic UAE customer end-to-end. Switch the LFI profile to see how field coverage drops; click any field name for spec-grounded guidance.',
+      cta: 'Open Sara → Transactions',
+      onClick: () => {
+        state.welcomeDismissed = true;
+        state.endpoint = '/accounts/{AccountId}/transactions';
+        state.selectedAccountId = state.bundle.accounts?.[0]?.AccountId ?? null;
+        clearTxState();
+        renderNavigator();
+        renderPayload();
+      },
+    }),
+  );
   // Bucket 2 — embed in your article / class (Maryam, Yusuf).
-  grid.appendChild(welcomeCard({
-    label: 'Embed in your article or class',
-    body: 'Drop a chrome-less view of a single persona+endpoint into a slide deck, blog post, or LMS module. Snippet pre-filled to the active state.',
-    cta: 'Copy embed snippet',
-    onClick: () => {
-      state.welcomeDismissed = true;
-      copyEmbedSnippet();
-      renderPayload();
-    },
-  }));
+  grid.appendChild(
+    welcomeCard({
+      label: 'Embed in your article or class',
+      body: 'Drop a chrome-less view of a single persona+endpoint into a slide deck, blog post, or LMS module. Snippet pre-filled to the active state.',
+      cta: 'Copy embed snippet',
+      onClick: () => {
+        state.welcomeDismissed = true;
+        copyEmbedSnippet();
+        renderPayload();
+      },
+    }),
+  );
   // Bucket 3 — grab fixtures (Priya, Hamid).
-  grid.appendChild(welcomeCard({
-    label: 'Grab fixtures for your tests',
-    body: 'Versioned, deterministic test corpus on npm + PyPI under @openfinance-os/sandbox-fixtures (MIT code, CC0 data). Pin to the same SHA the sandbox uses.',
-    cta: 'See packaging on About →',
-    href: 'about.html#fixtures',
-  }));
+  grid.appendChild(
+    welcomeCard({
+      label: 'Grab fixtures for your tests',
+      body: 'Versioned, deterministic test corpus on npm + PyPI under @openfinance-os/sandbox-fixtures (MIT code, CC0 data). Pin to the same SHA the sandbox uses.',
+      cta: 'See packaging on About →',
+      href: 'about.html#fixtures',
+    }),
+  );
 
   wrap.appendChild(grid);
   return wrap;
@@ -2016,7 +2183,9 @@ function welcomeCard({ label, body, cta, onClick, href }) {
   if (href) {
     card.appendChild(el('a', { class: 'welcome-cta', text: cta, attrs: { href } }));
   } else {
-    card.appendChild(el('button', { class: 'welcome-cta', attrs: { type: 'button' }, text: cta, onClick }));
+    card.appendChild(
+      el('button', { class: 'welcome-cta', attrs: { type: 'button' }, text: cta, onClick }),
+    );
   }
   return card;
 }
@@ -2034,9 +2203,13 @@ function renderPersonaOverview(body) {
   if (!persona) return;
 
   const wrap = el('div', { class: 'persona-overview' });
-  const header = el('div', { class: 'po-header' },
+  const header = el(
+    'div',
+    { class: 'po-header' },
     personaAvatarEl(state.personaId, persona, 'lg'),
-    el('div', { class: 'po-header-text' },
+    el(
+      'div',
+      { class: 'po-header-text' },
       el('div', { class: 'po-archetype', text: humanArchetype(persona.archetype) }),
       el('h2', { text: persona.name }),
     ),
@@ -2072,8 +2245,13 @@ function renderPersonaOverview(body) {
       persona.income.flag_payroll ? 'Carries Flags=Payroll' : 'No Payroll flag',
       persona.income.pay_day ? `Pay-day ${persona.income.pay_day}th` : null,
       persona.income.variability ? `${persona.income.variability} variability` : null,
-    ].filter(Boolean).join(' · ');
-    if (detail) inc.appendChild(el('div', { attrs: { style: 'color:var(--text-muted);font-size:11px' }, text: detail }));
+    ]
+      .filter(Boolean)
+      .join(' · ');
+    if (detail)
+      inc.appendChild(
+        el('div', { attrs: { style: 'color:var(--text-muted);font-size:11px' }, text: detail }),
+      );
     grid.appendChild(inc);
   }
 
@@ -2081,13 +2259,24 @@ function renderPersonaOverview(body) {
   // and /direct-debits.
   if (Array.isArray(persona.fixed_commitments) && persona.fixed_commitments.length > 0) {
     const fc = el('div', { class: 'po-card' });
-    fc.appendChild(el('div', { class: 'po-card-title', text: `Fixed commitments (${persona.fixed_commitments.length})` }));
+    fc.appendChild(
+      el('div', {
+        class: 'po-card-title',
+        text: `Fixed commitments (${persona.fixed_commitments.length})`,
+      }),
+    );
     const fcList = el('ul');
     for (const c of persona.fixed_commitments) {
       const amt = c.amount_aed
         ? `AED ${c.amount_aed.toLocaleString()}`
-        : Array.isArray(c.amount_aed_band) ? `AED ${c.amount_aed_band[0]}–${c.amount_aed_band[1]}` : '—';
-      fcList.appendChild(el('li', { text: `${c.kind === 'standing_order' ? 'SO' : 'DD'} · ${c.purpose} · ${amt} · ${c.schedule}` }));
+        : Array.isArray(c.amount_aed_band)
+          ? `AED ${c.amount_aed_band[0]}–${c.amount_aed_band[1]}`
+          : '—';
+      fcList.appendChild(
+        el('li', {
+          text: `${c.kind === 'standing_order' ? 'SO' : 'DD'} · ${c.purpose} · ${amt} · ${c.schedule}`,
+        }),
+      );
     }
     fc.appendChild(fcList);
     grid.appendChild(fc);
@@ -2112,18 +2301,27 @@ function renderPersonaOverview(body) {
       ? `NSF events / yr: ${persona.distress_signals.nsf_events_per_year_band[0]}–${persona.distress_signals.nsf_events_per_year_band[1]}`
       : null,
   ].filter(Boolean);
-  flags.appendChild(el('div', { attrs: { style: 'font-size:12px;line-height:1.5' }, text: flagList.join(' · ') }));
+  flags.appendChild(
+    el('div', { attrs: { style: 'font-size:12px;line-height:1.5' }, text: flagList.join(' · ') }),
+  );
   grid.appendChild(flags);
 
   wrap.appendChild(grid);
 
   // Where to look first — direct jumps to wire endpoints. Deep-link the
   // Daniel/Maryam/Omar 5-minute walkthrough into a single click.
-  const jumps = el('div', { class: 'po-jumps', attrs: { role: 'group', 'aria-label': 'Where to look first' } });
+  const jumps = el('div', {
+    class: 'po-jumps',
+    attrs: { role: 'group', 'aria-label': 'Where to look first' },
+  });
   const firstAcc = state.bundle.accounts?.[0]?.AccountId ?? null;
   const jumpDefs = [
     { label: 'Transactions →', endpoint: '/accounts/{AccountId}/transactions', acc: firstAcc },
-    { label: 'Standing Orders →', endpoint: '/accounts/{AccountId}/standing-orders', acc: firstAcc },
+    {
+      label: 'Standing Orders →',
+      endpoint: '/accounts/{AccountId}/standing-orders',
+      acc: firstAcc,
+    },
     { label: 'Direct Debits →', endpoint: '/accounts/{AccountId}/direct-debits', acc: firstAcc },
     { label: 'Underwriting summary →', endpoint: UNDERWRITING_PSEUDO, acc: null },
   ];
@@ -2160,51 +2358,64 @@ function renderUseInDemoPanel() {
   const lfi = state.lfi;
   const seed = state.seed;
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  const slugBase = typeof window !== 'undefined'
-    ? (window.location.origin + window.location.pathname.replace(/\/(index|embed)\.html$/, '')).replace(/\/$/, '')
-    : '';
+  const slugBase =
+    typeof window !== 'undefined'
+      ? (
+          window.location.origin + window.location.pathname.replace(/\/(index|embed)\.html$/, '')
+        ).replace(/\/$/, '')
+      : '';
 
   // The curl snippet targets /accounts as the simplest entry — it has no
   // {AccountId} dependency and is safe to demo without prior IDs.
   const curlUrl = encodeFixtureUrl({ origin, personaId, lfi, seed, endpoint: '/accounts' });
   const manifestUrl = `${origin}/fixtures/v1/manifest.json`;
 
-  const embedHref = slugBase + encodeEmbed({
-    personaId, lfi,
-    endpoint: '/accounts/{AccountId}/transactions',
-    seed, height: 600,
-  }).replace(/^\/embed/, '/embed.html');
+  const embedHref =
+    slugBase +
+    encodeEmbed({
+      personaId,
+      lfi,
+      endpoint: '/accounts/{AccountId}/transactions',
+      seed,
+      height: 600,
+    }).replace(/^\/embed/, '/embed.html');
   const iframeSnippet = `<iframe src="${embedHref}" width="100%" height="600" loading="lazy" title="Open Finance Data Sandbox · ${personaId} · ${lfi}" referrerpolicy="no-referrer" style="border:1px solid #d9d5cb;border-radius:4px"></iframe>`;
 
-  const npmSnippet =
-`npm install @openfinance-os/sandbox-fixtures
+  const npmSnippet = `npm install @openfinance-os/sandbox-fixtures
 import { loadJourney } from '@openfinance-os/sandbox-fixtures';
 const j = loadJourney({ persona: '${personaId}', lfi: '${lfi}', seed: ${seed} });
 // j.endpoints['/accounts'], j.endpoints['/parties'],
 // j.endpoints['/accounts/{AccountId}/transactions'], ...`;
 
-  const pipSnippet =
-`pip install openfinance-os-sandbox-fixtures
+  const pipSnippet = `pip install openfinance-os-sandbox-fixtures
 from openfinance_os_sandbox_fixtures import load_journey
 j = load_journey('${personaId}', lfi='${lfi}', seed=${seed})
 # j['endpoints']['/accounts'], j['endpoints']['/parties'],
 # j['endpoints']['/accounts/{AccountId}/transactions'], ...`;
 
-  const curlSnippet =
-`curl -fsS '${manifestUrl}'   # discover personas, LFIs, endpoints, version pin
+  const curlSnippet = `curl -fsS '${manifestUrl}'   # discover personas, LFIs, endpoints, version pin
 curl -fsS '${curlUrl}'`;
 
-  const details = el('details', { class: 'demo-panel', attrs: { 'aria-label': 'Use this persona in your demo' } });
+  const details = el('details', {
+    class: 'demo-panel',
+    attrs: { 'aria-label': 'Use this persona in your demo' },
+  });
   const summary = el('summary', { class: 'demo-panel-summary' });
   summary.appendChild(el('span', { class: 'demo-panel-eyebrow', text: 'For TPP demos' }));
-  summary.appendChild(el('span', { class: 'demo-panel-title', text: 'Use this persona in your demo' }));
+  summary.appendChild(
+    el('span', { class: 'demo-panel-title', text: 'Use this persona in your demo' }),
+  );
   details.appendChild(summary);
 
   const note = el('p', { class: 'demo-panel-note' });
   note.appendChild(document.createTextNode('Synthetic, illustrative data. '));
   const strong = el('strong', { text: 'Not endorsed by Nebras / CBUAE / any LFI.' });
   note.appendChild(strong);
-  note.appendChild(document.createTextNode(' Not a substitute for the Nebras-operated regulatory sandbox at certification time. '));
+  note.appendChild(
+    document.createTextNode(
+      ' Not a substitute for the Nebras-operated regulatory sandbox at certification time. ',
+    ),
+  );
   const link = el('a', { attrs: { href: 'integrate.html' }, text: 'Full integration guide →' });
   note.appendChild(link);
   details.appendChild(note);
@@ -2279,8 +2490,13 @@ function jumpFromForActiveEndpoint() {
         match: (tx, so) => {
           if (!so.Reference) return false;
           const ref = String(so.Reference).toUpperCase().slice(0, 6);
-          return tx.TransactionType === 'LocalBankTransfer'
-            && (tx.TransactionReference?.startsWith(ref) || tx.TransactionInformation?.toLowerCase().includes(String(so.Reference).replace(/_/g, ' ').toLowerCase()));
+          return (
+            tx.TransactionType === 'LocalBankTransfer' &&
+            (tx.TransactionReference?.startsWith(ref) ||
+              tx.TransactionInformation?.toLowerCase().includes(
+                String(so.Reference).replace(/_/g, ' ').toLowerCase(),
+              ))
+          );
         },
       };
     case '/accounts/{AccountId}/direct-debits':
@@ -2289,8 +2505,10 @@ function jumpFromForActiveEndpoint() {
         label: (dd) => `direct debit "${dd.Name || dd.DirectDebitId}"`,
         match: (tx, dd) => {
           const purpose = String(dd.Name || '').toLowerCase();
-          return tx.TransactionType === 'BillPayments'
-            && (tx.TransactionInformation?.toLowerCase().includes(purpose) || false);
+          return (
+            tx.TransactionType === 'BillPayments' &&
+            (tx.TransactionInformation?.toLowerCase().includes(purpose) || false)
+          );
         },
       };
     case '/accounts/{AccountId}/beneficiaries':
@@ -2300,7 +2518,7 @@ function jumpFromForActiveEndpoint() {
         match: (tx, b) => {
           const ben = b.CreditorAccount?.[0]?.Name?.toLowerCase();
           if (!ben) return false;
-          return (tx.TransactionInformation?.toLowerCase().includes(ben)) || false;
+          return tx.TransactionInformation?.toLowerCase().includes(ben) || false;
         },
       };
     default:
@@ -2311,7 +2529,7 @@ function jumpFromForActiveEndpoint() {
 function crossLinkToTransactions(record, jumpFrom) {
   // Find the related transactions in the bundle for the active account.
   const txs = state.bundle.transactions.filter(
-    (t) => t._accountId === state.selectedAccountId && jumpFrom.match(t, record)
+    (t) => t._accountId === state.selectedAccountId && jumpFrom.match(t, record),
   );
   state.txHighlight = new Set(txs.map((t) => t.TransactionId));
   state.crossLink = {
@@ -2324,10 +2542,16 @@ function crossLinkToTransactions(record, jumpFrom) {
   // matching transactions also pass the row filter.
   state.txFilter = emptyTxFilter();
   if (jumpFrom.kind === 'direct-debit') {
-    state.txFilter.search = String(record.Name || '').replace(/_/g, ' ').split(' ')[0] || '';
+    state.txFilter.search =
+      String(record.Name || '')
+        .replace(/_/g, ' ')
+        .split(' ')[0] || '';
     state.txFilter.type = 'BillPayments';
   } else if (jumpFrom.kind === 'standing-order') {
-    state.txFilter.search = String(record.Reference || '').replace(/_/g, ' ').split(' ')[0] || '';
+    state.txFilter.search =
+      String(record.Reference || '')
+        .replace(/_/g, ' ')
+        .split(' ')[0] || '';
     state.txFilter.type = 'LocalBankTransfer';
   }
   renderNavigator();
@@ -2336,20 +2560,24 @@ function crossLinkToTransactions(record, jumpFrom) {
 
 function renderCrossLinkBanner() {
   const banner = el('div', { class: 'cross-link-banner', attrs: { role: 'status' } });
-  banner.appendChild(el('span', {
-    text: `Showing transactions linked to ${state.crossLink.label} — ${state.crossLink.matchCount} match${state.crossLink.matchCount === 1 ? '' : 'es'} highlighted.`,
-  }));
-  banner.appendChild(el('button', {
-    text: '← Back',
-    onClick: () => {
-      state.endpoint = state.crossLink.fromEndpoint;
-      state.txFilter = emptyTxFilter();
-      state.txHighlight = new Set();
-      state.crossLink = null;
-      renderNavigator();
-      renderPayload();
-    },
-  }));
+  banner.appendChild(
+    el('span', {
+      text: `Showing transactions linked to ${state.crossLink.label} — ${state.crossLink.matchCount} match${state.crossLink.matchCount === 1 ? '' : 'es'} highlighted.`,
+    }),
+  );
+  banner.appendChild(
+    el('button', {
+      text: '← Back',
+      onClick: () => {
+        state.endpoint = state.crossLink.fromEndpoint;
+        state.txFilter = emptyTxFilter();
+        state.txHighlight = new Set();
+        state.crossLink = null;
+        renderNavigator();
+        renderPayload();
+      },
+    }),
+  );
   return banner;
 }
 
@@ -2366,7 +2594,9 @@ init().catch((err) => {
   // Render fallback safely — never use innerHTML/insertAdjacentHTML with untrusted data.
   const banner = el('pre', {
     text: `init failed: ${String(err.message ?? err)}`,
-    attrs: { style: 'background:#fee;color:#600;padding:8px;border-bottom:1px solid #c33;margin:0' },
+    attrs: {
+      style: 'background:#fee;color:#600;padding:8px;border-bottom:1px solid #c33;margin:0',
+    },
   });
   document.body.insertBefore(banner, document.body.firstChild);
 });

@@ -23,16 +23,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import yaml from 'js-yaml';
 import { repoRoot } from '../tools/load-fixtures.mjs';
-import {
-  deriveCrossLfiSelfIban,
-} from '../src/generator/multi-lfi.js';
+import { deriveCrossLfiSelfIban } from '../src/generator/multi-lfi.js';
 
 const PKG_DIR = path.join(repoRoot, 'packages/sandbox-fixtures');
 const MANIFEST_PATH = path.join(PKG_DIR, 'manifest.json');
-const POOL_PATH = path.join(
-  repoRoot,
-  'synthetic-identity-pool/counterparty-banks/uae-real.yaml',
-);
+const POOL_PATH = path.join(repoRoot, 'synthetic-identity-pool/counterparty-banks/uae-real.yaml');
 const FIXTURES_BUILT = fs.existsSync(MANIFEST_PATH);
 const POOL = yaml.load(fs.readFileSync(POOL_PATH, 'utf8'));
 const POOL_BY_NAME = new Map(POOL.banks.map((b) => [b.name, b]));
@@ -60,7 +55,10 @@ describe('Slice 4 — purpose-to-role routing in standing orders', () => {
   }
   const operatingId = fx.accountIds[0];
   const env = JSON.parse(
-    fs.readFileSync(path.join(PKG_DIR, fx.endpoints[`/accounts/${operatingId}/standing-orders`]), 'utf8'),
+    fs.readFileSync(
+      path.join(PKG_DIR, fx.endpoints[`/accounts/${operatingId}/standing-orders`]),
+      'utf8',
+    ),
   );
   const sos = env.Data?.StandingOrder ?? [];
   const personaJson = JSON.parse(
@@ -125,69 +123,70 @@ if (!FIXTURES_BUILT) {
   describe.skip("Phase D-lite — cross-LFI self-beneficiary surface (run 'npm run build:fixtures' to enable)", () => {
     it.skip('fixture package not built', () => {});
   });
-} else describe('Phase D-lite — cross-LFI self-beneficiary surfaces in primary bundle', () => {
-  const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
+} else
+  describe('Phase D-lite — cross-LFI self-beneficiary surfaces in primary bundle', () => {
+    const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
 
-  // Find personas with multi_lfi_footprint declared.
-  const personasWithFootprint = [];
-  for (const [pid, info] of Object.entries(manifest.personas)) {
-    if (info.domain !== 'banking') continue;
-    const personaJson = JSON.parse(
-      fs.readFileSync(path.join(PKG_DIR, 'personas', `${pid}.json`), 'utf8'),
-    );
-    if (personaJson.multi_lfi_footprint) {
-      personasWithFootprint.push({ pid, persona: personaJson });
+    // Find personas with multi_lfi_footprint declared.
+    const personasWithFootprint = [];
+    for (const [pid, info] of Object.entries(manifest.personas)) {
+      if (info.domain !== 'banking') continue;
+      const personaJson = JSON.parse(
+        fs.readFileSync(path.join(PKG_DIR, 'personas', `${pid}.json`), 'utf8'),
+      );
+      if (personaJson.multi_lfi_footprint) {
+        personasWithFootprint.push({ pid, persona: personaJson });
+      }
     }
-  }
 
-  it('at least 5 personas declare multi_lfi_footprint (the Phase 2.x SME expansion set)', () => {
-    expect(personasWithFootprint.length).toBeGreaterThanOrEqual(5);
-  });
-
-  for (const { pid, persona } of personasWithFootprint) {
-    const expectedRoles = ['secondary', 'tertiary'].filter((r) => {
-      const slot = persona.multi_lfi_footprint[r];
-      if (!slot) return false;
-      // The slot only yields a self-beneficiary if at least one candidate
-      // exists in the counterparty pool. Acquirer/PSP-only slots are
-      // silently skipped — see pickRoleBank in src/generator/multi-lfi.js.
-      return (slot.plausible_lfi_candidates ?? []).some((n) => POOL_BY_NAME.has(n));
+    it('at least 5 personas declare multi_lfi_footprint (the Phase 2.x SME expansion set)', () => {
+      expect(personasWithFootprint.length).toBeGreaterThanOrEqual(5);
     });
 
-    for (const lfi of ['rich', 'median', 'sparse']) {
-      const fxKey = `${pid}|${lfi}|${persona.default_seed}`;
-      const fx = manifest.fixtures[fxKey];
-      if (!fx) continue;
-      const operatingId = (fx.accountIds ?? [])[0];
-      if (!operatingId) continue;
-
-      it(`${fxKey} — primary bundle's beneficiaries include 'self-to-<role>' for each non-primary footprint slot`, () => {
-        const env = readEnv(fx.endpoints[`/accounts/${operatingId}/beneficiaries`]);
-        const beneficiaries = env.Data?.Beneficiary ?? [];
-        const selfBeneficiaries = beneficiaries.filter((b) =>
-          (b.Reference ?? '').startsWith('self-to-'),
-        );
-        const selfRoles = new Set(
-          selfBeneficiaries.map((b) => b.Reference.replace('self-to-', '')),
-        );
-        expect(selfRoles).toEqual(new Set(expectedRoles));
-
-        for (const ben of selfBeneficiaries) {
-          // Bank name from the pool (NG5/D-14 allow-site).
-          const bankName = ben.CreditorAgent?.Name;
-          expect(POOL_BY_NAME.has(bankName), `bank "${bankName}" must be in pool`).toBe(true);
-          // BIC matches the pool entry's bic stem.
-          expect(ben.CreditorAgent.Identification).toBe(POOL_BY_NAME.get(bankName).bic);
-          // The persona's own signatory name lives at the AEBeneficiary
-          // level (AccountHolderName) — AECashAccount5_0 (CreditorAccount)
-          // disallows Name per v2.1 spec.
-          expect(ben.AccountHolderName).toBeTruthy();
-          // The IBAN is the deterministic cross-LFI self-IBAN.
-          const role = ben.Reference.replace('self-to-', '');
-          const expectedIban = deriveCrossLfiSelfIban(pid, role, POOL_BY_NAME.get(bankName));
-          expect(ben.CreditorAccount[0].Identification).toBe(expectedIban);
-        }
+    for (const { pid, persona } of personasWithFootprint) {
+      const expectedRoles = ['secondary', 'tertiary'].filter((r) => {
+        const slot = persona.multi_lfi_footprint[r];
+        if (!slot) return false;
+        // The slot only yields a self-beneficiary if at least one candidate
+        // exists in the counterparty pool. Acquirer/PSP-only slots are
+        // silently skipped — see pickRoleBank in src/generator/multi-lfi.js.
+        return (slot.plausible_lfi_candidates ?? []).some((n) => POOL_BY_NAME.has(n));
       });
+
+      for (const lfi of ['rich', 'median', 'sparse']) {
+        const fxKey = `${pid}|${lfi}|${persona.default_seed}`;
+        const fx = manifest.fixtures[fxKey];
+        if (!fx) continue;
+        const operatingId = (fx.accountIds ?? [])[0];
+        if (!operatingId) continue;
+
+        it(`${fxKey} — primary bundle's beneficiaries include 'self-to-<role>' for each non-primary footprint slot`, () => {
+          const env = readEnv(fx.endpoints[`/accounts/${operatingId}/beneficiaries`]);
+          const beneficiaries = env.Data?.Beneficiary ?? [];
+          const selfBeneficiaries = beneficiaries.filter((b) =>
+            (b.Reference ?? '').startsWith('self-to-'),
+          );
+          const selfRoles = new Set(
+            selfBeneficiaries.map((b) => b.Reference.replace('self-to-', '')),
+          );
+          expect(selfRoles).toEqual(new Set(expectedRoles));
+
+          for (const ben of selfBeneficiaries) {
+            // Bank name from the pool (NG5/D-14 allow-site).
+            const bankName = ben.CreditorAgent?.Name;
+            expect(POOL_BY_NAME.has(bankName), `bank "${bankName}" must be in pool`).toBe(true);
+            // BIC matches the pool entry's bic stem.
+            expect(ben.CreditorAgent.Identification).toBe(POOL_BY_NAME.get(bankName).bic);
+            // The persona's own signatory name lives at the AEBeneficiary
+            // level (AccountHolderName) — AECashAccount5_0 (CreditorAccount)
+            // disallows Name per v2.1 spec.
+            expect(ben.AccountHolderName).toBeTruthy();
+            // The IBAN is the deterministic cross-LFI self-IBAN.
+            const role = ben.Reference.replace('self-to-', '');
+            const expectedIban = deriveCrossLfiSelfIban(pid, role, POOL_BY_NAME.get(bankName));
+            expect(ben.CreditorAccount[0].Identification).toBe(expectedIban);
+          }
+        });
+      }
     }
-  }
-});
+  });

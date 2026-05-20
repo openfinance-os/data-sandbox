@@ -110,7 +110,8 @@ function maybeRefundOne({ tx, account, cap, rate }) {
   if (!original) return null;
 
   const postedMs = isReversal
-    ? original.postedMs + hoursToMs(rngInt(sideRng, REVERSAL_HOUR_BAND[0], REVERSAL_HOUR_BAND[1] + 1))
+    ? original.postedMs +
+      hoursToMs(rngInt(sideRng, REVERSAL_HOUR_BAND[0], REVERSAL_HOUR_BAND[1] + 1))
     : original.postedMs + daysToMs(rngInt(sideRng, REFUND_DAY_BAND[0], REFUND_DAY_BAND[1] + 1));
   // Don't post a refund after `now`. If the latency would overshoot the
   // wall-clock anchor, skip — a TPP wouldn't see it yet either.
@@ -136,7 +137,10 @@ function maybeRefundOne({ tx, account, cap, rate }) {
   const tag = isReversal ? 'REV' : 'RFD';
 
   const merchantToken = String(tx.MerchantDetails.MerchantName)
-    .toUpperCase().replace(/[^A-Z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
   const refSuffix = String(rngInt(sideRng, 100000, 999999));
 
   return {
@@ -148,7 +152,10 @@ function maybeRefundOne({ tx, account, cap, rate }) {
     BookingDateTime: isoOf(stamped),
     TransactionDateTime: isoOf(stamped),
     ValueDateTime: isoOf(stamped),
-    TransactionInformation: bankishNarrative(tag, [merchantToken, rngPick(sideRng, ['ORIG', 'REF', 'CARD'])]),
+    TransactionInformation: bankishNarrative(tag, [
+      merchantToken,
+      rngPick(sideRng, ['ORIG', 'REF', 'CARD']),
+    ]),
     Amount: { Amount: refundAmount.toFixed(2), Currency: account.Currency },
     TransactionType: tx.TransactionType,
     SubTransactionType: subType,
@@ -187,8 +194,12 @@ function roundAmount(amount) {
   return Math.round(amount * 100) / 100;
 }
 
-function hoursToMs(h) { return h * 60 * 60 * 1000; }
-function daysToMs(d) { return d * 24 * 60 * 60 * 1000; }
+function hoursToMs(h) {
+  return h * 60 * 60 * 1000;
+}
+function daysToMs(d) {
+  return d * 24 * 60 * 60 * 1000;
+}
 
 function isoOf(date) {
   return date.toISOString().replace(/\.\d{3}Z$/, 'Z');

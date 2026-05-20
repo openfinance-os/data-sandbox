@@ -5,10 +5,22 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "origin", "value": "https://openfinance-os.org/commons/data-sandbox", "description": "Sandbox deployment origin" },
-    { "key": "persona", "value": "salaried_expat_mid", "description": "Sara — mid-tier salaried expat" },
+    {
+      "key": "origin",
+      "value": "https://openfinance-os.org/commons/data-sandbox",
+      "description": "Sandbox deployment origin"
+    },
+    {
+      "key": "persona",
+      "value": "salaried_expat_mid",
+      "description": "Sara — mid-tier salaried expat"
+    },
     { "key": "lfi", "value": "median", "description": "rich | median | sparse" },
-    { "key": "seed", "value": "4729", "description": "Persona's default seed (manifest.personas.<id>.default_seed)" },
+    {
+      "key": "seed",
+      "value": "4729",
+      "description": "Persona's default seed (manifest.personas.<id>.default_seed)"
+    },
     { "key": "accountId", "value": "", "description": "Set by the GET /accounts test script" }
   ],
   "item": [

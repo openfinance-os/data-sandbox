@@ -47,7 +47,9 @@ for (const pool of Object.values(pools.merchantsByCategory)) {
     if (registry[slug]) {
       // Defensive — fail loudly. A name collision would silently make
       // two merchants share a logo / registry entry.
-      throw new Error(`brand-registry: duplicate slug "${slug}" — merchant "${m.name}" collides with prior entry`);
+      throw new Error(
+        `brand-registry: duplicate slug "${slug}" — merchant "${m.name}" collides with prior entry`,
+      );
     }
     const color = hashColor(slug);
     const initials = initialsFor(m.name);
@@ -81,7 +83,7 @@ fs.writeFileSync(REGISTRY_PATH, JSON.stringify(out, null, 2));
 
 console.log(
   `brand-registry built → ${path.relative(repoRoot, REGISTRY_PATH)}\n` +
-  `  ${Object.keys(registry).length} merchants · ${svgCount} placeholder SVGs (OF-OS style)`
+    `  ${Object.keys(registry).length} merchants · ${svgCount} placeholder SVGs (OF-OS style)`,
 );
 
 // ─── helpers ────────────────────────────────────────────────────────
@@ -112,7 +114,7 @@ function hashColor(slug) {
     h ^= slug.charCodeAt(i);
     h = Math.imul(h, 16777619);
   }
-  const hue = ((h >>> 0) % 360);
+  const hue = (h >>> 0) % 360;
   // S 55% / L 45% — readable on a light statement-table background,
   // visually distinct between adjacent merchants. Avoids the muted
   // pastels and the screaming primaries.
@@ -120,10 +122,10 @@ function hashColor(slug) {
 }
 
 function hslToHex(h, s, l) {
-  const a = s * Math.min(l, 100 - l) / 10000;
+  const a = (s * Math.min(l, 100 - l)) / 10000;
   const f = (n) => {
     const k = (n + h / 30) % 12;
-    const v = (l / 100) - a * Math.max(-1, Math.min(k - 3, Math.min(9 - k, 1)));
+    const v = l / 100 - a * Math.max(-1, Math.min(k - 3, Math.min(9 - k, 1)));
     const x = Math.round(v * 255);
     return x.toString(16).padStart(2, '0');
   };

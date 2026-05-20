@@ -18,10 +18,7 @@ import { describe, it, expect } from 'vitest';
 import yaml from 'js-yaml';
 import fs from 'node:fs';
 import path from 'node:path';
-import {
-  projectPersonaForRole,
-  deriveCrossLfiSelfIban,
-} from '../src/generator/multi-lfi.js';
+import { projectPersonaForRole, deriveCrossLfiSelfIban } from '../src/generator/multi-lfi.js';
 import { isValidMod97Iban, mod97IbanCheck } from '../src/generator/identity.js';
 import { repoRoot } from '../tools/load-fixtures.mjs';
 
@@ -53,9 +50,21 @@ describe('Phase 2.2 — multi-product role-bundle projection', () => {
     },
     accounts: [
       { type: 'CurrentAccount', currency: 'AED', age_months: 96, at_slot: 'salary' },
-      { type: 'CreditCard', currency: 'AED', age_months: 72, credit_limit_aed: 50000, at_slot: 'salary' },
+      {
+        type: 'CreditCard',
+        currency: 'AED',
+        age_months: 72,
+        credit_limit_aed: 50000,
+        at_slot: 'salary',
+      },
       { type: 'CurrentAccount', currency: 'AED', age_months: 60, at_slot: 'everyday-card' },
-      { type: 'CreditCard', currency: 'AED', age_months: 36, credit_limit_aed: 40000, at_slot: 'everyday-card' },
+      {
+        type: 'CreditCard',
+        currency: 'AED',
+        age_months: 36,
+        credit_limit_aed: 40000,
+        at_slot: 'everyday-card',
+      },
     ],
   };
 
@@ -131,7 +140,11 @@ describe('Phase 2.2 — multi-product role-bundle projection', () => {
       multi_lfi_footprint: {
         slots: [
           { key: 'salary', role: 'salary_primary', plausible_lfi_candidates: [adcbBank.name] },
-          { key: 'mortgage-lender', role: 'mortgage_lender', plausible_lfi_candidates: [enbdBank.name] },
+          {
+            key: 'mortgage-lender',
+            role: 'mortgage_lender',
+            plausible_lfi_candidates: [enbdBank.name],
+          },
         ],
       },
       accounts: [

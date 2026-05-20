@@ -178,10 +178,7 @@ export function generateHealthEmployment({ persona }) {
     MonthlyIncomeAmount: aed(e.monthly_income_aed),
     AnnualIncomeAmount: aed(e.monthly_income_aed * 12),
     EmployerAddress: {
-      AddressLine: [
-        `Building ${1 + (e.monthly_income_aed % 99)}`,
-        persona.demographics.emirate,
-      ],
+      AddressLine: [`Building ${1 + (e.monthly_income_aed % 99)}`, persona.demographics.emirate],
       Country: 'AE',
     },
   };

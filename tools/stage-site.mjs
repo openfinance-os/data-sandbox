@@ -88,7 +88,7 @@ if (posthogKey) {
   // should fail loudly here rather than ship a broken bundle.
   if (!/^phc_[A-Za-z0-9]+$/.test(posthogKey)) {
     throw new Error(
-      "[stage-site] POSTHOG_KEY does not look like a PostHog project key (expected /^phc_[A-Za-z0-9]+$/). Refusing to inject — check the secret value."
+      '[stage-site] POSTHOG_KEY does not look like a PostHog project key (expected /^phc_[A-Za-z0-9]+$/). Refusing to inject — check the secret value.',
     );
   }
   // Leading `./` is load-bearing — `import()` resolves bare-relative
@@ -111,9 +111,13 @@ if (posthogKey) {
     fs.writeFileSync(p, html.replace('</head>', `${injection}\n</head>`));
     injectedCount += 1;
   }
-  console.log(`[stage-site] vendored ${sdkFilename} (${(sdkBytes.length / 1024).toFixed(1)} KB) + posthog-config.js into ${injectedCount} entry HTML(s)`);
+  console.log(
+    `[stage-site] vendored ${sdkFilename} (${(sdkBytes.length / 1024).toFixed(1)} KB) + posthog-config.js into ${injectedCount} entry HTML(s)`,
+  );
 } else {
-  console.log(`[stage-site] vendored ${sdkFilename} (${(sdkBytes.length / 1024).toFixed(1)} KB); POSTHOG_KEY not set so no posthog-config.js was emitted — analytics will be off in this build`);
+  console.log(
+    `[stage-site] vendored ${sdkFilename} (${(sdkBytes.length / 1024).toFixed(1)} KB); POSTHOG_KEY not set so no posthog-config.js was emitted — analytics will be off in this build`,
+  );
 }
 
 // Stage the worked TPP example so the integration guide's link resolves
@@ -147,7 +151,7 @@ if (fs.existsSync(path.join(fixtureSrc, 'manifest.json'))) {
   if (fs.existsSync(path.join(fixtureSrc, 'brand-registry.json'))) {
     fs.copyFileSync(
       path.join(fixtureSrc, 'brand-registry.json'),
-      path.join(fixtureDst, 'brand-registry.json')
+      path.join(fixtureDst, 'brand-registry.json'),
     );
   }
   if (fs.existsSync(path.join(fixtureSrc, 'brands'))) {
@@ -161,8 +165,11 @@ if (fs.existsSync(path.join(fixtureSrc, 'manifest.json'))) {
   // which endpoints exist). Mirrors what loadJourney() returns.
   const m = JSON.parse(fs.readFileSync(path.join(fixtureDst, 'manifest.json'), 'utf8'));
   const personaIds = Object.keys(m.personas);
-  const sampleKey = personaIds.length ? `${personaIds[0]}|median|${m.personas[personaIds[0]].default_seed}` : null;
-  const allEndpoints = sampleKey && m.fixtures[sampleKey] ? Object.keys(m.fixtures[sampleKey].endpoints) : [];
+  const sampleKey = personaIds.length
+    ? `${personaIds[0]}|median|${m.personas[personaIds[0]].default_seed}`
+    : null;
+  const allEndpoints =
+    sampleKey && m.fixtures[sampleKey] ? Object.keys(m.fixtures[sampleKey].endpoints) : [];
   // Show only canonical v2.1 endpoint paths (templated `{AccountId}` and
   // bundle-level paths). Persona-specific resolved paths exist in the
   // manifest for callers that need them, but they're noise in discovery.
@@ -179,11 +186,14 @@ if (fs.existsSync(path.join(fixtureSrc, 'manifest.json'))) {
     endpoints,
     pathContract: '/fixtures/v1/bundles/<persona>/<lfi>/seed-<n>/<endpoint>.json',
     pin: 'manifest.json.version',
-    pinNote: 'For high-stakes consumption pin via the npm/PyPI package (immutable). Raw URLs are latest-only within the /v1/ major slot.',
+    pinNote:
+      'For high-stakes consumption pin via the npm/PyPI package (immutable). Raw URLs are latest-only within the /v1/ major slot.',
   };
   fs.writeFileSync(path.join(fixtureDst, 'index.json'), JSON.stringify(index, null, 2));
 } else {
-  console.warn('[stage-site] fixtures not built — /fixtures/v1/ will be missing. Run `npm run build:fixtures` first.');
+  console.warn(
+    '[stage-site] fixtures not built — /fixtures/v1/ will be missing. Run `npm run build:fixtures` first.',
+  );
 }
 
 // Top-level redirect into the app entry so the bare URL works.

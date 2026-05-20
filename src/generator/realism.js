@@ -24,7 +24,13 @@ export function bankishNarrative(prefix, parts, maxLen = 80) {
   // unicode noise, accented chars all get dropped.
   const cleaned = parts
     .filter(Boolean)
-    .map((p) => String(p).toUpperCase().replace(/[^A-Z0-9 */.]+/g, '').replace(/\s+/g, ' ').trim())
+    .map((p) =>
+      String(p)
+        .toUpperCase()
+        .replace(/[^A-Z0-9 */.]+/g, '')
+        .replace(/\s+/g, ' ')
+        .trim(),
+    )
     .filter(Boolean);
   let out = `${prefix}/${cleaned.join('/')}`;
   if (out.length > maxLen) out = out.slice(0, maxLen);
@@ -50,13 +56,13 @@ export function weekdayBias(date, rng, weekendShiftProbability = 0.7) {
 // Realistic batch-posting times — most cores process in clusters at
 // scheduled batch windows rather than continuously.
 const POSTING_SLOTS = [
-  { h: 0, m: 30 },   // overnight batch
-  { h: 4, m: 15 },   // early-morning settlement
-  { h: 8, m: 30 },   // morning posting
-  { h: 11, m: 0 },   // mid-day (existing default)
-  { h: 13, m: 45 },  // afternoon
-  { h: 18, m: 0 },   // EOD batch
-  { h: 23, m: 50 },  // late-night cut-off
+  { h: 0, m: 30 }, // overnight batch
+  { h: 4, m: 15 }, // early-morning settlement
+  { h: 8, m: 30 }, // morning posting
+  { h: 11, m: 0 }, // mid-day (existing default)
+  { h: 13, m: 45 }, // afternoon
+  { h: 18, m: 0 }, // EOD batch
+  { h: 23, m: 50 }, // late-night cut-off
 ];
 export function pickPostingTime(rng) {
   return rngPick(rng, POSTING_SLOTS);
@@ -134,7 +140,11 @@ export function referenceNumber(rng, transactionType, date, hint = '') {
       return `ATM${term}${seq}`;
     }
     case 'BillPayments': {
-      const biller = (hint || 'BILR').toUpperCase().replace(/[^A-Z]+/g, '').slice(0, 4).padEnd(4, 'X');
+      const biller = (hint || 'BILR')
+        .toUpperCase()
+        .replace(/[^A-Z]+/g, '')
+        .slice(0, 4)
+        .padEnd(4, 'X');
       return `${biller}${yyyymm}${String(rngInt(rng, 0, 10000)).padStart(4, '0')}`;
     }
     case 'Teller': {
@@ -176,7 +186,21 @@ const POS_AGGREGATORS = ['TST*', 'SQ *', 'PYPL*', 'STRP*', 'APL*', 'GPAY*', 'NOO
 const ECM_AGGREGATORS = ['STRP*', 'PYPL*', 'APL*', 'GPAY*', 'NOON*'];
 // Emirate codes — population-weighted. DXB / AUH dominate. Codified
 // here so the generator doesn't keep open-coding 'DXB' as a constant.
-const EMIRATES = ['DXB', 'DXB', 'DXB', 'DXB', 'AUH', 'AUH', 'AUH', 'SHJ', 'SHJ', 'AJM', 'RAK', 'UAQ', 'FUJ'];
+const EMIRATES = [
+  'DXB',
+  'DXB',
+  'DXB',
+  'DXB',
+  'AUH',
+  'AUH',
+  'AUH',
+  'SHJ',
+  'SHJ',
+  'AJM',
+  'RAK',
+  'UAQ',
+  'FUJ',
+];
 
 /**
  * Pick a payment-rail aggregator prefix. Defaults to the POS deck;
@@ -231,7 +255,11 @@ export function dbaDrift(merchant, rng, fallback, prob = 0.3) {
   if (rng() >= prob) return fallback;
   const variants = Array.isArray(merchant?.display_variants) ? merchant.display_variants : [];
   if (variants.length === 0) return fallback;
-  return String(rngPick(rng, variants)).toUpperCase().replace(/[^A-Z0-9 ]+/g, '').replace(/\s+/g, ' ').trim();
+  return String(rngPick(rng, variants))
+    .toUpperCase()
+    .replace(/[^A-Z0-9 ]+/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 /**
@@ -259,7 +287,15 @@ export function parentGroupPrefix(merchant, registry, rng, prob = 0.25) {
  * and (optionally) an originating country code.
  *   'STARBUCKS LDN' + fxClutter(…, 'GBP', 4.20, rng) → ' GBP 4.20 LDN'
  */
-const FX_COUNTRIES = { USD: 'US', EUR: 'DE', GBP: 'LDN', INR: 'IN', PKR: 'PK', PHP: 'PH', SAR: 'SA' };
+const FX_COUNTRIES = {
+  USD: 'US',
+  EUR: 'DE',
+  GBP: 'LDN',
+  INR: 'IN',
+  PKR: 'PK',
+  PHP: 'PH',
+  SAR: 'SA',
+};
 export function fxClutter(currency, foreignAmount, rng, prob = 0.7) {
   if (rng() >= prob) return '';
   const amt = Number.isFinite(foreignAmount) ? foreignAmount.toFixed(2) : '';
@@ -280,7 +316,11 @@ export function arabicDescriptor(merchant, rng, prob = 0.1) {
   if (rng() >= prob) return '';
   const variants = Array.isArray(merchant?.display_variants_ar) ? merchant.display_variants_ar : [];
   if (variants.length === 0) return '';
-  return String(rngPick(rng, variants)).toUpperCase().replace(/[^A-Z0-9 ]+/g, '').replace(/\s+/g, ' ').trim();
+  return String(rngPick(rng, variants))
+    .toUpperCase()
+    .replace(/[^A-Z0-9 ]+/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 /**
@@ -298,7 +338,11 @@ export function arabicDescriptor(merchant, rng, prob = 0.1) {
  * Returns the full TransactionInformation string ready to assign.
  */
 export function buildDirtyPosNarrative({ rng, channel, prefix, merchant, registry, fx }) {
-  const canonical = String(merchant?.name ?? '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const canonical = String(merchant?.name ?? '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
   // Both helpers are invoked unconditionally so each consumes its
   // prob-gate rng draw regardless of which one's output wins the
   // `||` precedence below. Without this, the rng-draw count per
@@ -331,7 +375,7 @@ export function buildDirtyPosNarrative({ rng, channel, prefix, merchant, registr
 export function pendingForRecent(transactionDate, now, rng) {
   const ageMs = now.getTime() - transactionDate.getTime();
   const days = ageMs / (24 * 60 * 60 * 1000);
-  if (days < 0) return false;       // future-dated → not pending
+  if (days < 0) return false; // future-dated → not pending
   if (days < 1) return rng() < 0.7; // most recent are pending
   if (days < 2) return rng() < 0.3; // some still pending
   return false;

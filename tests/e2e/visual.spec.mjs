@@ -19,10 +19,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 function volatileMasks(page) {
-  return [
-    page.locator('#version-pin'),
-    page.locator('[data-volatile]'),
-  ];
+  return [page.locator('#version-pin'), page.locator('[data-volatile]')];
 }
 
 test('index — accounts default state', async ({ page }) => {

@@ -33,56 +33,64 @@ export function generateParties({ persona, accounts, identity, rng, pools, now }
       // copied verbatim from the persona (lint guarantees they're valid).
       persona.organisation.signatories.forEach((sig, idx) => {
         const sigName = sig._resolved?.fullName ?? identity.fullName;
-        perAccount.push(makeParty({
-          _accountId: acc.AccountId,
-          partySuffix: String(idx + 1).padStart(2, '0'),
-          personaId: persona.persona_id,
-          type: sig.party_type ?? 'Sole',
-          role: sig.account_role ?? 'Principal',
-          category: acc.AccountType,
-          name: sigName,
-        }));
+        perAccount.push(
+          makeParty({
+            _accountId: acc.AccountId,
+            partySuffix: String(idx + 1).padStart(2, '0'),
+            personaId: persona.persona_id,
+            type: sig.party_type ?? 'Sole',
+            role: sig.account_role ?? 'Principal',
+            category: acc.AccountType,
+            name: sigName,
+          }),
+        );
       });
       continue;
     }
 
     // Retail-segment account (or no organisation declared): individual holder.
-    perAccount.push(makeParty({
-      _accountId: acc.AccountId,
-      partySuffix: '01',
-      personaId: persona.persona_id,
-      type: accSpec?.party_type === 'Joint' ? 'Joint' : 'Sole',
-      role,
-      category: acc.AccountType,
-      name: identity.fullName,
-    }));
+    perAccount.push(
+      makeParty({
+        _accountId: acc.AccountId,
+        partySuffix: '01',
+        personaId: persona.persona_id,
+        type: accSpec?.party_type === 'Joint' ? 'Joint' : 'Sole',
+        role,
+        category: acc.AccountType,
+        name: identity.fullName,
+      }),
+    );
 
     // Secondary holder for Joint accounts.
     if (accSpec?.party_type === 'Joint' && persona.secondary_holder) {
       const secondary = persona.secondary_holder;
-      perAccount.push(makeParty({
-        _accountId: acc.AccountId,
-        partySuffix: '02',
-        personaId: persona.persona_id,
-        type: 'Joint',
-        role: 'Granter',
-        category: acc.AccountType,
-        name: `${secondary.given} ${secondary.surname}`,
-      }));
+      perAccount.push(
+        makeParty({
+          _accountId: acc.AccountId,
+          partySuffix: '02',
+          personaId: persona.persona_id,
+          type: 'Joint',
+          role: 'Granter',
+          category: acc.AccountType,
+          name: `${secondary.given} ${secondary.surname}`,
+        }),
+      );
     }
 
     // Custodian-for-minor: one party per minor dependent.
     if (accSpec?.custodian_for_minor && Array.isArray(persona.minor_dependents)) {
       persona.minor_dependents.forEach((minor, idx) => {
-        perAccount.push(makeParty({
-          _accountId: acc.AccountId,
-          partySuffix: String(idx + 2).padStart(2, '0'),
-          personaId: `${persona.persona_id}-minor-${idx + 1}`,
-          type: 'Sole',
-          role: 'CustodianForMinor',
-          category: acc.AccountType,
-          name: `${minor.given} ${minor.surname}`,
-        }));
+        perAccount.push(
+          makeParty({
+            _accountId: acc.AccountId,
+            partySuffix: String(idx + 2).padStart(2, '0'),
+            personaId: `${persona.persona_id}-minor-${idx + 1}`,
+            type: 'Sole',
+            role: 'CustodianForMinor',
+            category: acc.AccountType,
+            name: `${minor.given} ${minor.surname}`,
+          }),
+        );
       });
     }
   }

@@ -15,7 +15,9 @@ const ROOTS = ['dist/', 'packages/sandbox-fixtures/'];
 
 let changed;
 try {
-  changed = execFileSync('git', ['diff', '--name-only', '--', ...ROOTS], { encoding: 'utf8' }).trim();
+  changed = execFileSync('git', ['diff', '--name-only', '--', ...ROOTS], {
+    encoding: 'utf8',
+  }).trim();
 } catch (err) {
   console.error('check-dist-clean: failed to invoke git:', err.message);
   process.exit(2);
@@ -29,6 +31,8 @@ if (!changed) {
 console.error('check-dist-clean FAILED — generated outputs are out of sync with sources:');
 for (const path of changed.split('\n')) console.error(`  ${path}`);
 console.error('');
-console.error('Run: npm run build:spec && npm run build:data && npm run build:avatars && npm run build:fixtures');
+console.error(
+  'Run: npm run build:spec && npm run build:data && npm run build:avatars && npm run build:fixtures',
+);
 console.error('then commit the regenerated files.');
 process.exit(1);

@@ -21,9 +21,7 @@ const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..');
 const PERSONAS_DIR = path.join(repoRoot, 'personas');
 
-const files = fs
-  .readdirSync(PERSONAS_DIR)
-  .filter((f) => f.endsWith('.yaml') && !f.startsWith('_'));
+const files = fs.readdirSync(PERSONAS_DIR).filter((f) => f.endsWith('.yaml') && !f.startsWith('_'));
 
 const personas = files.map((f) => ({
   file: f,
@@ -55,7 +53,7 @@ for (const { file, manifest } of personas) {
       return `  - ${t} (also: ${others.join(', ')})`;
     });
     violations.push(
-      `${file} (${id}): no globally-unique stress term — every term is covered by at least one other persona:\n${overlaps.join('\n')}`
+      `${file} (${id}): no globally-unique stress term — every term is covered by at least one other persona:\n${overlaps.join('\n')}`,
     );
   }
 }
@@ -70,5 +68,5 @@ if (violations.length > 0) {
 }
 
 console.log(
-  `lint-stress-coverage-uniqueness OK — ${personas.length} personas, ${termCoverage.size} distinct stress terms, every persona has ≥1 globally-unique term.`
+  `lint-stress-coverage-uniqueness OK — ${personas.length} personas, ${termCoverage.size} distinct stress terms, every persona has ≥1 globally-unique term.`,
 );

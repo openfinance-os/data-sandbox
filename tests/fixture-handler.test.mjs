@@ -12,18 +12,24 @@ import { loadAllPools } from '../tools/load-fixtures.mjs';
 
 describe('isCustomFixtureUrl', () => {
   it('matches the documented URL shape', () => {
-    expect(isCustomFixtureUrl(
-      'https://x.test/fixtures/v1/bundles/custom/abc/median/seed-1/accounts.json'
-    )).toBe(true);
-    expect(isCustomFixtureUrl(
-      'https://x.test/fixtures/v1/bundles/custom/abc/rich/seed-42/accounts__custom-abc-acct-01__transactions.json'
-    )).toBe(true);
+    expect(
+      isCustomFixtureUrl(
+        'https://x.test/fixtures/v1/bundles/custom/abc/median/seed-1/accounts.json',
+      ),
+    ).toBe(true);
+    expect(
+      isCustomFixtureUrl(
+        'https://x.test/fixtures/v1/bundles/custom/abc/rich/seed-42/accounts__custom-abc-acct-01__transactions.json',
+      ),
+    ).toBe(true);
   });
 
   it('rejects curated-persona URLs and arbitrary paths', () => {
-    expect(isCustomFixtureUrl(
-      'https://x.test/fixtures/v1/bundles/salaried_expat_mid/median/seed-4729/accounts.json'
-    )).toBe(false);
+    expect(
+      isCustomFixtureUrl(
+        'https://x.test/fixtures/v1/bundles/salaried_expat_mid/median/seed-4729/accounts.json',
+      ),
+    ).toBe(false);
     expect(isCustomFixtureUrl('https://x.test/api/something')).toBe(false);
   });
 });

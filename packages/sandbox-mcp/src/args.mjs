@@ -46,7 +46,8 @@ export function parseArgs(argv, env = process.env) {
     else if (a.startsWith('--transport=')) out.transport = a.slice('--transport='.length);
     else if (a.startsWith('--port=')) out.port = Number(a.slice('--port='.length));
     else if (a.startsWith('--host=')) out.host = a.slice('--host='.length);
-    else if (a.startsWith('--allowed-host=')) out.allowedHosts.push(a.slice('--allowed-host='.length));
+    else if (a.startsWith('--allowed-host='))
+      out.allowedHosts.push(a.slice('--allowed-host='.length));
   }
   return out;
 }

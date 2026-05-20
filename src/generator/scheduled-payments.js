@@ -37,9 +37,7 @@ export function generateScheduledPayments({ persona, accounts, rng, pools, now }
           SchemeName: 'BICFI',
           Identification: counterpartyBank.bic ?? iban.slice(0, 8),
         },
-        CreditorAccount: [
-          { SchemeName: 'IBAN', Identification: iban },
-        ],
+        CreditorAccount: [{ SchemeName: 'IBAN', Identification: iban }],
       });
     }
   }

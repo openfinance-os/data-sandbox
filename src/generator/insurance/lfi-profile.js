@@ -114,7 +114,10 @@ export function applyInsuranceLfiProfile({ bundle, personaId, lfi, seed }) {
     if (policy.Product?.LeaseDetails && !decide('Product.LeaseDetails', 'Common')) {
       delete policy.Product.LeaseDetails;
     }
-    if (policy.Product?.PropertyDetails?.UsageByApplicant && !decide('Product.PropertyDetails.UsageByApplicant', 'Common')) {
+    if (
+      policy.Product?.PropertyDetails?.UsageByApplicant &&
+      !decide('Product.PropertyDetails.UsageByApplicant', 'Common')
+    ) {
       delete policy.Product.PropertyDetails.UsageByApplicant;
     }
   }
@@ -128,8 +131,10 @@ export function applyInsuranceLfiProfile({ bundle, personaId, lfi, seed }) {
     }
     // PolicyHolder.Employment is Common but mandatory under the spec when
     // present; only redact the optional AdditionalCompensation child.
-    if (policy.PolicyHolder?.Employment?.AdditionalCompensation
-        && !decide('PolicyHolder.Employment.AdditionalCompensation', 'Variable')) {
+    if (
+      policy.PolicyHolder?.Employment?.AdditionalCompensation &&
+      !decide('PolicyHolder.Employment.AdditionalCompensation', 'Variable')
+    ) {
       delete policy.PolicyHolder.Employment.AdditionalCompensation;
     }
   }
@@ -142,11 +147,17 @@ export function applyInsuranceLfiProfile({ bundle, personaId, lfi, seed }) {
       delete policy.Premium.PaymentMode;
     }
     if (policy.Product?.Policy) {
-      if (!decide('Product.Policy.PurposeOfTravel', 'Common')) delete policy.Product.Policy.PurposeOfTravel;
-      if (!decide('Product.Policy.TravellingWith', 'Common')) delete policy.Product.Policy.TravellingWith;
-      if (!decide('Product.Policy.TravelDestinationRegion', 'Common')) delete policy.Product.Policy.TravelDestinationRegion;
+      if (!decide('Product.Policy.PurposeOfTravel', 'Common'))
+        delete policy.Product.Policy.PurposeOfTravel;
+      if (!decide('Product.Policy.TravellingWith', 'Common'))
+        delete policy.Product.Policy.TravellingWith;
+      if (!decide('Product.Policy.TravelDestinationRegion', 'Common'))
+        delete policy.Product.Policy.TravelDestinationRegion;
     }
-    if (policy.Product?.OptionalTravelCoverOptions && !decide('Product.OptionalTravelCoverOptions', 'Variable')) {
+    if (
+      policy.Product?.OptionalTravelCoverOptions &&
+      !decide('Product.OptionalTravelCoverOptions', 'Variable')
+    ) {
       delete policy.Product.OptionalTravelCoverOptions;
     }
     if (policy.Product?.HighRiskActivities && !decide('Product.HighRiskActivities', 'Variable')) {
@@ -165,19 +176,22 @@ export function applyInsuranceLfiProfile({ bundle, personaId, lfi, seed }) {
       if (policy.Product.Beneficiaries && !decide('Product.Beneficiaries', 'Common')) {
         delete policy.Product.Beneficiaries;
       }
-      if (policy.Product.FinanceAgainstPolicy && !decide('Product.FinanceAgainstPolicy', 'Variable')) {
+      if (
+        policy.Product.FinanceAgainstPolicy &&
+        !decide('Product.FinanceAgainstPolicy', 'Variable')
+      ) {
         delete policy.Product.FinanceAgainstPolicy;
       }
       if (policy.Product.Policy) {
         if (
-          policy.Product.Policy.SurrenderValueAmount
-          && !decide('Product.Policy.SurrenderValueAmount', 'Variable')
+          policy.Product.Policy.SurrenderValueAmount &&
+          !decide('Product.Policy.SurrenderValueAmount', 'Variable')
         ) {
           delete policy.Product.Policy.SurrenderValueAmount;
         }
         if (
-          policy.Product.Policy.MaturityValueAmount
-          && !decide('Product.Policy.MaturityValueAmount', 'Variable')
+          policy.Product.Policy.MaturityValueAmount &&
+          !decide('Product.Policy.MaturityValueAmount', 'Variable')
         ) {
           delete policy.Product.Policy.MaturityValueAmount;
         }
@@ -189,12 +203,16 @@ export function applyInsuranceLfiProfile({ bundle, personaId, lfi, seed }) {
     if (policy.PolicyHolder && !decide('PolicyHolder.Salutation', 'Common')) {
       delete policy.PolicyHolder.Salutation;
     }
-    if (policy.PolicyHolder?.Employment && !decide('PolicyHolder.Employment.SalaryBand', 'Variable')) {
+    if (
+      policy.PolicyHolder?.Employment &&
+      !decide('PolicyHolder.Employment.SalaryBand', 'Variable')
+    ) {
       delete policy.PolicyHolder.Employment.SalaryBand;
     }
     if (policy.Product?.Policy) {
       if (!decide('Product.Policy.CareNetwork', 'Common')) delete policy.Product.Policy.CareNetwork;
-      if (!decide('Product.Policy.RegionsCoverage', 'Common')) delete policy.Product.Policy.RegionsCoverage;
+      if (!decide('Product.Policy.RegionsCoverage', 'Common'))
+        delete policy.Product.Policy.RegionsCoverage;
     }
     if (policy.Product?.Sponsor && !decide('Product.Sponsor', 'Variable')) {
       delete policy.Product.Sponsor;
@@ -212,7 +230,8 @@ export function applyInsuranceLfiProfile({ bundle, personaId, lfi, seed }) {
       const pd = policy.Product.PropertyDetails;
       if (!decide('Product.PropertyDetails.NumberOfFloors', 'Common')) delete pd.NumberOfFloors;
       if (!decide('Product.PropertyDetails.NumberOfRooms', 'Common')) delete pd.NumberOfRooms;
-      if (!decide('Product.PropertyDetails.YearOfConstruction', 'Common')) delete pd.YearOfConstruction;
+      if (!decide('Product.PropertyDetails.YearOfConstruction', 'Common'))
+        delete pd.YearOfConstruction;
     }
     if (policy.Product?.Mortgage && !decide('Product.Mortgage', 'Variable')) {
       delete policy.Product.Mortgage;

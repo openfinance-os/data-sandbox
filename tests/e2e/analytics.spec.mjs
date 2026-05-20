@@ -52,9 +52,8 @@ async function configurePosthogStub(page, { withKey = true } = {}) {
   if (withKey) {
     await page.addInitScript(
       ({ key, sdkUrl }) => {
-        // eslint-disable-next-line no-undef
         window.__POSTHOG_KEY__ = key;
-        // eslint-disable-next-line no-undef
+
         window.__POSTHOG_SDK_URL__ = sdkUrl;
       },
       { key: FAKE_KEY, sdkUrl: SDK_URL_TEST },
@@ -106,7 +105,9 @@ test.describe('EXP-21 / EXP-22 analytics wire-up', () => {
     expect(stubExists).toBe(false);
   });
 
-  test('SDK init runs with strict EXP-21 / EXP-22 options after first track()', async ({ page }) => {
+  test('SDK init runs with strict EXP-21 / EXP-22 options after first track()', async ({
+    page,
+  }) => {
     await configurePosthogStub(page);
     await page.goto('/src/index.html');
     await page.waitForFunction(() => typeof window.__phStub !== 'undefined');
@@ -132,18 +133,25 @@ test.describe('EXP-21 / EXP-22 analytics wire-up', () => {
   test('persona_load fires on init with allowlisted props only', async ({ page }) => {
     await configurePosthogStub(page);
     await page.goto('/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729');
-    await page.waitForFunction(() => window.__phStub?.captures?.some((c) => c.name === 'persona_load'));
+    await page.waitForFunction(() =>
+      window.__phStub?.captures?.some((c) => c.name === 'persona_load'),
+    );
     const captures = await page.evaluate(() => window.__phStub.captures);
     const personaLoad = captures.find((c) => c.name === 'persona_load');
     expect(personaLoad).toBeTruthy();
-    expect(Object.keys(personaLoad.props).sort()).toEqual(['custom', 'domain', 'lfi', 'persona_id'].sort());
+    expect(Object.keys(personaLoad.props).sort()).toEqual(
+      ['custom', 'domain', 'lfi', 'persona_id'].sort(),
+    );
     expect(personaLoad.props.persona_id).toBe('salaried_expat_mid');
     expect(personaLoad.props.lfi).toBe('median');
     expect(personaLoad.props.domain).toBe('banking');
     expect(personaLoad.props.custom).toBe(false);
   });
 
-  test('endpoint_nav, field_click, raw_json_toggle, share fire with sanitised props', async ({ page, isMobile }) => {
+  test('endpoint_nav, field_click, raw_json_toggle, share fire with sanitised props', async ({
+    page,
+    isMobile,
+  }) => {
     // The `#view-raw` / Export controls live in the desktop topbar and
     // are repositioned (or hidden) in the mobile viewport. Analytics prop
     // allowlisting is identical across viewports — the desktop projects
@@ -171,7 +179,8 @@ test.describe('EXP-21 / EXP-22 analytics wire-up', () => {
     expect(eventNames).toContain('share');
 
     // Allowlisted property keys only — nothing PII-shaped.
-    const banned = /(name|email|phone|iban|amount|merchant|address|searchQuery|userInput|ip|url|referrer|query|input|value|text|fullName)/i;
+    const banned =
+      /(name|email|phone|iban|amount|merchant|address|searchQuery|userInput|ip|url|referrer|query|input|value|text|fullName)/i;
     for (const c of captures) {
       for (const k of Object.keys(c.props ?? {})) {
         expect(banned.test(k), `event ${c.name}: prop '${k}' looks PII-shaped`).toBe(false);
@@ -179,7 +188,10 @@ test.describe('EXP-21 / EXP-22 analytics wire-up', () => {
     }
   });
 
-  test('EXP-22 — analytics writes no cookies and no PostHog localStorage keys', async ({ page, context }) => {
+  test('EXP-22 — analytics writes no cookies and no PostHog localStorage keys', async ({
+    page,
+    context,
+  }) => {
     await configurePosthogStub(page);
     await page.goto('/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729');
     await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');

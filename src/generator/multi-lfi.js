@@ -142,7 +142,10 @@ const PURPOSE_TO_ROLE_RULES = [
   { pattern: /lc_payment|trade_finance|fx_settlement|wire_corridor/i, role: 'trade_finance' },
   { pattern: /pos_terminal|aggregator|acquir|merchant_settlement/i, role: 'acquiring' },
   { pattern: /escrow|trust_account|rera_holding|khda_holding/i, role: 'escrow' },
-  { pattern: /founder_(secondary_)?(loan|card)|digital_card_repayment|saas_subscriptions/i, role: 'digital_challenger' },
+  {
+    pattern: /founder_(secondary_)?(loan|card)|digital_card_repayment|saas_subscriptions/i,
+    role: 'digital_challenger',
+  },
 ];
 
 /**
@@ -306,13 +309,10 @@ export function projectPersonaForRole(persona, slotKey, bank) {
       projectedAccounts = slotAccounts.map((acc, i) => ({
         ...acc,
         _bankOverride: bank,
-        _ibanOverride: i === 0
-          ? anchorIban
-          : deriveCrossLfiSelfIban(
-              persona.persona_id,
-              `${slotKey}__product_${i}`,
-              bank,
-            ),
+        _ibanOverride:
+          i === 0
+            ? anchorIban
+            : deriveCrossLfiSelfIban(persona.persona_id, `${slotKey}__product_${i}`, bank),
       }));
     }
   }
@@ -383,8 +383,7 @@ export async function buildRoleBundle({ persona, slot: slotKey, lfi, seed, pools
   // Resolve the indexed-pools structure to the active counterparty-bank
   // pool. build-fixture-package.mjs passes the full indexedPools object.
   const counterpartyBanksPool =
-    pools.counterpartyBanks ??
-    pools.counterpartyBanksByCategory?.['counterparty_banks_uae_real'];
+    pools.counterpartyBanks ?? pools.counterpartyBanksByCategory?.['counterparty_banks_uae_real'];
   if (!counterpartyBanksPool) return null;
   const bank = pickRoleBank(persona.persona_id, slotKey, slot, counterpartyBanksPool);
   if (!bank) return null;
@@ -504,15 +503,21 @@ export function derivePrimaryAccountIban(personaId, accountIndex) {
 const CROSS_LFI_HISTORY_MONTHS = 24;
 
 const ROLE_AMOUNT_BANDS_AED = {
-  operating: [3000, 8000],          // unused for primary→primary; here for completeness
-  islamic_deposit: [4000, 12000],   // monthly term-deposit top-up
-  digital_challenger: [800, 3500],  // founder card top-up / sweep
-  trade_finance: [15000, 60000],    // FX-corridor working capital sweep
-  acquiring: [5000, 18000],         // acquirer-float sweep into operating
-  escrow: [10000, 40000],           // escrow funding / release
+  operating: [3000, 8000], // unused for primary→primary; here for completeness
+  islamic_deposit: [4000, 12000], // monthly term-deposit top-up
+  digital_challenger: [800, 3500], // founder card top-up / sweep
+  trade_finance: [15000, 60000], // FX-corridor working capital sweep
+  acquiring: [5000, 18000], // acquirer-float sweep into operating
+  escrow: [10000, 40000], // escrow funding / release
 };
 
-export function computeCrossLfiLedger({ persona, primaryAccountId, primaryIban, counterpartyBanksPool, now }) {
+export function computeCrossLfiLedger({
+  persona,
+  primaryAccountId,
+  primaryIban,
+  counterpartyBanksPool,
+  now,
+}) {
   // Output is keyed by slot.key. For SME personas (legacy
   // primary/secondary/tertiary footprints), normalizeFootprint
   // synthesises keys 'primary'/'secondary'/'tertiary' so existing
@@ -574,9 +579,7 @@ export function computeCrossLfiLedger({ persona, primaryAccountId, primaryIban, 
           Identification: slotBank.bic,
           Name: slotBank.name,
         },
-        CreditorAccount: [
-          { SchemeName: 'IBAN', Identification: roleIban, Name: persona.name },
-        ],
+        CreditorAccount: [{ SchemeName: 'IBAN', Identification: roleIban, Name: persona.name }],
       });
 
       out[slotKey].push({
@@ -620,7 +623,7 @@ export function buildCrossLfiSelfBeneficiaries({ persona, accounts, identity, po
     const iban = deriveCrossLfiSelfIban(persona.persona_id, slot.key, bank);
     out.push({
       _accountId: operating.AccountId,
-      _crossLfiRole: slot.key,              // stripped before envelope finalisation
+      _crossLfiRole: slot.key, // stripped before envelope finalisation
       BeneficiaryId: `${operating.AccountId}-${slot.xCode}`,
       BeneficiaryType: 'Activated',
       AddedViaOF: false,

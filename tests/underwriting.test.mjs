@@ -5,7 +5,11 @@
 
 import { describe, it, expect } from 'vitest';
 import { buildBundle } from '../src/generator/index.js';
-import { computeUnderwriting, computeImpliedIncome, lowVolumeGuard } from '../src/shared/underwriting.js';
+import {
+  computeUnderwriting,
+  computeImpliedIncome,
+  lowVolumeGuard,
+} from '../src/shared/underwriting.js';
 import { loadAllPersonas, loadAllPools } from '../tools/load-fixtures.mjs';
 
 const NOW = new Date(Date.UTC(2026, 3, 1));
@@ -51,7 +55,9 @@ describe('underwriting calculator — EXP-18', () => {
   it('Gig — primary Payroll path returns no value (flag_payroll=false)', () => {
     const b = bundleFor('gig_variable_income', 'rich');
     // Gig persona has flag_payroll: false — no Payroll-flagged credits should exist
-    const payrollCredits = b.transactions.filter((t) => Array.isArray(t.Flags) && t.Flags.includes('Payroll'));
+    const payrollCredits = b.transactions.filter(
+      (t) => Array.isArray(t.Flags) && t.Flags.includes('Payroll'),
+    );
     expect(payrollCredits.length).toBe(0);
     // Income may fall back to Fallback A or B, or return null entirely.
     const income = computeImpliedIncome(b.transactions, NOW);

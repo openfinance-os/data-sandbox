@@ -52,11 +52,13 @@ export function indexPools(rawPools) {
       for (const e of p.confusion) {
         if (!e?.correct) continue;
         const arr = Array.isArray(e.wrong) ? e.wrong : [];
-        const records = arr.map((w) =>
-          typeof w === 'string'
-            ? { wrong: w, reason: e.reason ?? '' }
-            : { wrong: w?.wrong ?? null, reason: w?.reason ?? e.reason ?? '' }
-        ).filter((r) => r.wrong);
+        const records = arr
+          .map((w) =>
+            typeof w === 'string'
+              ? { wrong: w, reason: e.reason ?? '' }
+              : { wrong: w?.wrong ?? null, reason: w?.reason ?? e.reason ?? '' },
+          )
+          .filter((r) => r.wrong);
         if (records.length === 0) continue;
         mccConfusion[e.correct] = [...(mccConfusion[e.correct] ?? []), ...records];
       }

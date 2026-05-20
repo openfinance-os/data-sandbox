@@ -37,11 +37,13 @@ function rawRequest({ host, port, method = 'GET', path = '/', headers = {} }) {
     const req = http.request({ host, port, method, path, headers }, (res) => {
       const chunks = [];
       res.on('data', (c) => chunks.push(c));
-      res.on('end', () => resolve({
-        statusCode: res.statusCode,
-        headers: res.headers,
-        body: Buffer.concat(chunks).toString('utf8'),
-      }));
+      res.on('end', () =>
+        resolve({
+          statusCode: res.statusCode,
+          headers: res.headers,
+          body: Buffer.concat(chunks).toString('utf8'),
+        }),
+      );
     });
     req.on('error', reject);
     req.end();
@@ -49,8 +51,11 @@ function rawRequest({ host, port, method = 'GET', path = '/', headers = {} }) {
 }
 
 function b64url(buf) {
-  return Buffer.from(buf).toString('base64')
-    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return Buffer.from(buf)
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
 }
 
 function pkcePair() {
@@ -89,9 +94,9 @@ describe('parseArgs — --simulate-oauth', () => {
     expect(parseArgs([], { MCP_SIMULATE_OAUTH: 'yes' }).simulateOauth).toBe(true);
   });
   it('--no-simulate-oauth overrides env', () => {
-    expect(
-      parseArgs(['--no-simulate-oauth'], { MCP_SIMULATE_OAUTH: '1' }).simulateOauth,
-    ).toBe(false);
+    expect(parseArgs(['--no-simulate-oauth'], { MCP_SIMULATE_OAUTH: '1' }).simulateOauth).toBe(
+      false,
+    );
   });
   it('parseEnvSimulateOauth ignores empties and falsy', () => {
     expect(parseEnvSimulateOauth({})).toBe(false);
@@ -106,7 +111,9 @@ describe('HTTP transport — anonymous (simulateOauth: false)', () => {
   beforeAll(async () => {
     server = await startHttp({ port: 0, host: '127.0.0.1', log: () => {} });
   });
-  afterAll(async () => { await server.close(); });
+  afterAll(async () => {
+    await server.close();
+  });
 
   it('does not advertise OAuth metadata', async () => {
     const u = new URL(server.url);
@@ -129,17 +136,27 @@ describe('HTTP transport — OAuth simulation (simulateOauth: true)', () => {
   let server;
   beforeAll(async () => {
     server = await startHttp({
-      port: 0, host: '127.0.0.1', log: () => {}, simulateOauth: true,
+      port: 0,
+      host: '127.0.0.1',
+      log: () => {},
+      simulateOauth: true,
     });
   });
-  afterAll(async () => { await server.close(); });
+  afterAll(async () => {
+    await server.close();
+  });
 
-  function origin() { return server.url.replace(/\/mcp$/, ''); }
+  function origin() {
+    return server.url.replace(/\/mcp$/, '');
+  }
 
   it('returns 401 + WWW-Authenticate on /mcp without a bearer', async () => {
     const res = await fetch(server.url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json, text/event-stream' },
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json, text/event-stream',
+      },
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} }),
     });
     expect(res.status).toBe(401);

@@ -92,11 +92,7 @@ function defaultLogger(line) {
 }
 
 function buildAllowedHosts({ host, port, extraAllowedHosts }) {
-  const set = new Set([
-    `127.0.0.1:${port}`,
-    `localhost:${port}`,
-    `[::1]:${port}`,
-  ]);
+  const set = new Set([`127.0.0.1:${port}`, `localhost:${port}`, `[::1]:${port}`]);
   if (host && host !== '0.0.0.0' && host !== '::') {
     set.add(`${host}:${port}`);
   }
@@ -206,10 +202,12 @@ export function createHttpHandler({
         res.statusCode = 401;
         res.setHeader('WWW-Authenticate', oauthSimulation.challengeHeader(req));
         res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify({
-          error: 'unauthorized',
-          error_description: 'bearer token required — start the OAuth flow at /authorize',
-        }));
+        res.end(
+          JSON.stringify({
+            error: 'unauthorized',
+            error_description: 'bearer token required — start the OAuth flow at /authorize',
+          }),
+        );
         return;
       }
     }

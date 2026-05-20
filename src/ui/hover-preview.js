@@ -22,7 +22,9 @@ export function createHoverPreview(deps) {
       clearTimeout(openTimer);
       hoverHideTimer = setTimeout(hideHoverPreview, 80);
     };
-    node.addEventListener('mouseenter', () => { openTimer = setTimeout(open, 120); });
+    node.addEventListener('mouseenter', () => {
+      openTimer = setTimeout(open, 120);
+    });
     node.addEventListener('mouseleave', hide);
     node.addEventListener('focus', open);
     node.addEventListener('blur', hide);
@@ -40,21 +42,32 @@ export function createHoverPreview(deps) {
     card.replaceChildren();
     card.appendChild(el('div', { class: 'hc-title', text: fieldName }));
     const status = el('div', { class: 'hc-status' });
-    status.appendChild(el('span', { class: `pill ${badge.shape}`, text: badge.label, attrs: { 'aria-label': badge.text } }));
+    status.appendChild(
+      el('span', {
+        class: `pill ${badge.shape}`,
+        text: badge.label,
+        attrs: { 'aria-label': badge.text },
+      }),
+    );
     status.appendChild(document.createTextNode(badge.text));
-    if (band) status.appendChild(el('span', {
-      attrs: { style: 'margin-left:6px;font-size:10px;color:var(--text-muted)' },
-      text: ` · ${band} band`,
-    }));
+    if (band)
+      status.appendChild(
+        el('span', {
+          attrs: { style: 'margin-left:6px;font-size:10px;color:var(--text-muted)' },
+          text: ` · ${band} band`,
+        }),
+      );
     card.appendChild(status);
     card.appendChild(el('div', { class: 'hc-guidance', text: realLfisGuidance(f, band) }));
     const meta = `${f.type}${f.format ? ' · ' + f.format : ''}${Array.isArray(f.enum) ? ` · enum (${f.enum.length})` : ''}`;
     card.appendChild(el('div', { class: 'hc-meta', text: meta }));
-    card.appendChild(el('div', {
-      class: 'hc-meta',
-      attrs: { style: 'margin-top:6px;font-style:italic' },
-      text: 'Click to pin full card →',
-    }));
+    card.appendChild(
+      el('div', {
+        class: 'hc-meta',
+        attrs: { style: 'margin-top:6px;font-style:italic' },
+        text: 'Click to pin full card →',
+      }),
+    );
 
     // Position next to the anchor — prefer below, flip above if overflowing.
     card.hidden = false;

@@ -73,10 +73,9 @@ describe('Phase 2.2 — multi-domain bundle dispatch', () => {
     const policyHolder = bundle.motorPolicies[0]?.PolicyHolder;
     expect(bankingFullName).toBeTruthy();
     // PolicyHolder shape: { FirstName, LastName, ... } per v2.1 insurance.
-    const policyHolderName = [
-      policyHolder?.FirstName,
-      policyHolder?.LastName,
-    ].filter(Boolean).join(' ');
+    const policyHolderName = [policyHolder?.FirstName, policyHolder?.LastName]
+      .filter(Boolean)
+      .join(' ');
     expect(policyHolderName).toBe(bankingFullName);
   });
 
@@ -107,8 +106,20 @@ describe('Phase 2.2 — multi-domain bundle dispatch', () => {
   });
 
   it('determinism: same (persona, lfi, seed) produces byte-identical composite bundle', () => {
-    const a = buildBundle({ persona: multiDomainPersona, lfi: 'rich', seed: 1234, pools, now: NOW });
-    const b = buildBundle({ persona: multiDomainPersona, lfi: 'rich', seed: 1234, pools, now: NOW });
+    const a = buildBundle({
+      persona: multiDomainPersona,
+      lfi: 'rich',
+      seed: 1234,
+      pools,
+      now: NOW,
+    });
+    const b = buildBundle({
+      persona: multiDomainPersona,
+      lfi: 'rich',
+      seed: 1234,
+      pools,
+      now: NOW,
+    });
     expect(JSON.stringify(a)).toBe(JSON.stringify(b));
   });
 });
@@ -125,7 +136,11 @@ describe('Phase 2.2 — multi-line consent uniqueness', () => {
 
   it('emits one consent per declared insurance line', () => {
     const bundle = buildBundle({
-      persona, lfi: 'rich', seed: persona.default_seed, pools, now: NOW,
+      persona,
+      lfi: 'rich',
+      seed: persona.default_seed,
+      pools,
+      now: NOW,
     });
     const lines = persona.insurance?.lines ?? [];
     expect(lines.length).toBeGreaterThan(1);
@@ -135,15 +150,23 @@ describe('Phase 2.2 — multi-line consent uniqueness', () => {
 
   it('every consent carries a globally-unique ConsentId', () => {
     const bundle = buildBundle({
-      persona, lfi: 'rich', seed: persona.default_seed, pools, now: NOW,
+      persona,
+      lfi: 'rich',
+      seed: persona.default_seed,
+      pools,
+      now: NOW,
     });
     const ids = bundle.consents.map((c) => c.ConsentId);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it('every consent\'s detail endpoint resolves to the matching record', () => {
+  it("every consent's detail endpoint resolves to the matching record", () => {
     const bundle = buildBundle({
-      persona, lfi: 'rich', seed: persona.default_seed, pools, now: NOW,
+      persona,
+      lfi: 'rich',
+      seed: persona.default_seed,
+      pools,
+      now: NOW,
     });
     const envelopes = envelopesFromBundle(bundle, {
       personaId: persona.persona_id,
@@ -170,15 +193,16 @@ describe('personaDomains helper', () => {
     expect(personaDomains({ domain: 'insurance' })).toEqual(['insurance']);
   });
   it('returns domains[] for multi-domain personas', () => {
-    expect(personaDomains({ domains: ['banking', 'insurance'] }))
-      .toEqual(['banking', 'insurance']);
+    expect(personaDomains({ domains: ['banking', 'insurance'] })).toEqual(['banking', 'insurance']);
   });
   it('falls back to banking when neither field is set', () => {
     expect(personaDomains({})).toEqual(['banking']);
     expect(personaDomains(null)).toEqual(['banking']);
   });
   it('prefers domains[] over domain when both are present', () => {
-    expect(personaDomains({ domain: 'banking', domains: ['banking', 'insurance'] }))
-      .toEqual(['banking', 'insurance']);
+    expect(personaDomains({ domain: 'banking', domains: ['banking', 'insurance'] })).toEqual([
+      'banking',
+      'insurance',
+    ]);
   });
 });

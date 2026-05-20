@@ -36,11 +36,9 @@ function serviceRating() {
 export function generateTravelQuote({ persona, rng, now }) {
   const t = persona.travel;
   const quoteCreatedDays = t.policy.start_date_offset_days + 5;
-  const creationDateTime = new Date(
-    now.getTime() - quoteCreatedDays * 86400000
-  ).toISOString();
+  const creationDateTime = new Date(now.getTime() - quoteCreatedDays * 86400000).toISOString();
   const expirationDateTime = new Date(
-    now.getTime() - (quoteCreatedDays - 30) * 86400000
+    now.getTime() - (quoteCreatedDays - 30) * 86400000,
   ).toISOString();
 
   const travellers = 1 + (t.companions?.length ?? 0);

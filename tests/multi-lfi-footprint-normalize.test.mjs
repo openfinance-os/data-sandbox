@@ -6,11 +6,7 @@
 // upcoming retail multi-LFI aggregator) will rely on.
 
 import { describe, it, expect } from 'vitest';
-import {
-  normalizeFootprint,
-  findSlotByKey,
-  listRoleSlotKeys,
-} from '../src/generator/multi-lfi.js';
+import { normalizeFootprint, findSlotByKey, listRoleSlotKeys } from '../src/generator/multi-lfi.js';
 
 describe('normalizeFootprint — Phase 2.2', () => {
   it('returns null for missing footprint', () => {
@@ -60,7 +56,10 @@ describe('normalizeFootprint — Phase 2.2', () => {
     });
     expect(fp.slots.length).toBe(4);
     expect(fp.slots.map((s) => s.key)).toEqual([
-      'salary', 'everyday-card', 'digital', 'mortgage-lender',
+      'salary',
+      'everyday-card',
+      'digital',
+      'mortgage-lender',
     ]);
     expect(fp.slots[3].xCode).toBe('x4');
     expect(fp.slots[3].txCode).toBe('s4');
@@ -87,25 +86,36 @@ describe('findSlotByKey', () => {
   it('returns null when the footprint is empty or the key is missing', () => {
     expect(findSlotByKey(null, 'salary')).toBeNull();
     expect(findSlotByKey({}, 'salary')).toBeNull();
-    expect(findSlotByKey({
-      primary: { role: 'operating', plausible_lfi_candidates: ['A'] },
-    }, 'tertiary')).toBeNull();
+    expect(
+      findSlotByKey(
+        {
+          primary: { role: 'operating', plausible_lfi_candidates: ['A'] },
+        },
+        'tertiary',
+      ),
+    ).toBeNull();
   });
 
   it('finds slots by key in both shapes', () => {
-    const legacy = findSlotByKey({
-      primary: { role: 'operating', plausible_lfi_candidates: ['A'] },
-      secondary: { role: 'acquiring', plausible_lfi_candidates: ['B'] },
-    }, 'secondary');
+    const legacy = findSlotByKey(
+      {
+        primary: { role: 'operating', plausible_lfi_candidates: ['A'] },
+        secondary: { role: 'acquiring', plausible_lfi_candidates: ['B'] },
+      },
+      'secondary',
+    );
     expect(legacy?.role).toBe('acquiring');
     expect(legacy?.xCode).toBe('x2');
 
-    const fresh = findSlotByKey({
-      slots: [
-        { key: 'salary', role: 'salary_primary', plausible_lfi_candidates: ['X'] },
-        { key: 'mortgage-lender', role: 'mortgage_lender', plausible_lfi_candidates: ['Y'] },
-      ],
-    }, 'mortgage-lender');
+    const fresh = findSlotByKey(
+      {
+        slots: [
+          { key: 'salary', role: 'salary_primary', plausible_lfi_candidates: ['X'] },
+          { key: 'mortgage-lender', role: 'mortgage_lender', plausible_lfi_candidates: ['Y'] },
+        ],
+      },
+      'mortgage-lender',
+    );
     expect(fresh?.role).toBe('mortgage_lender');
     expect(fresh?.xCode).toBe('x2');
   });
@@ -118,23 +128,27 @@ describe('listRoleSlotKeys', () => {
   });
 
   it('returns non-primary slot keys in declaration order', () => {
-    expect(listRoleSlotKeys({
-      multi_lfi_footprint: {
-        primary: { role: 'operating', plausible_lfi_candidates: [] },
-        secondary: { role: 'acquiring', plausible_lfi_candidates: [] },
-        tertiary: { role: 'digital_challenger', plausible_lfi_candidates: [] },
-      },
-    })).toEqual(['secondary', 'tertiary']);
+    expect(
+      listRoleSlotKeys({
+        multi_lfi_footprint: {
+          primary: { role: 'operating', plausible_lfi_candidates: [] },
+          secondary: { role: 'acquiring', plausible_lfi_candidates: [] },
+          tertiary: { role: 'digital_challenger', plausible_lfi_candidates: [] },
+        },
+      }),
+    ).toEqual(['secondary', 'tertiary']);
 
-    expect(listRoleSlotKeys({
-      multi_lfi_footprint: {
-        slots: [
-          { key: 'salary', role: 'salary_primary', plausible_lfi_candidates: [] },
-          { key: 'everyday-card', role: 'secondary_card', plausible_lfi_candidates: [] },
-          { key: 'digital', role: 'digital_sidekick', plausible_lfi_candidates: [] },
-          { key: 'mortgage-lender', role: 'mortgage_lender', plausible_lfi_candidates: [] },
-        ],
-      },
-    })).toEqual(['everyday-card', 'digital', 'mortgage-lender']);
+    expect(
+      listRoleSlotKeys({
+        multi_lfi_footprint: {
+          slots: [
+            { key: 'salary', role: 'salary_primary', plausible_lfi_candidates: [] },
+            { key: 'everyday-card', role: 'secondary_card', plausible_lfi_candidates: [] },
+            { key: 'digital', role: 'digital_sidekick', plausible_lfi_candidates: [] },
+            { key: 'mortgage-lender', role: 'mortgage_lender', plausible_lfi_candidates: [] },
+          ],
+        },
+      }),
+    ).toEqual(['everyday-card', 'digital', 'mortgage-lender']);
   });
 });

@@ -27,7 +27,8 @@ export function createFindBox(deps) {
     // scoped to the active domain so insurance personas don't bleed into a
     // banking session.
     for (const [pid, p] of Object.entries(state.activePersonas ?? state.data.personas ?? {})) {
-      const hay = `${p.name} ${p.archetype} ${p.narrative ?? ''} ${(p.stress_coverage ?? []).join(' ')}`.toLowerCase();
+      const hay =
+        `${p.name} ${p.archetype} ${p.narrative ?? ''} ${(p.stress_coverage ?? []).join(' ')}`.toLowerCase();
       if (hay.includes(lower)) {
         out.push({
           kind: 'persona',
@@ -50,13 +51,21 @@ export function createFindBox(deps) {
         const enumStr = Array.isArray(f.enum) ? f.enum.join(' ') : '';
         const hay = `${f.name} ${f.path} ${enumStr}`.toLowerCase();
         if (hay.includes(lower)) {
-          const enumHit = enumStr.toLowerCase().includes(lower) && !f.name.toLowerCase().includes(lower);
+          const enumHit =
+            enumStr.toLowerCase().includes(lower) && !f.name.toLowerCase().includes(lower);
           out.push({
             kind: 'field',
             endpoint: path,
             fieldName: f.name,
             title: `${f.name}  ·  ${path}`,
-            meta: `${f.status}${f.format ? ' · ' + f.format : ''}${enumHit ? ` · enum match: ${f.enum.filter((v) => String(v).toLowerCase().includes(lower)).slice(0, 3).join(', ')}` : ''}`,
+            meta: `${f.status}${f.format ? ' · ' + f.format : ''}${
+              enumHit
+                ? ` · enum match: ${f.enum
+                    .filter((v) => String(v).toLowerCase().includes(lower))
+                    .slice(0, 3)
+                    .join(', ')}`
+                : ''
+            }`,
           });
           if (out.length > 200) return out;
         }
@@ -97,11 +106,22 @@ export function createFindBox(deps) {
     const card = el('div', { class: 'find-card' });
     const input = el('input', {
       class: 'find-input',
-      attrs: { type: 'search', placeholder: 'Search fields, paths, enums, persona names, narratives, stress coverage…', 'aria-label': 'Find input', autocomplete: 'off' },
+      attrs: {
+        type: 'search',
+        placeholder: 'Search fields, paths, enums, persona names, narratives, stress coverage…',
+        'aria-label': 'Find input',
+        autocomplete: 'off',
+      },
     });
     const corpus = el('div', { class: 'find-corpus' });
     corpus.appendChild(el('span', { class: 'find-corpus-label', text: 'Searches' }));
-    for (const tag of ['Field names', 'Field paths', 'Enum values', 'Personas', 'Stress coverage']) {
+    for (const tag of [
+      'Field names',
+      'Field paths',
+      'Enum values',
+      'Personas',
+      'Stress coverage',
+    ]) {
       corpus.appendChild(el('span', { class: 'find-corpus-tag', text: tag }));
     }
     const ul = el('ul', { class: 'find-results', attrs: { role: 'listbox' } });
@@ -119,7 +139,9 @@ export function createFindBox(deps) {
     card.appendChild(ul);
     card.appendChild(hint);
     overlay.appendChild(card);
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeFind(); });
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeFind();
+    });
 
     let activeIdx = 0;
     let lastResults = [];
@@ -133,9 +155,10 @@ export function createFindBox(deps) {
       if (lastResults.length === 0) {
         const empty = el('li', {
           class: 'find-empty',
-          text: input.value.trim().length === 0
-            ? 'Try: TransactionType · Payroll · MerchantCategoryCode · Sara · multi_currency · expat'
-            : 'No matches.',
+          text:
+            input.value.trim().length === 0
+              ? 'Try: TransactionType · Payroll · MerchantCategoryCode · Sara · multi_currency · expat'
+              : 'No matches.',
         });
         ul.appendChild(empty);
         return;
@@ -147,18 +170,33 @@ export function createFindBox(deps) {
         });
         li.appendChild(el('div', { class: 'find-result-title', text: r.title }));
         li.appendChild(el('div', { class: 'find-result-meta', text: r.meta }));
-        li.addEventListener('click', () => { applyFindResult(r); closeFind(); });
+        li.addEventListener('click', () => {
+          applyFindResult(r);
+          closeFind();
+        });
         ul.appendChild(li);
       });
     };
-    input.addEventListener('input', () => { activeIdx = 0; refresh(); });
+    input.addEventListener('input', () => {
+      activeIdx = 0;
+      refresh();
+    });
     input.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowDown') { e.preventDefault(); activeIdx = Math.min(activeIdx + 1, Math.max(lastResults.length - 1, 0)); renderResults(); }
-      else if (e.key === 'ArrowUp') { e.preventDefault(); activeIdx = Math.max(activeIdx - 1, 0); renderResults(); }
-      else if (e.key === 'Enter') {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        activeIdx = Math.min(activeIdx + 1, Math.max(lastResults.length - 1, 0));
+        renderResults();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        activeIdx = Math.max(activeIdx - 1, 0);
+        renderResults();
+      } else if (e.key === 'Enter') {
         e.preventDefault();
         const r = lastResults[activeIdx];
-        if (r) { applyFindResult(r); closeFind(); }
+        if (r) {
+          applyFindResult(r);
+          closeFind();
+        }
       }
     });
     document.body.appendChild(overlay);

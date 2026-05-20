@@ -27,79 +27,85 @@ if (!BUILT) {
   describe.skip("Phase R4 brand registry (run 'npm run build:brand-registry' to enable)", () => {
     it.skip('brand registry not built', () => {});
   });
-} else describe('Phase R4 brand registry', () => {
-  const registry = JSON.parse(fs.readFileSync(REGISTRY_PATH, 'utf8'));
-  const records = registry.records;
-  const pools = loadAllPools();
+} else
+  describe('Phase R4 brand registry', () => {
+    const registry = JSON.parse(fs.readFileSync(REGISTRY_PATH, 'utf8'));
+    const records = registry.records;
+    const pools = loadAllPools();
 
-  it('schema is the v1 contract', () => {
-    expect(registry.schema).toBe('openfinance-os/data-sandbox/brand-registry/v1');
-    expect(registry.merchantCount).toBe(Object.keys(records).length);
-    expect(registry.generatedAt).toBeTruthy();
-  });
+    it('schema is the v1 contract', () => {
+      expect(registry.schema).toBe('openfinance-os/data-sandbox/brand-registry/v1');
+      expect(registry.merchantCount).toBe(Object.keys(records).length);
+      expect(registry.generatedAt).toBeTruthy();
+    });
 
-  it('every merchant in every pool has a registry entry', () => {
-    for (const pool of Object.values(pools.merchantsByCategory)) {
-      for (const m of pool.merchants ?? []) {
-        const slug = slugify(m.name);
-        expect(records[slug], `missing registry entry for "${m.name}" (slug "${slug}")`).toBeTruthy();
+    it('every merchant in every pool has a registry entry', () => {
+      for (const pool of Object.values(pools.merchantsByCategory)) {
+        for (const m of pool.merchants ?? []) {
+          const slug = slugify(m.name);
+          expect(
+            records[slug],
+            `missing registry entry for "${m.name}" (slug "${slug}")`,
+          ).toBeTruthy();
+        }
       }
-    }
-  });
+    });
 
-  it('every registry entry has logoUrl + primaryColor + initials + parent-group passthrough', () => {
-    for (const [slug, rec] of Object.entries(records)) {
-      expect(rec.merchantName, `${slug} merchantName`).toBeTruthy();
-      expect(rec.logoUrl, `${slug} logoUrl`).toBe(`/fixtures/v1/brands/${slug}.svg`);
-      expect(rec.primaryColor, `${slug} primaryColor`).toMatch(/^#[0-9a-f]{6}$/);
-      expect(rec.initials, `${slug} initials`).toMatch(/^[A-Z0-9]{1,2}$/);
-      expect(rec.website, `${slug} website`).toMatch(/^https:\/\/.+\.example$/);
-      // Arrays default to [] when not declared on the pool — never null/undefined.
-      expect(Array.isArray(rec.displayVariants)).toBe(true);
-      expect(Array.isArray(rec.displayVariantsAr)).toBe(true);
-    }
-  });
+    it('every registry entry has logoUrl + primaryColor + initials + parent-group passthrough', () => {
+      for (const [slug, rec] of Object.entries(records)) {
+        expect(rec.merchantName, `${slug} merchantName`).toBeTruthy();
+        expect(rec.logoUrl, `${slug} logoUrl`).toBe(`/fixtures/v1/brands/${slug}.svg`);
+        expect(rec.primaryColor, `${slug} primaryColor`).toMatch(/^#[0-9a-f]{6}$/);
+        expect(rec.initials, `${slug} initials`).toMatch(/^[A-Z0-9]{1,2}$/);
+        expect(rec.website, `${slug} website`).toMatch(/^https:\/\/.+\.example$/);
+        // Arrays default to [] when not declared on the pool — never null/undefined.
+        expect(Array.isArray(rec.displayVariants)).toBe(true);
+        expect(Array.isArray(rec.displayVariantsAr)).toBe(true);
+      }
+    });
 
-  it('every registry entry has a matching SVG file on disk', () => {
-    for (const slug of Object.keys(records)) {
-      expect(fs.existsSync(path.join(BRANDS_DIR, `${slug}.svg`)), `missing SVG for ${slug}`).toBe(true);
-    }
-  });
+    it('every registry entry has a matching SVG file on disk', () => {
+      for (const slug of Object.keys(records)) {
+        expect(fs.existsSync(path.join(BRANDS_DIR, `${slug}.svg`)), `missing SVG for ${slug}`).toBe(
+          true,
+        );
+      }
+    });
 
-  it('SVGs are well-formed (root <svg>, single <circle>, single <text>)', () => {
-    const sample = Object.keys(records).slice(0, 5);
-    for (const slug of sample) {
-      const svg = fs.readFileSync(path.join(BRANDS_DIR, `${slug}.svg`), 'utf8');
-      expect(svg.startsWith('<svg')).toBe(true);
-      expect(svg.includes('<circle')).toBe(true);
-      expect(svg.includes('<text')).toBe(true);
-      // Includes the merchant initials in the <text> body.
-      expect(svg).toContain(records[slug].initials);
-    }
-  });
+    it('SVGs are well-formed (root <svg>, single <circle>, single <text>)', () => {
+      const sample = Object.keys(records).slice(0, 5);
+      for (const slug of sample) {
+        const svg = fs.readFileSync(path.join(BRANDS_DIR, `${slug}.svg`), 'utf8');
+        expect(svg.startsWith('<svg')).toBe(true);
+        expect(svg.includes('<circle')).toBe(true);
+        expect(svg.includes('<text')).toBe(true);
+        // Includes the merchant initials in the <text> body.
+        expect(svg).toContain(records[slug].initials);
+      }
+    });
 
-  it('algorithmic parity — enrichment sidecar matches the registry for every record', async () => {
-    const { loadPersonasByDomain } = await import('../tools/load-fixtures.mjs');
-    const banking = loadPersonasByDomain('banking');
-    const persona = banking.salaried_expat_mid;
-    const bundle = buildBundle({ persona, lfi: 'rich', seed: 4729, pools });
-    for (const rec of Object.values(bundle._enrichment)) {
-      if (!rec.logoSlug) continue;
-      const reg = records[rec.logoSlug];
-      if (!reg) continue; // skip non-pool merchants (eg. ATM network) — already covered by the 1:1 lint
-      expect(rec.logoUrl, `${rec.logoSlug} logoUrl`).toBe(reg.logoUrl);
-      expect(rec.primaryColor, `${rec.logoSlug} primaryColor`).toBe(reg.primaryColor);
-    }
-  });
+    it('algorithmic parity — enrichment sidecar matches the registry for every record', async () => {
+      const { loadPersonasByDomain } = await import('../tools/load-fixtures.mjs');
+      const banking = loadPersonasByDomain('banking');
+      const persona = banking.salaried_expat_mid;
+      const bundle = buildBundle({ persona, lfi: 'rich', seed: 4729, pools });
+      for (const rec of Object.values(bundle._enrichment)) {
+        if (!rec.logoSlug) continue;
+        const reg = records[rec.logoSlug];
+        if (!reg) continue; // skip non-pool merchants (eg. ATM network) — already covered by the 1:1 lint
+        expect(rec.logoUrl, `${rec.logoSlug} logoUrl`).toBe(reg.logoUrl);
+        expect(rec.primaryColor, `${rec.logoSlug} primaryColor`).toBe(reg.primaryColor);
+      }
+    });
 
-  it('loadBrandRegistry exposes the same payload through the package surface', async () => {
-    const m = await import(path.join(PKG_DIR, 'index.mjs'));
-    const r = m.loadBrandRegistry();
-    expect(r.schema).toBe(registry.schema);
-    expect(r.merchantCount).toBe(registry.merchantCount);
-    expect(Object.keys(r.records).length).toBe(Object.keys(registry.records).length);
+    it('loadBrandRegistry exposes the same payload through the package surface', async () => {
+      const m = await import(path.join(PKG_DIR, 'index.mjs'));
+      const r = m.loadBrandRegistry();
+      expect(r.schema).toBe(registry.schema);
+      expect(r.merchantCount).toBe(registry.merchantCount);
+      expect(Object.keys(r.records).length).toBe(Object.keys(registry.records).length);
+    });
   });
-});
 
 function slugify(name) {
   return String(name)

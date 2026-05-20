@@ -36,11 +36,9 @@ function serviceRating() {
 export function generateEmploymentQuote({ persona, rng, now }) {
   const e = persona.employment;
   const quoteCreatedDays = e.policy.start_date_offset_days + 5;
-  const creationDateTime = new Date(
-    now.getTime() - quoteCreatedDays * 86400000
-  ).toISOString();
+  const creationDateTime = new Date(now.getTime() - quoteCreatedDays * 86400000).toISOString();
   const expirationDateTime = new Date(
-    now.getTime() - (quoteCreatedDays - 30) * 86400000
+    now.getTime() - (quoteCreatedDays - 30) * 86400000,
   ).toISOString();
 
   // ILOE pricing — see employment-policy.js generateEmploymentPremium.
@@ -57,9 +55,10 @@ export function generateEmploymentQuote({ persona, rng, now }) {
     CreationDateTime: creationDateTime,
     ExpirationDateTime: expirationDateTime,
     PlanName: e.policy.scheme_category === 'CategoryB' ? 'ILOE Category B' : 'ILOE Category A',
-    LevelOfCover: e.policy.scheme_category === 'CategoryB'
-      ? 'ILOE — Salary > AED 16,000'
-      : 'ILOE — Salary ≤ AED 16,000',
+    LevelOfCover:
+      e.policy.scheme_category === 'CategoryB'
+        ? 'ILOE — Salary > AED 16,000'
+        : 'ILOE — Salary ≤ AED 16,000',
     ServiceRating: serviceRating(),
     PolicyIssuanceAllowed: {
       CustomerVerification: true,

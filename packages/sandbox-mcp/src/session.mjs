@@ -14,7 +14,12 @@
 // getEndpointEnvelope resolves against the persona's role-keyed bundle
 // (Phase D Slice 5) — the LLM consumer can ask "what does this persona
 // look like at their secondary LFI?" without changing personas.
-import { getPersonaInfo, loadFixture, listRoleBundles, manifest } from '@openfinance-os/sandbox-fixtures';
+import {
+  getPersonaInfo,
+  loadFixture,
+  listRoleBundles,
+  manifest,
+} from '@openfinance-os/sandbox-fixtures';
 
 const LFI_PROFILES = new Set(['rich', 'median', 'sparse']);
 const LFI_ROLES = new Set(['primary', 'secondary', 'tertiary']);
@@ -71,7 +76,7 @@ export function createSessionStore() {
       domain: 'banking',
       persona,
       lfi,
-      lfi_role: 'primary',  // Custom personas don't carry multi_lfi_footprint.
+      lfi_role: 'primary', // Custom personas don't carry multi_lfi_footprint.
       seed,
       personaName,
       recipe,

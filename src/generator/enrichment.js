@@ -32,34 +32,34 @@
 // to a TransactionType + SubTransactionType + Flags rule set below.
 const MCC_TAXONOMY = {
   // Banking-product MCC (utility direct-debits)
-  '4900': { category: 'Bills', subcategory: 'Utilities' },
+  4900: { category: 'Bills', subcategory: 'Utilities' },
 
   // R1 retail pools
-  '5411': { category: 'Food & Drink', subcategory: 'Supermarkets' },
-  '5541': { category: 'Transport', subcategory: 'Fuel' },
-  '5812': { category: 'Food & Drink', subcategory: 'Restaurants' },
-  '5814': { category: 'Food & Drink', subcategory: 'Fast Food' },
+  5411: { category: 'Food & Drink', subcategory: 'Supermarkets' },
+  5541: { category: 'Transport', subcategory: 'Fuel' },
+  5812: { category: 'Food & Drink', subcategory: 'Restaurants' },
+  5814: { category: 'Food & Drink', subcategory: 'Fast Food' },
 
   // R1 extended pools
-  '4121': { category: 'Transport', subcategory: 'Ride-hailing' },
-  '5399': { category: 'Shopping', subcategory: 'Online Marketplace' },
-  '5961': { category: 'Shopping', subcategory: 'Online Marketplace' },
-  '8011': { category: 'Health', subcategory: 'Clinics & GPs' },
-  '5912': { category: 'Health', subcategory: 'Pharmacy' },
-  '4111': { category: 'Transport', subcategory: 'Public Transit' },
-  '4112': { category: 'Transport', subcategory: 'Public Transit' },
-  '9311': { category: 'Government', subcategory: 'Fees & Fines' },
-  '9399': { category: 'Government', subcategory: 'Fees & Fines' },
-  '7832': { category: 'Entertainment', subcategory: 'Cinema & Events' },
-  '7922': { category: 'Entertainment', subcategory: 'Cinema & Events' },
-  '5815': { category: 'Subscriptions', subcategory: 'Streaming' },
-  '4899': { category: 'Subscriptions', subcategory: 'Streaming' },
-  '4511': { category: 'Travel', subcategory: 'Airlines' },
-  '7011': { category: 'Travel', subcategory: 'Hotels' },
-  '8220': { category: 'Education', subcategory: 'Schools & Tuition' },
-  '8299': { category: 'Education', subcategory: 'Schools & Tuition' },
-  '4814': { category: 'Bills', subcategory: 'Telco' },
-  '6011': { category: 'Cash', subcategory: 'ATM Withdrawal' },
+  4121: { category: 'Transport', subcategory: 'Ride-hailing' },
+  5399: { category: 'Shopping', subcategory: 'Online Marketplace' },
+  5961: { category: 'Shopping', subcategory: 'Online Marketplace' },
+  8011: { category: 'Health', subcategory: 'Clinics & GPs' },
+  5912: { category: 'Health', subcategory: 'Pharmacy' },
+  4111: { category: 'Transport', subcategory: 'Public Transit' },
+  4112: { category: 'Transport', subcategory: 'Public Transit' },
+  9311: { category: 'Government', subcategory: 'Fees & Fines' },
+  9399: { category: 'Government', subcategory: 'Fees & Fines' },
+  7832: { category: 'Entertainment', subcategory: 'Cinema & Events' },
+  7922: { category: 'Entertainment', subcategory: 'Cinema & Events' },
+  5815: { category: 'Subscriptions', subcategory: 'Streaming' },
+  4899: { category: 'Subscriptions', subcategory: 'Streaming' },
+  4511: { category: 'Travel', subcategory: 'Airlines' },
+  7011: { category: 'Travel', subcategory: 'Hotels' },
+  8220: { category: 'Education', subcategory: 'Schools & Tuition' },
+  8299: { category: 'Education', subcategory: 'Schools & Tuition' },
+  4814: { category: 'Bills', subcategory: 'Telco' },
+  6011: { category: 'Cash', subcategory: 'ATM Withdrawal' },
 };
 
 // Fallback taxonomy keyed on (TransactionType, SubTransactionType) — covers
@@ -79,7 +79,8 @@ function fallbackForShape(tx) {
     return { category: 'Bills', subcategory: directDebitHint(tx) };
   }
 
-  if (tt === 'Teller' && st === 'Deposit') return { category: 'Cash', subcategory: 'Branch Deposit' };
+  if (tt === 'Teller' && st === 'Deposit')
+    return { category: 'Cash', subcategory: 'Branch Deposit' };
   if (tt === 'InternationalTransfer' && st === 'MoneyTransfer') {
     return { category: 'Transfer', subcategory: 'International' };
   }
@@ -94,7 +95,8 @@ function fallbackForShape(tx) {
     }
     return { category: 'Transfer', subcategory: 'Local' };
   }
-  if (tt === 'BillPayments' && st === 'Reversal') return { category: 'Bills', subcategory: 'Bounced' };
+  if (tt === 'BillPayments' && st === 'Reversal')
+    return { category: 'Bills', subcategory: 'Bounced' };
   if (tt === 'BillPayments' && st === 'Fee') return { category: 'Fees', subcategory: 'NSF Charge' };
 
   return { category: 'Other', subcategory: 'Uncategorised' };
@@ -155,15 +157,15 @@ function brandColorFor(slug) {
     h ^= slug.charCodeAt(i);
     h = Math.imul(h, 16777619);
   }
-  const hue = ((h >>> 0) % 360);
+  const hue = (h >>> 0) % 360;
   return hslToHex(hue, 55, 45);
 }
 
 function hslToHex(h, s, l) {
-  const a = s * Math.min(l, 100 - l) / 10000;
+  const a = (s * Math.min(l, 100 - l)) / 10000;
   const f = (n) => {
     const k = (n + h / 30) % 12;
-    const v = (l / 100) - a * Math.max(-1, Math.min(k - 3, Math.min(9 - k, 1)));
+    const v = l / 100 - a * Math.max(-1, Math.min(k - 3, Math.min(9 - k, 1)));
     const x = Math.round(v * 255);
     return x.toString(16).padStart(2, '0');
   };

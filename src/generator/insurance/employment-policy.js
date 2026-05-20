@@ -74,9 +74,10 @@ export function generateEmploymentEmployment({ persona }) {
     EmploymentStatus: e.employer.employment_status ?? 'Employed',
     // YAML may parse `2023-08-15` as a Date object; the spec requires
     // `format: date` ISO-string. Coerce defensively.
-    StartDate: typeof e.employer.start_date === 'string'
-      ? e.employer.start_date
-      : new Date(e.employer.start_date).toISOString().slice(0, 10),
+    StartDate:
+      typeof e.employer.start_date === 'string'
+        ? e.employer.start_date
+        : new Date(e.employer.start_date).toISOString().slice(0, 10),
   };
   if (e.additional_compensation) {
     block.AdditionalCompensation = e.additional_compensation.map((c) => ({

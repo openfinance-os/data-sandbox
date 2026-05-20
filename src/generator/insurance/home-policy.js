@@ -93,10 +93,7 @@ export function generateHomeProduct({ persona, rng, now }) {
     product.Mortgage = {
       BankName: h.mortgage.bank_name ?? 'Counterparty Bank',
       BankAddress: {
-        AddressLine: [
-          `${h.mortgage.bank_name ?? 'Bank'} Branch`,
-          h.property.address_emirate,
-        ],
+        AddressLine: [`${h.mortgage.bank_name ?? 'Bank'} Branch`, h.property.address_emirate],
         Country: 'AE',
       },
       MortgageBalanceAmount: aed(h.mortgage.balance_aed),

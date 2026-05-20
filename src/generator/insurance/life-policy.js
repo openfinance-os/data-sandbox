@@ -148,7 +148,15 @@ function generateFinanceAgainstPolicy({ persona, banks, rng, preferredBank }) {
   };
 }
 
-export function generateLifeProduct({ persona, policyHolder, names, banks, rng, now, preferredFinanceBank }) {
+export function generateLifeProduct({
+  persona,
+  policyHolder,
+  names,
+  banks,
+  rng,
+  now,
+  preferredFinanceBank,
+}) {
   const l = persona.life;
   const startOffset = l.policy.start_date_offset_days;
   const startDate = isoDate(now, -startOffset);
@@ -193,7 +201,12 @@ export function generateLifeProduct({ persona, policyHolder, names, banks, rng, 
   const beneficiaries = generateBeneficiaries({ persona, names, rng });
   if (beneficiaries.length > 0) product.Beneficiaries = beneficiaries;
 
-  const finance = generateFinanceAgainstPolicy({ persona, banks, rng, preferredBank: preferredFinanceBank });
+  const finance = generateFinanceAgainstPolicy({
+    persona,
+    banks,
+    rng,
+    preferredBank: preferredFinanceBank,
+  });
   if (finance) product.FinanceAgainstPolicy = finance;
 
   return { product, policyNumber: policyNumber(rng), startDate, endDate: policyEnd };
@@ -217,9 +230,8 @@ export function generateLifePremium({ persona }) {
   // Heuristic: ~0.5% of sum-assured per year for term life on a healthy
   // adult, +5% VAT. Keeps the heuristic mid-market and recognisable.
   const sa = persona.life.policy.sum_assured_aed;
-  const annualRate = persona.life.policy.type_of_life_insurance === 'WholeLifeInsurance'
-    ? 0.012
-    : 0.005;
+  const annualRate =
+    persona.life.policy.type_of_life_insurance === 'WholeLifeInsurance' ? 0.012 : 0.005;
   const total = Math.round(sa * annualRate);
   return {
     TotalPremiumAmount: aed(total),

@@ -37,5 +37,5 @@ const poolCount =
   Object.keys(pools.organisationsByPoolId ?? {}).length +
   Object.keys(pools.counterpartiesByPoolId ?? {}).length;
 console.log(
-  `built ${Object.keys(personas).length} personas, ${poolCount} pools → ${path.relative(repoRoot, OUT)} (${(JSON.stringify(out).length / 1024).toFixed(1)} KB)`
+  `built ${Object.keys(personas).length} personas, ${poolCount} pools → ${path.relative(repoRoot, OUT)} (${(JSON.stringify(out).length / 1024).toFixed(1)} KB)`,
 );

@@ -59,7 +59,10 @@ for (const [pid, persona] of Object.entries(personas)) {
   const probes = [];
   for (const acc of bundle.accounts) {
     probes.push({ at: 'account.AccountHolderName', val: acc.AccountHolderName });
-    probes.push({ at: 'account.AccountIdentifiers[0].Name', val: acc.AccountIdentifiers?.[0]?.Name });
+    probes.push({
+      at: 'account.AccountIdentifiers[0].Name',
+      val: acc.AccountIdentifiers?.[0]?.Name,
+    });
     probes.push({ at: 'account._meta.servicerName', val: acc._meta?.servicerName });
   }
   for (const tx of bundle.transactions) {
@@ -74,7 +77,10 @@ for (const [pid, persona] of Object.entries(personas)) {
     probes.push({ at: 'beneficiary.CreditorAccount[0].Name', val: b.CreditorAccount?.[0]?.Name });
   }
   for (const sp of bundle.scheduledPayments) {
-    probes.push({ at: 'scheduledPayment.CreditorAccount[0].Name', val: sp.CreditorAccount?.[0]?.Name });
+    probes.push({
+      at: 'scheduledPayment.CreditorAccount[0].Name',
+      val: sp.CreditorAccount?.[0]?.Name,
+    });
   }
 
   for (const p of probes) {
@@ -82,7 +88,9 @@ for (const [pid, persona] of Object.entries(personas)) {
     probesChecked += 1;
     if (NAME_PROBE_AT.has(p.at)) {
       if (!allowedFullNames.has(p.val)) {
-        console.error(`PII-leak (persona=${pid}): ${p.at}="${p.val}" not in any name-pool cross-product`);
+        console.error(
+          `PII-leak (persona=${pid}): ${p.at}="${p.val}" not in any name-pool cross-product`,
+        );
         bad += 1;
       }
     } else if (!allowed.has(p.val)) {
@@ -96,4 +104,6 @@ if (bad > 0) {
   console.error(`lint-pii-leak: ${bad} violation(s)`);
   process.exit(1);
 }
-console.log(`lint-pii-leak OK — ${probesChecked} identity strings checked across ${Object.keys(personas).length} personas, all from pool`);
+console.log(
+  `lint-pii-leak OK — ${probesChecked} identity strings checked across ${Object.keys(personas).length} personas, all from pool`,
+);

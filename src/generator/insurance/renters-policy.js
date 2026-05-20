@@ -45,7 +45,7 @@ export function generateRentersProduct({ persona, rng, now }) {
   const policyCovers = [
     {
       CoverType: 'ContentsCover',
-      Description: 'Contents cover for the renter\'s personal belongings.',
+      Description: "Contents cover for the renter's personal belongings.",
       Required: true,
       CoverLimit: aed(r.contents.declared_value_aed),
       CoverInclusionsAndExclusions: [

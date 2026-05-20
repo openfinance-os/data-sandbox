@@ -48,20 +48,52 @@ const HISTORY_MONTHS = 24;
 // Extended categories that can plausibly hit a credit card. ATM and
 // government bill payments don't ride on cards.
 const CARDABLE_EXTENDED_CATEGORIES = new Set([
-  'ride_hailing', 'ecommerce', 'healthcare', 'entertainment',
-  'subscriptions', 'travel_air', 'travel_hotel', 'telecom',
+  'ride_hailing',
+  'ecommerce',
+  'healthcare',
+  'entertainment',
+  'subscriptions',
+  'travel_air',
+  'travel_hotel',
+  'telecom',
 ]);
 
 const SPEND_CATEGORIES = [
-  { id: 'groceries', mccCategory: 'GRC',  weekdayBiasFactor: 0.4, defaultCountBand: [4, 9],
-    countBandKey: 'groceries_per_month_count_band', aedBandKey: 'groceries_aed_per_month_band' },
-  { id: 'fuel',      mccCategory: 'FUEL', weekdayBiasFactor: 0.4, defaultCountBand: [2, 5],
-    countBandKey: 'fuel_per_month_count_band',      aedBandKey: 'fuel_aed_per_month_band' },
-  { id: 'dining',    mccCategory: 'DIN',  weekdayBiasFactor: 0.3, defaultCountBand: [4, 12],
-    countBandKey: 'dining_per_month_count_band',    aedBandKey: 'dining_aed_per_month_band' },
+  {
+    id: 'groceries',
+    mccCategory: 'GRC',
+    weekdayBiasFactor: 0.4,
+    defaultCountBand: [4, 9],
+    countBandKey: 'groceries_per_month_count_band',
+    aedBandKey: 'groceries_aed_per_month_band',
+  },
+  {
+    id: 'fuel',
+    mccCategory: 'FUEL',
+    weekdayBiasFactor: 0.4,
+    defaultCountBand: [2, 5],
+    countBandKey: 'fuel_per_month_count_band',
+    aedBandKey: 'fuel_aed_per_month_band',
+  },
+  {
+    id: 'dining',
+    mccCategory: 'DIN',
+    weekdayBiasFactor: 0.3,
+    defaultCountBand: [4, 12],
+    countBandKey: 'dining_per_month_count_band',
+    aedBandKey: 'dining_aed_per_month_band',
+  },
 ];
 
-export function generateTransactions({ persona, account, rng, pools, runningBalance, now, txState }) {
+export function generateTransactions({
+  persona,
+  account,
+  rng,
+  pools,
+  runningBalance,
+  now,
+  txState,
+}) {
   const out = [];
   const today = new Date(now.getTime());
   today.setHours(0, 0, 0, 0);
@@ -93,10 +125,18 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
         if (day == null) continue;
         const amount = c.amount_aed ?? rngInt(rng, c.amount_aed_band[0], c.amount_aed_band[1] + 1);
         const txDate = weekdayBias(dateForDay(monthStart, day), rng);
-        out.push(makeFixedCommitment({
-          rng, account, date: txDate, amount,
-          purpose: c.purpose, kind: c.kind, txState, now,
-        }));
+        out.push(
+          makeFixedCommitment({
+            rng,
+            account,
+            date: txDate,
+            amount,
+            purpose: c.purpose,
+            kind: c.kind,
+            txState,
+            now,
+          }),
+        );
         runningBalance.balance -= amount;
       }
 
@@ -111,14 +151,27 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
         });
         for (let i = 0; i < count; i++) {
           const merchant = drawMerchant(rng, pool);
-          const amount = rngInt(rng, merchant.typical_amount_aed_band[0], merchant.typical_amount_aed_band[1] + 1);
+          const amount = rngInt(
+            rng,
+            merchant.typical_amount_aed_band[0],
+            merchant.typical_amount_aed_band[1] + 1,
+          );
           const day = rngInt(rng, 1, 28);
-          out.push(makePosTransaction({
-            rng, account, date: weekdayBias(dateForDay(monthStart, day), rng, cat.weekdayBiasFactor),
-            amount, merchant, mcc: pool.mcc, txState, now, mccCategory: cat.mccCategory,
-            familyGroups: pools.familyGroups,
-            mccConfusion: pools.mccConfusion,
-          }));
+          out.push(
+            makePosTransaction({
+              rng,
+              account,
+              date: weekdayBias(dateForDay(monthStart, day), rng, cat.weekdayBiasFactor),
+              amount,
+              merchant,
+              mcc: pool.mcc,
+              txState,
+              now,
+              mccCategory: cat.mccCategory,
+              familyGroups: pools.familyGroups,
+              mccConfusion: pools.mccConfusion,
+            }),
+          );
           runningBalance.balance -= amount;
         }
       }
@@ -145,31 +198,66 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
         const archetypeBand = defaultCountBand(persona.archetype, cat.id);
         if (!countBand && !aedBand && archetypeBand[0] === 0 && archetypeBand[1] === 0) continue;
         const count = monthlyCountFromSpend({
-          rng, countBand, aedBand, pool, defaultBand: archetypeBand,
+          rng,
+          countBand,
+          aedBand,
+          pool,
+          defaultBand: archetypeBand,
         });
         for (let i = 0; i < count; i++) {
           const merchant = drawMerchant(rng, pool);
-          const amount = rngInt(rng, merchant.typical_amount_aed_band[0], merchant.typical_amount_aed_band[1] + 1);
+          const amount = rngInt(
+            rng,
+            merchant.typical_amount_aed_band[0],
+            merchant.typical_amount_aed_band[1] + 1,
+          );
           const day = rngInt(rng, 1, 28);
           const date = weekdayBias(dateForDay(monthStart, day), rng, cat.weekdayBiasFactor);
           if (cat.transactionType === 'ATM') {
-            out.push(makeAtmWithdrawal({
-              rng, account, date, amount, merchant, mcc: pool.mcc, txState, now,
-            }));
+            out.push(
+              makeAtmWithdrawal({
+                rng,
+                account,
+                date,
+                amount,
+                merchant,
+                mcc: pool.mcc,
+                txState,
+                now,
+              }),
+            );
             runningBalance.balance -= amount;
           } else if (cat.transactionType === 'BillPayments') {
-            out.push(makeGovBillPayment({
-              rng, account, date, amount, merchant, mcc: pool.mcc, txState, now,
-            }));
+            out.push(
+              makeGovBillPayment({
+                rng,
+                account,
+                date,
+                amount,
+                merchant,
+                mcc: pool.mcc,
+                txState,
+                now,
+              }),
+            );
             runningBalance.balance -= amount;
           } else {
-            out.push(makePosTransaction({
-              rng, account, date, amount, merchant, mcc: pool.mcc, txState, now,
-              mccCategory: cat.mccCategory,
-              transactionType: cat.isEcommerce ? 'ECommerce' : 'POS',
-              familyGroups: pools.familyGroups,
-              mccConfusion: pools.mccConfusion,
-            }));
+            out.push(
+              makePosTransaction({
+                rng,
+                account,
+                date,
+                amount,
+                merchant,
+                mcc: pool.mcc,
+                txState,
+                now,
+                mccCategory: cat.mccCategory,
+                transactionType: cat.isEcommerce ? 'ECommerce' : 'POS',
+                familyGroups: pools.familyGroups,
+                mccConfusion: pools.mccConfusion,
+              }),
+            );
             runningBalance.balance -= amount;
           }
         }
@@ -182,11 +270,22 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
         const merchant = drawMerchant(rng, pools.dining);
         const amount = rngInt(rng, 80, 600);
         const day = rngInt(rng, 1, 28);
-        out.push(makePosTransaction({
-          rng, account, date: weekdayBias(dateForDay(monthStart, day), rng, 0.3),
-          amount, merchant, mcc: pools.dining.mcc, txState, now, mccCategory: 'DIN',
-          isCreditCard: true, familyGroups: pools.familyGroups, mccConfusion: pools.mccConfusion,
-        }));
+        out.push(
+          makePosTransaction({
+            rng,
+            account,
+            date: weekdayBias(dateForDay(monthStart, day), rng, 0.3),
+            amount,
+            merchant,
+            mcc: pools.dining.mcc,
+            txState,
+            now,
+            mccCategory: 'DIN',
+            isCreditCard: true,
+            familyGroups: pools.familyGroups,
+            mccConfusion: pools.mccConfusion,
+          }),
+        );
       }
 
       // Phase R1 — extended cardable spend on credit cards. The legacy
@@ -213,20 +312,40 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
           Math.floor(archetypeBand[0] / 2),
           Math.max(0, Math.floor(archetypeBand[1] / 2)),
         ];
-        if (!countBand && !aedBand && ccArchetypeBand[0] === 0 && ccArchetypeBand[1] === 0) continue;
+        if (!countBand && !aedBand && ccArchetypeBand[0] === 0 && ccArchetypeBand[1] === 0)
+          continue;
         const count = monthlyCountFromSpend({
-          rng, countBand, aedBand, pool, defaultBand: ccArchetypeBand,
+          rng,
+          countBand,
+          aedBand,
+          pool,
+          defaultBand: ccArchetypeBand,
         });
         for (let i = 0; i < count; i++) {
           const merchant = drawMerchant(rng, pool);
-          const amount = rngInt(rng, merchant.typical_amount_aed_band[0], merchant.typical_amount_aed_band[1] + 1);
+          const amount = rngInt(
+            rng,
+            merchant.typical_amount_aed_band[0],
+            merchant.typical_amount_aed_band[1] + 1,
+          );
           const day = rngInt(rng, 1, 28);
-          out.push(makePosTransaction({
-            rng, account, date: weekdayBias(dateForDay(monthStart, day), rng, cat.weekdayBiasFactor),
-            amount, merchant, mcc: pool.mcc, txState, now, mccCategory: cat.mccCategory,
-            transactionType: cat.isEcommerce ? 'ECommerce' : 'POS',
-            isCreditCard: true, familyGroups: pools.familyGroups, mccConfusion: pools.mccConfusion,
-          }));
+          out.push(
+            makePosTransaction({
+              rng,
+              account,
+              date: weekdayBias(dateForDay(monthStart, day), rng, cat.weekdayBiasFactor),
+              amount,
+              merchant,
+              mcc: pool.mcc,
+              txState,
+              now,
+              mccCategory: cat.mccCategory,
+              transactionType: cat.isEcommerce ? 'ECommerce' : 'POS',
+              isCreditCard: true,
+              familyGroups: pools.familyGroups,
+              mccConfusion: pools.mccConfusion,
+            }),
+          );
         }
       }
     }
@@ -241,9 +360,16 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
       for (let i = 0; i < count; i++) {
         const day = rngInt(rng, 1, 28);
         const amount = rngInt(rng, amtLo, amtHi + 1);
-        out.push(makeCashDeposit({
-          rng, account, date: weekdayBias(dateForDay(monthStart, day), rng, 0.85), amount, txState, now,
-        }));
+        out.push(
+          makeCashDeposit({
+            rng,
+            account,
+            date: weekdayBias(dateForDay(monthStart, day), rng, 0.85),
+            amount,
+            txState,
+            now,
+          }),
+        );
         runningBalance.balance += amount;
       }
     }
@@ -259,10 +385,19 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
         const fxAmount = rngInt(rng, 200, 5000);
         const exchangeRate = fxRateFor(fxCurrency);
         const aedAmount = Math.round(fxAmount * exchangeRate);
-        out.push(makeFxTransaction({
-          rng, account, date: weekdayBias(dateForDay(monthStart, day), rng, 0.9),
-          aedAmount, fxAmount, fxCurrency, exchangeRate, txState, now,
-        }));
+        out.push(
+          makeFxTransaction({
+            rng,
+            account,
+            date: weekdayBias(dateForDay(monthStart, day), rng, 0.9),
+            aedAmount,
+            fxAmount,
+            fxCurrency,
+            exchangeRate,
+            txState,
+            now,
+          }),
+        );
         runningBalance.balance -= aedAmount;
       }
     }
@@ -288,12 +423,18 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
             const day = rngInt(rng, 1, 28);
             const gross = rngInt(rng, lo, hi + 1) / perMonth;
             const txDate = weekdayBias(dateForDay(monthStart, day), rng);
-            out.push(makeB2bInflow({
-              rng, account, date: txDate, grossAmount: Math.round(gross),
-              counterparty: drawCounterparty(rng, pool),
-              poolId: cf.customer_inflows.counterparty_pool,
-              txState, now,
-            }));
+            out.push(
+              makeB2bInflow({
+                rng,
+                account,
+                date: txDate,
+                grossAmount: Math.round(gross),
+                counterparty: drawCounterparty(rng, pool),
+                poolId: cf.customer_inflows.counterparty_pool,
+                txState,
+                now,
+              }),
+            );
             runningBalance.balance += Math.round(gross);
           }
         }
@@ -309,12 +450,18 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
             const day = rngInt(rng, 1, 28);
             const gross = rngInt(rng, lo, hi + 1);
             const txDate = weekdayBias(dateForDay(monthStart, day), rng);
-            out.push(makeB2bOutflow({
-              rng, account, date: txDate, grossAmount: gross,
-              counterparty: drawCounterparty(rng, pool),
-              poolId: cf.supplier_outflows.counterparty_pool,
-              txState, now,
-            }));
+            out.push(
+              makeB2bOutflow({
+                rng,
+                account,
+                date: txDate,
+                grossAmount: gross,
+                counterparty: drawCounterparty(rng, pool),
+                poolId: cf.supplier_outflows.counterparty_pool,
+                txState,
+                now,
+              }),
+            );
             runningBalance.balance -= gross;
           }
         }
@@ -332,14 +479,30 @@ export function generateTransactions({ persona, account, rng, pools, runningBala
         const amount = rngInt(rng, 250, 1500);
         const nsfDate = weekdayBias(dateForDay(monthStart, day), rng, 0.7);
         const purpose = rngPick(rng, ['DEWA', 'TELCO', 'LOAN', 'INSUR']);
-        out.push(makeNsfRejection({
-          rng, account, date: nsfDate, amount, txState, now, purpose,
-        }));
+        out.push(
+          makeNsfRejection({
+            rng,
+            account,
+            date: nsfDate,
+            amount,
+            txState,
+            now,
+            purpose,
+          }),
+        );
         // Bounce fee — small Booked debit the customer pays for the rejection.
         const feeAmount = rngPick(rng, [25, 50, 100]);
-        out.push(makeNsfFee({
-          rng, account, date: nsfDate, amount: feeAmount, txState, now, purpose,
-        }));
+        out.push(
+          makeNsfFee({
+            rng,
+            account,
+            date: nsfDate,
+            amount: feeAmount,
+            txState,
+            now,
+            purpose,
+          }),
+        );
         runningBalance.balance -= feeAmount;
       }
     }
@@ -367,13 +530,20 @@ function fxRateFor(ccy) {
   // Phase 1.5 EXP-18 multi-currency normalisation will publish this table
   // alongside the spec SHA so it's deterministic across rebuilds.
   switch (ccy) {
-    case 'USD': return 3.6725;
-    case 'EUR': return 3.95;
-    case 'GBP': return 4.6;
-    case 'INR': return 0.044;
-    case 'PKR': return 0.013;
-    case 'PHP': return 0.063;
-    default: return 1.0;
+    case 'USD':
+      return 3.6725;
+    case 'EUR':
+      return 3.95;
+    case 'GBP':
+      return 4.6;
+    case 'INR':
+      return 0.044;
+    case 'PKR':
+      return 0.013;
+    case 'PHP':
+      return 0.063;
+    default:
+      return 1.0;
   }
 }
 
@@ -397,7 +567,17 @@ function makeCashDeposit({ rng, account, date, amount, txState, now }) {
   };
 }
 
-function makeFxTransaction({ rng, account, date, aedAmount, fxAmount, fxCurrency, exchangeRate, txState, now }) {
+function makeFxTransaction({
+  rng,
+  account,
+  date,
+  aedAmount,
+  fxAmount,
+  fxCurrency,
+  exchangeRate,
+  txState,
+  now,
+}) {
   const posted = applyPostingTime(date, rng);
   return {
     _accountId: account.AccountId,
@@ -408,13 +588,16 @@ function makeFxTransaction({ rng, account, date, aedAmount, fxAmount, fxCurrency
     BookingDateTime: isoOf(posted),
     TransactionDateTime: isoOf(posted),
     ValueDateTime: valueDateOf(posted, 'InternationalTransfer', rng),
-    TransactionInformation: bankishNarrative('FX', [
-      `${account.Currency}-${fxCurrency}`,
-      'IBT',
-      // Phase R2 — add the source-currency + amount + country tail
-      // a real card scheme appends on cross-border transactions.
-      fxClutter(fxCurrency, fxAmount, rng, 0.9),
-    ].filter(Boolean)),
+    TransactionInformation: bankishNarrative(
+      'FX',
+      [
+        `${account.Currency}-${fxCurrency}`,
+        'IBT',
+        // Phase R2 — add the source-currency + amount + country tail
+        // a real card scheme appends on cross-border transactions.
+        fxClutter(fxCurrency, fxAmount, rng, 0.9),
+      ].filter(Boolean),
+    ),
     Amount: { Amount: aedAmount.toFixed(2), Currency: account.Currency },
     TransactionType: 'InternationalTransfer',
     SubTransactionType: 'MoneyTransfer',
@@ -507,7 +690,13 @@ function nextTxId(account, date, txState) {
 function makeSalary({ rng, persona, date, accountId, currency, employerName, txState, now }) {
   // Salaries post in the early-morning batch — a bank-core specific tell.
   const posted = withPostingTime(date, { h: 4, m: 30 });
-  const employerSlug = String(employerName).split(/\s+/).slice(0, 2).join('').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10);
+  const employerSlug = String(employerName)
+    .split(/\s+/)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '')
+    .slice(0, 10);
   return {
     _accountId: accountId,
     TransactionId: nextTxId({ AccountId: accountId }, posted, txState),
@@ -553,10 +742,10 @@ function makeFixedCommitment({ rng, account, date, amount, purpose, kind, txStat
     BookingDateTime: isoOf(posted),
     TransactionDateTime: isoOf(posted),
     ValueDateTime: valueDateOf(posted, txType, rng),
-    TransactionInformation: bankishNarrative(
-      kind === 'standing_order' ? 'SO' : 'DD',
-      [billerHint, String(rngInt(rng, 1000, 9999))]
-    ),
+    TransactionInformation: bankishNarrative(kind === 'standing_order' ? 'SO' : 'DD', [
+      billerHint,
+      String(rngInt(rng, 1000, 9999)),
+    ]),
     Amount: { Amount: amount.toFixed(2), Currency: account.Currency },
     TransactionType: txType,
     SubTransactionType: 'Repayments',
@@ -565,7 +754,21 @@ function makeFixedCommitment({ rng, account, date, amount, purpose, kind, txStat
   };
 }
 
-function makePosTransaction({ rng, account, date, amount, merchant, mcc, isCreditCard = false, txState, now, mccCategory = 'POS', transactionType = 'POS', familyGroups, mccConfusion }) {
+function makePosTransaction({
+  rng,
+  account,
+  date,
+  amount,
+  merchant,
+  mcc,
+  isCreditCard = false,
+  txState,
+  now,
+  mccCategory = 'POS',
+  transactionType = 'POS',
+  familyGroups,
+  mccConfusion,
+}) {
   const posted = applyPostingTime(date, rng);
   // Real POS amounts carry fils precision — typical retail pricing patterns.
   const amt = fractionalAmount(rng, amount);
@@ -586,7 +789,11 @@ function makePosTransaction({ rng, account, date, amount, merchant, mcc, isCredi
   // The emitted MerchantCategoryCode is what a real card scheme would
   // place on the wire (possibly misrouted); the sidecar's `mcc` field
   // continues to carry the corrected ground-truth (via _trueMcc).
-  const noise = maybeMisrouteMcc({ correctMcc: mcc, transactionId: txId, confusionTable: mccConfusion });
+  const noise = maybeMisrouteMcc({
+    correctMcc: mcc,
+    transactionId: txId,
+    confusionTable: mccConfusion,
+  });
   return {
     _accountId: account.AccountId,
     TransactionId: txId,
@@ -597,7 +804,11 @@ function makePosTransaction({ rng, account, date, amount, merchant, mcc, isCredi
     TransactionDateTime: isoOf(posted),
     ValueDateTime: isoOf(posted),
     TransactionInformation: buildDirtyPosNarrative({
-      rng, channel, prefix: narrativeTag, merchant, registry: familyGroups,
+      rng,
+      channel,
+      prefix: narrativeTag,
+      merchant,
+      registry: familyGroups,
     }),
     Amount: { Amount: amt.toFixed(2), Currency: account.Currency },
     TransactionType: transactionType,
@@ -609,7 +820,9 @@ function makePosTransaction({ rng, account, date, amount, merchant, mcc, isCredi
     // surface parent-group ownership without re-loading the merchant
     // pool. The `_` prefix strips on export per the standard convention.
     _parentGroup: merchant.parent_group ?? null,
-    _parentGroupAcronym: merchant.parent_group ? (familyGroups?.[merchant.parent_group]?.acronym ?? null) : null,
+    _parentGroupAcronym: merchant.parent_group
+      ? (familyGroups?.[merchant.parent_group]?.acronym ?? null)
+      : null,
     // Phase R3 — ground-truth MCC (only populated when the wire field
     // was misrouted). Enrichment reads this with a fallback so any tx
     // that wasn't flipped looks the same as today.
@@ -621,11 +834,17 @@ function makePosTransaction({ rng, account, date, amount, merchant, mcc, isCredi
 
 function makeAtmWithdrawal({ rng, account, date, amount, merchant, mcc, txState, now }) {
   const posted = applyPostingTime(date, rng);
-  const networkToken = merchant.name.toUpperCase().replace(/[^A-Z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const networkToken = merchant.name
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
   const terminal = terminalSuffix(rng, 0.8); // ATM terminals near-always carry an id
   const branch = `BR${String(rngInt(rng, 100, 999))}`;
   const emirate = emirateCode(rng);
-  const parts = terminal ? [networkToken, branch, terminal, emirate] : [networkToken, branch, emirate];
+  const parts = terminal
+    ? [networkToken, branch, terminal, emirate]
+    : [networkToken, branch, emirate];
   return {
     _accountId: account.AccountId,
     TransactionId: nextTxId(account, posted, txState),
@@ -646,7 +865,11 @@ function makeAtmWithdrawal({ rng, account, date, amount, merchant, mcc, txState,
 
 function makeGovBillPayment({ rng, account, date, amount, merchant, mcc, txState, now }) {
   const posted = applyPostingTime(date, rng);
-  const billerToken = merchant.name.toUpperCase().replace(/[^A-Z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const billerToken = merchant.name
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
   // Government bill payments often carry a reference number + emirate
   // code on the statement. Aggregator prefixes don't apply (this rail
   // doesn't route via TST*/SQ*/PYPL*).
@@ -687,7 +910,8 @@ function monthlyCountFromSpend({ rng, countBand, aedBand, pool, defaultBand }) {
     const monthlyAed = rngInt(rng, aedBand[0], aedBand[1] + 1);
     if (monthlyAed === 0) return 0;
     const avgTx = poolAverageTypicalAed(pool);
-    if (!Number.isFinite(avgTx) || avgTx <= 0) return rngInt(rng, defaultBand[0], defaultBand[1] + 1);
+    if (!Number.isFinite(avgTx) || avgTx <= 0)
+      return rngInt(rng, defaultBand[0], defaultBand[1] + 1);
     return Math.max(1, Math.round(monthlyAed / avgTx));
   }
   return rngInt(rng, defaultBand[0], defaultBand[1] + 1);
@@ -726,11 +950,16 @@ function cadenceToCount(cadence) {
   // a per-month invoice count. Monthly = 1, biweekly = 2, weekly = 4,
   // irregular ~= 1.5.
   switch (cadence) {
-    case 'weekly':   return 4;
-    case 'biweekly': return 2;
-    case 'monthly':  return 1;
-    case 'irregular': return 2;
-    default: return 1;
+    case 'weekly':
+      return 4;
+    case 'biweekly':
+      return 2;
+    case 'monthly':
+      return 1;
+    case 'irregular':
+      return 2;
+    default:
+      return 1;
   }
 }
 
@@ -747,12 +976,20 @@ function makeB2bInflow({ rng, account, date, grossAmount, counterparty, poolId, 
     BookingDateTime: isoOf(posted),
     TransactionDateTime: isoOf(posted),
     ValueDateTime: valueDateOf(posted, 'LocalBankTransfer', rng),
-    TransactionInformation: bankishNarrative('IBT', ['INVOICE', 'CR', counterparty.slice(0, 12).toUpperCase()]),
+    TransactionInformation: bankishNarrative('IBT', [
+      'INVOICE',
+      'CR',
+      counterparty.slice(0, 12).toUpperCase(),
+    ]),
     Amount: { Amount: grossAmount.toFixed(2), Currency: account.Currency },
     TransactionType: 'LocalBankTransfer',
     SubTransactionType: 'MoneyTransfer',
     DebtorAgent: { SchemeName: 'BICFI', Identification: 'SYNAEAA', Name: counterparty },
-    DebtorAccount: { SchemeName: 'IBAN', Identification: synthCounterpartyIban(rng), Name: counterparty },
+    DebtorAccount: {
+      SchemeName: 'IBAN',
+      Identification: synthCounterpartyIban(rng),
+      Name: counterparty,
+    },
   };
 }
 
@@ -773,7 +1010,10 @@ function makeB2bOutflow({ rng, account, date, grossAmount, counterparty, poolId,
     BookingDateTime: isoOf(posted),
     TransactionDateTime: isoOf(posted),
     ValueDateTime: valueDateOf(posted, txType, rng),
-    TransactionInformation: bankishNarrative(isIntl ? 'IBT' : 'LBT', ['SUPP', counterparty.slice(0, 12).toUpperCase()]),
+    TransactionInformation: bankishNarrative(isIntl ? 'IBT' : 'LBT', [
+      'SUPP',
+      counterparty.slice(0, 12).toUpperCase(),
+    ]),
     Amount: { Amount: grossAmount.toFixed(2), Currency: account.Currency },
     TransactionType: txType,
     SubTransactionType: 'MoneyTransfer',

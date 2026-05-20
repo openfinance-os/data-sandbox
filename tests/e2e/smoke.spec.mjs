@@ -13,7 +13,7 @@ test('renders Sara, switches endpoints, no console errors, axe-clean', async ({ 
 
   // PR #2 — tour auto-launches on cold landing; dismiss it so the rest
   // of the test interacts with the navigator unobstructed.
-  if (await page.locator('#tour-overlay .tour-skip').count() > 0) {
+  if ((await page.locator('#tour-overlay .tour-skip').count()) > 0) {
     await page.locator('#tour-overlay .tour-skip').click();
     await expect(page.locator('#tour-overlay')).toHaveCount(0);
   }
@@ -44,9 +44,7 @@ test('renders Sara, switches endpoints, no console errors, axe-clean', async ({ 
   await expect(page.locator('#fc-content')).toContainText('Mandatory');
 
   // axe-core a11y scan — Phase 0 acceptance for EXP-23.
-  const axeResults = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa'])
-    .analyze();
+  const axeResults = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
   if (axeResults.violations.length > 0) {
     console.error('axe violations:', JSON.stringify(axeResults.violations, null, 2));
   }
@@ -80,7 +78,9 @@ test('transactions filter narrows the row set — EXP-11', async ({ page }) => {
   expect(afterCount).toBeGreaterThan(0);
 });
 
-test('cross-link from standing-orders highlights matching transactions — EXP-12', async ({ page }) => {
+test('cross-link from standing-orders highlights matching transactions — EXP-12', async ({
+  page,
+}) => {
   await loadPersona(page, {
     persona: 'salaried_emirati_affluent',
     lfi: 'median',
@@ -96,7 +96,9 @@ test('cross-link from standing-orders highlights matching transactions — EXP-1
 });
 
 test('embed page renders chrome-less view with status badges — EXP-27', async ({ page }) => {
-  await page.goto('/src/embed.html?persona=salaried_expat_mid&lfi=median&endpoint=/accounts/{AccountId}/transactions&seed=4729&height=600');
+  await page.goto(
+    '/src/embed.html?persona=salaried_expat_mid&lfi=median&endpoint=/accounts/{AccountId}/transactions&seed=4729&height=600',
+  );
   await expect(page.locator('.embed-strip')).toBeVisible();
   await expect(page.locator('.payload-rendered table')).toBeVisible();
   expect(await page.locator('.pill-solid').count()).toBeGreaterThan(0);
@@ -105,7 +107,10 @@ test('embed page renders chrome-less view with status badges — EXP-27', async 
   await expect(page.locator('.persona-pane')).toHaveCount(0);
 });
 
-test('identity posture — no cookies / localStorage writes / non-static fetches — EXP-22', async ({ page, context }) => {
+test('identity posture — no cookies / localStorage writes / non-static fetches — EXP-22', async ({
+  page,
+  context,
+}) => {
   const fetchedUrls = [];
   page.on('request', (req) => {
     if (req.frame() === page.mainFrame()) fetchedUrls.push(req.url());
@@ -144,17 +149,27 @@ test('about page renders with live spec metadata', async ({ page }) => {
   expect(mandatory).toBeLessThan(total);
 });
 
-test('insurance domain renders motor persona, switches endpoints, no console errors', async ({ page }) => {
+test('insurance domain renders motor persona, switches endpoints, no console errors', async ({
+  page,
+}) => {
   // Insurance personas don't drive coverage-pct, so use a raw goto + body wait
   // instead of the loadPersona helper (which polls #coverage-pct).
-  await page.goto('/src/index.html?domain=insurance&persona=motor_comprehensive_mid&lfi=median&seed=4729');
+  await page.goto(
+    '/src/index.html?domain=insurance&persona=motor_comprehensive_mid&lfi=median&seed=4729',
+  );
 
   // Active persona card is the motor one.
   await expect(page.locator('.persona-card.active').first()).toBeVisible();
 
   // Insurance navigator is in place with the expected endpoint set.
-  await expect(page.locator('.nav-endpoint', { hasText: '/motor-insurance-policies' }).first()).toBeVisible();
-  await expect(page.locator('.nav-endpoint', { hasText: '/motor-insurance-policies/{InsurancePolicyId}/payment-details' })).toBeVisible();
+  await expect(
+    page.locator('.nav-endpoint', { hasText: '/motor-insurance-policies' }).first(),
+  ).toBeVisible();
+  await expect(
+    page.locator('.nav-endpoint', {
+      hasText: '/motor-insurance-policies/{InsurancePolicyId}/payment-details',
+    }),
+  ).toBeVisible();
 
   // Payload renders an insurance record card with at least one field name.
   await expect(page.locator('.insurance-payload .insurance-record').first()).toBeVisible();
@@ -242,7 +257,9 @@ test('Stress-chip filter narrows the persona library', async ({ page }) => {
   expect(await page.locator('.persona-card').count()).toBe(fullCount);
 });
 
-test('Monthly summary roll-up renders one row per month of activity on /transactions', async ({ page }) => {
+test('Monthly summary roll-up renders one row per month of activity on /transactions', async ({
+  page,
+}) => {
   await loadPersona(page, { endpoint: '/transactions' });
   const rolled = page.locator('.tx-monthly');
   await expect(rolled).toBeVisible();
@@ -260,8 +277,12 @@ test('Underwriting panel renders 4 signals — EXP-18', async ({ page }) => {
   await loadPersona(page);
   await page.locator('.nav-endpoint', { hasText: 'Underwriting summary' }).click();
   await expect(page.locator('.uw-panel')).toBeVisible();
-  await expect(page.locator('.uw-card-title', { hasText: 'Implied monthly net income' })).toBeVisible();
-  await expect(page.locator('.uw-card-title', { hasText: 'Total fixed commitments' })).toBeVisible();
+  await expect(
+    page.locator('.uw-card-title', { hasText: 'Implied monthly net income' }),
+  ).toBeVisible();
+  await expect(
+    page.locator('.uw-card-title', { hasText: 'Total fixed commitments' }),
+  ).toBeVisible();
   await expect(page.locator('.uw-card-title', { hasText: 'Implied DBR' })).toBeVisible();
   await expect(page.locator('.uw-card-title', { hasText: 'NSF / distress' })).toBeVisible();
 });
@@ -276,7 +297,9 @@ test('Senior persona triggers low-volume guard — EXP-18', async ({ page }) => 
   await expect(dbrCard.locator('.uw-card-value')).toHaveText('—');
 });
 
-test('collapsed nav-account stays collapsed across endpoint navigation (PR-13 Greptile P1)', async ({ page }) => {
+test('collapsed nav-account stays collapsed across endpoint navigation (PR-13 Greptile P1)', async ({
+  page,
+}) => {
   // hnw_multicurrency has multiple accounts, so collapse is meaningful.
   await loadPersona(page, { persona: 'hnw_multicurrency' });
   const accounts = page.locator('details.nav-account[data-account-id]');
@@ -304,7 +327,17 @@ test('field card shows all 9 elements + Report-an-issue link', async ({ page }) 
   const fc = page.locator('#fc-content');
   await expect(fc).toBeVisible();
   // Status, Type, Format, Enum, Example, Conditional, Real LFIs, Spec, Feedback labels visible.
-  for (const k of ['Status', 'Type', 'Format', 'Enum', 'Example', 'Conditional', 'Real LFIs', 'Spec', 'Feedback']) {
+  for (const k of [
+    'Status',
+    'Type',
+    'Format',
+    'Enum',
+    'Example',
+    'Conditional',
+    'Real LFIs',
+    'Spec',
+    'Feedback',
+  ]) {
     await expect(fc).toContainText(k);
   }
   // Spec citation is a link to the upstream pinned SHA.

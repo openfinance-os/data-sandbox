@@ -8,10 +8,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { buildBundle } from '../src/generator/index.js';
-import {
-  pickFootprintSlotBank,
-  findInsuranceCrossDomainLink,
-} from '../src/generator/multi-lfi.js';
+import { pickFootprintSlotBank, findInsuranceCrossDomainLink } from '../src/generator/multi-lfi.js';
 import { loadPersona, loadAllPools } from '../tools/load-fixtures.mjs';
 
 const NOW = new Date(Date.UTC(2026, 3, 1, 0, 0, 0));
@@ -28,18 +25,25 @@ describe('Phase 2.2 — cross_domain_link resolution', () => {
     expect(findInsuranceCrossDomainLink(persona, 'travel')).toBeNull();
   });
 
-  it('home Mortgage.BankName resolves to the persona\'s mortgage-lender slot bank', () => {
+  it("home Mortgage.BankName resolves to the persona's mortgage-lender slot bank", () => {
     const expectedBank = pickFootprintSlotBank(persona, 'mortgage-lender', counterpartyBanks);
     expect(expectedBank).toBeTruthy();
-    const bundle = buildBundle({ persona, lfi: 'rich', seed: persona.default_seed, pools, now: NOW });
+    const bundle = buildBundle({
+      persona,
+      lfi: 'rich',
+      seed: persona.default_seed,
+      pools,
+      now: NOW,
+    });
     const homePolicy = bundle.homePolicies?.[0];
     expect(homePolicy).toBeTruthy();
-    const mortgageBank = homePolicy.HouseDetails?.Mortgage?.BankName
-      ?? homePolicy.House?.Mortgage?.BankName
-      ?? homePolicy.Mortgage?.BankName
+    const mortgageBank =
+      homePolicy.HouseDetails?.Mortgage?.BankName ??
+      homePolicy.House?.Mortgage?.BankName ??
+      homePolicy.Mortgage?.BankName ??
       // Different home-policy shapes may nest the mortgage block differently;
       // search the JSON for the BankName field.
-      ?? findMortgageBankInPolicy(homePolicy);
+      findMortgageBankInPolicy(homePolicy);
     expect(mortgageBank).toBe(expectedBank.name);
   });
 
@@ -51,7 +55,11 @@ describe('Phase 2.2 — cross_domain_link resolution', () => {
     const expectedBank = pickFootprintSlotBank(linkedPersona, 'mortgage-lender', counterpartyBanks);
     expect(expectedBank).toBeTruthy();
     const bundle = buildBundle({
-      persona: linkedPersona, lfi: 'rich', seed: linkedPersona.default_seed, pools, now: NOW,
+      persona: linkedPersona,
+      lfi: 'rich',
+      seed: linkedPersona.default_seed,
+      pools,
+      now: NOW,
     });
     const lifePolicy = bundle.lifePolicies?.[0];
     expect(lifePolicy).toBeTruthy();
@@ -59,14 +67,20 @@ describe('Phase 2.2 — cross_domain_link resolution', () => {
     expect(provider).toBe(expectedBank.name);
   });
 
-  it('motor CarFinance.BankName resolves to the persona\'s salary slot bank', () => {
+  it("motor CarFinance.BankName resolves to the persona's salary slot bank", () => {
     const expectedBank = pickFootprintSlotBank(persona, 'salary', counterpartyBanks);
     expect(expectedBank).toBeTruthy();
-    const bundle = buildBundle({ persona, lfi: 'rich', seed: persona.default_seed, pools, now: NOW });
+    const bundle = buildBundle({
+      persona,
+      lfi: 'rich',
+      seed: persona.default_seed,
+      pools,
+      now: NOW,
+    });
     const motorPolicy = bundle.motorPolicies?.[0];
     expect(motorPolicy).toBeTruthy();
-    const carFinanceBank = motorPolicy.Product?.CarFinance?.BankName
-      ?? findCarFinanceBankInPolicy(motorPolicy);
+    const carFinanceBank =
+      motorPolicy.Product?.CarFinance?.BankName ?? findCarFinanceBankInPolicy(motorPolicy);
     expect(carFinanceBank).toBe(expectedBank.name);
   });
 
@@ -76,14 +90,21 @@ describe('Phase 2.2 — cross_domain_link resolution', () => {
     expect(salaryBank?.name).not.toBe(mortgageBank?.name);
   });
 
-  it('home Mortgage carries the linked bank\'s BIC (not just name)', () => {
+  it("home Mortgage carries the linked bank's BIC (not just name)", () => {
     const expectedBank = pickFootprintSlotBank(persona, 'mortgage-lender', counterpartyBanks);
     expect(expectedBank?.bic).toBeTruthy();
-    const bundle = buildBundle({ persona, lfi: 'rich', seed: persona.default_seed, pools, now: NOW });
+    const bundle = buildBundle({
+      persona,
+      lfi: 'rich',
+      seed: persona.default_seed,
+      pools,
+      now: NOW,
+    });
     const homePolicy = bundle.homePolicies?.[0];
-    const mortgageBic = findStringByKeyPath(homePolicy, ['Mortgage', 'BIC'])
-      ?? findStringByKeyPath(homePolicy, ['Mortgage', 'BankBIC'])
-      ?? findStringByKeyPath(homePolicy, ['Mortgage', 'BankIdentifier']);
+    const mortgageBic =
+      findStringByKeyPath(homePolicy, ['Mortgage', 'BIC']) ??
+      findStringByKeyPath(homePolicy, ['Mortgage', 'BankBIC']) ??
+      findStringByKeyPath(homePolicy, ['Mortgage', 'BankIdentifier']);
     // The current home-policy generator surfaces only BankName + BankBranch
     // — no BIC field. Document the limitation: if a future generator
     // change adds a BIC, it MUST resolve from the linked bank.
@@ -102,7 +123,13 @@ describe('Phase 2.2 — cross_domain_link fallback (no link declared)', () => {
 
   it('builds a home bundle and surfaces a BankName from the pool when no link is declared', () => {
     expect(findInsuranceCrossDomainLink(persona, 'home')).toBeNull();
-    const bundle = buildBundle({ persona, lfi: 'rich', seed: persona.default_seed, pools, now: NOW });
+    const bundle = buildBundle({
+      persona,
+      lfi: 'rich',
+      seed: persona.default_seed,
+      pools,
+      now: NOW,
+    });
     const homePolicy = bundle.homePolicies?.[0];
     expect(homePolicy).toBeTruthy();
     const mortgageBank = findStringByKeyPath(homePolicy, ['Mortgage', 'BankName']);
@@ -146,7 +173,10 @@ function findStringByKeyPath(node, keyPath) {
     // Direct match?
     let cursor = node;
     for (const k of keyPath) {
-      if (cursor == null || typeof cursor !== 'object') { cursor = null; break; }
+      if (cursor == null || typeof cursor !== 'object') {
+        cursor = null;
+        break;
+      }
       cursor = cursor[k];
     }
     if (typeof cursor === 'string') return cursor;

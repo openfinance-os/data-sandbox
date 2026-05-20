@@ -99,8 +99,7 @@ export function generateMotorProduct({ persona, names, banks, rng, now, preferre
     PolicyNumber: policyNumber(rng),
     PurchaseDate: purchaseDate,
     Takaful: persona.policy.takaful,
-    ProductName:
-      persona.policy.type === 'Comprehensive' ? 'Motor Comprehensive Plus' : 'Motor TPL',
+    ProductName: persona.policy.type === 'Comprehensive' ? 'Motor Comprehensive Plus' : 'Motor TPL',
     PolicyExcess: aed(persona.policy.excess_aed),
     PolicyCoverAndBenefits: policyCovers,
     PolicyPurchaseChannelType: CHANNEL_MAP[persona.policy.channel] ?? 'Other',
@@ -132,7 +131,12 @@ export function generateMotorProduct({ persona, names, banks, rng, now, preferre
   });
   if (drivers.length > 0) product.AdditionalDrivers = drivers;
 
-  const carFinance = generateCarFinance({ persona, banks, rng, preferredBank: preferredFinanceBank });
+  const carFinance = generateCarFinance({
+    persona,
+    banks,
+    rng,
+    preferredBank: preferredFinanceBank,
+  });
   if (carFinance) product.CarFinance = carFinance;
 
   return product;

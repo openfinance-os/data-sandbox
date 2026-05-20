@@ -28,8 +28,15 @@ test.describe('Export popover (PR #6)', () => {
     await expect(tabs).toHaveCount(9);
     const labels = await tabs.allTextContents();
     expect(labels).toEqual([
-      'Permalink', 'Embed iframe', 'JSON', 'CSV', 'Tarball',
-      'npm', 'Python', 'curl', 'MCP',
+      'Permalink',
+      'Embed iframe',
+      'JSON',
+      'CSV',
+      'Tarball',
+      'npm',
+      'Python',
+      'curl',
+      'MCP',
     ]);
   });
 
@@ -66,11 +73,18 @@ test.describe('Export popover (PR #6)', () => {
     await expect(page.locator('.export-copy-btn', { hasText: 'Download tarball' })).toBeVisible();
   });
 
-  test('Copy button copies the active snippet to the clipboard', async ({ page, browser }, testInfo) => {
+  test('Copy button copies the active snippet to the clipboard', async ({
+    page,
+    browser,
+  }, testInfo) => {
     // PR-14 — clipboard read in test mode requires permissions that not
     // every Playwright project grants. Chromium-family projects support
     // the permission grant below; WebKit and Firefox reject it.
-    test.skip(!testInfo.project.name.startsWith('chromium-') && !testInfo.project.name.startsWith('mobile-chrome'), 'navigator.clipboard.readText not available in this browser/test mode');
+    test.skip(
+      !testInfo.project.name.startsWith('chromium-') &&
+        !testInfo.project.name.startsWith('mobile-chrome'),
+      'navigator.clipboard.readText not available in this browser/test mode',
+    );
     const ctx = await browser.newContext({ permissions: ['clipboard-read', 'clipboard-write'] });
     const isolatedPage = await ctx.newPage();
     await loadPersona(isolatedPage);

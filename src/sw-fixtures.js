@@ -46,7 +46,9 @@ let poolsPromise = null;
 function loadPools() {
   if (poolsPromise) return poolsPromise;
   // The SW is registered with `scope: '../'` so paths are relative to /src/.
-  poolsPromise = fetch('../dist/data.json').then((r) => r.json()).then((d) => d.pools);
+  poolsPromise = fetch('../dist/data.json')
+    .then((r) => r.json())
+    .then((d) => d.pools);
   return poolsPromise;
 }
 
@@ -94,14 +96,17 @@ async function handleCurated(url) {
 }
 
 function errorResponse(err) {
-  return new Response(
-    JSON.stringify({ error: String(err && err.message || err) }),
-    {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-    }
-  );
+  // Don't leak internal details (including any stack trace embedded in
+  // err.message) into the response body — the SW serves arbitrary
+  // cross-origin TPP integrators. Log the detail to the SW console for
+  // local debugging and return a generic body to the caller.
+
+  console.error('[sw-fixtures] handler error:', err);
+  return new Response(JSON.stringify({ error: 'fixture handler error' }), {
+    status: 500,
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+    },
+  });
 }

@@ -92,9 +92,7 @@ const SHIRT_COLORS = ['#3F6483', '#5C7A4F', '#A95464', '#6E548F', '#8A6B1F'];
 // The narratives use a small set of named personas. We only need a hint
 // to drive the hair-length default; the heuristic is a closed list, not
 // open NLP, so it stays robust.
-const FEMALE_FIRST_NAMES = new Set([
-  'sara', 'aisha', 'layla', 'maria', 'priya', 'tanvi',
-]);
+const FEMALE_FIRST_NAMES = new Set(['sara', 'aisha', 'layla', 'maria', 'priya', 'tanvi']);
 
 function genderHint(name) {
   const head = name.split(/\s+[—–-]\s+/)[0].trim();
@@ -109,11 +107,9 @@ function genderHint(name) {
 function faceAvatar(persona) {
   const seed = hashStr(persona.persona_id);
   const palette = pick(BG_PALETTE, seed);
-  const skin =
-    SKIN_BY_POOL[persona.demographics?.nationality_pool] ?? SKIN_BY_POOL.default;
+  const skin = SKIN_BY_POOL[persona.demographics?.nationality_pool] ?? SKIN_BY_POOL.default;
   const isSenior =
-    persona.archetype === 'senior_retiree' ||
-    /6[0-9]-/.test(persona.demographics?.age_band ?? '');
+    persona.archetype === 'senior_retiree' || /6[0-9]-/.test(persona.demographics?.age_band ?? '');
   const hairColor = isSenior ? HAIR_GREY : HAIR_DARK;
   const gender = genderHint(persona.name);
   const shirt = pick(SHIRT_COLORS, seed >> 3);
@@ -121,16 +117,17 @@ function faceAvatar(persona) {
   if (gender === 'joint') {
     // Two heads, offset. Shared shoulders behind.
     return svg(
-      120, 120,
+      120,
+      120,
       `<rect width="120" height="120" fill="${palette.bg}"/>` +
-      // Shoulders
-      `<path d="M0 120 Q60 70 120 120 Z" fill="${shirt}"/>` +
-      // Head A (left, female default)
-      `<circle cx="42" cy="56" r="20" fill="${skin}"/>` +
-      `<path d="M22 56 Q22 32 42 32 Q62 32 62 56 L62 64 Q60 50 42 50 Q24 50 22 64 Z" fill="${hairColor}"/>` +
-      // Head B (right, male default)
-      `<circle cx="82" cy="60" r="20" fill="${skin}"/>` +
-      `<path d="M62 50 Q72 38 82 40 Q92 38 102 50 Q100 46 82 46 Q64 46 62 50 Z" fill="${hairColor}"/>`
+        // Shoulders
+        `<path d="M0 120 Q60 70 120 120 Z" fill="${shirt}"/>` +
+        // Head A (left, female default)
+        `<circle cx="42" cy="56" r="20" fill="${skin}"/>` +
+        `<path d="M22 56 Q22 32 42 32 Q62 32 62 56 L62 64 Q60 50 42 50 Q24 50 22 64 Z" fill="${hairColor}"/>` +
+        // Head B (right, male default)
+        `<circle cx="82" cy="60" r="20" fill="${skin}"/>` +
+        `<path d="M62 50 Q72 38 82 40 Q92 38 102 50 Q100 46 82 46 Q64 46 62 50 Z" fill="${hairColor}"/>`,
     );
   }
 
@@ -138,27 +135,28 @@ function faceAvatar(persona) {
   // eyes, mouth. Glyph-free, soft, friendly.
   const hairPath =
     gender === 'female'
-      // Longer hair, frames the face on both sides.
-      ? `<path d="M28 60 Q28 28 60 28 Q92 28 92 60 L92 78 Q88 56 60 56 Q32 56 28 78 Z" fill="${hairColor}"/>`
-      // Short top + temple line.
-      : `<path d="M30 56 Q34 30 60 30 Q86 30 90 56 Q86 46 60 46 Q34 46 30 56 Z" fill="${hairColor}"/>`;
+      ? // Longer hair, frames the face on both sides.
+        `<path d="M28 60 Q28 28 60 28 Q92 28 92 60 L92 78 Q88 56 60 56 Q32 56 28 78 Z" fill="${hairColor}"/>`
+      : // Short top + temple line.
+        `<path d="M30 56 Q34 30 60 30 Q86 30 90 56 Q86 46 60 46 Q34 46 30 56 Z" fill="${hairColor}"/>`;
 
   return svg(
-    120, 120,
+    120,
+    120,
     `<rect width="120" height="120" fill="${palette.bg}"/>` +
-    // Shoulders / shirt
-    `<path d="M0 120 Q60 78 120 120 Z" fill="${shirt}"/>` +
-    // Neck
-    `<rect x="52" y="78" width="16" height="14" fill="${skin}"/>` +
-    // Head
-    `<circle cx="60" cy="60" r="26" fill="${skin}"/>` +
-    // Hair
-    hairPath +
-    // Eyes
-    `<circle cx="51" cy="62" r="2.2" fill="#1B1B1B"/>` +
-    `<circle cx="69" cy="62" r="2.2" fill="#1B1B1B"/>` +
-    // Mouth — soft smile
-    `<path d="M53 72 Q60 77 67 72" stroke="#5A3A2B" stroke-width="1.6" stroke-linecap="round" fill="none"/>`
+      // Shoulders / shirt
+      `<path d="M0 120 Q60 78 120 120 Z" fill="${shirt}"/>` +
+      // Neck
+      `<rect x="52" y="78" width="16" height="14" fill="${skin}"/>` +
+      // Head
+      `<circle cx="60" cy="60" r="26" fill="${skin}"/>` +
+      // Hair
+      hairPath +
+      // Eyes
+      `<circle cx="51" cy="62" r="2.2" fill="#1B1B1B"/>` +
+      `<circle cx="69" cy="62" r="2.2" fill="#1B1B1B"/>` +
+      // Mouth — soft smile
+      `<path d="M53 72 Q60 77 67 72" stroke="#5A3A2B" stroke-width="1.6" stroke-linecap="round" fill="none"/>`,
   );
 }
 
@@ -245,10 +243,7 @@ function glyphAvatar(persona, glyphKey) {
   const seed = hashStr(persona.persona_id);
   const palette = pick(BG_PALETTE, seed);
   const glyph = GLYPHS[glyphKey](palette.accent);
-  return svg(
-    120, 120,
-    `<rect width="120" height="120" fill="${palette.bg}"/>` + glyph
-  );
+  return svg(120, 120, `<rect width="120" height="120" fill="${palette.bg}"/>` + glyph);
 }
 
 // ---- dispatch ---------------------------------------------------------
@@ -277,5 +272,5 @@ fs.writeFileSync(OUT, JSON.stringify({ avatars }));
 const count = Object.keys(avatars).length;
 console.log(
   `built ${count} avatars → ${path.relative(repoRoot, OUT)} ` +
-    `(avg ${(totalBytes / count).toFixed(0)} B/svg, total ${(totalBytes / 1024).toFixed(1)} KB)`
+    `(avg ${(totalBytes / count).toFixed(0)} B/svg, total ${(totalBytes / 1024).toFixed(1)} KB)`,
 );

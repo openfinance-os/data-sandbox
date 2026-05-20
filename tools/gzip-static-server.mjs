@@ -28,9 +28,7 @@ const MIME = {
   '.yaml': 'text/yaml; charset=utf-8',
 };
 
-const GZIP_TYPES = new Set([
-  '.html', '.css', '.js', '.mjs', '.json', '.svg', '.txt', '.yaml',
-]);
+const GZIP_TYPES = new Set(['.html', '.css', '.js', '.mjs', '.json', '.svg', '.txt', '.yaml']);
 
 function safeJoin(rel) {
   const resolved = path.resolve(repoRoot, '.' + rel);
@@ -38,42 +36,48 @@ function safeJoin(rel) {
   return resolved;
 }
 
-http.createServer((req, res) => {
-  const urlPath = decodeURIComponent(new URL(req.url, 'http://x').pathname);
-  let target = safeJoin(urlPath);
-  if (!target) {
-    res.writeHead(403); res.end('forbidden'); return;
-  }
-  if (fs.existsSync(target) && fs.statSync(target).isDirectory()) {
-    target = path.join(target, 'index.html');
-  }
-  if (!fs.existsSync(target)) {
-    res.writeHead(404); res.end('not found'); return;
-  }
-  const ext = path.extname(target).toLowerCase();
-  const contentType = MIME[ext] ?? 'application/octet-stream';
-  const data = fs.readFileSync(target);
+http
+  .createServer((req, res) => {
+    const urlPath = decodeURIComponent(new URL(req.url, 'http://x').pathname);
+    let target = safeJoin(urlPath);
+    if (!target) {
+      res.writeHead(403);
+      res.end('forbidden');
+      return;
+    }
+    if (fs.existsSync(target) && fs.statSync(target).isDirectory()) {
+      target = path.join(target, 'index.html');
+    }
+    if (!fs.existsSync(target)) {
+      res.writeHead(404);
+      res.end('not found');
+      return;
+    }
+    const ext = path.extname(target).toLowerCase();
+    const contentType = MIME[ext] ?? 'application/octet-stream';
+    const data = fs.readFileSync(target);
 
-  const acceptsGzip = (req.headers['accept-encoding'] ?? '').includes('gzip');
-  if (acceptsGzip && GZIP_TYPES.has(ext)) {
-    const gz = zlib.gzipSync(data);
-    res.writeHead(200, {
-      'Content-Type': contentType,
-      'Content-Encoding': 'gzip',
-      'Content-Length': gz.length,
-      'Cache-Control': 'public, max-age=300',
-      'X-Content-Type-Options': 'nosniff',
-    });
-    res.end(gz);
-  } else {
-    res.writeHead(200, {
-      'Content-Type': contentType,
-      'Content-Length': data.length,
-      'Cache-Control': 'public, max-age=300',
-      'X-Content-Type-Options': 'nosniff',
-    });
-    res.end(data);
-  }
-}).listen(port, '127.0.0.1', () => {
-  console.log(`gzip-static-server listening on http://127.0.0.1:${port}/  (root: ${repoRoot})`);
-});
+    const acceptsGzip = (req.headers['accept-encoding'] ?? '').includes('gzip');
+    if (acceptsGzip && GZIP_TYPES.has(ext)) {
+      const gz = zlib.gzipSync(data);
+      res.writeHead(200, {
+        'Content-Type': contentType,
+        'Content-Encoding': 'gzip',
+        'Content-Length': gz.length,
+        'Cache-Control': 'public, max-age=300',
+        'X-Content-Type-Options': 'nosniff',
+      });
+      res.end(gz);
+    } else {
+      res.writeHead(200, {
+        'Content-Type': contentType,
+        'Content-Length': data.length,
+        'Cache-Control': 'public, max-age=300',
+        'X-Content-Type-Options': 'nosniff',
+      });
+      res.end(data);
+    }
+  })
+  .listen(port, '127.0.0.1', () => {
+    console.log(`gzip-static-server listening on http://127.0.0.1:${port}/  (root: ${repoRoot})`);
+  });

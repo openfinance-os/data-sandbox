@@ -56,7 +56,9 @@ test.describe('responsive panel collapse (PR #1)', () => {
     await loadPersona(page, { endpoint: '/transactions' });
     // Table is wider than its parent's available width when both pane state
     // is squeezed; min-width: 520 keeps cell content from breaking mid-word.
-    const tableWidth = await page.locator('.payload-rendered table').first()
+    const tableWidth = await page
+      .locator('.payload-rendered table')
+      .first()
       .evaluate((el) => el.getBoundingClientRect().width);
     expect(tableWidth).toBeGreaterThanOrEqual(520);
   });

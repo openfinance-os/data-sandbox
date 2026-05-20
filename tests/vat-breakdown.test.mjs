@@ -48,56 +48,62 @@ if (!FIXTURES_BUILT) {
   describe.skip("Slice 10 — built fixture VAT consistency (run 'npm run build:fixtures')", () => {
     it.skip('fixture package not built', () => {});
   });
-} else describe('Slice 10 — built fixture VAT consistency', () => {
-  const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
+} else
+  describe('Slice 10 — built fixture VAT consistency', () => {
+    const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
 
-  // Personas declaring cash_flow → expected to have B2B transactions with VAT.
-  const cashFlowPersonas = [];
-  for (const id of Object.keys(manifest.personas)) {
-    const info = manifest.personas[id];
-    if (info.domain !== 'banking') continue;
-    const persona = JSON.parse(fs.readFileSync(path.join(PKG_DIR, 'personas', `${id}.json`), 'utf8'));
-    if (persona.cash_flow) cashFlowPersonas.push({ id, persona });
-  }
+    // Personas declaring cash_flow → expected to have B2B transactions with VAT.
+    const cashFlowPersonas = [];
+    for (const id of Object.keys(manifest.personas)) {
+      const info = manifest.personas[id];
+      if (info.domain !== 'banking') continue;
+      const persona = JSON.parse(
+        fs.readFileSync(path.join(PKG_DIR, 'personas', `${id}.json`), 'utf8'),
+      );
+      if (persona.cash_flow) cashFlowPersonas.push({ id, persona });
+    }
 
-  it('at least 5 personas declare cash_flow (the SME + Corporate set)', () => {
-    expect(cashFlowPersonas.length).toBeGreaterThanOrEqual(5);
+    it('at least 5 personas declare cash_flow (the SME + Corporate set)', () => {
+      expect(cashFlowPersonas.length).toBeGreaterThanOrEqual(5);
+    });
+
+    for (const { id, persona } of cashFlowPersonas) {
+      // For each of these, fixture key is rich/median/sparse × seed; pick rich
+      // for the assertion since VAT metadata is a record-level keep that
+      // survives all profiles (the strip whitelist preserves it).
+      const fxKey = `${id}|rich|${persona.default_seed}`;
+      const fx = manifest.fixtures[fxKey];
+      if (!fx) continue;
+      const accountId = fx.accountIds[0];
+      if (!accountId) continue;
+      const txEnv = JSON.parse(
+        fs.readFileSync(
+          path.join(PKG_DIR, fx.endpoints[`/accounts/${accountId}/transactions`]),
+          'utf8',
+        ),
+      );
+      const vatTxs = (txEnv.Data?.Transaction ?? []).filter((t) => t._vatBreakdown);
+
+      it(`${id} — primary CurrentAccount has at least 12 B2B transactions with _vatBreakdown`, () => {
+        expect(vatTxs.length).toBeGreaterThanOrEqual(12);
+      });
+
+      it(`${id} — every _vatBreakdown's net + vat_amount === gross Amount.Amount`, () => {
+        for (const t of vatTxs) {
+          const gross = parseFloat(t.Amount.Amount);
+          const net = parseFloat(t._vatBreakdown.net);
+          const vat = parseFloat(t._vatBreakdown.vat_amount);
+          // Allow 0.01 fils precision tolerance.
+          expect(Math.abs(net + vat - gross)).toBeLessThan(0.02);
+          expect(t._vatBreakdown.currency).toBe(t.Amount.Currency);
+        }
+      });
+
+      it(`${id} — every _vatBreakdown carries a known vat_category`, () => {
+        const known = new Set(['standard', 'zero-rated', 'exempt']);
+        for (const t of vatTxs) {
+          expect(known.has(t._vatBreakdown.vat_category)).toBe(true);
+        }
+      });
+    }
   });
-
-  for (const { id, persona } of cashFlowPersonas) {
-    // For each of these, fixture key is rich/median/sparse × seed; pick rich
-    // for the assertion since VAT metadata is a record-level keep that
-    // survives all profiles (the strip whitelist preserves it).
-    const fxKey = `${id}|rich|${persona.default_seed}`;
-    const fx = manifest.fixtures[fxKey];
-    if (!fx) continue;
-    const accountId = fx.accountIds[0];
-    if (!accountId) continue;
-    const txEnv = JSON.parse(
-      fs.readFileSync(path.join(PKG_DIR, fx.endpoints[`/accounts/${accountId}/transactions`]), 'utf8'),
-    );
-    const vatTxs = (txEnv.Data?.Transaction ?? []).filter((t) => t._vatBreakdown);
-
-    it(`${id} — primary CurrentAccount has at least 12 B2B transactions with _vatBreakdown`, () => {
-      expect(vatTxs.length).toBeGreaterThanOrEqual(12);
-    });
-
-    it(`${id} — every _vatBreakdown's net + vat_amount === gross Amount.Amount`, () => {
-      for (const t of vatTxs) {
-        const gross = parseFloat(t.Amount.Amount);
-        const net = parseFloat(t._vatBreakdown.net);
-        const vat = parseFloat(t._vatBreakdown.vat_amount);
-        // Allow 0.01 fils precision tolerance.
-        expect(Math.abs(net + vat - gross)).toBeLessThan(0.02);
-        expect(t._vatBreakdown.currency).toBe(t.Amount.Currency);
-      }
-    });
-
-    it(`${id} — every _vatBreakdown carries a known vat_category`, () => {
-      const known = new Set(['standard', 'zero-rated', 'exempt']);
-      for (const t of vatTxs) {
-        expect(known.has(t._vatBreakdown.vat_category)).toBe(true);
-      }
-    });
-  }
-});

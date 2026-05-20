@@ -116,15 +116,7 @@ function walkSchema(spec, schema, pathParts, parentRequired, seen, out, depth = 
     const props = schema.properties ?? {};
     for (const [key, child] of Object.entries(props)) {
       const isRequired = requiredSet.has(key);
-      walkSchema(
-        spec,
-        child,
-        [...pathParts, key],
-        isRequired,
-        seen,
-        out,
-        depth + 1
-      );
+      walkSchema(spec, child, [...pathParts, key], isRequired, seen, out, depth + 1);
     }
     return;
   }
@@ -278,10 +270,10 @@ export function parseDomain(config) {
 
   const totalFields = Object.values(endpoints).reduce((n, e) => n + e.fields.length, 0);
   const mandatory = Object.values(endpoints).flatMap((e) =>
-    e.fields.filter((f) => f.status === 'mandatory')
+    e.fields.filter((f) => f.status === 'mandatory'),
   ).length;
   console.log(
-    `[${config.id}] parsed ${Object.keys(endpoints).length} endpoints, ${totalFields} fields (${mandatory} mandatory) → ${path.relative(repoRoot, outPath)}`
+    `[${config.id}] parsed ${Object.keys(endpoints).length} endpoints, ${totalFields} fields (${mandatory} mandatory) → ${path.relative(repoRoot, outPath)}`,
   );
 
   return {
@@ -308,7 +300,7 @@ function main() {
   fs.mkdirSync(path.dirname(domainsManifestPath), { recursive: true });
   fs.writeFileSync(domainsManifestPath, JSON.stringify(manifest, null, 2));
   console.log(
-    `wrote domains manifest (${manifestEntries.length} domain${manifestEntries.length === 1 ? '' : 's'}) → ${path.relative(repoRoot, domainsManifestPath)}`
+    `wrote domains manifest (${manifestEntries.length} domain${manifestEntries.length === 1 ? '' : 's'}) → ${path.relative(repoRoot, domainsManifestPath)}`,
   );
 }
 

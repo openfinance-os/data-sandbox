@@ -9,9 +9,9 @@ describe('parseEnvAllowedHosts', () => {
   });
 
   it('splits comma-separated hosts and trims whitespace', () => {
-    expect(
-      parseEnvAllowedHosts({ MCP_ALLOWED_HOSTS: 'a.example, b.example , c.example' }),
-    ).toEqual(['a.example', 'b.example', 'c.example']);
+    expect(parseEnvAllowedHosts({ MCP_ALLOWED_HOSTS: 'a.example, b.example , c.example' })).toEqual(
+      ['a.example', 'b.example', 'c.example'],
+    );
   });
 
   it('drops empty entries from trailing or doubled commas', () => {
@@ -21,15 +21,16 @@ describe('parseEnvAllowedHosts', () => {
 
 describe('parseArgs', () => {
   it('seeds allowedHosts from MCP_ALLOWED_HOSTS env', () => {
-    const args = parseArgs([], { MCP_ALLOWED_HOSTS: 'data-sandbox.fly.dev,mcp.openfinance-os.org' });
+    const args = parseArgs([], {
+      MCP_ALLOWED_HOSTS: 'data-sandbox.fly.dev,mcp.openfinance-os.org',
+    });
     expect(args.allowedHosts).toEqual(['data-sandbox.fly.dev', 'mcp.openfinance-os.org']);
   });
 
   it('--allowed-host appends to env-derived list', () => {
-    const args = parseArgs(
-      ['--allowed-host', 'extra.example'],
-      { MCP_ALLOWED_HOSTS: 'one.example' },
-    );
+    const args = parseArgs(['--allowed-host', 'extra.example'], {
+      MCP_ALLOWED_HOSTS: 'one.example',
+    });
     expect(args.allowedHosts).toEqual(['one.example', 'extra.example']);
   });
 
@@ -40,6 +41,8 @@ describe('parseArgs', () => {
 
   it('--no-dns-rebinding-protection flips the flag', () => {
     expect(parseArgs([], {}).enableDnsRebindingProtection).toBe(true);
-    expect(parseArgs(['--no-dns-rebinding-protection'], {}).enableDnsRebindingProtection).toBe(false);
+    expect(parseArgs(['--no-dns-rebinding-protection'], {}).enableDnsRebindingProtection).toBe(
+      false,
+    );
   });
 });

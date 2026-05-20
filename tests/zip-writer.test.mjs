@@ -48,7 +48,9 @@ describe('zip-writer', () => {
     expect(listing).toContain('data/payload.json');
     execSync(`unzip -o "${zipPath}" -d "${dir}"`, { stdio: 'pipe' });
     expect(fs.readFileSync(path.join(dir, 'hello.txt'), 'utf8')).toBe('world');
-    expect(JSON.parse(fs.readFileSync(path.join(dir, 'data/payload.json'), 'utf8'))).toEqual({ k: 42 });
+    expect(JSON.parse(fs.readFileSync(path.join(dir, 'data/payload.json'), 'utf8'))).toEqual({
+      k: 42,
+    });
     fs.rmSync(dir, { recursive: true, force: true });
   });
 });
@@ -79,14 +81,14 @@ describe('buildCustomFixtureZip — Workstream C plug-point 3', () => {
     const accountsRich = JSON.parse(
       fs.readFileSync(
         path.join(dir, 'fixtures/v1/bundles', personaSlug, 'rich/seed-1/accounts.json'),
-        'utf8'
-      )
+        'utf8',
+      ),
     );
     expect(accountsRich.Data.Account[0].AccountType).toBe('SME');
     expect(accountsRich._persona).toBe(personaSlug);
 
     const topManifest = JSON.parse(
-      fs.readFileSync(path.join(dir, 'fixtures/v1/manifest.json'), 'utf8')
+      fs.readFileSync(path.join(dir, 'fixtures/v1/manifest.json'), 'utf8'),
     );
     expect(topManifest.specVersion).toBe('v2.1');
     expect(topManifest.recipeHash).toMatch(/^[a-z0-9]+$/);

@@ -60,9 +60,10 @@ export function parsePaginationParams(searchParams, opts = {}) {
     return { offset: 0, limit: Infinity, requested: false };
   }
   const offset = Math.max(0, toInt(offsetRaw, 0));
-  const limit = limitRaw === null
-    ? defaultLimit
-    : Math.min(maxLimit, Math.max(1, toInt(limitRaw, defaultLimit)));
+  const limit =
+    limitRaw === null
+      ? defaultLimit
+      : Math.min(maxLimit, Math.max(1, toInt(limitRaw, defaultLimit)));
   return { offset, limit, requested: true };
 }
 

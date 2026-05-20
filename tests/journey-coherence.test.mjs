@@ -40,81 +40,82 @@ if (!FIXTURES_BUILT) {
   describe.skip("EXP-32 cross-endpoint coherence (run 'npm run build:fixtures' to enable)", () => {
     it.skip('fixture package not built — run `npm run build:fixtures`', () => {});
   });
-} else describe('EXP-32 cross-endpoint coherence', () => {
-  const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
-  // Banking-only — /accounts + per-account fan-out is the banking shape.
-  // Insurance fixtures (motor policies / quotes) get their own coherence
-  // assertions in tests/spec-validation.insurance.test.mjs. Multi-domain
-  // fixtures include banking endpoints too, so they're in scope here.
-  const fixtureEntries = Object.entries(manifest.fixtures).filter(([, fx]) => {
-    const ds = Array.isArray(fx.domains) ? fx.domains : [fx.domain ?? 'banking'];
-    return ds.includes('banking');
-  });
+} else
+  describe('EXP-32 cross-endpoint coherence', () => {
+    const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
+    // Banking-only — /accounts + per-account fan-out is the banking shape.
+    // Insurance fixtures (motor policies / quotes) get their own coherence
+    // assertions in tests/spec-validation.insurance.test.mjs. Multi-domain
+    // fixtures include banking endpoints too, so they're in scope here.
+    const fixtureEntries = Object.entries(manifest.fixtures).filter(([, fx]) => {
+      const ds = Array.isArray(fx.domains) ? fx.domains : [fx.domain ?? 'banking'];
+      return ds.includes('banking');
+    });
 
-  it('the banking test matrix covers 29 personas × 3 LFIs (21 banking + 8 multi-domain)', () => {
-    expect(fixtureEntries.length).toBe(87);
-  });
+    it('the banking test matrix covers 29 personas × 3 LFIs (21 banking + 8 multi-domain)', () => {
+      expect(fixtureEntries.length).toBe(87);
+    });
 
-  for (const [key, fx] of fixtureEntries) {
-    it(`${key} — AccountIds line up across every per-account endpoint`, () => {
-      const accountsEnv = readEnv(fx.endpoints['/accounts']);
-      const accountIds = (accountsEnv.Data?.Account ?? []).map((a) => a.AccountId);
+    for (const [key, fx] of fixtureEntries) {
+      it(`${key} — AccountIds line up across every per-account endpoint`, () => {
+        const accountsEnv = readEnv(fx.endpoints['/accounts']);
+        const accountIds = (accountsEnv.Data?.Account ?? []).map((a) => a.AccountId);
 
-      // /accounts must agree with manifest.accountIds.
-      expect(accountIds.length, '/accounts has accounts').toBeGreaterThan(0);
-      expect([...accountIds].sort()).toEqual([...(fx.accountIds ?? [])].sort());
+        // /accounts must agree with manifest.accountIds.
+        expect(accountIds.length, '/accounts has accounts').toBeGreaterThan(0);
+        expect([...accountIds].sort()).toEqual([...(fx.accountIds ?? [])].sort());
 
-      // Every accountId resolves to all 9 per-account endpoints, and each
-      // envelope's Data.AccountId matches the path-segment AccountId.
-      for (const id of accountIds) {
-        for (const suffix of PER_ACCOUNT_SUFFIXES) {
-          const ep = `/accounts/${id}/${suffix}`;
-          const rel = fx.endpoints[ep];
-          expect(rel, `${key} missing ${ep}`).toBeDefined();
-          const env = readEnv(rel);
-          expect(env.Data, `${key} ${ep} has Data`).toBeDefined();
-          expect(env.Data.AccountId, `${key} ${ep} Data.AccountId`).toBe(id);
+        // Every accountId resolves to all 9 per-account endpoints, and each
+        // envelope's Data.AccountId matches the path-segment AccountId.
+        for (const id of accountIds) {
+          for (const suffix of PER_ACCOUNT_SUFFIXES) {
+            const ep = `/accounts/${id}/${suffix}`;
+            const rel = fx.endpoints[ep];
+            expect(rel, `${key} missing ${ep}`).toBeDefined();
+            const env = readEnv(rel);
+            expect(env.Data, `${key} ${ep} has Data`).toBeDefined();
+            expect(env.Data.AccountId, `${key} ${ep} Data.AccountId`).toBe(id);
+          }
+          // /accounts/{AccountId} (the per-account "self") should also resolve.
+          const selfEp = `/accounts/${id}`;
+          expect(fx.endpoints[selfEp], `${key} missing ${selfEp}`).toBeDefined();
         }
-        // /accounts/{AccountId} (the per-account "self") should also resolve.
-        const selfEp = `/accounts/${id}`;
-        expect(fx.endpoints[selfEp], `${key} missing ${selfEp}`).toBeDefined();
-      }
-    });
+      });
 
-    it(`${key} — /parties calling-party id is stable and well-formed`, () => {
-      const parties = readEnv(fx.endpoints['/parties']);
-      const partyId = parties.Data?.Party?.PartyId;
-      expect(partyId, `${key} /parties PartyId`).toBeTruthy();
-      expect(typeof partyId).toBe('string');
-      // Generator convention: <persona-slug>-party
-      expect(partyId).toMatch(/-party$/);
-    });
+      it(`${key} — /parties calling-party id is stable and well-formed`, () => {
+        const parties = readEnv(fx.endpoints['/parties']);
+        const partyId = parties.Data?.Party?.PartyId;
+        expect(partyId, `${key} /parties PartyId`).toBeTruthy();
+        expect(typeof partyId).toBe('string');
+        // Generator convention: <persona-slug>-party
+        expect(partyId).toMatch(/-party$/);
+      });
 
-    it(`${key} — every transaction's parent envelope AccountId matches its path`, () => {
-      for (const id of fx.accountIds ?? []) {
-        const txEnv = readEnv(fx.endpoints[`/accounts/${id}/transactions`]);
-        expect(txEnv.Data?.AccountId).toBe(id);
-        // If transactions exist, every entry should at minimum carry a TransactionId.
-        for (const t of txEnv.Data?.Transaction ?? []) {
-          expect(t.TransactionId, `${key} ${id} transaction has TransactionId`).toBeTruthy();
+      it(`${key} — every transaction's parent envelope AccountId matches its path`, () => {
+        for (const id of fx.accountIds ?? []) {
+          const txEnv = readEnv(fx.endpoints[`/accounts/${id}/transactions`]);
+          expect(txEnv.Data?.AccountId).toBe(id);
+          // If transactions exist, every entry should at minimum carry a TransactionId.
+          for (const t of txEnv.Data?.Transaction ?? []) {
+            expect(t.TransactionId, `${key} ${id} transaction has TransactionId`).toBeTruthy();
+          }
         }
-      }
-    });
+      });
 
-    it(`${key} — every standing-order DebtorAccount points back to the parent AccountId`, () => {
-      for (const id of fx.accountIds ?? []) {
-        const soEnv = readEnv(fx.endpoints[`/accounts/${id}/standing-orders`]);
-        expect(soEnv.Data?.AccountId).toBe(id);
-        // Spec doesn't require DebtorAccount echoing AccountId, so we just
-        // assert envelope-level coherence here. Per-record fields (Debtor,
-        // Creditor) are covered by the spec-validation suite.
-      }
-    });
-  }
-
-  it('every persona has at least one account', () => {
-    for (const [, fx] of fixtureEntries) {
-      expect((fx.accountIds ?? []).length).toBeGreaterThan(0);
+      it(`${key} — every standing-order DebtorAccount points back to the parent AccountId`, () => {
+        for (const id of fx.accountIds ?? []) {
+          const soEnv = readEnv(fx.endpoints[`/accounts/${id}/standing-orders`]);
+          expect(soEnv.Data?.AccountId).toBe(id);
+          // Spec doesn't require DebtorAccount echoing AccountId, so we just
+          // assert envelope-level coherence here. Per-record fields (Debtor,
+          // Creditor) are covered by the spec-validation suite.
+        }
+      });
     }
+
+    it('every persona has at least one account', () => {
+      for (const [, fx] of fixtureEntries) {
+        expect((fx.accountIds ?? []).length).toBeGreaterThan(0);
+      }
+    });
   });
-});

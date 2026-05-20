@@ -27,10 +27,12 @@ function compileSchema(spec, refPath) {
       if (node.nullable === true && typeof node.type === 'string') node.type = [node.type, 'null'];
       delete node.nullable;
       if (node.exclusiveMinimum === true && typeof node.minimum === 'number') {
-        node.exclusiveMinimum = node.minimum; delete node.minimum;
+        node.exclusiveMinimum = node.minimum;
+        delete node.minimum;
       }
       if (node.exclusiveMaximum === true && typeof node.maximum === 'number') {
-        node.exclusiveMaximum = node.maximum; delete node.maximum;
+        node.exclusiveMaximum = node.maximum;
+        delete node.maximum;
       }
       if (node.exclusiveMinimum === false) delete node.exclusiveMinimum;
       if (node.exclusiveMaximum === false) delete node.exclusiveMaximum;
@@ -79,7 +81,7 @@ describe('exports — EXP-19 / §6.5', () => {
 
   it('every JSON export validates against v2.1 (after stripping watermark fields)', () => {
     const validators = Object.fromEntries(
-      Object.entries(parsed.endpoints).map(([p, e]) => [p, compileSchema(spec, e.schemaRef)])
+      Object.entries(parsed.endpoints).map(([p, e]) => [p, compileSchema(spec, e.schemaRef)]),
     );
     for (const [endpoint, env] of Object.entries(envelopes)) {
       const stripped = { Data: env.Data, Links: env.Links, Meta: env.Meta };
@@ -91,7 +93,9 @@ describe('exports — EXP-19 / §6.5', () => {
           LastAvailableDateTime: '2026-04-01T00:00:00Z',
           TotalRecords: Array.isArray(stripped.Data?.Transaction)
             ? stripped.Data.Transaction.length
-            : Array.isArray(stripped.Data?.Statements) ? stripped.Data.Statements.length : 0,
+            : Array.isArray(stripped.Data?.Statements)
+              ? stripped.Data.Statements.length
+              : 0,
         };
       }
       // Resolve which validator to use — endpoints with concrete AccountIds
@@ -100,7 +104,11 @@ describe('exports — EXP-19 / §6.5', () => {
       const validate = validators[templ] ?? validators[endpoint];
       if (!validate) continue;
       const ok = validate(stripped);
-      if (!ok) console.error(`${endpoint} validation errors:`, JSON.stringify(validate.errors?.slice(0, 3), null, 2));
+      if (!ok)
+        console.error(
+          `${endpoint} validation errors:`,
+          JSON.stringify(validate.errors?.slice(0, 3), null, 2),
+        );
       expect(ok, endpoint).toBe(true);
     }
   });

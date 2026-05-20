@@ -46,12 +46,15 @@ const fakeMerchant = {
 // through `values` so each rng() call returns the next entry.
 function fixedRng(values) {
   let i = 0;
-  return () => values[(i++) % values.length];
+  return () => values[i++ % values.length];
 }
 
 describe('Phase R2 narrative-dirtying grammar', () => {
   it('bankishNarrative cap is now 80 chars and TransactionInformation stays spec-valid', () => {
-    const out = bankishNarrative('POS', ['VERY VERY VERY LONG MERCHANT TOKEN THAT EXCEEDS THE OLD 22 CHAR CAP', 'DXB']);
+    const out = bankishNarrative('POS', [
+      'VERY VERY VERY LONG MERCHANT TOKEN THAT EXCEEDS THE OLD 22 CHAR CAP',
+      'DXB',
+    ]);
     expect(out.length).toBeLessThanOrEqual(80);
     expect(out.length).toBeGreaterThan(22);
     // Still well under the v2.1 TransactionInformation 500-char ceiling.
@@ -79,7 +82,13 @@ describe('Phase R2 narrative-dirtying grammar', () => {
 
   it('emirateCode draws from the population-weighted UAE-emirate set', () => {
     const set = new Set();
-    const rng = (() => { let s = 1; return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; }; })();
+    const rng = (() => {
+      let s = 1;
+      return () => {
+        s = (s * 9301 + 49297) % 233280;
+        return s / 233280;
+      };
+    })();
     for (let i = 0; i < 200; i++) set.add(emirateCode(rng));
     expect(set.has('DXB')).toBe(true);
     expect(set.has('AUH')).toBe(true);
@@ -117,14 +126,29 @@ describe('Phase R2 narrative-dirtying grammar', () => {
   });
 
   it('buildDirtyPosNarrative keeps the merchant token as a substring (cross-link safety)', () => {
-    const rng = (() => { let s = 7; return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; }; })();
+    const rng = (() => {
+      let s = 7;
+      return () => {
+        s = (s * 9301 + 49297) % 233280;
+        return s / 233280;
+      };
+    })();
     for (let i = 0; i < 50; i++) {
       const out = buildDirtyPosNarrative({
-        rng, channel: 'pos', prefix: 'POS', merchant: fakeMerchant, registry: fakeRegistry,
+        rng,
+        channel: 'pos',
+        prefix: 'POS',
+        merchant: fakeMerchant,
+        registry: fakeRegistry,
       });
       // Canonical token OR one of the declared display_variants must
       // appear as a substring — never both replaced and absent.
-      const norm = (s) => s.toUpperCase().replace(/[^A-Z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+      const norm = (s) =>
+        s
+          .toUpperCase()
+          .replace(/[^A-Z0-9]+/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
       const haystack = norm(out);
       const candidates = [
         norm('MARKETMARK HYPERMARKET'),
@@ -137,10 +161,34 @@ describe('Phase R2 narrative-dirtying grammar', () => {
   });
 
   it('buildDirtyPosNarrative is deterministic on the passed rng', () => {
-    const r1 = (() => { let s = 11; return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; }; })();
-    const r2 = (() => { let s = 11; return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; }; })();
-    const a = buildDirtyPosNarrative({ rng: r1, channel: 'pos', prefix: 'POS', merchant: fakeMerchant, registry: fakeRegistry });
-    const b = buildDirtyPosNarrative({ rng: r2, channel: 'pos', prefix: 'POS', merchant: fakeMerchant, registry: fakeRegistry });
+    const r1 = (() => {
+      let s = 11;
+      return () => {
+        s = (s * 9301 + 49297) % 233280;
+        return s / 233280;
+      };
+    })();
+    const r2 = (() => {
+      let s = 11;
+      return () => {
+        s = (s * 9301 + 49297) % 233280;
+        return s / 233280;
+      };
+    })();
+    const a = buildDirtyPosNarrative({
+      rng: r1,
+      channel: 'pos',
+      prefix: 'POS',
+      merchant: fakeMerchant,
+      registry: fakeRegistry,
+    });
+    const b = buildDirtyPosNarrative({
+      rng: r2,
+      channel: 'pos',
+      prefix: 'POS',
+      merchant: fakeMerchant,
+      registry: fakeRegistry,
+    });
     expect(a).toBe(b);
   });
 
@@ -164,7 +212,12 @@ describe('Phase R2 narrative-dirtying grammar', () => {
   it('enrichment sidecar surfaces parentGroup + parentGroupAcronym for parent-grouped merchants', () => {
     const personas = loadPersonasByDomain('banking');
     const pools = loadAllPools();
-    const bundle = buildBundle({ persona: personas.salaried_expat_mid, lfi: 'median', seed: 4729, pools });
+    const bundle = buildBundle({
+      persona: personas.salaried_expat_mid,
+      lfi: 'median',
+      seed: 4729,
+      pools,
+    });
     // At least one POS tx must have a parent-grouped enrichment record
     // (groceries / dining / ride-hailing / fuel all carry parent_group
     // attributions on some merchants).

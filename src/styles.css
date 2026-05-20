@@ -22,14 +22,17 @@
   --focus-ring: #1d4a3e;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   font-size: 14px;
   line-height: 1.5;
   height: 100vh;
@@ -43,9 +46,16 @@ body {
   flex-direction: column;
 }
 
-button { font: inherit; cursor: pointer; }
+button {
+  font: inherit;
+  cursor: pointer;
+}
 
-a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
+a:focus,
+button:focus,
+select:focus,
+input:focus,
+[tabindex='0']:focus {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
@@ -61,7 +71,9 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   flex: 0 0 auto;
   position: relative;
 }
-.banner[hidden] { display: none; }
+.banner[hidden] {
+  display: none;
+}
 .banner-close {
   position: absolute;
   top: 50%;
@@ -81,7 +93,9 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   line-height: 1;
   cursor: pointer;
 }
-.banner-close:hover { background: var(--warn-border); }
+.banner-close:hover {
+  background: var(--warn-border);
+}
 .banner-close:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
@@ -111,12 +125,17 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   color: var(--text);
   cursor: pointer;
 }
-.banner-chip:hover { filter: brightness(0.98); }
+.banner-chip:hover {
+  filter: brightness(0.98);
+}
 .banner-chip:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
-.banner-chip-icon { font-size: 12px; line-height: 1; }
+.banner-chip-icon {
+  font-size: 12px;
+  line-height: 1;
+}
 .banner-popover {
   position: absolute;
   top: 48px;
@@ -131,8 +150,12 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
   z-index: 220;
 }
-.banner-popover[hidden] { display: none; }
-.banner-popover strong { margin-right: 4px; }
+.banner-popover[hidden] {
+  display: none;
+}
+.banner-popover strong {
+  margin-right: 4px;
+}
 
 /* PR-10 — Persona slot inside the topbar. Replaces the prior standalone
    .persona-hero strip and the OF-OS wordmark block: the active persona
@@ -176,7 +199,9 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   height: 36px;
   border-radius: 6px;
 }
-.topbar-persona-avatar .persona-avatar-sm { margin-top: 0; }
+.topbar-persona-avatar .persona-avatar-sm {
+  margin-top: 0;
+}
 .topbar-persona-meta {
   display: flex;
   flex-direction: column;
@@ -209,7 +234,9 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   min-width: 0;
   flex: 0 1 auto;
 }
-.topbar-persona.is-empty .topbar-persona-name { display: none; }
+.topbar-persona.is-empty .topbar-persona-name {
+  display: none;
+}
 .topbar-persona-tagline {
   font-size: 11px;
   color: var(--text-muted);
@@ -219,11 +246,20 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   min-width: 0;
 }
 @media (max-width: 1099px) {
-  .topbar-attribution { display: none; }
-  .topbar-persona { flex: 0 1 240px; }
+  .topbar-attribution {
+    display: none;
+  }
+  .topbar-persona {
+    flex: 0 1 240px;
+  }
 }
 @media (max-width: 760px) {
-  .topbar-persona-tagline { white-space: normal; -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; }
+  .topbar-persona-tagline {
+    white-space: normal;
+    -webkit-line-clamp: 2;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+  }
 }
 
 .topbar {
@@ -263,8 +299,12 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
 }
 /* PR-11 — slightly larger gap between sub-clusters (persona | LFI | Seed)
    so the merged pill reads as three logical groups, not a dense row. */
-.controls-scenario { gap: 10px; }
-.controls-runstate { gap: 6px; }
+.controls-scenario {
+  gap: 10px;
+}
+.controls-runstate {
+  gap: 6px;
+}
 
 .control-group {
   display: flex;
@@ -273,7 +313,8 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   color: var(--text-muted);
 }
 
-.control-group select, .control-group input {
+.control-group select,
+.control-group input {
   padding: 4px 6px;
   border: 1px solid var(--border-strong);
   border-radius: 4px;
@@ -282,12 +323,16 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   min-width: 110px;
 }
 
-.control-group input { min-width: 88px; }
+.control-group input {
+  min-width: 88px;
+}
 
 /* LFI segmented control — promotes the Rich/Median/Sparse choice to a
    visible lever. The single-line caption underneath previews the populate-
    rate consequence before the user goes to the coverage meter. */
-.lfi-control { gap: 2px; }
+.lfi-control {
+  gap: 2px;
+}
 .lfi-seg {
   display: inline-flex;
   align-items: stretch;
@@ -308,7 +353,9 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   cursor: pointer;
   min-width: 56px;
 }
-.lfi-seg button:last-child { border-right: none; }
+.lfi-seg button:last-child {
+  border-right: none;
+}
 .lfi-seg button[aria-checked='true'],
 .lfi-seg button[aria-pressed='true'] {
   background: var(--accent);
@@ -323,7 +370,10 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   color: var(--text-muted);
   white-space: nowrap;
 }
-.lfi-seg .lfi-compare:hover { color: var(--accent); background: var(--accent-soft); }
+.lfi-seg .lfi-compare:hover {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
 .lfi-caption {
   font-size: 10.5px;
   color: var(--text-muted);
@@ -339,9 +389,17 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   padding-top: 4px;
   border-top: 1px dashed var(--border);
 }
-.lfi-compare-row .control-label { font-size: 10px; color: var(--text-muted); }
-.lfi-seg-compare button { min-width: 50px; padding: 3px 8px; font-size: 11px; }
-.lfi-compare-swap, .lfi-compare-close {
+.lfi-compare-row .control-label {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+.lfi-seg-compare button {
+  min-width: 50px;
+  padding: 3px 8px;
+  font-size: 11px;
+}
+.lfi-compare-swap,
+.lfi-compare-close {
   font: inherit;
   font-size: 12px;
   padding: 2px 8px;
@@ -351,19 +409,23 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   cursor: pointer;
   color: var(--text-muted);
 }
-.lfi-compare-swap:hover, .lfi-compare-close:hover {
+.lfi-compare-swap:hover,
+.lfi-compare-close:hover {
   background: var(--accent-soft);
   color: var(--accent);
 }
 /* PR #9 — visible focus on icon-only LFI compare buttons (a11y). */
-.lfi-compare-swap:focus-visible, .lfi-compare-close:focus-visible {
+.lfi-compare-swap:focus-visible,
+.lfi-compare-close:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
-.control-seed[hidden] { display: none; }
+.control-seed[hidden] {
+  display: none;
+}
 
 .version-pin {
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   font-size: 11px;
   color: var(--text-muted);
   padding: 2px 6px;
@@ -383,7 +445,9 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   text-decoration: none;
   font-family: inherit;
 }
-.topbar-btn:hover { background: var(--accent-soft); }
+.topbar-btn:hover {
+  background: var(--accent-soft);
+}
 /* Demoted state for the Tour button after the user has seen the walkthrough
    (PR #2). Same hover/focus affordances as .topbar-btn but compact, icon-only,
    keyboard-restorable. */
@@ -395,7 +459,9 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   color: var(--text-muted);
   border-color: var(--border);
 }
-.topbar-btn.topbar-btn-icon:hover { color: var(--text); }
+.topbar-btn.topbar-btn-icon:hover {
+  color: var(--text);
+}
 .topbar-btn:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
@@ -413,7 +479,9 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   font-family: inherit;
   cursor: pointer;
 }
-.domain-chip[hidden] { display: none; }
+.domain-chip[hidden] {
+  display: none;
+}
 
 .preview-banner {
   background: var(--accent-soft);
@@ -431,7 +499,7 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   border-radius: 4px;
   padding: 12px;
   overflow-x: auto;
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   font-size: 11px;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -447,11 +515,18 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   font-size: 12px;
   color: var(--text);
 }
-.payload-error strong { display: block; margin-bottom: 6px; font-size: 13px; }
-.payload-error p { margin: 0 0 6px; color: var(--text-muted); }
+.payload-error strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+.payload-error p {
+  margin: 0 0 6px;
+  color: var(--text-muted);
+}
 .payload-error pre {
   margin: 0;
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   font-size: 11px;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -469,8 +544,12 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   list-style: none;
   cursor: pointer;
 }
-.topbar-menu > summary::-webkit-details-marker { display: none; }
-.topbar-menu[open] > summary { background: var(--accent-soft); }
+.topbar-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.topbar-menu[open] > summary {
+  background: var(--accent-soft);
+}
 .topbar-menu-content {
   position: absolute;
   top: calc(100% + 4px);
@@ -493,7 +572,10 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   text-decoration: none;
 }
 .topbar-menu-content a:hover,
-.topbar-menu-content a:focus { background: var(--accent-soft); outline: none; }
+.topbar-menu-content a:focus {
+  background: var(--accent-soft);
+  outline: none;
+}
 
 /* Spec-wide find box — Cmd/Ctrl+K opens an overlay with a single input
    that searches field names, paths, enums, and persona narratives. */
@@ -526,7 +608,9 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   outline: none;
   font-family: inherit;
 }
-.find-input:focus { outline: none; }
+.find-input:focus {
+  outline: none;
+}
 .find-results {
   list-style: none;
   margin: 0;
@@ -542,10 +626,13 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   flex-direction: column;
   gap: 2px;
 }
-.find-result:hover, .find-result.is-active { background: var(--accent-soft); }
+.find-result:hover,
+.find-result.is-active {
+  background: var(--accent-soft);
+}
 .find-result-title {
   font-size: 13px;
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   color: var(--accent);
 }
 .find-result-meta {
@@ -568,7 +655,7 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   border-top: 1px solid var(--border);
 }
 .find-hint kbd {
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   font-size: 10px;
   padding: 1px 4px;
   border: 1px solid var(--border-strong);
@@ -615,7 +702,11 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   padding: 12px 16px;
   border-bottom: 1px solid var(--border);
 }
-.export-title { margin: 0; font-size: 14px; font-weight: 700; }
+.export-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
 .export-close {
   appearance: none;
   background: transparent;
@@ -626,7 +717,9 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   cursor: pointer;
   color: var(--text-muted);
 }
-.export-close:hover { color: var(--text); }
+.export-close:hover {
+  color: var(--text);
+}
 .export-close:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
@@ -651,7 +744,9 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   color: var(--text-muted);
   cursor: pointer;
 }
-.export-tab:hover { color: var(--text); }
+.export-tab:hover {
+  color: var(--text);
+}
 .export-tab.is-active {
   color: var(--accent);
   border-bottom-color: var(--accent);
@@ -667,7 +762,7 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   min-height: 0;
 }
 .export-pre {
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   font-size: 12px;
   line-height: 1.5;
   background: var(--bg);
@@ -703,7 +798,9 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   color: var(--mandatory-fg);
   cursor: pointer;
 }
-.export-copy-btn:hover { filter: brightness(1.05); }
+.export-copy-btn:hover {
+  filter: brightness(1.05);
+}
 .export-copy-btn.export-copy-btn-secondary {
   background: var(--bg-card);
   color: var(--accent);
@@ -766,7 +863,9 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tour-overlay { transition: none; }
+  .tour-overlay {
+    transition: none;
+  }
 }
 
 /* Coverage indicator — band-disaggregated readout of populate-rate per
@@ -808,7 +907,9 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   color: var(--text-muted);
   cursor: help;
 }
-.coverage-band .band-label { font-weight: 600; }
+.coverage-band .band-label {
+  font-weight: 600;
+}
 .coverage-band .band-cells {
   display: inline-flex;
   gap: 1px;
@@ -820,11 +921,25 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   border: 1px solid var(--border-strong);
   border-radius: 1px;
 }
-.coverage-band[data-band='Universal'] .band-cell.is-on { background: var(--accent); border-color: var(--accent); }
-.coverage-band[data-band='Common']    .band-cell.is-on { background: #6a8f4a; border-color: #6a8f4a; }
-.coverage-band[data-band='Variable']  .band-cell.is-on { background: #d8a13b; border-color: #d8a13b; }
-.coverage-band[data-band='Rare']      .band-cell.is-on { background: #c8862a; border-color: #c8862a; }
-.coverage-band.is-empty { opacity: 0.45; }
+.coverage-band[data-band='Universal'] .band-cell.is-on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.coverage-band[data-band='Common'] .band-cell.is-on {
+  background: #6a8f4a;
+  border-color: #6a8f4a;
+}
+.coverage-band[data-band='Variable'] .band-cell.is-on {
+  background: #d8a13b;
+  border-color: #d8a13b;
+}
+.coverage-band[data-band='Rare'] .band-cell.is-on {
+  background: #c8862a;
+  border-color: #c8862a;
+}
+.coverage-band.is-empty {
+  opacity: 0.45;
+}
 .coverage-pct {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -841,14 +956,20 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   grid-template-columns: var(--pane-left) 1fr var(--pane-right);
   gap: 0;
   flex: 1 1 auto;
-  min-height: 0;       /* let internal panes overflow:auto kick in */
+  min-height: 0; /* let internal panes overflow:auto kick in */
   overflow: hidden;
   transition: grid-template-columns 200ms ease;
 }
-.three-pane.left-collapsed  { --pane-left: var(--pane-rail); }
-.three-pane.right-collapsed { --pane-right: var(--pane-rail); }
+.three-pane.left-collapsed {
+  --pane-left: var(--pane-rail);
+}
+.three-pane.right-collapsed {
+  --pane-right: var(--pane-rail);
+}
 @media (prefers-reduced-motion: reduce) {
-  .three-pane { transition: none; }
+  .three-pane {
+    transition: none;
+  }
 }
 
 /* Collapse chevron in pane-header, vertical rail when collapsed. */
@@ -926,7 +1047,10 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   background: var(--bg-card);
   color: var(--text);
 }
-.pane-rail .pane-rail-chevron { font-size: 14px; line-height: 1; }
+.pane-rail .pane-rail-chevron {
+  font-size: 14px;
+  line-height: 1;
+}
 .pane-rail .pane-rail-label {
   writing-mode: vertical-rl;
   transform: rotate(180deg);
@@ -936,20 +1060,22 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
 /* Pane needs position: relative so the absolutely positioned rail anchors to
    the pane and not the viewport. */
 .persona-pane,
-.field-detail { position: relative; }
+.field-detail {
+  position: relative;
+}
 
 /* Collapsed state: hide pane internals (visibility: hidden so the rail
    overlay reveals a clean column) and bring the rail forward via opacity +
    pointer-events. Display stays in flow, which avoids the CSS-class race
    that previously left the rail and header simultaneously visible at high
    viewport widths. */
-.three-pane.left-collapsed  .persona-pane > .pane-header,
-.three-pane.left-collapsed  .persona-pane > .persona-list-shell,
+.three-pane.left-collapsed .persona-pane > .pane-header,
+.three-pane.left-collapsed .persona-pane > .persona-list-shell,
 .three-pane.right-collapsed .field-detail > .pane-header,
 .three-pane.right-collapsed .field-detail > .field-detail-scroll {
   visibility: hidden;
 }
-.three-pane.left-collapsed  .persona-pane > .pane-rail,
+.three-pane.left-collapsed .persona-pane > .pane-rail,
 .three-pane.right-collapsed .field-detail > .pane-rail {
   opacity: 1;
   pointer-events: auto;
@@ -961,10 +1087,12 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  overflow: hidden;    /* contain children; their own overflow handles scroll */
+  overflow: hidden; /* contain children; their own overflow handles scroll */
 }
 
-.pane:last-of-type { border-right: none; }
+.pane:last-of-type {
+  border-right: none;
+}
 
 .pane-header {
   padding: 8px 12px;
@@ -1029,7 +1157,10 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   cursor: pointer;
   white-space: nowrap;
 }
-.jtbd-rail .jtbd-chip:hover { color: var(--accent); border-color: var(--accent); }
+.jtbd-rail .jtbd-chip:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
 .jtbd-rail .jtbd-chip[aria-pressed='true'] {
   background: var(--accent);
   color: var(--mandatory-fg);
@@ -1046,8 +1177,12 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   gap: 6px;
   flex-wrap: wrap;
 }
-.stress-filter-bar.is-empty { display: none; }
-.stress-filter-bar .label { color: var(--text-muted); }
+.stress-filter-bar.is-empty {
+  display: none;
+}
+.stress-filter-bar .label {
+  color: var(--text-muted);
+}
 .stress-filter-bar button {
   font-size: 10px;
   padding: 2px 8px;
@@ -1057,7 +1192,9 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   color: var(--mandatory-fg);
   cursor: pointer;
 }
-.stress-filter-bar button:hover { background: var(--mandatory-bg); }
+.stress-filter-bar button:hover {
+  background: var(--mandatory-bg);
+}
 
 .persona-list {
   flex: 1 1 auto;
@@ -1099,14 +1236,18 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   align-items: center;
   gap: 8px;
 }
-.tx-monthly summary::-webkit-details-marker { display: none; }
+.tx-monthly summary::-webkit-details-marker {
+  display: none;
+}
 .tx-monthly summary::before {
   content: '▸';
   font-size: 10px;
   margin-right: 4px;
   color: var(--text-muted);
 }
-.tx-monthly[open] summary::before { content: '▾'; }
+.tx-monthly[open] summary::before {
+  content: '▾';
+}
 .tx-monthly summary .roll-badge {
   font-weight: 400;
   color: var(--text-muted);
@@ -1118,16 +1259,29 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   margin: 0;
   font-size: 11px;
 }
-.tx-monthly th, .tx-monthly td {
+.tx-monthly th,
+.tx-monthly td {
   padding: 4px 12px;
   text-align: right;
   border-top: 1px solid var(--border);
   font-variant-numeric: tabular-nums;
 }
-.tx-monthly th { background: var(--bg-soft); color: var(--text-muted); font-weight: 600; }
-.tx-monthly td:first-child, .tx-monthly th:first-child { text-align: left; }
-.tx-monthly tr.has-nsf td { background: #fdf3ef; }
-.tx-monthly tr.has-nsf td:last-child { color: #b3431a; font-weight: 600; }
+.tx-monthly th {
+  background: var(--bg-soft);
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.tx-monthly td:first-child,
+.tx-monthly th:first-child {
+  text-align: left;
+}
+.tx-monthly tr.has-nsf td {
+  background: #fdf3ef;
+}
+.tx-monthly tr.has-nsf td:last-child {
+  color: #b3431a;
+  font-weight: 600;
+}
 
 .persona-card {
   padding: 8px 10px;
@@ -1142,8 +1296,15 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   row-gap: 4px;
   align-items: start;
 }
-.persona-card .persona-card-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.persona-card > .persona-stress { grid-column: 1 / -1; }
+.persona-card .persona-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.persona-card > .persona-stress {
+  grid-column: 1 / -1;
+}
 .persona-avatar {
   display: inline-flex;
   align-items: center;
@@ -1153,23 +1314,47 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   background: var(--bg-card);
   flex: 0 0 auto;
 }
-.persona-avatar svg { display: block; width: 100%; height: 100%; }
-.persona-avatar-sm { width: 40px; height: 40px; margin-top: 2px; }
-.persona-avatar-md { width: 56px; height: 56px; border-radius: 8px; }
-.persona-avatar-lg { width: 96px; height: 96px; border-radius: 10px; }
+.persona-avatar svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.persona-avatar-sm {
+  width: 40px;
+  height: 40px;
+  margin-top: 2px;
+}
+.persona-avatar-md {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+}
+.persona-avatar-lg {
+  width: 96px;
+  height: 96px;
+  border-radius: 10px;
+}
 .persona-avatar-fallback {
   background: var(--bg-soft);
   color: var(--text-muted);
   font-weight: 600;
   font-size: 14px;
 }
-.persona-avatar-lg.persona-avatar-fallback { font-size: 32px; }
-.persona-card:hover { border-color: var(--border-strong); }
+.persona-avatar-lg.persona-avatar-fallback {
+  font-size: 32px;
+}
+.persona-card:hover {
+  border-color: var(--border-strong);
+}
 .persona-card.active {
   border-color: var(--accent);
   background: var(--accent-soft);
 }
-.persona-name { font-weight: 600; font-size: 13px; line-height: 1.2; }
+.persona-name {
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 1.2;
+}
 .persona-archetype {
   font-size: 10px;
   color: var(--text-muted);
@@ -1219,7 +1404,10 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   cursor: pointer;
   line-height: 1.3;
 }
-.persona-jtbd-chip:hover { border-color: var(--accent); color: var(--accent); }
+.persona-jtbd-chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
 .persona-jtbd-chip.is-active {
   background: var(--accent);
   color: var(--mandatory-fg);
@@ -1246,22 +1434,30 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   padding: 2px 0;
   list-style: none;
 }
-.persona-more > summary.persona-more-summary::-webkit-details-marker { display: none; }
+.persona-more > summary.persona-more-summary::-webkit-details-marker {
+  display: none;
+}
 .persona-more > summary.persona-more-summary::before {
   content: '▸ ';
   display: inline-block;
   transition: transform 120ms ease;
   margin-right: 2px;
 }
-.persona-more[open] > summary.persona-more-summary::before { content: '▾ '; }
-.persona-more > summary.persona-more-summary:hover { color: var(--text); }
+.persona-more[open] > summary.persona-more-summary::before {
+  content: '▾ ';
+}
+.persona-more > summary.persona-more-summary:hover {
+  color: var(--text);
+}
 .persona-more > summary.persona-more-summary:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
 .persona-more > .persona-best,
 .persona-more > .persona-narrative,
-.persona-more > .persona-stress { margin-top: 4px; }
+.persona-more > .persona-stress {
+  margin-top: 4px;
+}
 .persona-stress {
   display: flex;
   flex-wrap: wrap;
@@ -1292,13 +1488,19 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   grid-template-columns: minmax(220px, 260px) 1fr;
   grid-template-rows: auto 1fr;
   grid-template-areas:
-    "header  header"
-    "tree    payload";
+    'header  header'
+    'tree    payload';
   min-height: 0;
 }
-.navigator > .pane-header { grid-area: header; }
-.navigator > .nav-tree { grid-area: tree; }
-.navigator > .payload-area { grid-area: payload; }
+.navigator > .pane-header {
+  grid-area: header;
+}
+.navigator > .nav-tree {
+  grid-area: tree;
+}
+.navigator > .payload-area {
+  grid-area: payload;
+}
 
 .nav-tree {
   padding: 8px 12px;
@@ -1314,7 +1516,9 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   padding-bottom: 6px;
   border-bottom: 1px dashed var(--border);
 }
-.nav-account:last-child { border-bottom: none; }
+.nav-account:last-child {
+  border-bottom: none;
+}
 
 /* Section-header hierarchy — "BUNDLE-LEVEL" / "CURRENT ACCOUNT · …" sit
    above the endpoint buttons in distinctly smaller typography. */
@@ -1327,7 +1531,9 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   margin-bottom: 4px;
   padding-top: 2px;
 }
-.nav-account.is-bundle .nav-account-header { color: var(--accent); }
+.nav-account.is-bundle .nav-account-header {
+  color: var(--accent);
+}
 .nav-endpoint {
   display: flex;
   align-items: center;
@@ -1343,7 +1549,9 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   /* Reserve room for the left accent bar so the active row doesn't shift. */
   border-left: 3px solid transparent;
 }
-.nav-endpoint:hover { color: var(--accent); }
+.nav-endpoint:hover {
+  color: var(--accent);
+}
 /* PR #8 — active row is bold and carries a left accent bar. */
 .nav-endpoint.active {
   color: var(--accent);
@@ -1365,7 +1573,9 @@ a:focus, button:focus, select:focus, input:focus, [tabindex="0"]:focus {
   line-height: 1;
   color: var(--text-muted);
 }
-.nav-endpoint.active .nav-endpoint-icon { color: var(--accent); }
+.nav-endpoint.active .nav-endpoint-icon {
+  color: var(--accent);
+}
 /* PR #8 — collapsible per-account group. Summary acts as the toggle. */
 details.nav-account > summary.nav-account-header {
   cursor: pointer;
@@ -1373,7 +1583,9 @@ details.nav-account > summary.nav-account-header {
   display: flex;
   align-items: center;
 }
-details.nav-account > summary.nav-account-header::-webkit-details-marker { display: none; }
+details.nav-account > summary.nav-account-header::-webkit-details-marker {
+  display: none;
+}
 details.nav-account > summary.nav-account-header::before {
   content: '▸';
   display: inline-block;
@@ -1382,14 +1594,21 @@ details.nav-account > summary.nav-account-header::before {
   color: var(--text-muted);
   transition: transform 120ms ease;
 }
-details.nav-account[open] > summary.nav-account-header::before { content: '▾'; }
-details.nav-account > summary.nav-account-header:hover { color: var(--text); }
+details.nav-account[open] > summary.nav-account-header::before {
+  content: '▾';
+}
+details.nav-account > summary.nav-account-header:hover {
+  color: var(--text);
+}
 details.nav-account > summary.nav-account-header:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
 
-.nav-endpoint-label { flex: 1 1 auto; font-size: 12px; }
+.nav-endpoint-label {
+  flex: 1 1 auto;
+  font-size: 12px;
+}
 
 .nav-submeter {
   display: inline-block;
@@ -1409,9 +1628,15 @@ details.nav-account > summary.nav-account-header:focus-visible {
 /* Amber → olive → green gradient driven by the inline width of the fill,
    so a 30% bar reads as warmer than a 90% bar. CSS-only — applied via
    --submeter-color set on the parent .nav-endpoint at render time. */
-.nav-endpoint[data-coverage-band='low']    { --submeter-color: #c8862a; }
-.nav-endpoint[data-coverage-band='medium'] { --submeter-color: #6a8f4a; }
-.nav-endpoint[data-coverage-band='high']   { --submeter-color: var(--accent); }
+.nav-endpoint[data-coverage-band='low'] {
+  --submeter-color: #c8862a;
+}
+.nav-endpoint[data-coverage-band='medium'] {
+  --submeter-color: #6a8f4a;
+}
+.nav-endpoint[data-coverage-band='high'] {
+  --submeter-color: var(--accent);
+}
 .nav-submeter-pct {
   font-size: 10px;
   color: var(--text-muted);
@@ -1424,8 +1649,12 @@ details.nav-account > summary.nav-account-header:focus-visible {
   color: var(--accent);
   text-decoration: none;
 }
-.fc-content a:hover { text-decoration: underline; }
-.fc-row .v { line-height: 1.4; }
+.fc-content a:hover {
+  text-decoration: underline;
+}
+.fc-row .v {
+  line-height: 1.4;
+}
 .fc-row.fc-report {
   margin-top: 4px;
   padding-top: 8px;
@@ -1480,7 +1709,9 @@ details.nav-account > summary.nav-account-header:focus-visible {
   min-width: 90px;
 }
 
-.tx-filter-bar input[type='search'] { min-width: 160px; }
+.tx-filter-bar input[type='search'] {
+  min-width: 160px;
+}
 
 .tx-filter-bar .filter-clear {
   margin-left: auto;
@@ -1502,11 +1733,23 @@ details.nav-account > summary.nav-account-header:focus-visible {
   cursor: pointer;
   user-select: none;
 }
-.payload-rendered th.sortable:hover { background: var(--accent-soft); }
-.payload-rendered th.sortable.sort-asc::after { content: ' ▲'; font-size: 9px; color: var(--accent); }
-.payload-rendered th.sortable.sort-desc::after { content: ' ▼'; font-size: 9px; color: var(--accent); }
+.payload-rendered th.sortable:hover {
+  background: var(--accent-soft);
+}
+.payload-rendered th.sortable.sort-asc::after {
+  content: ' ▲';
+  font-size: 9px;
+  color: var(--accent);
+}
+.payload-rendered th.sortable.sort-desc::after {
+  content: ' ▼';
+  font-size: 9px;
+  color: var(--accent);
+}
 
-.payload-rendered tr.tx-highlight td { background: var(--accent-soft); }
+.payload-rendered tr.tx-highlight td {
+  background: var(--accent-soft);
+}
 .payload-rendered tr.tx-highlight td:first-child {
   border-left: 3px solid var(--accent);
 }
@@ -1575,7 +1818,9 @@ details.nav-account > summary.nav-account-header:focus-visible {
   color: var(--text-muted);
   padding: 0 4px;
 }
-.filter-toggle input { margin: 0; }
+.filter-toggle input {
+  margin: 0;
+}
 
 .cross-link-banner {
   padding: 6px 12px;
@@ -1598,12 +1843,20 @@ details.nav-account > summary.nav-account-header:focus-visible {
 }
 
 .endpoint-label {
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   color: var(--text-muted);
 }
 
-.toolbar-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-.export-group { display: flex; gap: 4px; }
+.toolbar-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.export-group {
+  display: flex;
+  gap: 4px;
+}
 .export-btn {
   padding: 4px 10px;
   border: 1px solid var(--border-strong);
@@ -1611,18 +1864,32 @@ details.nav-account > summary.nav-account-header:focus-visible {
   background: var(--bg-card);
   font-size: 11px;
 }
-.export-btn:hover { background: var(--accent-soft); }
+.export-btn:hover {
+  background: var(--accent-soft);
+}
 
-.toggle-group { display: flex; gap: 0; }
+.toggle-group {
+  display: flex;
+  gap: 0;
+}
 .toggle {
   padding: 4px 10px;
   border: 1px solid var(--border-strong);
   background: var(--bg-card);
   font-size: 12px;
 }
-.toggle:first-child { border-radius: 4px 0 0 4px; }
-.toggle:last-child { border-radius: 0 4px 4px 0; border-left: none; }
-.toggle.active { background: var(--accent); color: var(--mandatory-fg); border-color: var(--accent); }
+.toggle:first-child {
+  border-radius: 4px 0 0 4px;
+}
+.toggle:last-child {
+  border-radius: 0 4px 4px 0;
+  border-left: none;
+}
+.toggle.active {
+  background: var(--accent);
+  color: var(--mandatory-fg);
+  border-color: var(--accent);
+}
 
 .payload-body {
   flex: 1 1 auto;
@@ -1650,7 +1917,8 @@ details.nav-account > summary.nav-account-header:focus-visible {
   word-break: normal;
   overflow-wrap: normal;
 }
-.payload-rendered th, .payload-rendered td {
+.payload-rendered th,
+.payload-rendered td {
   text-align: left;
   border-bottom: 1px solid var(--border);
   padding: 6px 8px;
@@ -1658,7 +1926,9 @@ details.nav-account > summary.nav-account-header:focus-visible {
   background: var(--bg-card);
 }
 /* Alternating row striping for scannable wide tables. */
-.payload-rendered tbody tr:nth-child(odd) td { background: var(--bg); }
+.payload-rendered tbody tr:nth-child(odd) td {
+  background: var(--bg);
+}
 .payload-rendered th {
   font-weight: 600;
   font-size: 11px;
@@ -1670,9 +1940,16 @@ details.nav-account > summary.nav-account-header:focus-visible {
 }
 /* Status stripe — the column-header top border carries the M/O/C colour
    so the status reads at a glance even before the user hovers the pill. */
-.payload-rendered th[data-status='mandatory']   { border-top-color: var(--mandatory-bg); }
-.payload-rendered th[data-status='optional']    { border-top-color: var(--border-strong); border-top-style: dashed; }
-.payload-rendered th[data-status='conditional'] { border-top-color: var(--conditional-fg); }
+.payload-rendered th[data-status='mandatory'] {
+  border-top-color: var(--mandatory-bg);
+}
+.payload-rendered th[data-status='optional'] {
+  border-top-color: var(--border-strong);
+  border-top-style: dashed;
+}
+.payload-rendered th[data-status='conditional'] {
+  border-top-color: var(--conditional-fg);
+}
 
 /* Sticky leftmost column on /transactions — anchors TransactionId so a wide
    table can scroll horizontally without losing the row's identity. */
@@ -1689,10 +1966,12 @@ details.nav-account > summary.nav-account-header:focus-visible {
 .payload-rendered.has-sticky-col tbody tr:nth-child(even) td:first-child {
   background: var(--bg-card);
 }
-.payload-rendered.has-sticky-col tr.tx-highlight td:first-child { background: var(--accent-soft); }
+.payload-rendered.has-sticky-col tr.tx-highlight td:first-child {
+  background: var(--accent-soft);
+}
 
 .payload-rendered .field-name {
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   color: var(--accent);
   background: none;
   border: none;
@@ -1700,7 +1979,9 @@ details.nav-account > summary.nav-account-header:focus-visible {
   cursor: pointer;
   text-align: left;
 }
-.payload-rendered .field-name:hover { text-decoration: underline; }
+.payload-rendered .field-name:hover {
+  text-decoration: underline;
+}
 /* Smaller pill in column headers — the stripe carries the colour, the pill
    carries the M/O/C label (a11y per EXP-23(g)). */
 .payload-rendered th .pill {
@@ -1712,11 +1993,19 @@ details.nav-account > summary.nav-account-header:focus-visible {
 
 /* 120ms fade on bundle changes — the table briefly fades while the new
    bundle generates. Honours prefers-reduced-motion. */
-.payload-body { transition: opacity 120ms ease; }
-.payload-body.is-fading { opacity: 0.35; }
+.payload-body {
+  transition: opacity 120ms ease;
+}
+.payload-body.is-fading {
+  opacity: 0.35;
+}
 @media (prefers-reduced-motion: reduce) {
-  .payload-body { transition: none; }
-  .payload-body.is-fading { opacity: 1; }
+  .payload-body {
+    transition: none;
+  }
+  .payload-body.is-fading {
+    opacity: 1;
+  }
 }
 
 /* EXP-18 Underwriting Scenario panel. Lives in a virtual bundle-level
@@ -1799,7 +2088,9 @@ details.nav-account > summary.nav-account-header:focus-visible {
   color: var(--accent);
 }
 .uw-card-formula summary::-webkit-details-marker,
-.uw-card-contrib summary::-webkit-details-marker { display: none; }
+.uw-card-contrib summary::-webkit-details-marker {
+  display: none;
+}
 .uw-card-formula summary::before,
 .uw-card-contrib summary::before {
   content: '▸ ';
@@ -1807,7 +2098,9 @@ details.nav-account > summary.nav-account-header:focus-visible {
   color: var(--text-muted);
 }
 .uw-card-formula[open] summary::before,
-.uw-card-contrib[open] summary::before { content: '▾ '; }
+.uw-card-contrib[open] summary::before {
+  content: '▾ ';
+}
 .uw-card-formula p {
   margin: 6px 0 0;
   font-size: 11px;
@@ -1821,7 +2114,7 @@ details.nav-account > summary.nav-account-header:focus-visible {
   overflow-y: auto;
 }
 .uw-card-contrib li {
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   font-size: 10.5px;
   line-height: 1.4;
   color: var(--text);
@@ -1842,20 +2135,29 @@ details.nav-account > summary.nav-account-header:focus-visible {
   border-radius: 3px;
   cursor: pointer;
 }
-.uw-pin-btn:hover { background: var(--accent); color: var(--mandatory-fg); }
+.uw-pin-btn:hover {
+  background: var(--accent);
+  color: var(--mandatory-fg);
+}
 .uw-pin-btn:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
 
 @media (max-width: 1099px) {
-  .uw-grid { grid-template-columns: 1fr; }
+  .uw-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Visual indicator that the navigator entry is a derived view, not a
    spec endpoint. */
-.nav-endpoint.nav-virtual { font-style: italic; }
-.nav-endpoint.nav-virtual .nav-endpoint-label { color: var(--accent); }
+.nav-endpoint.nav-virtual {
+  font-style: italic;
+}
+.nav-endpoint.nav-virtual .nav-endpoint-label {
+  color: var(--accent);
+}
 
 /* Compare-LFIs view (EXP-16) — two side-by-side tables of the same persona
    under two LFI profiles, with diff highlighting on cells that differ. */
@@ -1883,7 +2185,9 @@ details.nav-account > summary.nav-account-header:focus-visible {
   font-size: 11px;
   cursor: pointer;
 }
-.compare-bar .swap:hover { background: var(--accent-soft); }
+.compare-bar .swap:hover {
+  background: var(--accent-soft);
+}
 .compare-persona {
   display: flex;
   align-items: center;
@@ -1892,7 +2196,11 @@ details.nav-account > summary.nav-account-header:focus-visible {
   background: var(--bg);
   border-bottom: 1px solid var(--border);
 }
-.compare-persona-name { font-weight: 600; font-size: 14px; line-height: 1.2; }
+.compare-persona-name {
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.2;
+}
 .compare-persona-lfis {
   font-size: 11px;
   color: var(--text-muted);
@@ -1922,7 +2230,9 @@ details.nav-account > summary.nav-account-header:focus-visible {
   min-width: 0;
   min-height: 0;
 }
-.compare-half:last-child { border-right: none; }
+.compare-half:last-child {
+  border-right: none;
+}
 .compare-half .compare-half-header {
   padding: 6px 12px;
   background: var(--bg-soft);
@@ -1982,7 +2292,9 @@ details.nav-account > summary.nav-account-header:focus-visible {
   line-height: 1.5;
   border-radius: 2px;
 }
-.insurance-empty-banner strong { margin-right: 6px; }
+.insurance-empty-banner strong {
+  margin-right: 6px;
+}
 .insurance-empty-link {
   display: inline-block;
   margin-left: 6px;
@@ -1996,7 +2308,7 @@ details.nav-account > summary.nav-account-header:focus-visible {
 }
 
 .payload-raw {
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   font-size: 11px;
   white-space: pre;
   background: var(--bg-soft);
@@ -2076,7 +2388,10 @@ details.nav-account > summary.nav-account-header:focus-visible {
   flex-direction: column;
   gap: 8px;
 }
-.fc-row { display: flex; gap: 8px; }
+.fc-row {
+  display: flex;
+  gap: 8px;
+}
 .fc-row .k {
   flex: 0 0 88px;
   font-size: 11px;
@@ -2086,7 +2401,7 @@ details.nav-account > summary.nav-account-header:focus-visible {
 }
 .fc-row .v {
   flex: 1 1 auto;
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   font-size: 12px;
   word-break: break-word;
 }
@@ -2116,7 +2431,12 @@ details.nav-account > summary.nav-account-header:focus-visible {
   align-items: center;
   gap: 14px;
 }
-.persona-overview .po-header-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.persona-overview .po-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
 .persona-overview h2 {
   font-size: 18px;
   margin: 0;
@@ -2181,7 +2501,10 @@ details.nav-account > summary.nav-account-header:focus-visible {
   color: var(--accent);
   cursor: pointer;
 }
-.persona-overview .po-jump:hover { background: var(--accent); color: var(--mandatory-fg); }
+.persona-overview .po-jump:hover {
+  background: var(--accent);
+  color: var(--mandatory-fg);
+}
 .persona-overview .po-stress {
   display: flex;
   flex-wrap: wrap;
@@ -2208,7 +2531,9 @@ details.nav-account > summary.nav-account-header:focus-visible {
   list-style: none;
   user-select: none;
 }
-.persona-overview .demo-panel-summary::-webkit-details-marker { display: none; }
+.persona-overview .demo-panel-summary::-webkit-details-marker {
+  display: none;
+}
 .persona-overview .demo-panel-summary::before {
   content: '▸';
   font-size: 11px;
@@ -2237,8 +2562,12 @@ details.nav-account > summary.nav-account-header:focus-visible {
   color: var(--text-muted);
   line-height: 1.5;
 }
-.persona-overview .demo-panel-note strong { color: var(--text); }
-.persona-overview .demo-panel-note a { color: var(--accent); }
+.persona-overview .demo-panel-note strong {
+  color: var(--text);
+}
+.persona-overview .demo-panel-note a {
+  color: var(--accent);
+}
 .persona-overview .demo-row {
   border-top: 1px solid var(--border-strong);
   padding: 10px 12px 12px;
@@ -2263,7 +2592,7 @@ details.nav-account > summary.nav-account-header:focus-visible {
   background: var(--bg-app, #f4f1ea);
   border: 1px solid var(--border-strong);
   border-radius: 3px;
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   font-size: 11.5px;
   line-height: 1.5;
   white-space: pre-wrap;
@@ -2293,7 +2622,9 @@ details.nav-account > summary.nav-account-header:focus-visible {
   outline-offset: 2px;
 }
 @media (prefers-reduced-motion: reduce) {
-  .persona-overview .demo-panel-summary::before { transition: none; }
+  .persona-overview .demo-panel-summary::before {
+    transition: none;
+  }
 }
 
 /* Hover preview for field cards — fast affordance per EXP-14, click still
@@ -2311,7 +2642,7 @@ details.nav-account > summary.nav-account-header:focus-visible {
   pointer-events: none;
 }
 .hovercard .hc-title {
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   font-size: 12px;
   color: var(--accent);
   margin-bottom: 4px;
@@ -2333,7 +2664,9 @@ details.nav-account > summary.nav-account-header:focus-visible {
   margin-top: 4px;
 }
 @media (prefers-reduced-motion: reduce) {
-  .hovercard { transition: none; }
+  .hovercard {
+    transition: none;
+  }
 }
 
 /* Inline field-card expansion under each column header — surfaces status,
@@ -2356,7 +2689,7 @@ details.nav-account > summary.nav-account-header:focus-visible {
 }
 .payload-rendered tr.field-row .fr-meta {
   display: block;
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   font-size: 10px;
 }
 
@@ -2368,7 +2701,9 @@ details.nav-account > summary.nav-account-header:focus-visible {
   color: var(--text-muted);
   cursor: pointer;
 }
-.toolbar-checkbox input { margin: 0; }
+.toolbar-checkbox input {
+  margin: 0;
+}
 
 /* Status pill legend on the field-detail header — anchored mini-legend so
    first-time users don't have to open a card to learn what M/O/C means. */
@@ -2416,13 +2751,17 @@ details.nav-account > summary.nav-account-header:focus-visible {
     transform: translateX(100%);
     transition: transform 220ms ease;
     z-index: 100;
-    box-shadow: -8px 0 16px rgba(0,0,0,0.08);
+    box-shadow: -8px 0 16px rgba(0, 0, 0, 0.08);
   }
-  .field-detail.open { transform: translateX(0); }
+  .field-detail.open {
+    transform: translateX(0);
+  }
   /* Right-pane collapse is a no-op when the pane is a fixed overlay; keep
      its header/contents visible regardless of the right-collapsed flag. */
   .three-pane.right-collapsed .field-detail > .pane-header,
-  .three-pane.right-collapsed .field-detail > .field-detail-scroll { visibility: visible; }
+  .three-pane.right-collapsed .field-detail > .field-detail-scroll {
+    visibility: visible;
+  }
   .three-pane.right-collapsed .field-detail > .pane-rail {
     opacity: 0;
     pointer-events: none;
@@ -2430,11 +2769,15 @@ details.nav-account > summary.nav-account-header:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .field-detail { transition: none; }
+  .field-detail {
+    transition: none;
+  }
 }
 
 @media (max-width: 760px) {
-  .three-pane { grid-template-columns: 1fr; }
+  .three-pane {
+    grid-template-columns: 1fr;
+  }
   .persona-pane {
     max-height: 200px;
   }
@@ -2442,9 +2785,15 @@ details.nav-account > summary.nav-account-header:focus-visible {
      rail wouldn't free horizontal space and just buries the list, so disable
      the feature here. Also force-restore the expanded layout in case the user
      resized down from a wider viewport with left-collapsed already set. */
-  .persona-pane > .pane-header .pane-collapse { display: none; }
-  .three-pane.left-collapsed .persona-pane > .pane-header { visibility: visible; }
-  .three-pane.left-collapsed .persona-pane > .persona-list-shell { visibility: visible; }
+  .persona-pane > .pane-header .pane-collapse {
+    display: none;
+  }
+  .three-pane.left-collapsed .persona-pane > .pane-header {
+    visibility: visible;
+  }
+  .three-pane.left-collapsed .persona-pane > .persona-list-shell {
+    visibility: visible;
+  }
   .three-pane.left-collapsed .persona-pane > .pane-rail {
     opacity: 0;
     pointer-events: none;
@@ -2509,7 +2858,10 @@ details.nav-account > summary.nav-account-header:focus-visible {
   cursor: default;
   font-weight: 400;
 }
-.linked-btn.is-empty:hover { background: transparent; color: var(--text-muted); }
+.linked-btn.is-empty:hover {
+  background: transparent;
+  color: var(--text-muted);
+}
 
 /* Toolbar status-pill legend — always-visible reading of M/O/C without
    opening a field card. Sits to the right of the endpoint label. */
@@ -2548,7 +2900,9 @@ details.nav-account > summary.nav-account-header:focus-visible {
   font-size: 10px;
   letter-spacing: 0.02em;
 }
-.toolbar-legend .legend-text:last-child { margin-right: 0; }
+.toolbar-legend .legend-text:last-child {
+  margin-right: 0;
+}
 
 /* Advanced disclosure for the seed input — most users never touch this;
    tucking it behind a one-click <details> de-clutters the topbar without
@@ -2569,7 +2923,9 @@ details.nav-account > summary.nav-account-header:focus-visible {
   cursor: pointer;
   list-style: none;
 }
-.control-advanced > summary::-webkit-details-marker { display: none; }
+.control-advanced > summary::-webkit-details-marker {
+  display: none;
+}
 .control-advanced[open] > summary {
   background: var(--accent-soft);
   color: var(--accent);
@@ -2696,7 +3052,9 @@ details.nav-account > summary.nav-account-header:focus-visible {
   cursor: pointer;
   padding: 0 4px;
 }
-.welcome-dismiss:hover { color: var(--accent); }
+.welcome-dismiss:hover {
+  color: var(--accent);
+}
 .welcome-title {
   margin: 4px 0 10px;
   font-size: 15px;
@@ -2741,7 +3099,10 @@ details.nav-account > summary.nav-account-header:focus-visible {
   cursor: pointer;
   text-decoration: none;
 }
-.welcome-cta:hover { background: var(--accent); color: var(--mandatory-fg); }
+.welcome-cta:hover {
+  background: var(--accent);
+  color: var(--mandatory-fg);
+}
 
 /* Underwriting at-a-glance strip — compact 4-stat dock above /transactions
    so Sara's primary JTBD-1.1/1.2 signals are one glance away without
@@ -2790,7 +3151,10 @@ details.nav-account > summary.nav-account-header:focus-visible {
   color: var(--accent);
   cursor: pointer;
 }
-.uw-strip-jump:hover { background: var(--accent); color: var(--mandatory-fg); }
+.uw-strip-jump:hover {
+  background: var(--accent);
+  color: var(--mandatory-fg);
+}
 .uw-strip-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -2826,7 +3190,9 @@ details.nav-account > summary.nav-account-header:focus-visible {
   line-height: 1.3;
 }
 @media (max-width: 1099px) {
-  .uw-strip-grid { grid-template-columns: repeat(2, 1fr); }
+  .uw-strip-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 /* PII-only mode helpers. */
@@ -2886,7 +3252,10 @@ details.nav-account > summary.nav-account-header:focus-visible {
   cursor: pointer;
   border-radius: 4px;
 }
-.builder-cta:hover { border-style: solid; background: var(--bg); }
+.builder-cta:hover {
+  border-style: solid;
+  background: var(--bg);
+}
 .builder-cta-help {
   margin: 6px 0 0;
   font-size: 11px;
@@ -2968,7 +3337,9 @@ details.nav-account > summary.nav-account-header:focus-visible {
   color: var(--text-muted);
   font-weight: 600;
 }
-.builder-section:first-child { margin-top: 0; }
+.builder-section:first-child {
+  margin-top: 0;
+}
 .builder-row {
   display: grid;
   grid-template-columns: 180px 1fr;
@@ -2997,7 +3368,10 @@ details.nav-account > summary.nav-account-header:focus-visible {
   background: var(--bg);
   color: var(--text);
 }
-.builder-checkbox { display: inline-flex; align-items: center; }
+.builder-checkbox {
+  display: inline-flex;
+  align-items: center;
+}
 .builder-checkgroup {
   display: flex;
   flex-wrap: wrap;
@@ -3022,7 +3396,9 @@ details.nav-account > summary.nav-account-header:focus-visible {
   font-size: 12px;
   color: var(--text-muted);
 }
-.builder-validation.has-error { color: #b00020; }
+.builder-validation.has-error {
+  color: #b00020;
+}
 .btn-primary {
   padding: 6px 14px;
   font-size: 13px;
@@ -3073,7 +3449,9 @@ details.nav-account > summary.nav-account-header:focus-visible {
   padding: 12px;
   margin-bottom: 12px;
 }
-.insurance-record:last-child { margin-bottom: 0; }
+.insurance-record:last-child {
+  margin-bottom: 0;
+}
 .insurance-field-tree {
   margin: 0;
   display: grid;
@@ -3102,24 +3480,27 @@ details.nav-account > summary.nav-account-header:focus-visible {
   color: var(--text);
 }
 .insurance-field-label .field-name {
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   font-size: 11px;
 }
 .insurance-field-label .field-format,
 .insurance-field-label .field-enum {
   font-size: 10px;
   color: var(--text-muted);
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   font-weight: 400;
 }
 .insurance-field-value {
   margin: 0;
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   font-size: 11px;
   color: var(--text);
   word-break: break-word;
 }
-.insurance-field-value .value-empty { color: var(--text-muted); font-style: italic; }
+.insurance-field-value .value-empty {
+  color: var(--text-muted);
+  font-style: italic;
+}
 .insurance-array {
   margin: 0;
   padding-left: 0;
@@ -3137,7 +3518,7 @@ details.nav-account > summary.nav-account-header:focus-visible {
 .insurance-array-row .array-index {
   font-size: 10px;
   color: var(--text-muted);
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
 }
 
 /* Phase R4 — Logo column. Present only when the enriched-view toggle is

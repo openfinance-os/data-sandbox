@@ -19,14 +19,17 @@
 
 const params = new URLSearchParams(window.location.search);
 const ORIGIN = (
-  params.get('origin')
-    || (window.location.origin && window.location.origin !== 'null' ? window.location.origin : '')
-    || 'https://openfinance-os.org/commons/data-sandbox'
+  params.get('origin') ||
+  (window.location.origin && window.location.origin !== 'null' ? window.location.origin : '') ||
+  'https://openfinance-os.org/commons/data-sandbox'
 ).replace(/\/$/, '');
 const FX = `${ORIGIN}/fixtures/v1`;
 
 const $ = (id) => document.getElementById(id);
-const showErr = (msg) => { $('err').textContent = msg; $('err').hidden = false; };
+const showErr = (msg) => {
+  $('err').textContent = msg;
+  $('err').hidden = false;
+};
 
 async function getJSON(url) {
   const r = await fetch(url, { headers: { Accept: 'application/json' } });
@@ -57,7 +60,9 @@ async function init() {
     sel.appendChild(opt);
   }
   if (footprintPersonas.length === 0) {
-    showErr('No personas with multi_lfi_footprint were found in manifest.json. Rebuild fixtures with `npm run build:fixtures`.');
+    showErr(
+      'No personas with multi_lfi_footprint were found in manifest.json. Rebuild fixtures with `npm run build:fixtures`.',
+    );
     return;
   }
   sel.value = footprintPersonas[0];
@@ -74,8 +79,12 @@ async function renderAll() {
 
   renderFootprint(info);
 
-  const [primaryAccounts, primaryBeneficiaries, ...roleBundles] =
-    await fetchPrimaryAndRoles(personaId, lfi, seed, info);
+  const [primaryAccounts, primaryBeneficiaries, ...roleBundles] = await fetchPrimaryAndRoles(
+    personaId,
+    lfi,
+    seed,
+    info,
+  );
 
   renderReconciliation(info, primaryAccounts, primaryBeneficiaries, roleBundles);
   renderLedger(personaId, info, primaryAccounts, roleBundles);
@@ -89,8 +98,7 @@ async function fetchPrimaryAndRoles(personaId, lfi, seed, info) {
   const primaryAccounts = await getJSON(primaryAccountsUrl);
   const firstAccount = primaryAccounts.Data?.Account?.[0];
   if (!firstAccount) throw new Error('primary bundle missing /accounts.Data.Account[0]');
-  const primaryBeneficiariesUrl =
-    `${FX}/bundles/${personaId}/${lfi}/seed-${seed}/accounts__${firstAccount.AccountId}__beneficiaries.json`;
+  const primaryBeneficiariesUrl = `${FX}/bundles/${personaId}/${lfi}/seed-${seed}/accounts__${firstAccount.AccountId}__beneficiaries.json`;
   const primaryBeneficiaries = await getJSON(primaryBeneficiariesUrl);
 
   // Role bundles in parallel.
@@ -99,7 +107,14 @@ async function fetchPrimaryAndRoles(personaId, lfi, seed, info) {
     const url = `${FX}/bundles/${personaId}/${slot}/${lfi}/seed-${seed}/accounts.json`;
     try {
       const env = await getJSON(url);
-      return { slot, accounts: env, balanceUrl: url.replace('accounts.json', `accounts__${env.Data?.Account?.[0]?.AccountId}__balances.json`) };
+      return {
+        slot,
+        accounts: env,
+        balanceUrl: url.replace(
+          'accounts.json',
+          `accounts__${env.Data?.Account?.[0]?.AccountId}__balances.json`,
+        ),
+      };
     } catch {
       // The slot may have all-non-bank candidates (e.g. F&B's `acquiring`
       // slot whose candidates are all PSPs not in the counterparty pool).
@@ -146,23 +161,33 @@ function renderReconciliation(info, primaryAccounts, primaryBeneficiaries, roleB
   // Primary bundle's accounts
   for (const acc of primaryAccounts.Data?.Account ?? []) {
     const ai = acc.AccountIdentifiers?.[0] ?? {};
-    addReconRow(tbody, 'Primary /accounts', acc._meta?.servicerName ?? '—', '—', ai.Identification, acc.AccountHolderName);
+    addReconRow(
+      tbody,
+      'Primary /accounts',
+      acc._meta?.servicerName ?? '—',
+      '—',
+      ai.Identification,
+      acc.AccountHolderName,
+    );
   }
 
   // Primary's self-to-<slot> beneficiaries
-  const selfBeneficiaries = (primaryBeneficiaries.Data?.Beneficiary ?? [])
-    .filter((b) => (b.Reference ?? '').startsWith('self-to-'));
+  const selfBeneficiaries = (primaryBeneficiaries.Data?.Beneficiary ?? []).filter((b) =>
+    (b.Reference ?? '').startsWith('self-to-'),
+  );
   const selfIbansBySlot = {};
   for (const b of selfBeneficiaries) {
     const slot = b.Reference.replace('self-to-', '');
     const iban = b.CreditorAccount?.[0]?.Identification;
     selfIbansBySlot[slot] = iban;
-    addReconRow(tbody,
+    addReconRow(
+      tbody,
       `Primary self-to-${slot} beneficiary`,
       b.CreditorAgent?.Name ?? '—',
       b.CreditorAgent?.Identification ?? '—',
       iban,
-      b.CreditorAccount?.[0]?.Name ?? '—');
+      b.CreditorAccount?.[0]?.Name ?? '—',
+    );
   }
 
   // Each role bundle's account[0] — highlight if IBAN matches the
@@ -171,12 +196,14 @@ function renderReconciliation(info, primaryAccounts, primaryBeneficiaries, roleB
     const acc = rb.accounts.Data?.Account?.[0];
     const ai = acc?.AccountIdentifiers?.[0] ?? {};
     const matches = ai.Identification === selfIbansBySlot[rb.slot];
-    const tr = addReconRow(tbody,
+    const tr = addReconRow(
+      tbody,
       `${rb.slot} bundle /accounts`,
       acc?._meta?.servicerName ?? '—',
       acc?.Servicer?.Identification ?? '—',
       ai.Identification,
-      acc?.AccountHolderName ?? '—');
+      acc?.AccountHolderName ?? '—',
+    );
     if (matches) {
       tr.classList.add('row-link');
       tr.lastElementChild.innerHTML += ` <span class="match">↑ matches self-to-${rb.slot}</span>`;
@@ -203,7 +230,15 @@ function renderLedger(personaId, info, primaryAccounts, roleBundles) {
 
   // Primary slot — every account in the primary bundle.
   for (const acc of primaryAccounts.Data?.Account ?? []) {
-    addLedgerRow(tbody, 'primary', acc._meta?.servicerName, acc.AccountId, acc.Currency, acc.AccountIdentifiers?.[0]?.Identification, '—');
+    addLedgerRow(
+      tbody,
+      'primary',
+      acc._meta?.servicerName,
+      acc.AccountId,
+      acc.Currency,
+      acc.AccountIdentifiers?.[0]?.Identification,
+      '—',
+    );
   }
 
   for (const rb of roleBundles) {
@@ -214,7 +249,15 @@ function renderLedger(personaId, info, primaryAccounts, roleBundles) {
       const b = rb.balances.Data.Balance[0];
       bal = `${b.Amount?.Amount ?? '—'} ${b.Amount?.Currency ?? ''}`;
     }
-    addLedgerRow(tbody, rb.slot, acc._meta?.servicerName, acc.AccountId, acc.Currency, acc.AccountIdentifiers?.[0]?.Identification, bal);
+    addLedgerRow(
+      tbody,
+      rb.slot,
+      acc._meta?.servicerName,
+      acc.AccountId,
+      acc.Currency,
+      acc.AccountIdentifiers?.[0]?.Identification,
+      bal,
+    );
   }
 }
 
@@ -234,7 +277,10 @@ function addLedgerRow(tbody, slot, bank, accountId, currency, iban, balance) {
 
 function escapeHtml(s) {
   if (s == null) return '';
-  return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  return String(s).replace(
+    /[&<>"']/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
+  );
 }
 
 init();
