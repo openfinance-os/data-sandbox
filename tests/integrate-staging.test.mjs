@@ -52,17 +52,19 @@ if (!SITE_STAGED) {
 
     const manifest = JSON.parse(fs.readFileSync(need('fixtures/v1/manifest.json').p, 'utf8'));
     expect(manifest.specVersion).toBe('v2.1');
-    // 18 banking + 9 insurance GA + 3 multi-domain (Phase 2.2:
-    // retail_multi_banker, emirati_takaful_multi, hnw_intl_multi) =
-    // 30 personas × 3 LFIs = 90 fixtures.
-    expect(Object.keys(manifest.personas).length).toBe(30);
-    expect(Object.keys(manifest.fixtures).length).toBe(90);
+    // 18 banking + 9 insurance GA + 8 multi-domain (Phase 2.2:
+    // retail_multi_banker, emirati_takaful_multi, hnw_intl_multi,
+    // tech_pro_multi, recent_expat_multi, retired_multi,
+    // healthcare_multi, gcc_commuter_multi) = 35 personas × 3 LFIs
+    // = 105 fixtures.
+    expect(Object.keys(manifest.personas).length).toBe(35);
+    expect(Object.keys(manifest.fixtures).length).toBe(105);
     expect(manifest.domains).toEqual(expect.arrayContaining(['banking', 'insurance']));
     const byDomain = { banking: 0, insurance: 0, multi: 0 };
     for (const info of Object.values(manifest.personas)) {
       byDomain[info.domain] = (byDomain[info.domain] ?? 0) + 1;
     }
-    expect(byDomain).toEqual({ banking: 18, insurance: 9, multi: 3 });
+    expect(byDomain).toEqual({ banking: 18, insurance: 9, multi: 8 });
 
     const index = JSON.parse(fs.readFileSync(need('fixtures/v1/index.json').p, 'utf8'));
     expect(index.lfiProfiles).toEqual(['rich', 'median', 'sparse']);

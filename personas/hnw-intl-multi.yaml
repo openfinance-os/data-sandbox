@@ -182,6 +182,7 @@ home:
 life:
   policy:
     cover_type: Joint
+    policyholder_life_assured: true
     type_of_life_insurance: LevelTermInsurance
     insurance_purpose: FamilyProtection
     sum_assured_aed: 5000000
@@ -190,6 +191,10 @@ life:
     start_date_offset_days: 90
     channel: Broker
     product_name: Premier Term Life
+  beneficiaries:
+    - relationship: Spouse
+    - relationship: Child
+    - relationship: Child
   claims:
     history_months: 24
     claims_in_period: 0

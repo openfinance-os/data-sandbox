@@ -1,0 +1,202 @@
+persona_id: retired_multi
+domains: [banking, insurance]
+name: "Retired Emirati Multi-Banker — Consolidated 4-Bank Savings"
+archetype: retired_emirati_savings_consolidator
+default_seed: 60284
+segment: Retail
+stress_coverage:
+  # Retired Emirati national whose multi-LFI footprint reflects
+  # decades of accumulated relationships: pension primary, an Islamic
+  # savings deposit, a mainstream secondary held alongside a child's
+  # joint signing, and a legacy international branch from a younger
+  # FX-active period. No mortgage (paid off), no auto loan. The
+  # stress vector is consolidating dormant + active savings across
+  # four LFIs for an estate-planning view.
+  - retired_emirati_consolidated_savings_multi_lfi
+
+demographics:
+  nationality_pool: emirati
+  age_band: 62-72
+  emirate: abu_dhabi
+
+income:
+  primary_employer_pool: pension_gcc
+  monthly_amount_aed: 22000
+  pay_day: 1
+  variability: none
+  flag_payroll: true
+
+accounts:
+  # ── Salary primary (FAB-class) — pension lands here ───────────────
+  - type: CurrentAccount
+    at_slot: salary
+    currency: AED
+    age_months: 360
+  - type: Savings
+    at_slot: salary
+    currency: AED
+    age_months: 240
+  # ── Islamic deposit (DIB-class) — Sharia-compliant savings ────────
+  - type: Savings
+    at_slot: islamic-deposit
+    currency: AED
+    age_months: 180
+  # ── Everyday-card secondary (ENBD-class) ──────────────────────────
+  - type: CurrentAccount
+    at_slot: everyday-card
+    currency: AED
+    age_months: 120
+  - type: CreditCard
+    at_slot: everyday-card
+    currency: AED
+    age_months: 72
+    credit_limit_aed: 30000
+  # ── International (HSBC-class) — legacy from FX-active years ──────
+  - type: CurrentAccount
+    at_slot: international
+    currency: GBP
+    age_months: 240
+  - type: Savings
+    at_slot: international
+    currency: USD
+    age_months: 180
+
+multi_lfi_footprint:
+  slots:
+    - key: salary
+      role: salary_primary
+      lfi_default: Rich
+      plausible_lfi_candidates:
+        - "First Abu Dhabi Bank"
+        - "Abu Dhabi Commercial Bank"
+    - key: islamic-deposit
+      role: islamic_deposit
+      lfi_default: Median
+      plausible_lfi_candidates:
+        - "Dubai Islamic Bank"
+        - "Abu Dhabi Islamic Bank"
+        - "Sharjah Islamic Bank"
+    - key: everyday-card
+      role: secondary_card
+      lfi_default: Median
+      plausible_lfi_candidates:
+        - "Emirates NBD"
+        - "Commercial Bank of Dubai"
+    - key: international
+      role: international_branch
+      lfi_default: Rich
+      plausible_lfi_candidates:
+        - "HSBC Bank Middle East"
+        - "Standard Chartered Bank"
+
+multi_insurer_footprint:
+  slots:
+    - line: health
+      key: health-senior
+      insurer_default: Rich
+      plausible_insurer_candidates:
+        - "Daman"
+        - "AXA Gulf"
+        - "Sukoon Insurance"
+    - line: life
+      key: life-whole
+      insurer_default: Rich
+      plausible_insurer_candidates:
+        - "Sukoon Insurance"
+        - "Salama Islamic Arab Insurance"
+
+insurance:
+  lines: [health, life]
+
+# Health — senior-tier comprehensive for self + spouse
+health:
+  policy:
+    cover_subjects: SelfAndSpouse
+    annual_limit_aed: 2000000
+    policyholder_insured: true
+    excess_aed: 500
+    start_date_offset_days: 120
+    channel: Broker
+    takaful: false
+    product_name: Senior Care Premier
+  claims:
+    history_months: 24
+    claims_in_period: 4
+    approved_claims: 4
+    total_gross_aed: 18500
+
+# Life — whole-life family-protection policy held for decades
+life:
+  policy:
+    cover_type: Sole
+    policyholder_life_assured: true
+    type_of_life_insurance: WholeLifeInsurance
+    insurance_purpose: FamilyProtection
+    sum_assured_aed: 1500000
+    term_years: 35
+    takaful: false
+    start_date_offset_days: 300
+    channel: Broker
+    product_name: Whole-Life Family Cover
+  beneficiaries:
+    - relationship: Spouse
+    - relationship: Child
+    - relationship: Child
+  claims:
+    history_months: 24
+    claims_in_period: 0
+    approved_claims: 0
+    total_gross_aed: 0
+
+fixed_commitments:
+  - kind: standing_order
+    purpose: islamic_deposit_topup
+    at_slot: islamic-deposit
+    amount_aed: 4000
+    schedule: monthly_3
+  - kind: direct_debit
+    purpose: credit_card_repayment_card_everyday
+    at_slot: everyday-card
+    amount_aed_band: [800, 2400]
+    schedule: monthly_10
+  - kind: direct_debit
+    purpose: utilities_adwea
+    at_slot: salary
+    amount_aed_band: [600, 1100]
+    schedule: monthly_5
+  - kind: direct_debit
+    purpose: health_insurance_premium
+    at_slot: salary
+    amount_aed_band: [3800, 4800]
+    schedule: monthly_22
+  - kind: direct_debit
+    purpose: life_insurance_premium
+    at_slot: salary
+    amount_aed_band: [900, 1200]
+    schedule: monthly_22
+
+spend_profile:
+  groceries_aed_per_month_band: [1800, 3000]
+  fuel_aed_per_month_band: [400, 700]
+  dining_per_month_count_band: [4, 10]
+
+fx_activity: true
+cash_deposit_activity: false
+
+distress_signals:
+  nsf_events_per_year_band: [0, 0]
+
+narrative: |
+  Retired Emirati national in Abu Dhabi (AED 22k/mo pension landing
+  on the 1st). Multi-LFI footprint reflects decades of accumulated
+  relationships rather than active card-stacking: pension primary
+  at a Tier-1 conventional bank with a long-tenure CurrentAccount +
+  Savings; a Sharia-compliant savings deposit at an Islamic bank
+  receiving monthly top-ups; an everyday-card relationship at a
+  second mainstream bank (used for utilities + grocery DDs); and a
+  legacy international-branch slot still hosting a GBP CurrentAccount
+  + USD Savings from FX-active working years. No mortgage (paid off
+  years ago), no auto loan. Insurance: senior-tier comprehensive
+  health for self + spouse, whole-life family-protection. The
+  estate-planning underwriting view — total liquid + locked savings
+  across four LFIs — is only legible via Open Finance aggregation.

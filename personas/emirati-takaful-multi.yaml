@@ -177,6 +177,7 @@ home:
 life:
   policy:
     cover_type: Sole
+    policyholder_life_assured: true
     type_of_life_insurance: DecreasingTermInsurance
     insurance_purpose: MortgageCover
     sum_assured_aed: 2700000
@@ -185,9 +186,15 @@ life:
     start_date_offset_days: 60
     channel: Bank
     product_name: Family Takaful — Mortgage Protection
+  beneficiaries:
+    - relationship: Spouse
+    - relationship: Child
+    - relationship: Child
   finance:
     has_finance: true
     bank_pool: counterparty_banks_uae_real
+    amount_aed: 2700000
+    value_against_policy_aed: 2700000
   claims:
     history_months: 24
     claims_in_period: 0

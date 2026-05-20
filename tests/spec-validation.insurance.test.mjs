@@ -365,11 +365,20 @@ describe('insurance spec validation — endpoints × persona × LFI', () => {
 
   describe.each(personaIds)('persona=%s', (pid) => {
     const persona = personas[pid];
-    const line = persona.line ?? 'motor';
-    // Each persona's bundle covers its own line's 4 endpoints PLUS the
-    // 2 cross-line consent endpoints (every insurance bundle carries a
-    // single consent record covering its line's permissions).
-    const endpoints = [...ENDPOINTS_BY_LINE[line], ...CONSENT_ENDPOINTS];
+    // Phase 2.2 — multi-domain personas declare `insurance.lines: []`
+    // covering several lines at once; single-line personas use the
+    // legacy `line:` discriminator (defaulting to motor).
+    const lines = Array.isArray(persona.insurance?.lines)
+      && persona.insurance.lines.length > 0
+      ? persona.insurance.lines
+      : [persona.line ?? 'motor'];
+    // Each persona's bundle covers all its declared lines' 4 endpoints
+    // PLUS the 2 cross-line consent endpoints (every insurance bundle
+    // carries one consent record per line; the list returns the array).
+    const endpoints = [
+      ...lines.flatMap((line) => ENDPOINTS_BY_LINE[line] ?? []),
+      ...CONSENT_ENDPOINTS,
+    ];
     describe.each(PROFILES)('LFI=%s', (lfi) => {
       const bundle = buildBundle({ persona, lfi, seed: persona.default_seed, pools });
       it.each(endpoints)('endpoint %s validates against v2.1-errata1 schema', (endpoint) => {
