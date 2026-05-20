@@ -22,8 +22,10 @@ test('renders Sara, switches endpoints, no console errors, axe-clean', async ({ 
   await expect(page.locator('.persona-card').first()).toBeVisible();
   await expect(page.locator('.persona-card.active')).toHaveCount(1);
 
-  // Top bar pin shows the spec SHA.
-  await expect(page.locator('#version-pin')).toContainText('v2.1 @');
+  // Top bar pin shows the spec version + SHA. Allow an optional `-errataN`
+  // suffix so the assertion survives the periodic CBUAE errata bumps
+  // (e.g. v2.1-errata2 at the time of writing) without churning the test.
+  await expect(page.locator('#version-pin')).toContainText(/^v2\.1(?:-errata\d+)? @ [0-9a-f]{7}/);
 
   // PR #5 — banking cold landing now defaults to Underwriting Summary;
   // navigate to /accounts explicitly to verify the spec table renders.
