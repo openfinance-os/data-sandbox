@@ -19,7 +19,12 @@ import {
   manifest,
 } from '@openfinance-os/sandbox-fixtures';
 import { z } from 'zod';
-import { createSessionStore, getEndpointEnvelope, fanOutAccountIds, fixtureEntry } from './session.mjs';
+import {
+  createSessionStore,
+  getEndpointEnvelope,
+  fanOutAccountIds,
+  fixtureEntry,
+} from './session.mjs';
 import { registerPrompts } from './prompts.mjs';
 
 const PKG_NAME = '@openfinance-os/sandbox-mcp';
@@ -36,14 +41,14 @@ const PFM_INSTRUCTIONS = [
   '',
   'Workflow — curated persona (recommended for first use):',
   '  1. Call `list_personas` (optionally with { domain: "banking" | "insurance" }) and ask the user',
-  '     to pick one (or accept a persona id directly). The persona\'s `domain` determines which',
+  "     to pick one (or accept a persona id directly). The persona's `domain` determines which",
   '     get_* tools apply.',
   '  2. Call `set_session` with { persona, lfi?, seed? }. lfi defaults to median; seed defaults to',
-  '     the persona\'s default_seed. The same (persona, lfi, seed) always returns byte-identical data.',
+  "     the persona's default_seed. The same (persona, lfi, seed) always returns byte-identical data.",
   '  3. For a banking session: use `get_party`, `get_accounts`, `get_balances`, `get_transactions`,',
   '     `get_standing_orders`, `get_direct_debits`, `get_scheduled_payments`, `get_beneficiaries`,',
   '     `get_product`, `get_statements`. Use `load_journey` for a single dump of everything.',
-  '  4. For an insurance session: use the per-line tools matching the persona\'s `line`',
+  "  4. For an insurance session: use the per-line tools matching the persona's `line`",
   '     (motor / home / health / life / travel / renters / employment) — e.g. for a `life` persona,',
   '     call `get_life_policies`, `get_life_policy`, `get_life_payment_details`, `get_life_quote`.',
   '     Banking get_* tools error against an insurance session and vice versa, and a tool for the',
@@ -51,7 +56,7 @@ const PFM_INSTRUCTIONS = [
   '',
   'Workflow — custom persona (banking only — recipe schema covers retail/SME/corporate banking):',
   '  1. Call `get_recipe_defaults` (or read the `recipe://schema` resource) to see the available knobs.',
-  '  2. Translate the user\'s description into a recipe object (any subset of those knobs — missing keys',
+  "  2. Translate the user's description into a recipe object (any subset of those knobs — missing keys",
   '     fall back to defaults). Call `build_persona` with { recipe, lfi?, seed? }.',
   '  3. The banking get_* tools then return the in-memory custom journey.',
   '  Same recipe + lfi + seed → byte-identical bundle. Persona id is `custom_<recipeHash>`.',
@@ -105,7 +110,7 @@ function requireDomain(session, expected, toolName) {
   if (got !== expected) {
     throw new Error(
       `${toolName} requires a ${expected} session; this session is ${got} (persona ${session.persona}). ` +
-      `Call list_personas({ domain: '${expected}' }) → set_session to switch.`,
+        `Call list_personas({ domain: '${expected}' }) → set_session to switch.`,
     );
   }
 }
@@ -134,7 +139,7 @@ function requireLine(session, expectedLine, toolName) {
   if (got !== expectedLine) {
     throw new Error(
       `${toolName} requires an insurance session on the "${expectedLine}" line; this session is line="${got ?? 'unknown'}" (persona ${session.persona}). ` +
-      `Call list_personas({ domain: 'insurance' }) to find a ${expectedLine}-line persona, then set_session to switch.`,
+        `Call list_personas({ domain: 'insurance' }) to find a ${expectedLine}-line persona, then set_session to switch.`,
     );
   }
 }
@@ -213,7 +218,10 @@ function summariseTransactions(txs) {
   };
 }
 
-function filterTransactions(envelopeJson, { since, until, minAmount, maxAmount, category, limit, summary }) {
+function filterTransactions(
+  envelopeJson,
+  { since, until, minAmount, maxAmount, category, limit, summary },
+) {
   const txs = envelopeJson?.Data?.Transaction;
   if (!Array.isArray(txs)) return envelopeJson;
   const sinceTs = since ? Date.parse(since) : null;
@@ -250,7 +258,11 @@ function filterTransactions(envelopeJson, { since, until, minAmount, maxAmount, 
       ...envelopeJson,
       Data: { ...envelopeJson.Data, Transaction: [] },
       _filter: {
-        since, until, minAmount, maxAmount, category,
+        since,
+        until,
+        minAmount,
+        maxAmount,
+        category,
         mode: 'summary',
         total: txs.length,
         matched: filtered.length,
@@ -266,7 +278,11 @@ function filterTransactions(envelopeJson, { since, until, minAmount, maxAmount, 
   const truncated = filtered.length > effLimit;
   const kept = truncated ? filtered.slice(filtered.length - effLimit) : filtered;
   const filterBlock = {
-    since, until, minAmount, maxAmount, category,
+    since,
+    until,
+    minAmount,
+    maxAmount,
+    category,
     limit: effLimit,
     total: txs.length,
     matched: filtered.length,
@@ -279,7 +295,9 @@ function filterTransactions(envelopeJson, { since, until, minAmount, maxAmount, 
       `Returned the ${kept.length} most recent transactions (of ${filtered.length} matching, ${txs.length} total).`,
       oldestKept
         ? `For older items: re-call with until="${oldestKept}" (and optionally a smaller limit) to walk backwards in time.`
-        : 'For older items: re-call with a tighter since/until window or a higher limit (max ' + MAX_LIMIT + ').',
+        : 'For older items: re-call with a tighter since/until window or a higher limit (max ' +
+          MAX_LIMIT +
+          ').',
       'For aggregate analysis (category/month buckets) call with summary=true instead — single small response.',
     ].join(' ');
   }
@@ -294,9 +312,24 @@ function filterTransactions(envelopeJson, { since, until, minAmount, maxAmount, 
 // see the same description whether they read the server-level instructions or
 // call `lfi_profiles` directly.
 const LFI_PROFILES = [
-  { id: 'rich', label: 'Rich', description: 'All optional fields populated.', populate_band: 'all-optional' },
-  { id: 'median', label: 'Median', description: 'Typical UAE-market populate rate (default).', populate_band: 'typical' },
-  { id: 'sparse', label: 'Sparse', description: 'Minimum-conformant: only mandatory fields plus a few optionals.', populate_band: 'minimum-plus' },
+  {
+    id: 'rich',
+    label: 'Rich',
+    description: 'All optional fields populated.',
+    populate_band: 'all-optional',
+  },
+  {
+    id: 'median',
+    label: 'Median',
+    description: 'Typical UAE-market populate rate (default).',
+    populate_band: 'typical',
+  },
+  {
+    id: 'sparse',
+    label: 'Sparse',
+    description: 'Minimum-conformant: only mandatory fields plus a few optionals.',
+    populate_band: 'minimum-plus',
+  },
 ];
 const LFI_INVARIANT = 'Mandatory fields are never redacted regardless of profile (EXP-04 / §8.3).';
 
@@ -338,12 +371,19 @@ function findFields(spec, endpoint, query, limit) {
   }
   const q = String(query).toLowerCase();
   const exactPath = fields.filter((f) => String(f.path ?? '').toLowerCase() === q);
-  const exactName = fields.filter((f) => String(f.name ?? '').toLowerCase() === q && !exactPath.includes(f));
+  const exactName = fields.filter(
+    (f) => String(f.name ?? '').toLowerCase() === q && !exactPath.includes(f),
+  );
   const substr = fields.filter(
     (f) =>
       !exactPath.includes(f) &&
       !exactName.includes(f) &&
-      (String(f.path ?? '').toLowerCase().includes(q) || String(f.name ?? '').toLowerCase().includes(q)),
+      (String(f.path ?? '')
+        .toLowerCase()
+        .includes(q) ||
+        String(f.name ?? '')
+          .toLowerCase()
+          .includes(q)),
   );
   const ranked = [...exactPath, ...exactName, ...substr];
   const cap = Math.max(0, Math.min(FIELD_MAX_LIMIT, limit ?? FIELD_DEFAULT_LIMIT));
@@ -510,7 +550,10 @@ export function createServer() {
         // LOADABLE via set_session({lfi_role}). Some declared slots
         // resolve to candidates that aren't in the counterparty pool
         // (e.g. acquirer-only slots) and silently drop.
-        const availableRoles = ['primary', ...(info?.domain === 'banking' ? listRoleBundles(id) : [])];
+        const availableRoles = [
+          'primary',
+          ...(info?.domain === 'banking' ? listRoleBundles(id) : []),
+        ];
         return {
           id,
           name: info?.name ?? id,
@@ -536,7 +579,9 @@ export function createServer() {
           available_lfi_roles: availableRoles,
         };
       });
-      return textResult(JSON.stringify({ personas: rows, count: rows.length, domain: domain ?? 'all' }, null, 2));
+      return textResult(
+        JSON.stringify({ personas: rows, count: rows.length, domain: domain ?? 'all' }, null, 2),
+      );
     },
   );
 
@@ -565,9 +610,7 @@ export function createServer() {
       description:
         'Pin the active persona, LFI profile, and seed for subsequent tool calls. lfi defaults to "median". seed defaults to the persona\'s default_seed (recommended). The same (persona, lfi, seed) is deterministic across calls and across processes. D-14: pass `lfi_role: "secondary"` or `"tertiary"` to view the persona at one of their non-primary banks (only valid for personas that declare a multi_lfi_footprint with that slot — see list_personas).',
       inputSchema: {
-        persona: z
-          .string()
-          .describe('Persona id from list_personas (e.g. "salaried_expat_mid").'),
+        persona: z.string().describe('Persona id from list_personas (e.g. "salaried_expat_mid").'),
         lfi: z
           .enum(['rich', 'median', 'sparse'])
           .optional()
@@ -576,7 +619,9 @@ export function createServer() {
         lfi_role: z
           .enum(['primary', 'secondary', 'tertiary'])
           .optional()
-          .describe('Which slot of the persona\'s multi_lfi_footprint to load. Default: primary (the historical bundle). secondary/tertiary load the role-keyed bundle emitted in Phase D Slice 5.'),
+          .describe(
+            "Which slot of the persona's multi_lfi_footprint to load. Default: primary (the historical bundle). secondary/tertiary load the role-keyed bundle emitted in Phase D Slice 5.",
+          ),
       },
     },
     async ({ persona, lfi, seed, lfi_role }) => {
@@ -642,9 +687,7 @@ export function createServer() {
       const pools = getPools();
       const validation = validateRecipe(merged, pools);
       if (!validation.ok) {
-        return errorResult(
-          `recipe validation failed:\n  - ${validation.errors.join('\n  - ')}`,
-        );
+        return errorResult(`recipe validation failed:\n  - ${validation.errors.join('\n  - ')}`);
       }
       const expanded = expandRecipe(merged, pools);
       // Anchor `now` and `retrievedAt` to the bundled fixture corpus's
@@ -709,7 +752,9 @@ export function createServer() {
         pool: z
           .string()
           .optional()
-          .describe('Pool id (e.g. "expat_indian", "tech_freezone"). Omit to list all pool ids by kind.'),
+          .describe(
+            'Pool id (e.g. "expat_indian", "tech_freezone"). Omit to list all pool ids by kind.',
+          ),
         kind: z
           .enum([
             'names',
@@ -767,7 +812,9 @@ export function createServer() {
       inputSchema: {
         recipe: z
           .record(z.unknown())
-          .describe('Recipe object. Any subset of RECIPE_DEFAULTS keys; missing keys fall back to defaults.'),
+          .describe(
+            'Recipe object. Any subset of RECIPE_DEFAULTS keys; missing keys fall back to defaults.',
+          ),
       },
     },
     async ({ recipe }) => {
@@ -795,7 +842,9 @@ export function createServer() {
       inputSchema: {
         encoded: z
           .string()
-          .describe('URL-safe recipe blob (output of encode_recipe). Empty string returns RECIPE_DEFAULTS.'),
+          .describe(
+            'URL-safe recipe blob (output of encode_recipe). Empty string returns RECIPE_DEFAULTS.',
+          ),
       },
     },
     async ({ encoded }) => {
@@ -844,7 +893,8 @@ export function createServer() {
     'get_accounts',
     {
       title: 'List accounts',
-      description: 'Return the v2.1 /accounts envelope for the active banking persona. Errors if the active session is an insurance persona.',
+      description:
+        'Return the v2.1 /accounts envelope for the active banking persona. Errors if the active session is an insurance persona.',
       inputSchema: {},
     },
     async () => {
@@ -859,7 +909,9 @@ export function createServer() {
     accountId: z
       .string()
       .optional()
-      .describe('Account id from get_accounts. Omit to fan out across every account in the session.'),
+      .describe(
+        'Account id from get_accounts. Omit to fan out across every account in the session.',
+      ),
   };
 
   server.registerTool(
@@ -898,7 +950,7 @@ export function createServer() {
       title: 'Get transactions',
       description:
         'Return /accounts/{AccountId}/transactions. Server-side filters: since/until (ISO8601), minAmount/maxAmount (numeric), category (substring match against MerchantCategoryCode + TransactionInformation). Filters run after the deterministic generator — they never alter the underlying synthetic data.\n\n' +
-        'High-volume personas (HNW, Corporate, SME) can hold hundreds of transactions per account; full-list responses can exceed the host MCP client\'s tool-result size cap. To stay safely under it, output is capped at `limit` (default 50, max 500) — the most recent N matching transactions are returned, in ascending BookingDateTime order, with `_filter.truncated=true` and a `_paginationHint` when truncation occurs. For aggregate analysis (top categories, monthly buckets, credit/debit totals) pass `summary=true` to skip the per-row payload entirely.',
+        "High-volume personas (HNW, Corporate, SME) can hold hundreds of transactions per account; full-list responses can exceed the host MCP client's tool-result size cap. To stay safely under it, output is capped at `limit` (default 50, max 500) — the most recent N matching transactions are returned, in ascending BookingDateTime order, with `_filter.truncated=true` and a `_paginationHint` when truncation occurs. For aggregate analysis (top categories, monthly buckets, credit/debit totals) pass `summary=true` to skip the per-row payload entirely.",
       inputSchema: {
         ...accountIdOptional,
         since: z
@@ -946,7 +998,13 @@ export function createServer() {
       const text = results
         .map((r) => {
           const filtered = filterTransactions(r.envelope, {
-            since, until, minAmount, maxAmount, category, limit, summary,
+            since,
+            until,
+            minAmount,
+            maxAmount,
+            category,
+            limit,
+            summary,
           });
           const wm = filtered?._watermark ?? '';
           return [
@@ -1076,7 +1134,7 @@ export function createServer() {
       .string()
       .optional()
       .describe(
-        'Insurance policy id from get_motor_policies. Omit to use the persona\'s only policy (Phase 2.0 personas have exactly one).',
+        "Insurance policy id from get_motor_policies. Omit to use the persona's only policy (Phase 2.0 personas have exactly one).",
       ),
   };
 
@@ -1103,7 +1161,7 @@ export function createServer() {
     {
       title: 'Get motor insurance payment details',
       description:
-        'Return the v2.1-errata1 /motor-insurance-policies/{InsurancePolicyId}/payment-details envelope — IBAN-keyed payment account + bank for the policy\'s premium-payment instruction. Errors if the active session is a banking persona.',
+        "Return the v2.1-errata1 /motor-insurance-policies/{InsurancePolicyId}/payment-details envelope — IBAN-keyed payment account + bank for the policy's premium-payment instruction. Errors if the active session is a banking persona.",
       inputSchema: policyIdOptional,
     },
     async ({ policyId }) => {
@@ -1112,7 +1170,13 @@ export function createServer() {
       const id = resolvePolicyId(s, policyId);
       if (!id) throw new Error('no motor policy in this session');
       const env = getEndpointEnvelope(s, `/motor-insurance-policies/${id}/payment-details`);
-      return envelope(s.persona, s.lfi, s.seed, `/motor-insurance-policies/${id}/payment-details`, env);
+      return envelope(
+        s.persona,
+        s.lfi,
+        s.seed,
+        `/motor-insurance-policies/${id}/payment-details`,
+        env,
+      );
     },
   );
 
@@ -1123,10 +1187,7 @@ export function createServer() {
       description:
         'Return the v2.1-errata1 /motor-insurance-quotes/{QuoteId} envelope — the quote-read response (QuoteStatus=PolicyIssued for personas who already have an issued policy), with ServiceRating, Premium, and PolicyIssuanceAllowed sub-objects. Errors if the active session is a banking persona.',
       inputSchema: {
-        quoteId: z
-          .string()
-          .optional()
-          .describe('Quote id; omit to use the persona\'s only quote.'),
+        quoteId: z.string().optional().describe("Quote id; omit to use the persona's only quote."),
       },
     },
     async ({ quoteId }) => {
@@ -1147,17 +1208,20 @@ export function createServer() {
     {
       line: 'home',
       title: 'home insurance',
-      detailBlocks: 'PolicyHolder, Identity, Product (Property + Building/Contents/Mortgage), Claims, Premium',
+      detailBlocks:
+        'PolicyHolder, Identity, Product (Property + Building/Contents/Mortgage), Claims, Premium',
     },
     {
       line: 'health',
       title: 'health insurance',
-      detailBlocks: 'PolicyHolder (with Employment), Identity, Product (Plan + Coverage), Claims, Premium',
+      detailBlocks:
+        'PolicyHolder (with Employment), Identity, Product (Plan + Coverage), Claims, Premium',
     },
     {
       line: 'life',
       title: 'life insurance',
-      detailBlocks: 'PolicyHolder, Identity, Product (including FinanceAgainstPolicy when present), Claims, Premium',
+      detailBlocks:
+        'PolicyHolder, Identity, Product (including FinanceAgainstPolicy when present), Claims, Premium',
     },
     {
       line: 'travel',
@@ -1172,7 +1236,8 @@ export function createServer() {
     {
       line: 'employment',
       title: 'employment insurance (ILOE)',
-      detailBlocks: 'PolicyHolder (with Employment + line-specific Address), Identity, Product, Claims, Premium',
+      detailBlocks:
+        'PolicyHolder (with Employment + line-specific Address), Identity, Product, Claims, Premium',
     },
   ];
 
@@ -1274,7 +1339,7 @@ export function createServer() {
     {
       title: 'Load full journey',
       description:
-        'Return every in-scope endpoint for the active persona in one call. For a banking session: /parties + /accounts + per-account balances/transactions/standing-orders/direct-debits/beneficiaries/scheduled-payments/product/statements/parties. For an insurance session: the per-line policy list + policy detail + payment-details + quote-read for the persona\'s line (one of motor / home / health / life / travel / renters / employment). Verbose — prefer the granular tools when answering targeted questions.',
+        "Return every in-scope endpoint for the active persona in one call. For a banking session: /parties + /accounts + per-account balances/transactions/standing-orders/direct-debits/beneficiaries/scheduled-payments/product/statements/parties. For an insurance session: the per-line policy list + policy detail + payment-details + quote-read for the persona's line (one of motor / home / health / life / travel / renters / employment). Verbose — prefer the granular tools when answering targeted questions.",
       inputSchema: {},
     },
     async () => {
@@ -1292,7 +1357,7 @@ export function createServer() {
     {
       title: 'List endpoints available to the active session',
       description:
-        'Return the v2.1 endpoint paths exposed by the active persona+LFI fixture. Banking sessions: /parties, /accounts, and per-account paths. Insurance sessions: the per-line GETs (policies list + policy detail + payment-details + quote) for the persona\'s line. Cheap — prefer this over `load_journey` when you only need to know which endpoints exist for the current persona.',
+        "Return the v2.1 endpoint paths exposed by the active persona+LFI fixture. Banking sessions: /parties, /accounts, and per-account paths. Insurance sessions: the per-line GETs (policies list + policy detail + payment-details + quote) for the persona's line. Cheap — prefer this over `load_journey` when you only need to know which endpoints exist for the current persona.",
       inputSchema: {},
     },
     async () => {
@@ -1348,7 +1413,9 @@ export function createServer() {
           .min(0)
           .max(FIELD_MAX_LIMIT)
           .optional()
-          .describe(`Max fields returned. Default ${FIELD_DEFAULT_LIMIT}, hard cap ${FIELD_MAX_LIMIT}.`),
+          .describe(
+            `Max fields returned. Default ${FIELD_DEFAULT_LIMIT}, hard cap ${FIELD_MAX_LIMIT}.`,
+          ),
       },
     },
     async ({ endpoint, field, domain, limit }) => {

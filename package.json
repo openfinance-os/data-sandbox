@@ -18,7 +18,8 @@
     "build:avatars": "node tools/build-avatars.mjs",
     "build:brand-registry": "node tools/build-brand-registry.mjs",
     "build:site": "npm run build:spec && npm run build:data && npm run build:avatars && node tools/build-fixture-package.mjs && node tools/build-brand-registry.mjs && node tools/build-fixture-package-py.mjs && node tools/stage-site.mjs",
-    "build:fixtures": "npm run build:spec && node tools/build-fixture-package.mjs && node tools/build-brand-registry.mjs && node tools/build-fixture-package-py.mjs",
+    "build:fixtures": "npm run build:spec && npm run build:fixtures:pkgs",
+    "build:fixtures:pkgs": "node tools/build-fixture-package.mjs && node tools/build-brand-registry.mjs && node tools/build-fixture-package-py.mjs",
     "test:mcp": "npm run build:fixtures --silent && npm test --workspace @openfinance-os/sandbox-mcp --silent",
     "verify:spec-shape": "node tools/verify-spec-shape.mjs",
     "check:dist-clean": "node tools/check-dist-clean.mjs",
@@ -29,25 +30,43 @@
     "lint:persona-spec-conformance": "node tools/lint-persona-spec-conformance.mjs",
     "lint:stress-coverage-uniqueness": "node tools/lint-stress-coverage-uniqueness.mjs",
     "lint:brand-registry-coverage": "node tools/lint-brand-registry-coverage.mjs",
-    "lint": "npm run lint:no-handauthored && npm run lint:no-institution-leak && npm run lint:pii-leak && npm run lint:no-glyph-only && npm run lint:persona-spec-conformance && npm run lint:stress-coverage-uniqueness && npm run lint:brand-registry-coverage",
+    "lint:js": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "run-p --aggregate-output --continue-on-error lint:no-handauthored lint:no-institution-leak lint:pii-leak lint:no-glyph-only lint:persona-spec-conformance lint:stress-coverage-uniqueness lint:brand-registry-coverage lint:js format:check",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:perf": "lhci autorun --config=lighthouserc.json",
+    "validate:spec-conformance": "npm run lint:persona-spec-conformance && vitest run tests/spec-validation.test.mjs tests/spec-validation.insurance.test.mjs tests/rendered-fixture-spec-validation.test.mjs",
     "serve": "python3 -m http.server 8000 --directory src",
-    "ci": "npm run verify:spec-shape && npm run build:spec && npm run build:data && npm run build:avatars && npm run build:fixtures && npm run check:dist-clean && npm run lint && npm test && npm run test:mcp",
-    "ci:full": "npm run ci && npm run build:site && npm run test:e2e && npm run test:perf"
+    "ci": "npm run verify:spec-shape && npm run build:spec && npm run build:data && npm run build:avatars && npm run build:fixtures:pkgs && npm run check:dist-clean && npm run lint && npm test && npm run test:mcp",
+    "ci:full": "npm run ci && npm run build:site && npm run test:e2e && npm run test:perf",
+    "prepare": "husky || true"
+  },
+  "lint-staged": {
+    "*.{js,mjs,cjs}": [
+      "eslint --fix",
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "js-yaml": "^4.1.0"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.0",
+    "@eslint/js": "^9.17.0",
     "@lhci/cli": "^0.15.1",
     "@playwright/test": "^1.49.0",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
+    "eslint": "^9.17.0",
+    "globals": "^15.14.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.11",
+    "npm-run-all2": "^7.0.2",
     "posthog-js": "^1.372.10",
+    "prettier": "^3.4.2",
     "vitest": "^2.1.8"
   }
 }

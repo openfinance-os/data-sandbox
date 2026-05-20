@@ -4,7 +4,14 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { startHttp } from '../src/transports/http.mjs';
 
-async function rawHttp({ port, host = '127.0.0.1', method = 'POST', path = '/mcp', headers = {}, body = '' }) {
+async function rawHttp({
+  port,
+  host = '127.0.0.1',
+  method = 'POST',
+  path = '/mcp',
+  headers = {},
+  body = '',
+}) {
   return new Promise((resolve, reject) => {
     const req = http.request(
       {
@@ -22,7 +29,9 @@ async function rawHttp({ port, host = '127.0.0.1', method = 'POST', path = '/mcp
       (res) => {
         const chunks = [];
         res.on('data', (c) => chunks.push(c));
-        res.on('end', () => resolve({ status: res.statusCode, body: Buffer.concat(chunks).toString('utf8') }));
+        res.on('end', () =>
+          resolve({ status: res.statusCode, body: Buffer.concat(chunks).toString('utf8') }),
+        );
       },
     );
     req.on('error', reject);
@@ -78,7 +87,9 @@ describe('HTTP hardening (D-13 production readiness)', () => {
     handle.sweep();
 
     expect(handle.sessions.size).toBe(0);
-    expect(captured.some((l) => l.includes('session-evict') && l.includes('reason=idle'))).toBe(true);
+    expect(captured.some((l) => l.includes('session-evict') && l.includes('reason=idle'))).toBe(
+      true,
+    );
 
     // The previously-open client now refers to a dead session; closing should
     // not throw — the SDK's transport tears its own state down regardless.
@@ -104,7 +115,9 @@ describe('HTTP hardening (D-13 production readiness)', () => {
     const c = await newClient();
     expect(handle.sessions.size).toBe(2);
     expect(handle.sessions.has(oldestId)).toBe(false);
-    expect(captured.some((l) => l.includes('session-evict') && l.includes('reason=cap'))).toBe(true);
+    expect(captured.some((l) => l.includes('session-evict') && l.includes('reason=cap'))).toBe(
+      true,
+    );
 
     await Promise.all([a.client, b.client, c.client].map((cl) => cl.close().catch(() => {})));
   });

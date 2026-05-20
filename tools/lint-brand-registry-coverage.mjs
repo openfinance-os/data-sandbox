@@ -25,7 +25,7 @@ const reporter = new LintReporter('lint-brand-registry-coverage');
 if (!fs.existsSync(REGISTRY_PATH)) {
   console.log(
     'lint-brand-registry-coverage SKIPPED — brand-registry.json not built.\n' +
-    '  Run `npm run build:brand-registry` (or `npm run build:fixtures`) to regenerate.'
+      '  Run `npm run build:brand-registry` (or `npm run build:fixtures`) to regenerate.',
   );
   process.exit(0);
 }
@@ -46,7 +46,7 @@ for (const pool of Object.values(pools.merchantsByCategory)) {
     if (!registrySlugs.has(slug)) {
       reporter.add(
         `pool merchant "${m.name}" (slug "${slug}") has no brand-registry entry — ` +
-        'run `npm run build:brand-registry` to regenerate.'
+          'run `npm run build:brand-registry` to regenerate.',
       );
     }
   }
@@ -57,8 +57,8 @@ for (const slug of registrySlugs) {
   if (!poolSlugs.has(slug)) {
     reporter.add(
       `brand-registry entry "${slug}" has no pool merchant — ` +
-      'the merchant was removed from a pool but the registry wasn\'t rebuilt. ' +
-      'Run `npm run build:brand-registry`.'
+        "the merchant was removed from a pool but the registry wasn't rebuilt. " +
+        'Run `npm run build:brand-registry`.',
     );
   }
 }

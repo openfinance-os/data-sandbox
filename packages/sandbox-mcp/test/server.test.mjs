@@ -122,17 +122,17 @@ describe('sandbox-mcp server', () => {
       textOf(await client.callTool({ name: 'list_personas', arguments: { domain: 'banking' } })),
     );
     expect(banking.count).toBe(26); // 18 single-banking + 8 multi-domain
-    expect(banking.personas.every(
-      (p) => p.domain === 'banking' || p.domain === 'multi',
-    )).toBe(true);
+    expect(banking.personas.every((p) => p.domain === 'banking' || p.domain === 'multi')).toBe(
+      true,
+    );
 
     const insurance = JSON.parse(
       textOf(await client.callTool({ name: 'list_personas', arguments: { domain: 'insurance' } })),
     );
     expect(insurance.count).toBe(17); // 9 single-insurance + 8 multi-domain
-    expect(insurance.personas.every(
-      (p) => p.domain === 'insurance' || p.domain === 'multi',
-    )).toBe(true);
+    expect(insurance.personas.every((p) => p.domain === 'insurance' || p.domain === 'multi')).toBe(
+      true,
+    );
     expect(insurance.personas.map((p) => p.id)).toEqual(
       expect.arrayContaining([
         'motor_comprehensive_mid',
@@ -313,11 +313,11 @@ describe('sandbox-mcp server', () => {
   // Personas are 1:1 with lines (one persona per non-motor line today), so
   // this also covers the line-id resolution path.
   const NON_MOTOR_LINES = [
-    { line: 'home',       persona: 'home_mortgage_villa' },
-    { line: 'health',     persona: 'health_family_comprehensive' },
-    { line: 'life',       persona: 'life_mortgage_protection' },
-    { line: 'travel',     persona: 'travel_annual_multitrip_expat' },
-    { line: 'renters',    persona: 'renters_apartment_tenant' },
+    { line: 'home', persona: 'home_mortgage_villa' },
+    { line: 'health', persona: 'health_family_comprehensive' },
+    { line: 'life', persona: 'life_mortgage_protection' },
+    { line: 'travel', persona: 'travel_annual_multitrip_expat' },
+    { line: 'renters', persona: 'renters_apartment_tenant' },
     { line: 'employment', persona: 'employment_iloe_private' },
   ];
 
@@ -354,7 +354,10 @@ describe('sandbox-mcp server', () => {
 
   it('wrong-line insurance tool errors with a "switch persona to a <line>-line persona" hint', async () => {
     // motor → home (non-motor tool called against motor persona)
-    await client.callTool({ name: 'set_session', arguments: { persona: 'motor_comprehensive_mid' } });
+    await client.callTool({
+      name: 'set_session',
+      arguments: { persona: 'motor_comprehensive_mid' },
+    });
     const motorOnHome = await client.callTool({ name: 'get_home_policies', arguments: {} });
     expect(motorOnHome.isError).toBe(true);
     expect(textOf(motorOnHome)).toMatch(/requires an insurance session on the "home" line/);
@@ -646,9 +649,7 @@ describe('sandbox-mcp server', () => {
     expect(payload.matched).toBeGreaterThanOrEqual(1);
     // Currency on Balance.Amount is mandatory — pin this one because it's a
     // load-bearing v2.1 field (every Balance carries a currency).
-    const balanceCurrency = payload.fields.find(
-      (f) => f.path === 'Data.Balance[].Amount.Currency',
-    );
+    const balanceCurrency = payload.fields.find((f) => f.path === 'Data.Balance[].Amount.Currency');
     expect(balanceCurrency).toBeDefined();
     expect(balanceCurrency.status).toBe('mandatory');
   });

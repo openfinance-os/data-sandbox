@@ -37,7 +37,7 @@ const REFUND_SUBTYPES = new Set(['Refund', 'Reversal']);
 // suffix. The pair lookup `findRefunds()` below is the canonical filter.
 function findR5Refunds(bundle) {
   return bundle.transactions.filter(
-    (t) => REFUND_SUBTYPES.has(t.SubTransactionType) && t.TransactionId.endsWith('-rfd')
+    (t) => REFUND_SUBTYPES.has(t.SubTransactionType) && t.TransactionId.endsWith('-rfd'),
   );
 }
 
@@ -101,7 +101,9 @@ describe('refunds — Phase R5', () => {
       // NSF cores emit a Reversal SubTransactionType on the rejected
       // direct debit half (existing behaviour); those carry
       // TransactionType=BillPayments. Filter to the new R5 shape only.
-      const r5 = refunds.filter((t) => t.TransactionType === 'POS' || t.TransactionType === 'ECommerce');
+      const r5 = refunds.filter(
+        (t) => t.TransactionType === 'POS' || t.TransactionType === 'ECommerce',
+      );
       expect(r5.length, `${pid} unexpectedly emitted R5 refunds`).toBe(0);
     }
   });
@@ -123,7 +125,9 @@ describe('refunds — Phase R5', () => {
     const withRefunds = buildBundle({ persona, lfi: 'median', seed: persona.default_seed, pools });
     const withoutRefunds = buildBundle({
       persona: { ...persona, enable_refunds: false },
-      lfi: 'median', seed: persona.default_seed, pools,
+      lfi: 'median',
+      seed: persona.default_seed,
+      pools,
     });
     const r5Ids = new Set(findR5Refunds(withRefunds).map((t) => t.TransactionId));
     const nonR5A = withRefunds.transactions.filter((t) => !r5Ids.has(t.TransactionId));

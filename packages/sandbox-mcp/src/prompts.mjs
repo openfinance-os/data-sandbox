@@ -41,7 +41,9 @@ export function registerPrompts(server) {
         month: z
           .string()
           .optional()
-          .describe('Optional ISO month, e.g. "2026-03". Defaults to the most recent full month in the data.'),
+          .describe(
+            'Optional ISO month, e.g. "2026-03". Defaults to the most recent full month in the data.',
+          ),
       },
     },
     ({ month } = {}) => ({

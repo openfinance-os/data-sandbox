@@ -54,11 +54,9 @@ function serviceRating() {
  */
 export function generateMotorQuote({ persona, rng, now }) {
   const quoteCreatedDays = persona.policy.start_date_offset_days + 5;
-  const creationDateTime = new Date(
-    now.getTime() - quoteCreatedDays * 86400000
-  ).toISOString();
+  const creationDateTime = new Date(now.getTime() - quoteCreatedDays * 86400000).toISOString();
   const expirationDateTime = new Date(
-    now.getTime() - (quoteCreatedDays - 30) * 86400000
+    now.getTime() - (quoteCreatedDays - 30) * 86400000,
   ).toISOString();
 
   const v = persona.vehicle.valuation_aed;
@@ -73,10 +71,7 @@ export function generateMotorQuote({ persona, rng, now }) {
     QuoteReference: quoteReference(rng),
     CreationDateTime: creationDateTime,
     ExpirationDateTime: expirationDateTime,
-    PlanName:
-      persona.policy.type === 'Comprehensive'
-        ? 'Motor Comprehensive Plus'
-        : 'Motor TPL',
+    PlanName: persona.policy.type === 'Comprehensive' ? 'Motor Comprehensive Plus' : 'Motor TPL',
     LevelOfCover:
       persona.policy.type === 'Comprehensive'
         ? 'Comprehensive — Own Damage + Third Party'

@@ -38,40 +38,59 @@ import { LintReporter, repoRoot, walk } from './lint-shared.mjs';
 
 const DENYLIST = [
   // Tier-1 conventional
-  'Emirates NBD', 'ENBD',
-  'First Abu Dhabi Bank', 'FAB',
-  'Abu Dhabi Commercial Bank', 'ADCB',
+  'Emirates NBD',
+  'ENBD',
+  'First Abu Dhabi Bank',
+  'FAB',
+  'Abu Dhabi Commercial Bank',
+  'ADCB',
   'Mashreq',
-  'Commercial Bank of Dubai', 'CBD',
+  'Commercial Bank of Dubai',
+  'CBD',
   // Tier-1 Islamic
-  'Dubai Islamic Bank', 'DIB',
-  'Abu Dhabi Islamic Bank', 'ADIB',
+  'Dubai Islamic Bank',
+  'DIB',
+  'Abu Dhabi Islamic Bank',
+  'ADIB',
   'Emirates Islamic',
-  'Sharjah Islamic Bank', 'SIB',
+  'Sharjah Islamic Bank',
+  'SIB',
   // Tier-2 conventional / Islamic
-  'National Bank of Fujairah', 'NBF',
-  'RAKBANK', 'RAK Bank',
-  'United Arab Bank', 'UAB',
+  'National Bank of Fujairah',
+  'NBF',
+  'RAKBANK',
+  'RAK Bank',
+  'United Arab Bank',
+  'UAB',
   'Bank of Sharjah',
   'Invest Bank',
-  'Commercial Bank International', 'CBI',
-  'National Bank of Umm Al Quwain', 'NBQ',
+  'Commercial Bank International',
+  'CBI',
+  'National Bank of Umm Al Quwain',
+  'NBQ',
   'Al Masraf',
   'Ajman Bank',
   'Al Hilal Bank',
   // Digital-only (separately CBUAE-licensed)
-  'Wio Bank', 'Wio',
-  'Zand Bank', 'Zand',
-  'Al Maryah Community Bank', 'Mbank',
+  'Wio Bank',
+  'Wio',
+  'Zand Bank',
+  'Zand',
+  'Al Maryah Community Bank',
+  'Mbank',
   // Digital sub-brands (channels of parent's licence; still NG5-relevant)
-  'Liv', 'Mashreq Neo', 'NEOBiz', 'Hayyak',
+  'Liv',
+  'Mashreq Neo',
+  'NEOBiz',
+  'Hayyak',
   // Foreign branches active in UAE SME / corporate
   'HSBC',
   'Standard Chartered',
   'Citibank',
   'BNP Paribas',
   'Deutsche Bank',
-  'Crédit Agricole', 'Credit Agricole',
+  'Crédit Agricole',
+  'Credit Agricole',
   'ICBC',
   'Bank of China',
   'MUFG',
@@ -81,7 +100,8 @@ const DENYLIST = [
   'Arab Bank',
   'Doha Bank',
   'Banque Misr',
-  'SNB Group', 'Samba',
+  'SNB Group',
+  'Samba',
   // Acquiring / payment-rail
   'Network International',
   'Magnati',
@@ -93,13 +113,17 @@ const DENYLIST = [
   // Real UAE insurance carriers. Same NG5 / D-14 invariant: names allowed
   // only in the counterparty-insurers pool and in persona manifests'
   // multi_insurer_footprint.slots[].plausible_insurer_candidates arrays.
-  'Sukoon Insurance', 'Sukoon',
-  'Orient Insurance', 'Orient UNB Takaful',
+  'Sukoon Insurance',
+  'Sukoon',
+  'Orient Insurance',
+  'Orient UNB Takaful',
   'AXA Gulf',
-  'Abu Dhabi National Insurance Company', 'ADNIC',
+  'Abu Dhabi National Insurance Company',
+  'ADNIC',
   'Dubai Insurance',
   'Emirates Insurance',
-  'Al Sagr National Insurance', 'Al Sagr',
+  'Al Sagr National Insurance',
+  'Al Sagr',
   'Union Insurance',
   'Insurance House',
   'Daman',
@@ -186,10 +210,8 @@ function scanPersonaManifest(file, rel) {
     if (segs.length >= 3 && last === 'plausible_lfi_candidates') {
       const slot = segs[segs.length - 2];
       const head = segs[segs.length - 3];
-      if (
-        ['primary', 'secondary', 'tertiary'].includes(slot) &&
-        head === 'multi_lfi_footprint'
-      ) return true;
+      if (['primary', 'secondary', 'tertiary'].includes(slot) && head === 'multi_lfi_footprint')
+        return true;
     }
     // N-slot bank: ...multi_lfi_footprint.slots.<idx>.plausible_lfi_candidates
     // N-slot insurer: ...multi_insurer_footprint.slots.<idx>.plausible_insurer_candidates
@@ -199,7 +221,8 @@ function scanPersonaManifest(file, rel) {
       const head = segs[segs.length - 4];
       if (!/^\d+$/.test(idx) || slotsKey !== 'slots') return false;
       if (head === 'multi_lfi_footprint' && last === 'plausible_lfi_candidates') return true;
-      if (head === 'multi_insurer_footprint' && last === 'plausible_insurer_candidates') return true;
+      if (head === 'multi_insurer_footprint' && last === 'plausible_insurer_candidates')
+        return true;
     }
     return false;
   }

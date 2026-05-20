@@ -24,7 +24,12 @@ describe('enrichment sidecar — Phase R1.5', () => {
 
   it('every transaction has a matching enrichment record (1:1 by TransactionId)', () => {
     for (const [pid, persona] of Object.entries(personas)) {
-      const bundle = buildBundle({ persona, lfi: 'median', seed: persona.default_seed ?? 1, pools });
+      const bundle = buildBundle({
+        persona,
+        lfi: 'median',
+        seed: persona.default_seed ?? 1,
+        pools,
+      });
       const txs = bundle.transactions ?? [];
       const reg = bundle._enrichment ?? {};
       const txIds = new Set(txs.map((t) => t.TransactionId));
@@ -48,7 +53,10 @@ describe('enrichment sidecar — Phase R1.5', () => {
     // (it's a Common-band field — Sparse routinely drops it). The
     // sidecar record for that tx must still carry a merchant name.
     const strippedSamples = txs.filter((t) => !t.MerchantDetails);
-    expect(strippedSamples.length, 'Sparse should strip MerchantDetails on some POS rows').toBeGreaterThan(0);
+    expect(
+      strippedSamples.length,
+      'Sparse should strip MerchantDetails on some POS rows',
+    ).toBeGreaterThan(0);
     for (const t of strippedSamples.slice(0, 5)) {
       const rec = reg[t.TransactionId];
       expect(rec).toBeDefined();
@@ -77,11 +85,21 @@ describe('enrichment sidecar — Phase R1.5', () => {
   });
 
   it('every record carries non-empty category + subcategory', () => {
-    const personasToCheck = ['salaried_expat_mid', 'hnw_multicurrency', 'sme_trading_business', 'senior_retiree'];
+    const personasToCheck = [
+      'salaried_expat_mid',
+      'hnw_multicurrency',
+      'sme_trading_business',
+      'senior_retiree',
+    ];
     for (const pid of personasToCheck) {
       const persona = personas[pid];
       if (!persona) continue;
-      const bundle = buildBundle({ persona, lfi: 'median', seed: persona.default_seed ?? 1, pools });
+      const bundle = buildBundle({
+        persona,
+        lfi: 'median',
+        seed: persona.default_seed ?? 1,
+        pools,
+      });
       for (const [txId, rec] of Object.entries(bundle._enrichment)) {
         expect(rec.category, `${pid} ${txId} category`).toBeTruthy();
         expect(rec.subcategory, `${pid} ${txId} subcategory`).toBeTruthy();

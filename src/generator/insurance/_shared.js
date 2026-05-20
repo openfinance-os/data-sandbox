@@ -9,7 +9,14 @@
  * The PolicyHolder / Identity / Product / Claims / Premium objects come
  * from the per-line generators; this just nails the envelope key order.
  */
-export function makePolicyDetail({ insurancePolicyId, policyHolder, identity, product, claims, premium }) {
+export function makePolicyDetail({
+  insurancePolicyId,
+  policyHolder,
+  identity,
+  product,
+  claims,
+  premium,
+}) {
   return {
     InsurancePolicyId: insurancePolicyId,
     PolicyHolder: policyHolder,
@@ -25,7 +32,13 @@ export function makePolicyDetail({ insurancePolicyId, policyHolder, identity, pr
  * `policyStatus` defaults to 'New' — every Phase 2.1 persona's policy is
  * freshly issued; widen the API when a builder needs Renewed/Lapsed/etc.
  */
-export function makePolicySummary({ insurancePolicyId, policyNumber, startDate, endDate, policyStatus = 'New' }) {
+export function makePolicySummary({
+  insurancePolicyId,
+  policyNumber,
+  startDate,
+  endDate,
+  policyStatus = 'New',
+}) {
   return {
     InsurancePolicyId: insurancePolicyId,
     PolicyNumber: policyNumber,
@@ -43,7 +56,11 @@ export function makePolicySummary({ insurancePolicyId, policyNumber, startDate, 
  */
 export function makePaymentDetails({ accountIban, name, bankName }) {
   return {
-    Account: { Identification: accountIban, SchemeName: 'IBAN', Name: `${name.given} ${name.surname}` },
+    Account: {
+      Identification: accountIban,
+      SchemeName: 'IBAN',
+      Name: `${name.given} ${name.surname}`,
+    },
     Bank: { Name: bankName },
   };
 }

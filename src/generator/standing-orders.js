@@ -17,9 +17,7 @@ export function generateStandingOrders({ persona, accounts, rng, pools, now }) {
   // appears only on the CurrentAccount whose slotKey matches the
   // commitment's at_slot. Untagged personas (SME) keep the legacy
   // behaviour: every commitment appears on every CurrentAccount.
-  const hasAtSlotCommitments = (persona.fixed_commitments ?? []).some(
-    (c) => c.at_slot != null,
-  );
+  const hasAtSlotCommitments = (persona.fixed_commitments ?? []).some((c) => c.at_slot != null);
   for (const acc of currentAccounts) {
     const accSlot = acc._meta?.slotKey ?? null;
     const sos = (persona.fixed_commitments ?? []).filter((c) => {
@@ -38,8 +36,8 @@ export function generateStandingOrders({ persona, accounts, rng, pools, now }) {
       // branch wholesale bank. Otherwise fall back to the random pool
       // draw (preserves the existing default behaviour).
       const counterpartyBank =
-        pickFootprintBankForPurpose(persona, c.purpose, pools.counterpartyBanks)
-        ?? drawCounterpartyBank(rng, pools.counterpartyBanks);
+        pickFootprintBankForPurpose(persona, c.purpose, pools.counterpartyBanks) ??
+        drawCounterpartyBank(rng, pools.counterpartyBanks);
       const creditorIban = drawIban(rng, pools.ibans, counterpartyBank);
       const firstPayment = monthsAgoAtDay(now, 24, day);
       const nextPayment = nextOccurrence(now, day);
@@ -70,9 +68,7 @@ export function generateStandingOrders({ persona, accounts, rng, pools, now }) {
           SchemeName: 'BICFI',
           Identification: counterpartyBank.bic ?? creditorIban.slice(0, 8),
         },
-        CreditorAccount: [
-          { SchemeName: 'IBAN', Identification: creditorIban },
-        ],
+        CreditorAccount: [{ SchemeName: 'IBAN', Identification: creditorIban }],
       });
     });
   }

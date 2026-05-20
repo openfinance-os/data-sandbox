@@ -29,26 +29,25 @@ export const test = base.extend({
     await run(page);
 
     if (!allowConsoleErrors && errors.length) {
-      throw new Error(
-        `console errors in "${testInfo.title}":\n${errors.join('\n')}`,
-      );
+      throw new Error(`console errors in "${testInfo.title}":\n${errors.join('\n')}`);
     }
   },
 });
 
-export async function loadPersona(page, {
-  persona = 'salaried_expat_mid',
-  lfi = 'median',
-  seed = '4729',
-  endpoint,
-  route = '/src/index.html',
-  extraParams = {},
-} = {}) {
+export async function loadPersona(
+  page,
+  {
+    persona = 'salaried_expat_mid',
+    lfi = 'median',
+    seed = '4729',
+    endpoint,
+    route = '/src/index.html',
+    extraParams = {},
+  } = {},
+) {
   const params = new URLSearchParams({ persona, lfi, seed, ...extraParams });
   await page.goto(`${route}?${params.toString()}`);
-  await page.waitForFunction(
-    () => document.getElementById('coverage-pct')?.textContent !== '—',
-  );
+  await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
   if (endpoint) {
     await page.locator('.nav-endpoint', { hasText: endpoint }).first().click();
     await expect(page.locator('#endpoint-label')).toContainText(endpoint);

@@ -80,7 +80,8 @@ export function applyLfiProfile({ bundle, personaId, lfi, seed }) {
   }
 
   for (const tx of bundle.transactions ?? []) {
-    if (!decide('Transaction.TransactionInformation', 'Universal')) delete tx.TransactionInformation;
+    if (!decide('Transaction.TransactionInformation', 'Universal'))
+      delete tx.TransactionInformation;
     if (!decide('Transaction.ValueDateTime', 'Universal')) delete tx.ValueDateTime;
     if (!decide('Transaction.Flags', 'Common')) delete tx.Flags;
     if (!decide('Transaction.TransactionReference', 'Common')) delete tx.TransactionReference;
@@ -96,7 +97,8 @@ export function applyLfiProfile({ bundle, personaId, lfi, seed }) {
       }
     }
     // Slice 7: counterparty fields on Transaction.
-    if (tx.CreditorAccount && !decide('Transaction.CreditorAccount', 'Common')) delete tx.CreditorAccount;
+    if (tx.CreditorAccount && !decide('Transaction.CreditorAccount', 'Common'))
+      delete tx.CreditorAccount;
     if (tx.DebtorAccount && !decide('Transaction.DebtorAccount', 'Common')) delete tx.DebtorAccount;
     if (tx.CreditorAgent && !decide('Transaction.CreditorAgent', 'Common')) delete tx.CreditorAgent;
     if (tx.DebtorAgent && !decide('Transaction.DebtorAgent', 'Common')) delete tx.DebtorAgent;

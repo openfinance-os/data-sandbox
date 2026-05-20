@@ -19,12 +19,12 @@ export function createTour(deps) {
 
   const TOUR_STEPS = [
     {
-      title: "Meet Sara",
-      body: "Sara is a salaried expat in Dubai. She has two accounts: a current account where her AED 25k salary lands on the 25th, and a credit card. The persona library on the left lets you swap her for eleven other UAE archetypes — gig worker, SME, HNW multi-currency, joint family, corporate treasury, and more.",
+      title: 'Meet Sara',
+      body: 'Sara is a salaried expat in Dubai. She has two accounts: a current account where her AED 25k salary lands on the 25th, and a credit card. The persona library on the left lets you swap her for eleven other UAE archetypes — gig worker, SME, HNW multi-currency, joint family, corporate treasury, and more.',
       setup: () => setPersona('salaried_expat_mid', 'median'),
     },
     {
-      title: "Watch the salary marker",
+      title: 'Watch the salary marker',
       body: "Open the transactions endpoint on Sara's current account. Notice the monthly salary credit — it carries Flags=Payroll. That's the v2.1 spec-clean way to identify income; everything else (fallbacks, recurrence-clustering) is a workaround for LFIs that don't populate it.",
       setup: () => {
         state.endpoint = '/accounts/{AccountId}/transactions';
@@ -34,8 +34,8 @@ export function createTour(deps) {
       },
     },
     {
-      title: "See the rent commitment",
-      body: "Switch to /standing-orders for the same account. Sara has a rent standing order that hits the 27th of every month — two days after her salary. Click that row and the sandbox jumps to the matching transactions in /transactions, with the cross-link banner offering you a way back.",
+      title: 'See the rent commitment',
+      body: 'Switch to /standing-orders for the same account. Sara has a rent standing order that hits the 27th of every month — two days after her salary. Click that row and the sandbox jumps to the matching transactions in /transactions, with the cross-link banner offering you a way back.',
       setup: () => {
         state.endpoint = '/accounts/{AccountId}/standing-orders';
         state.selectedAccountId = state.bundle.accounts[0]?.AccountId ?? null;
@@ -45,14 +45,14 @@ export function createTour(deps) {
       },
     },
     {
-      title: "Read the field card",
+      title: 'Read the field card',
       body: "Click any field name in the rendered table to open the field card. Every field carries: a status badge (Mandatory / Optional / Conditional, derived live from the OpenAPI spec — never hand-authored), type and format, enum values, an example from the persona, a 'Real LFIs' guidance note, and a deep link to the field on the upstream Nebras GitHub at the pinned SHA.",
       setup: () => {
         // No state change — just nudge the user.
       },
     },
     {
-      title: "Sparse vs Median",
+      title: 'Sparse vs Median',
       body: "Switch the LFI profile (top bar) to Sparse. Watch the coverage meter drop and watch optional fields like MerchantDetails / Flags / ValueDateTime / Nickname disappear. That's the Phase-1 minimum your downstream UI and decisioning logic needs to handle. Switch back to Median, then to Rich, and pick a different persona to finish — the URL updates as you go, so you can paste it into a slide deck.",
       setup: () => {},
     },
@@ -79,31 +79,59 @@ export function createTour(deps) {
     // Remove any existing overlay before mounting a fresh one.
     document.getElementById('tour-overlay')?.remove();
 
-    const overlay = el('div', { class: 'tour-overlay', attrs: { id: 'tour-overlay', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'tour-title' } });
+    const overlay = el('div', {
+      class: 'tour-overlay',
+      attrs: {
+        id: 'tour-overlay',
+        role: 'dialog',
+        'aria-modal': 'true',
+        'aria-labelledby': 'tour-title',
+      },
+    });
     const card = el('div', { class: 'tour-card' });
-    card.appendChild(el('div', { class: 'tour-step-num', text: `Step ${state.tourStep + 1} of ${TOUR_STEPS.length}` }));
+    card.appendChild(
+      el('div', {
+        class: 'tour-step-num',
+        text: `Step ${state.tourStep + 1} of ${TOUR_STEPS.length}`,
+      }),
+    );
     card.appendChild(el('h3', { text: step.title, attrs: { id: 'tour-title' } }));
     card.appendChild(el('p', { text: step.body }));
     const actions = el('div', { class: 'tour-actions' });
     actions.appendChild(el('button', { class: 'tour-skip', text: 'Skip', onClick: closeTour }));
     const right = el('div', { attrs: { style: 'display:flex;gap:6px' } });
     if (state.tourStep > 0) {
-      right.appendChild(el('button', { text: 'Back', onClick: () => { state.tourStep--; renderTourStep(); } }));
+      right.appendChild(
+        el('button', {
+          text: 'Back',
+          onClick: () => {
+            state.tourStep--;
+            renderTourStep();
+          },
+        }),
+      );
     }
     const isLast = state.tourStep === TOUR_STEPS.length - 1;
-    right.appendChild(el('button', {
-      class: 'tour-primary',
-      text: isLast ? 'Finish' : 'Next →',
-      onClick: () => {
-        if (isLast) closeTour();
-        else { state.tourStep++; renderTourStep(); }
-      },
-    }));
+    right.appendChild(
+      el('button', {
+        class: 'tour-primary',
+        text: isLast ? 'Finish' : 'Next →',
+        onClick: () => {
+          if (isLast) closeTour();
+          else {
+            state.tourStep++;
+            renderTourStep();
+          }
+        },
+      }),
+    );
     actions.appendChild(right);
     card.appendChild(actions);
     overlay.appendChild(card);
     // Click-outside dismisses.
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeTour(); });
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeTour();
+    });
     document.body.appendChild(overlay);
     // Move focus into the card for keyboard users.
     card.querySelector('button.tour-primary')?.focus();

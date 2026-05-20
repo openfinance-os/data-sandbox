@@ -34,8 +34,12 @@ export function crc32(bytes) {
   return (c ^ 0xffffffff) >>> 0;
 }
 
-function writeU16(view, off, val) { view.setUint16(off, val, true); }
-function writeU32(view, off, val) { view.setUint32(off, val >>> 0, true); }
+function writeU16(view, off, val) {
+  view.setUint16(off, val, true);
+}
+function writeU32(view, off, val) {
+  view.setUint32(off, val >>> 0, true);
+}
 
 // Build a zip Blob from `entries`. Each entry: { path: string, bytes: Uint8Array }.
 // Returns a Blob; the caller is responsible for triggering the download.
@@ -53,17 +57,17 @@ export function buildZip(entries) {
     // Local file header (30 bytes + name).
     const localHeader = new Uint8Array(30 + nameBytes.length);
     const lhView = new DataView(localHeader.buffer);
-    writeU32(lhView, 0, 0x04034b50);   // signature
-    writeU16(lhView, 4, 20);            // version needed
-    writeU16(lhView, 6, 0);             // general purpose flags
-    writeU16(lhView, 8, 0);             // method (0 = STORE)
-    writeU16(lhView, 10, 0);            // mod time
-    writeU16(lhView, 12, 0);            // mod date
+    writeU32(lhView, 0, 0x04034b50); // signature
+    writeU16(lhView, 4, 20); // version needed
+    writeU16(lhView, 6, 0); // general purpose flags
+    writeU16(lhView, 8, 0); // method (0 = STORE)
+    writeU16(lhView, 10, 0); // mod time
+    writeU16(lhView, 12, 0); // mod date
     writeU32(lhView, 14, crc);
-    writeU32(lhView, 18, size);         // compressed size = uncompressed for STORE
-    writeU32(lhView, 22, size);         // uncompressed size
+    writeU32(lhView, 18, size); // compressed size = uncompressed for STORE
+    writeU32(lhView, 22, size); // uncompressed size
     writeU16(lhView, 26, nameBytes.length);
-    writeU16(lhView, 28, 0);            // extra field length
+    writeU16(lhView, 28, 0); // extra field length
     localHeader.set(nameBytes, 30);
 
     localChunks.push(localHeader, dataBytes);
@@ -74,8 +78,8 @@ export function buildZip(entries) {
     const cdEntry = new Uint8Array(46 + nameBytes.length);
     const cdView = new DataView(cdEntry.buffer);
     writeU32(cdView, 0, 0x02014b50);
-    writeU16(cdView, 4, 20);            // version made by
-    writeU16(cdView, 6, 20);            // version needed
+    writeU16(cdView, 4, 20); // version made by
+    writeU16(cdView, 6, 20); // version needed
     writeU16(cdView, 8, 0);
     writeU16(cdView, 10, 0);
     writeU16(cdView, 12, 0);
@@ -88,7 +92,7 @@ export function buildZip(entries) {
     writeU16(cdView, 32, 0);
     writeU16(cdView, 34, 0);
     writeU16(cdView, 36, 0);
-    writeU32(cdView, 38, 0);            // external attrs
+    writeU32(cdView, 38, 0); // external attrs
     writeU32(cdView, 42, localOffset);
     cdEntry.set(nameBytes, 46);
     central.push(cdEntry);
@@ -107,7 +111,7 @@ export function buildZip(entries) {
   writeU16(eocdView, 10, central.length);
   writeU32(eocdView, 12, cdSize);
   writeU32(eocdView, 16, cdOffset);
-  writeU16(eocdView, 20, 0);            // comment length
+  writeU16(eocdView, 20, 0); // comment length
 
   const allChunks = [...localChunks, ...central, eocd];
   // Single Uint8Array assembly so callers in Node (no Blob) can read bytes

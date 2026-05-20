@@ -42,9 +42,21 @@ const SCOPE_LABELS = {
 // Three populate-rate profiles per PRD §8.3 / EXP-04. Anonymous-by-design
 // (NG5 / D-14) — these are never tied to a named real bank.
 const LFI_PROFILES = [
-  { key: 'rich', name: 'LFI · Rich profile', body: 'Every optional field populated. Best-case parser test.' },
-  { key: 'median', name: 'LFI · Median profile', body: 'Typical UAE-market populate rate. Default for most personas.' },
-  { key: 'sparse', name: 'LFI · Sparse profile', body: 'Minimum-conformant: mandatory + a few optionals. Resilience test.' },
+  {
+    key: 'rich',
+    name: 'LFI · Rich profile',
+    body: 'Every optional field populated. Best-case parser test.',
+  },
+  {
+    key: 'median',
+    name: 'LFI · Median profile',
+    body: 'Typical UAE-market populate rate. Default for most personas.',
+  },
+  {
+    key: 'sparse',
+    name: 'LFI · Sparse profile',
+    body: 'Minimum-conformant: mandatory + a few optionals. Resilience test.',
+  },
 ];
 
 const INSURANCE_LINES = ['motor', 'home', 'health', 'life', 'travel', 'renters', 'employment'];
@@ -65,33 +77,102 @@ const INSURANCE_LINES = ['motor', 'home', 'health', 'life', 'travel', 'renters',
 // in the open-finance-uae skill.
 
 const OF_PERMISSIONS = [
-  { key: 'ReadAccountsBasic',       cluster: 'Accounts',         label: 'Account list',                body: 'AccountId, Type, SubType, Nickname', mandatory: true },
-  { key: 'ReadAccountsDetail',      cluster: 'Accounts',         label: 'Account details',             body: 'Identifiers (IBAN, ACCT), holders, currency, opening date' },
-  { key: 'ReadBalances',            cluster: 'Balances',         label: 'Balances',                    body: 'Current, available, overdraft · per-account' },
-  { key: 'ReadTransactionsBasic',   cluster: 'Transactions',     label: 'Transactions (basic)',        body: 'Amount, date, direction, status' },
-  { key: 'ReadTransactionsDetail',  cluster: 'Transactions',     label: 'Transactions (detail)',       body: 'Merchant, MCC, geolocation, references, counterparty' },
-  { key: 'ReadStandingOrdersBasic', cluster: 'Standing orders',  label: 'Standing orders (basic)',     body: 'Counterparty + amount + frequency' },
-  { key: 'ReadStandingOrdersDetail',cluster: 'Standing orders',  label: 'Standing orders (detail)',    body: 'Full schedule, references, next payment date' },
-  { key: 'ReadDirectDebits',        cluster: 'Direct debits',    label: 'Direct debits',               body: 'Mandates + last collection amount' },
-  { key: 'ReadBeneficiariesBasic',  cluster: 'Beneficiaries',    label: 'Beneficiaries (basic)',       body: 'Names + counterparties' },
-  { key: 'ReadBeneficiariesDetail', cluster: 'Beneficiaries',    label: 'Beneficiaries (detail)',      body: 'Account identifiers (IBAN, sort/account)' },
-  { key: 'ReadStatementsBasic',     cluster: 'Statements',       label: 'Statements (basic)',          body: 'Period + closing balance per statement' },
-  { key: 'ReadStatementsDetail',    cluster: 'Statements',       label: 'Statements (detail)',         body: 'Per-statement transactions and references' },
-  { key: 'ReadProducts',            cluster: 'Products',         label: 'Products',                    body: 'Account-type metadata, fees, conditions' },
+  {
+    key: 'ReadAccountsBasic',
+    cluster: 'Accounts',
+    label: 'Account list',
+    body: 'AccountId, Type, SubType, Nickname',
+    mandatory: true,
+  },
+  {
+    key: 'ReadAccountsDetail',
+    cluster: 'Accounts',
+    label: 'Account details',
+    body: 'Identifiers (IBAN, ACCT), holders, currency, opening date',
+  },
+  {
+    key: 'ReadBalances',
+    cluster: 'Balances',
+    label: 'Balances',
+    body: 'Current, available, overdraft · per-account',
+  },
+  {
+    key: 'ReadTransactionsBasic',
+    cluster: 'Transactions',
+    label: 'Transactions (basic)',
+    body: 'Amount, date, direction, status',
+  },
+  {
+    key: 'ReadTransactionsDetail',
+    cluster: 'Transactions',
+    label: 'Transactions (detail)',
+    body: 'Merchant, MCC, geolocation, references, counterparty',
+  },
+  {
+    key: 'ReadStandingOrdersBasic',
+    cluster: 'Standing orders',
+    label: 'Standing orders (basic)',
+    body: 'Counterparty + amount + frequency',
+  },
+  {
+    key: 'ReadStandingOrdersDetail',
+    cluster: 'Standing orders',
+    label: 'Standing orders (detail)',
+    body: 'Full schedule, references, next payment date',
+  },
+  {
+    key: 'ReadDirectDebits',
+    cluster: 'Direct debits',
+    label: 'Direct debits',
+    body: 'Mandates + last collection amount',
+  },
+  {
+    key: 'ReadBeneficiariesBasic',
+    cluster: 'Beneficiaries',
+    label: 'Beneficiaries (basic)',
+    body: 'Names + counterparties',
+  },
+  {
+    key: 'ReadBeneficiariesDetail',
+    cluster: 'Beneficiaries',
+    label: 'Beneficiaries (detail)',
+    body: 'Account identifiers (IBAN, sort/account)',
+  },
+  {
+    key: 'ReadStatementsBasic',
+    cluster: 'Statements',
+    label: 'Statements (basic)',
+    body: 'Period + closing balance per statement',
+  },
+  {
+    key: 'ReadStatementsDetail',
+    cluster: 'Statements',
+    label: 'Statements (detail)',
+    body: 'Per-statement transactions and references',
+  },
+  {
+    key: 'ReadProducts',
+    cluster: 'Products',
+    label: 'Products',
+    body: 'Account-type metadata, fees, conditions',
+  },
 ];
 
 // Set of mandatory permission keys for quick lookup. Per Standards, this
 // must always be a subset of any granted consent.
-const OF_MANDATORY_PERMISSIONS = new Set(OF_PERMISSIONS.filter((p) => p.mandatory).map((p) => p.key));
+const OF_MANDATORY_PERMISSIONS = new Set(
+  OF_PERMISSIONS.filter((p) => p.mandatory).map((p) => p.key),
+);
 
 // Mint a UAE-OF-flavoured ConsentId. Format mirrors what the API Hub returns
 // from POST /account-access-consents: a URN that the Consent Manager uses as
 // the durable handle for the consent record. crypto.randomUUID() is available
 // in every browser the rest of this page targets.
 function mintConsentId() {
-  const uuid = (crypto && typeof crypto.randomUUID === 'function')
-    ? crypto.randomUUID()
-    : `${Date.now().toString(16)}-${Math.random().toString(16).slice(2, 10)}`;
+  const uuid =
+    crypto && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `${Date.now().toString(16)}-${Math.random().toString(16).slice(2, 10)}`;
   return `urn:openfinance:ae:consent:${uuid}`;
 }
 
@@ -114,14 +195,25 @@ function inferInsuranceLine(persona) {
 }
 
 function avatarColor(id) {
-  const palette = ['#2d5d4f', '#6E548F', '#8b5d2e', '#3d6fa3', '#7a3d52', '#4d6d4d', '#8b3d52', '#4d4d8b'];
+  const palette = [
+    '#2d5d4f',
+    '#6E548F',
+    '#8b5d2e',
+    '#3d6fa3',
+    '#7a3d52',
+    '#4d6d4d',
+    '#8b3d52',
+    '#4d4d8b',
+  ];
   let h = 0;
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
   return palette[h % palette.length];
 }
 
 function initials(name) {
-  const cleaned = String(name || '').replace(/[—–-].*$/, '').trim();
+  const cleaned = String(name || '')
+    .replace(/[—–-].*$/, '')
+    .trim();
   const parts = cleaned.split(/\s+/).filter(Boolean);
   if (!parts.length) return '?';
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
@@ -135,10 +227,11 @@ function el(tag, attrs = {}, children = []) {
     else if (k === 'dataset') for (const [dk, dv] of Object.entries(v)) node.dataset[dk] = dv;
     else if (k.startsWith('on') && typeof v === 'function') node.addEventListener(k.slice(2), v);
     else if (v === true) node.setAttribute(k, '');
-    else if (v === false || v == null) { /* skip */ }
-    else node.setAttribute(k, v);
+    else if (v === false || v == null) {
+      /* skip */
+    } else node.setAttribute(k, v);
   }
-  for (const c of (Array.isArray(children) ? children : [children])) {
+  for (const c of Array.isArray(children) ? children : [children]) {
     if (c == null) continue;
     node.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
   }
@@ -146,8 +239,12 @@ function el(tag, attrs = {}, children = []) {
 }
 
 function escapeHtml(s) {
-  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 function formatAed(n) {
@@ -172,12 +269,22 @@ function formatAed(n) {
 // to mutate state and call refresh().
 
 function renderPermissionsList(selectedSet, onChange, opts = {}) {
-  const wrap = el('div', { className: 'permissions-list', role: 'group', 'aria-label': 'Permissions requested' });
+  const wrap = el('div', {
+    className: 'permissions-list',
+    role: 'group',
+    'aria-label': 'Permissions requested',
+  });
   if (opts.heading !== false) {
-    wrap.appendChild(el('div', { className: 'permissions-heading' }, [
-      el('strong', {}, 'Permissions requested'),
-      el('span', { className: 'permissions-help' }, '13 data clusters · ReadAccountsBasic is mandatory'),
-    ]));
+    wrap.appendChild(
+      el('div', { className: 'permissions-heading' }, [
+        el('strong', {}, 'Permissions requested'),
+        el(
+          'span',
+          { className: 'permissions-help' },
+          '13 data clusters · ReadAccountsBasic is mandatory',
+        ),
+      ]),
+    );
   }
   // Group by cluster while preserving the taxonomy order
   const byCluster = new Map();
@@ -206,17 +313,23 @@ function renderPermissionsList(selectedSet, onChange, opts = {}) {
         for (const m of OF_MANDATORY_PERMISSIONS) next.add(m);
         onChange(next);
       });
-      const label = el('label', { for: id, className: 'permissions-item' + (p.mandatory ? ' mandatory' : '') }, [
-        cb,
-        el('div', { className: 'permissions-item-text' }, [
-          el('div', { className: 'permissions-item-label' }, [
-            p.label,
-            ...(p.mandatory ? [el('span', { className: 'permissions-required' }, 'required')] : []),
+      const label = el(
+        'label',
+        { for: id, className: 'permissions-item' + (p.mandatory ? ' mandatory' : '') },
+        [
+          cb,
+          el('div', { className: 'permissions-item-text' }, [
+            el('div', { className: 'permissions-item-label' }, [
+              p.label,
+              ...(p.mandatory
+                ? [el('span', { className: 'permissions-required' }, 'required')]
+                : []),
+            ]),
+            el('div', { className: 'permissions-item-body' }, p.body),
+            el('code', { className: 'permissions-item-key' }, p.key),
           ]),
-          el('div', { className: 'permissions-item-body' }, p.body),
-          el('code', { className: 'permissions-item-key' }, p.key),
-        ]),
-      ]);
+        ],
+      );
       items.appendChild(label);
     }
     block.appendChild(items);
@@ -231,24 +344,38 @@ function renderConsentParamsPanel(params, onChange, opts = {}) {
   //         since bank-direct consent is always one consumer authorising one
   //         account; multi-authoriser only meaningfully applies in J2's
   //         regulated TPP flow (joint/corporate accounts).
-  const wrap = el('div', { className: 'consent-params-panel', role: 'group', 'aria-label': 'Consent parameters' });
+  const wrap = el('div', {
+    className: 'consent-params-panel',
+    role: 'group',
+    'aria-label': 'Consent parameters',
+  });
   wrap.appendChild(el('div', { className: 'consent-params-heading' }, 'Consent parameters'));
 
   // ExpirationDateTime
   const expRow = el('div', { className: 'consent-params-row' });
-  expRow.appendChild(el('div', { className: 'consent-params-label' }, [
-    el('strong', {}, 'ExpirationDateTime'),
-    el('span', { className: 'consent-params-help' }, 'Sharing window — TPP can keep reading until this date'),
-  ]));
+  expRow.appendChild(
+    el('div', { className: 'consent-params-label' }, [
+      el('strong', {}, 'ExpirationDateTime'),
+      el(
+        'span',
+        { className: 'consent-params-help' },
+        'Sharing window — TPP can keep reading until this date',
+      ),
+    ]),
+  );
   const expChoices = el('div', { className: 'consent-params-choices', role: 'radiogroup' });
   for (const days of [30, 90, 180, 365]) {
     const selected = params.expirationDays === days;
-    const chip = el('button', {
-      type: 'button',
-      className: 'consent-params-chip' + (selected ? ' selected' : ''),
-      'aria-pressed': selected ? 'true' : 'false',
-      onclick: () => onChange({ ...params, expirationDays: days }),
-    }, `${days} days`);
+    const chip = el(
+      'button',
+      {
+        type: 'button',
+        className: 'consent-params-chip' + (selected ? ' selected' : ''),
+        'aria-pressed': selected ? 'true' : 'false',
+        onclick: () => onChange({ ...params, expirationDays: days }),
+      },
+      `${days} days`,
+    );
     expChoices.appendChild(chip);
   }
   expRow.appendChild(expChoices);
@@ -257,35 +384,55 @@ function renderConsentParamsPanel(params, onChange, opts = {}) {
   // IsSingleAuthorization (J2 only by default)
   if (opts.includeSingleAuth !== false) {
     const singleAuthRow = el('div', { className: 'consent-params-row' });
-    singleAuthRow.appendChild(el('div', { className: 'consent-params-label' }, [
-      el('strong', {}, 'IsSingleAuthorization'),
-      el('span', { className: 'consent-params-help' }, 'When on, the consent must be approved by a single authoriser. For joint or corporate accounts, leave off to allow multi-auth.'),
-    ]));
-    const toggle = el('button', {
-      type: 'button',
-      className: 'consent-params-toggle' + (params.isSingleAuth ? ' on' : ''),
-      'aria-pressed': params.isSingleAuth ? 'true' : 'false',
-      onclick: () => onChange({ ...params, isSingleAuth: !params.isSingleAuth }),
-    }, params.isSingleAuth ? 'On' : 'Off');
+    singleAuthRow.appendChild(
+      el('div', { className: 'consent-params-label' }, [
+        el('strong', {}, 'IsSingleAuthorization'),
+        el(
+          'span',
+          { className: 'consent-params-help' },
+          'When on, the consent must be approved by a single authoriser. For joint or corporate accounts, leave off to allow multi-auth.',
+        ),
+      ]),
+    );
+    const toggle = el(
+      'button',
+      {
+        type: 'button',
+        className: 'consent-params-toggle' + (params.isSingleAuth ? ' on' : ''),
+        'aria-pressed': params.isSingleAuth ? 'true' : 'false',
+        onclick: () => onChange({ ...params, isSingleAuth: !params.isSingleAuth }),
+      },
+      params.isSingleAuth ? 'On' : 'Off',
+    );
     singleAuthRow.appendChild(toggle);
     wrap.appendChild(singleAuthRow);
   }
 
   // TransactionFromDateTime
   const txRow = el('div', { className: 'consent-params-row' });
-  txRow.appendChild(el('div', { className: 'consent-params-label' }, [
-    el('strong', {}, 'TransactionFromDateTime'),
-    el('span', { className: 'consent-params-help' }, 'How far back the TPP can read transactions. Standards max: 13 months.'),
-  ]));
+  txRow.appendChild(
+    el('div', { className: 'consent-params-label' }, [
+      el('strong', {}, 'TransactionFromDateTime'),
+      el(
+        'span',
+        { className: 'consent-params-help' },
+        'How far back the TPP can read transactions. Standards max: 13 months.',
+      ),
+    ]),
+  );
   const txChoices = el('div', { className: 'consent-params-choices', role: 'radiogroup' });
   for (const months of [3, 6, 13]) {
     const selected = params.transactionMonths === months;
-    const chip = el('button', {
-      type: 'button',
-      className: 'consent-params-chip' + (selected ? ' selected' : ''),
-      'aria-pressed': selected ? 'true' : 'false',
-      onclick: () => onChange({ ...params, transactionMonths: months }),
-    }, `${months} months`);
+    const chip = el(
+      'button',
+      {
+        type: 'button',
+        className: 'consent-params-chip' + (selected ? ' selected' : ''),
+        'aria-pressed': selected ? 'true' : 'false',
+        onclick: () => onChange({ ...params, transactionMonths: months }),
+      },
+      `${months} months`,
+    );
     txChoices.appendChild(chip);
   }
   txRow.appendChild(txChoices);
@@ -299,18 +446,26 @@ function renderConsentParamsPanel(params, onChange, opts = {}) {
 // backward navigation only (forward nav is gated on actually completing
 // the prerequisite sub-step).
 function renderSubStepIndicator(steps, currentKey, onClick) {
-  const list = el('ol', { className: 'sub-step-indicator', role: 'list', 'aria-label': 'Sub-step progress' });
+  const list = el('ol', {
+    className: 'sub-step-indicator',
+    role: 'list',
+    'aria-label': 'Sub-step progress',
+  });
   const curIdx = steps.findIndex((s) => s.key === currentKey);
   for (let i = 0; i < steps.length; i++) {
     const s = steps[i];
     const isActive = s.key === currentKey;
     const isDone = i < curIdx;
-    const item = el('li', {
-      className: 'sub-step-item' + (isActive ? ' active' : '') + (isDone ? ' done' : ''),
-    }, [
-      el('span', { className: 'sub-step-num' }, isDone ? '✓' : String(i + 1)),
-      el('span', { className: 'sub-step-label' }, s.label),
-    ]);
+    const item = el(
+      'li',
+      {
+        className: 'sub-step-item' + (isActive ? ' active' : '') + (isDone ? ' done' : ''),
+      },
+      [
+        el('span', { className: 'sub-step-num' }, isDone ? '✓' : String(i + 1)),
+        el('span', { className: 'sub-step-label' }, s.label),
+      ],
+    );
     if (onClick && isDone) {
       item.style.cursor = 'pointer';
       item.addEventListener('click', () => onClick(s.key));
@@ -344,24 +499,24 @@ const state = {
   subStep: 'discovery',
   j1Permissions: new Set(OF_PERMISSIONS.map((p) => p.key)),
   j1ExpirationDays: 90,
-  j1TransactionMonths: 13,        // Standards v2.1 maximum
+  j1TransactionMonths: 13, // Standards v2.1 maximum
   j1ConsentId: null,
   // J2 ──────────────────────────────────────────────────────────────
   j2Step: 1,
-  j2Filter: 'all',                // 'all' | 'retail' | 'sme'
-  j2Scope: null,                  // 'single' | 'multi'
-  j2SelectedLFIs: new Set(),      // subset of LFI_PROFILES keys (rich/median/sparse)
+  j2Filter: 'all', // 'all' | 'retail' | 'sme'
+  j2Scope: null, // 'single' | 'multi'
+  j2SelectedLFIs: new Set(), // subset of LFI_PROFILES keys (rich/median/sparse)
   j2Approved: false,
   // J2 step 4 sub-flow state (Phase C — consent-fidelity refit) ────
   // j2SubStep walks inside J2's step 4: tpp → altareq → sca → manager
   j2SubStep: 'tpp',
-  j2SCAIndex: 0,                  // 0-based index into j2SelectedLFIs during per-LFI SCA
+  j2SCAIndex: 0, // 0-based index into j2SelectedLFIs during per-LFI SCA
   j2Permissions: new Set(OF_PERMISSIONS.map((p) => p.key)),
   j2ExpirationDays: 90,
   j2IsSingleAuth: false,
-  j2TransactionMonths: 13,        // Standards v2.1 maximum
-  j2SelectedAccounts: new Map(),  // lfiKey → Set<accountId>, populated lazily during 4c
-  j2ConsentIds: new Map(),        // lfiKey → ConsentId (urn:…), minted on per-LFI confirm
+  j2TransactionMonths: 13, // Standards v2.1 maximum
+  j2SelectedAccounts: new Map(), // lfiKey → Set<accountId>, populated lazily during 4c
+  j2ConsentIds: new Map(), // lfiKey → ConsentId (urn:…), minted on per-LFI confirm
   // Flat list of consent records — Consent Manager view renders from this.
   // Each record: { source: 'j1' | 'j2', tpp, lfi, consentId, permissions,
   //                expiresAt, accounts, status: 'Active' | 'Revoked' }
@@ -380,19 +535,24 @@ function serializeStateToParams() {
   const params = new URLSearchParams();
   if (state.view && state.view !== 'hub') params.set('view', state.view);
   if (state.selectedPersonaId) params.set('persona', state.selectedPersonaId);
-  if (state.selectedBankProfiles.size) params.set('banks', [...state.selectedBankProfiles].join(','));
-  if (state.selectedInsuranceLines.size) params.set('lines', [...state.selectedInsuranceLines].join(','));
+  if (state.selectedBankProfiles.size)
+    params.set('banks', [...state.selectedBankProfiles].join(','));
+  if (state.selectedInsuranceLines.size)
+    params.set('lines', [...state.selectedInsuranceLines].join(','));
   if (state.step && state.step !== 1) params.set('step', String(state.step));
   // J1 sub-step (only meaningful when view=j1 and step=3)
-  if (state.subStep && state.subStep !== 'discovery' && state.step === 3) params.set('substep', state.subStep);
+  if (state.subStep && state.subStep !== 'discovery' && state.step === 3)
+    params.set('substep', state.subStep);
   // J2 state — namespaced to avoid colliding with J1 params on shared URLs
   if (state.j2Step && state.j2Step !== 1) params.set('j2step', String(state.j2Step));
   if (state.j2Scope) params.set('j2scope', state.j2Scope);
   if (state.j2SelectedLFIs.size) params.set('j2lfis', [...state.j2SelectedLFIs].join(','));
   // J2 sub-step (only meaningful when view=j2 and j2step=4)
-  if (state.j2SubStep && state.j2SubStep !== 'tpp' && state.j2Step === 4) params.set('j2substep', state.j2SubStep);
+  if (state.j2SubStep && state.j2SubStep !== 'tpp' && state.j2Step === 4)
+    params.set('j2substep', state.j2SubStep);
   // J2 SCA index (only meaningful when j2substep=sca)
-  if (state.j2SCAIndex > 0 && state.j2SubStep === 'sca' && state.j2Step === 4) params.set('j2scaindex', String(state.j2SCAIndex));
+  if (state.j2SCAIndex > 0 && state.j2SubStep === 'sca' && state.j2Step === 4)
+    params.set('j2scaindex', String(state.j2SCAIndex));
   return params;
 }
 
@@ -451,7 +611,7 @@ function rehydrateConsents() {
     if (Array.isArray(payload.j2ConsentIds)) state.j2ConsentIds = new Map(payload.j2ConsentIds);
     if (Array.isArray(payload.j2SelectedAccounts)) {
       state.j2SelectedAccounts = new Map(
-        payload.j2SelectedAccounts.map(([k, arr]) => [k, new Set(arr)])
+        payload.j2SelectedAccounts.map(([k, arr]) => [k, new Set(arr)]),
       );
     }
     if (typeof payload.j2Approved === 'boolean') state.j2Approved = payload.j2Approved;
@@ -473,7 +633,12 @@ function restoreStateFromUrl() {
   if (view === 'j1' || view === 'j2' || view === 'hub') {
     state.view = view;
     if (view !== 'hub') any = true;
-  } else if (params.has('persona') || params.has('banks') || params.has('lines') || params.has('step')) {
+  } else if (
+    params.has('persona') ||
+    params.has('banks') ||
+    params.has('lines') ||
+    params.has('step')
+  ) {
     state.view = 'j1';
     any = true;
   }
@@ -484,12 +649,16 @@ function restoreStateFromUrl() {
   }
   const banks = params.get('banks');
   if (banks) {
-    state.selectedBankProfiles = new Set(banks.split(',').filter((b) => LFI_PROFILES.some((p) => p.key === b)));
+    state.selectedBankProfiles = new Set(
+      banks.split(',').filter((b) => LFI_PROFILES.some((p) => p.key === b)),
+    );
     any = true;
   }
   const lines = params.get('lines');
   if (lines) {
-    state.selectedInsuranceLines = new Set(lines.split(',').filter((l) => INSURANCE_LINES.includes(l)));
+    state.selectedInsuranceLines = new Set(
+      lines.split(',').filter((l) => INSURANCE_LINES.includes(l)),
+    );
     any = true;
   }
   const step = parseInt(params.get('step') || '1', 10);
@@ -503,11 +672,17 @@ function restoreStateFromUrl() {
   // and any reload at step=4 lands with it null, so we re-walk consent
   // rather than surfacing the chat without a bearer.
   if (state.step > 1 && !selectedPersona()) state.step = 1;
-  if (state.step > 2 && state.selectedBankProfiles.size + state.selectedInsuranceLines.size === 0) state.step = 2;
+  if (state.step > 2 && state.selectedBankProfiles.size + state.selectedInsuranceLines.size === 0)
+    state.step = 2;
   if (state.step >= 4 && !state.j1ConsentId) state.step = 3;
   // J1 sub-step restore
   const subStep = params.get('substep');
-  if (subStep === 'discovery' || subStep === 'sca' || subStep === 'consent' || subStep === 'token') {
+  if (
+    subStep === 'discovery' ||
+    subStep === 'sca' ||
+    subStep === 'consent' ||
+    subStep === 'token'
+  ) {
     state.subStep = subStep;
     if (subStep !== 'discovery') any = true;
   }
@@ -524,7 +699,9 @@ function restoreStateFromUrl() {
   }
   const j2Lfis = params.get('j2lfis');
   if (j2Lfis) {
-    state.j2SelectedLFIs = new Set(j2Lfis.split(',').filter((b) => LFI_PROFILES.some((p) => p.key === b)));
+    state.j2SelectedLFIs = new Set(
+      j2Lfis.split(',').filter((b) => LFI_PROFILES.some((p) => p.key === b)),
+    );
     any = true;
   }
   // Single-scope safety: a crafted URL can pack multiple j2lfis with
@@ -540,7 +717,8 @@ function restoreStateFromUrl() {
   if (state.j2Step > 1 && !selectedPersona()) state.j2Step = 1;
   if (state.j2Step > 2 && !state.j2Scope) state.j2Step = 2;
   if (state.j2Step > 3 && state.j2SelectedLFIs.size === 0) state.j2Step = 3;
-  if (state.j2Scope === 'multi' && state.j2SelectedLFIs.size === 1 && state.j2Step > 3) state.j2Step = 3;
+  if (state.j2Scope === 'multi' && state.j2SelectedLFIs.size === 1 && state.j2Step > 3)
+    state.j2Step = 3;
   // Step 5 (PFM/BFM dashboard) requires at least one J2 consent. j2ConsentIds
   // is session-only state (never serialised to the URL), so any reload at
   // j2step=5 lands with size=0 and must bounce to step 4 to re-walk consent
@@ -569,31 +747,37 @@ async function loadPersonas() {
       const m = await res.json();
       return toPersonaList(m.personas);
     }
-  } catch { /* fall through */ }
+  } catch {
+    /* fall through */
+  }
   try {
     const res = await fetch('../dist/data.json');
     if (res.ok) {
       const d = await res.json();
       return toPersonaList(d.personas);
     }
-  } catch { /* fall through */ }
+  } catch {
+    /* fall through */
+  }
   throw new Error('no persona data — run `npm run build:fixtures` or `npm run build:data`');
 }
 
 function toPersonaList(map) {
-  return Object.entries(map).map(([id, v]) => ({
-    id,
-    name: v.name,
-    archetype: v.archetype,
-    domain: v.domain,
-    segment: v.segment || null,
-    default_seed: v.default_seed || null,
-    stress_coverage: v.stress_coverage || [],
-    multi_lfi_footprint: v.multi_lfi_footprint || null,
-  })).sort((a, b) => {
-    if (a.domain !== b.domain) return a.domain.localeCompare(b.domain);
-    return a.name.localeCompare(b.name);
-  });
+  return Object.entries(map)
+    .map(([id, v]) => ({
+      id,
+      name: v.name,
+      archetype: v.archetype,
+      domain: v.domain,
+      segment: v.segment || null,
+      default_seed: v.default_seed || null,
+      stress_coverage: v.stress_coverage || [],
+      multi_lfi_footprint: v.multi_lfi_footprint || null,
+    }))
+    .sort((a, b) => {
+      if (a.domain !== b.domain) return a.domain.localeCompare(b.domain);
+      return a.name.localeCompare(b.name);
+    });
 }
 
 function firstSelectedLfi() {
@@ -674,23 +858,41 @@ function renderPersonaGallery() {
     return true;
   });
   for (const p of filtered) {
-    const card = el('button', {
-      type: 'button',
-      className: `persona-card${p.id === state.selectedPersonaId ? ' selected' : ''}`,
-      role: 'radio',
-      'aria-checked': p.id === state.selectedPersonaId ? 'true' : 'false',
-      dataset: { personaId: p.id },
-      onclick: () => { state.selectedPersonaId = p.id; resetInstitutionSelection(p); refresh(); },
-    }, [
-      el('div', { className: 'avatar', style: `background:${avatarColor(p.id)};` }, initials(p.name)),
-      el('span', { className: 'pname' }, p.name),
-      el('span', { className: 'pmeta' }, `${(p.archetype || '').replace(/_/g, ' ')}${p.segment ? ` · ${p.segment}` : ''}`),
-      el('div', { className: 'ptags' }, [
-        el('span', { className: `tag domain-${p.domain}` }, p.domain),
-        ...(p.segment ? [el('span', { className: 'tag segment-sme' }, p.segment)] : []),
-        ...(p.stress_coverage.slice(0, 1).map((t) => el('span', { className: 'tag' }, t.replace(/_/g, ' ')))),
-      ]),
-    ]);
+    const card = el(
+      'button',
+      {
+        type: 'button',
+        className: `persona-card${p.id === state.selectedPersonaId ? ' selected' : ''}`,
+        role: 'radio',
+        'aria-checked': p.id === state.selectedPersonaId ? 'true' : 'false',
+        dataset: { personaId: p.id },
+        onclick: () => {
+          state.selectedPersonaId = p.id;
+          resetInstitutionSelection(p);
+          refresh();
+        },
+      },
+      [
+        el(
+          'div',
+          { className: 'avatar', style: `background:${avatarColor(p.id)};` },
+          initials(p.name),
+        ),
+        el('span', { className: 'pname' }, p.name),
+        el(
+          'span',
+          { className: 'pmeta' },
+          `${(p.archetype || '').replace(/_/g, ' ')}${p.segment ? ` · ${p.segment}` : ''}`,
+        ),
+        el('div', { className: 'ptags' }, [
+          el('span', { className: `tag domain-${p.domain}` }, p.domain),
+          ...(p.segment ? [el('span', { className: 'tag segment-sme' }, p.segment)] : []),
+          ...p.stress_coverage
+            .slice(0, 1)
+            .map((t) => el('span', { className: 'tag' }, t.replace(/_/g, ' '))),
+        ]),
+      ],
+    );
     grid.appendChild(card);
   }
   if (!filtered.length) {
@@ -785,30 +987,40 @@ function renderInstitutions() {
     `(<strong>${escapeHtml(persona.domain)}</strong>).`;
 
   // ─── Bank Data Sharing block (always shown) ───
-  const bankHeader = el('h4', {}, hasBankingFixtures(persona)
-    ? 'Bank Data Sharing — populate-rate profiles'
-    : 'Bank Data Sharing — populate-rate profiles (no fixtures for this persona)');
+  const bankHeader = el(
+    'h4',
+    {},
+    hasBankingFixtures(persona)
+      ? 'Bank Data Sharing — populate-rate profiles'
+      : 'Bank Data Sharing — populate-rate profiles (no fixtures for this persona)',
+  );
   body.appendChild(bankHeader);
   const bankGrid = el('div', { className: 'inst-grid' });
   for (const prof of LFI_PROFILES) {
     const selected = state.selectedBankProfiles.has(prof.key);
-    const card = el('button', {
-      type: 'button',
-      className: `inst-card${selected ? ' selected' : ''}${!hasBankingFixtures(persona) ? ' cross-domain' : ''}`,
-      'aria-pressed': selected ? 'true' : 'false',
-      onclick: () => {
-        if (state.selectedBankProfiles.has(prof.key)) state.selectedBankProfiles.delete(prof.key);
-        else state.selectedBankProfiles.add(prof.key);
-        renderInstitutions(); renderActions(); pushUrl();
+    const card = el(
+      'button',
+      {
+        type: 'button',
+        className: `inst-card${selected ? ' selected' : ''}${!hasBankingFixtures(persona) ? ' cross-domain' : ''}`,
+        'aria-pressed': selected ? 'true' : 'false',
+        onclick: () => {
+          if (state.selectedBankProfiles.has(prof.key)) state.selectedBankProfiles.delete(prof.key);
+          else state.selectedBankProfiles.add(prof.key);
+          renderInstitutions();
+          renderActions();
+          pushUrl();
+        },
       },
-    }, [
-      el('div', { className: 'ihead' }, [
-        el('span', { className: 'iname' }, prof.name),
-        el('span', { className: `ibadge ${prof.key}` }, prof.key),
-      ]),
-      el('div', { className: 'ibody' }, prof.body),
-      el('div', { className: 'iendpoints' }, '12 v2.1 endpoints'),
-    ]);
+      [
+        el('div', { className: 'ihead' }, [
+          el('span', { className: 'iname' }, prof.name),
+          el('span', { className: `ibadge ${prof.key}` }, prof.key),
+        ]),
+        el('div', { className: 'ibody' }, prof.body),
+        el('div', { className: 'iendpoints' }, '12 v2.1 endpoints'),
+      ],
+    );
     bankGrid.appendChild(card);
   }
   body.appendChild(bankGrid);
@@ -817,7 +1029,13 @@ function renderInstitutions() {
   if (slots.length > 0) {
     const advisory = el('div', { className: 'footprint-advisory' });
     advisory.appendChild(el('strong', {}, 'Real-world plausible UAE LFIs for this persona'));
-    advisory.appendChild(el('span', {}, 'Descriptive of the persona\'s likely relationships per the persona manifest — not bound to any populate-rate profile (NG5 / D-14).'));
+    advisory.appendChild(
+      el(
+        'span',
+        {},
+        "Descriptive of the persona's likely relationships per the persona manifest — not bound to any populate-rate profile (NG5 / D-14).",
+      ),
+    );
     for (const s of slots) {
       const roleLabel = `${s.key} · ${(s.role || '').replace(/_/g, ' ')}`;
       advisory.appendChild(el('div', { className: 'candidate-role' }, roleLabel));
@@ -831,9 +1049,13 @@ function renderInstitutions() {
   }
 
   // ─── Insurance Data Sharing block (always shown) ───
-  const insHeader = el('h4', {}, hasInsuranceFixtures(persona)
-    ? 'Insurance Data Sharing — applicable lines'
-    : 'Insurance Data Sharing — applicable lines (no fixtures for this persona)');
+  const insHeader = el(
+    'h4',
+    {},
+    hasInsuranceFixtures(persona)
+      ? 'Insurance Data Sharing — applicable lines'
+      : 'Insurance Data Sharing — applicable lines (no fixtures for this persona)',
+  );
   body.appendChild(insHeader);
   const insGrid = el('div', { className: 'inst-grid' });
   const personaLine = inferInsuranceLine(persona);
@@ -851,23 +1073,30 @@ function renderInstitutions() {
     const meta = INSURANCE_LINE_LABELS[lineKey];
     const selected = state.selectedInsuranceLines.has(lineKey);
     const isPersonaLine = personaLineSet.has(lineKey);
-    const card = el('button', {
-      type: 'button',
-      className: `inst-card${selected ? ' selected' : ''}${!isPersonaLine && !hasInsuranceFixtures(persona) ? ' cross-domain' : ''}`,
-      'aria-pressed': selected ? 'true' : 'false',
-      onclick: () => {
-        if (state.selectedInsuranceLines.has(lineKey)) state.selectedInsuranceLines.delete(lineKey);
-        else state.selectedInsuranceLines.add(lineKey);
-        renderInstitutions(); renderActions(); pushUrl();
+    const card = el(
+      'button',
+      {
+        type: 'button',
+        className: `inst-card${selected ? ' selected' : ''}${!isPersonaLine && !hasInsuranceFixtures(persona) ? ' cross-domain' : ''}`,
+        'aria-pressed': selected ? 'true' : 'false',
+        onclick: () => {
+          if (state.selectedInsuranceLines.has(lineKey))
+            state.selectedInsuranceLines.delete(lineKey);
+          else state.selectedInsuranceLines.add(lineKey);
+          renderInstitutions();
+          renderActions();
+          pushUrl();
+        },
       },
-    }, [
-      el('div', { className: 'ihead' }, [
-        el('span', { className: 'iname' }, meta.name),
-        el('span', { className: 'ibadge' }, isPersonaLine ? 'persona line' : 'read-only'),
-      ]),
-      el('div', { className: 'ibody' }, meta.body),
-      el('div', { className: 'iendpoints' }, `/${lineKey}-insurance-policies/* · /quotes/*`),
-    ]);
+      [
+        el('div', { className: 'ihead' }, [
+          el('span', { className: 'iname' }, meta.name),
+          el('span', { className: 'ibadge' }, isPersonaLine ? 'persona line' : 'read-only'),
+        ]),
+        el('div', { className: 'ibody' }, meta.body),
+        el('div', { className: 'iendpoints' }, `/${lineKey}-insurance-policies/* · /quotes/*`),
+      ],
+    );
     insGrid.appendChild(card);
   }
   body.appendChild(insGrid);
@@ -890,9 +1119,9 @@ function renderInstitutions() {
 
 const J1_SUB_STEPS = [
   { key: 'discovery', label: 'Discovery' },
-  { key: 'sca',       label: 'Sign in (SCA)' },
-  { key: 'consent',   label: 'Consent' },
-  { key: 'token',     label: 'Token' },
+  { key: 'sca', label: 'Sign in (SCA)' },
+  { key: 'consent', label: 'Consent' },
+  { key: 'token', label: 'Token' },
 ];
 
 function renderConsent() {
@@ -901,10 +1130,12 @@ function renderConsent() {
   body.replaceChildren();
   if (!persona) return;
 
-  body.appendChild(renderSubStepIndicator(J1_SUB_STEPS, state.subStep, (key) => {
-    state.subStep = key;
-    refresh();
-  }));
+  body.appendChild(
+    renderSubStepIndicator(J1_SUB_STEPS, state.subStep, (key) => {
+      state.subStep = key;
+      refresh();
+    }),
+  );
 
   if (state.subStep === 'discovery') renderJ1Discovery(body);
   else if (state.subStep === 'sca') renderJ1SCA(body);
@@ -918,19 +1149,24 @@ function renderConsent() {
 // RFC 9728 / RFC 8414 documents from the Fly deploy and inlines them.
 function renderJ1Discovery(body) {
   const wrap = el('div', { className: 'discovery-chain' });
-  wrap.appendChild(el('p', { className: 'discovery-intro' }, [
-    'When Claude first touches the sandbox MCP, the spec-mandated discovery chain runs. ',
-    'You don’t see it because Claude’s MCP client handles the handshake before bringing you to the consent screen. ',
-    'Each row below is one real HTTP exchange — click ',
-    el('strong', {}, 'Probe the live server'),
-    ' to populate the metadata rows from the production deploy at ',
-    el('code', {}, 'data-sandbox.fly.dev'), '.',
-  ]));
+  wrap.appendChild(
+    el('p', { className: 'discovery-intro' }, [
+      'When Claude first touches the sandbox MCP, the spec-mandated discovery chain runs. ',
+      'You don’t see it because Claude’s MCP client handles the handshake before bringing you to the consent screen. ',
+      'Each row below is one real HTTP exchange — click ',
+      el('strong', {}, 'Probe the live server'),
+      ' to populate the metadata rows from the production deploy at ',
+      el('code', {}, 'data-sandbox.fly.dev'),
+      '.',
+    ]),
+  );
 
   const rows = [
     {
-      method: 'GET', path: '/mcp',
-      status: '401 Unauthorized', statusKind: 'warn',
+      method: 'GET',
+      path: '/mcp',
+      status: '401 Unauthorized',
+      statusKind: 'warn',
       headers: [
         'WWW-Authenticate: Bearer realm="open-finance-sandbox",',
         '                  authorization_uri="…/authorize",',
@@ -939,21 +1175,29 @@ function renderJ1Discovery(body) {
       caption: 'Server signals that auth is required and points at metadata to bootstrap the flow.',
     },
     {
-      method: 'GET', path: '/.well-known/oauth-protected-resource',
-      status: '200 OK', statusKind: 'pos',
+      method: 'GET',
+      path: '/.well-known/oauth-protected-resource',
+      status: '200 OK',
+      statusKind: 'pos',
       caption: 'RFC 9728 — declares the authorization server(s) the resource trusts.',
       bodyId: 'rfc9728',
     },
     {
-      method: 'GET', path: '/.well-known/oauth-authorization-server',
-      status: '200 OK', statusKind: 'pos',
-      caption: 'RFC 8414 — declares /authorize and /token endpoints, supported scopes, PKCE methods.',
+      method: 'GET',
+      path: '/.well-known/oauth-authorization-server',
+      status: '200 OK',
+      statusKind: 'pos',
+      caption:
+        'RFC 8414 — declares /authorize and /token endpoints, supported scopes, PKCE methods.',
       bodyId: 'rfc8414',
     },
     {
-      method: 'GET', path: '/authorize?client_id=…&code_challenge=…&code_challenge_method=S256',
-      status: '302 Found', statusKind: 'pos',
-      caption: 'PKCE S256 challenge sent. Server 302s to your bank’s SCA screen — that’s sub-step 3b.',
+      method: 'GET',
+      path: '/authorize?client_id=…&code_challenge=…&code_challenge_method=S256',
+      status: '302 Found',
+      statusKind: 'pos',
+      caption:
+        'PKCE S256 challenge sent. Server 302s to your bank’s SCA screen — that’s sub-step 3b.',
     },
   ];
 
@@ -965,18 +1209,32 @@ function renderJ1Discovery(body) {
         el('span', { className: 'discovery-arrow' }, '→'),
         el('span', { className: 'discovery-status ' + row.statusKind }, row.status),
       ]),
-      ...(row.headers ? [el('pre', { className: 'discovery-headers' }, row.headers.join('\n'))] : []),
-      ...(row.bodyId ? [el('pre', { className: 'discovery-body', id: `discovery-body-${row.bodyId}` }, '(click “Probe the live server” below to populate)')] : []),
+      ...(row.headers
+        ? [el('pre', { className: 'discovery-headers' }, row.headers.join('\n'))]
+        : []),
+      ...(row.bodyId
+        ? [
+            el(
+              'pre',
+              { className: 'discovery-body', id: `discovery-body-${row.bodyId}` },
+              '(click “Probe the live server” below to populate)',
+            ),
+          ]
+        : []),
       el('p', { className: 'discovery-caption' }, row.caption),
     ]);
     wrap.appendChild(card);
   }
 
-  const probeBtn = el('button', {
-    type: 'button',
-    className: 'btn primary',
-    style: 'margin-top:10px;',
-  }, 'Probe the live server →');
+  const probeBtn = el(
+    'button',
+    {
+      type: 'button',
+      className: 'btn primary',
+      style: 'margin-top:10px;',
+    },
+    'Probe the live server →',
+  );
   probeBtn.addEventListener('click', () => probeLiveServer(probeBtn));
   wrap.appendChild(probeBtn);
 
@@ -1013,37 +1271,76 @@ async function probeLiveServer(btn) {
 // are decorative — Continue advances to the consent screen regardless.
 function renderJ1SCA(body) {
   const persona = selectedPersona();
-  const userBase = persona ? persona.name.split('—')[0].trim().toLowerCase().replace(/\s+/g, '.').replace(/[^a-z.]/g, '') : 'you';
+  const userBase = persona
+    ? persona.name
+        .split('—')[0]
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, '.')
+        .replace(/[^a-z.]/g, '')
+    : 'you';
   const username = `${userBase}@your-bank-labs.example`;
-  const mock = el('div', { className: 'sca-mock', role: 'img', 'aria-label': 'Mock bank Strong Customer Authentication screen' });
-  mock.appendChild(el('div', { className: 'browser-bar' }, [
-    el('span', { className: 'dots' }, [el('span'), el('span'), el('span')]),
-    el('span', { className: 'url' }, 'https://auth.your-bank-labs.example/sca?continue=…'),
-  ]));
+  const mock = el('div', {
+    className: 'sca-mock',
+    role: 'img',
+    'aria-label': 'Mock bank Strong Customer Authentication screen',
+  });
+  mock.appendChild(
+    el('div', { className: 'browser-bar' }, [
+      el('span', { className: 'dots' }, [el('span'), el('span'), el('span')]),
+      el('span', { className: 'url' }, 'https://auth.your-bank-labs.example/sca?continue=…'),
+    ]),
+  );
   const inner = el('div', { className: 'body' });
   inner.appendChild(el('h4', {}, 'Sign in to your bank'));
-  inner.appendChild(el('p', { className: 'sub' }, [
-    'Strong Customer Authentication. Your bank verifies you with knowledge (password) + possession (one-time code) — Article 18, CBUAE C 03/2025. ',
-    'This is the bank’s own auth surface; Claude never sees these credentials.',
-  ]));
+  inner.appendChild(
+    el('p', { className: 'sub' }, [
+      'Strong Customer Authentication. Your bank verifies you with knowledge (password) + possession (one-time code) — Article 18, CBUAE C 03/2025. ',
+      'This is the bank’s own auth surface; Claude never sees these credentials.',
+    ]),
+  );
   const form = el('div', { className: 'sca-form' });
   form.appendChild(el('label', { for: 'sca-user' }, 'Username'));
   form.appendChild(el('input', { type: 'text', id: 'sca-user', value: username, readonly: true }));
   form.appendChild(el('label', { for: 'sca-pass', style: 'margin-top:10px;' }, 'Password'));
-  form.appendChild(el('input', { type: 'password', id: 'sca-pass', value: '••••••••••', readonly: true }));
+  form.appendChild(
+    el('input', { type: 'password', id: 'sca-pass', value: '••••••••••', readonly: true }),
+  );
 
   const otpBlock = el('div', { className: 'sca-otp' });
-  otpBlock.appendChild(el('div', { className: 'sca-otp-heading' }, '2FA — enter the 6-digit code from your bank app'));
+  otpBlock.appendChild(
+    el('div', { className: 'sca-otp-heading' }, '2FA — enter the 6-digit code from your bank app'),
+  );
   const otpInputs = el('div', { className: 'sca-otp-inputs' });
   for (let i = 0; i < 6; i++) {
-    otpInputs.appendChild(el('input', { type: 'text', maxlength: 1, value: ['8','3','9','1','7','2'][i], readonly: true, 'aria-label': `OTP digit ${i + 1}` }));
+    otpInputs.appendChild(
+      el('input', {
+        type: 'text',
+        maxlength: 1,
+        value: ['8', '3', '9', '1', '7', '2'][i],
+        readonly: true,
+        'aria-label': `OTP digit ${i + 1}`,
+      }),
+    );
   }
   otpBlock.appendChild(otpInputs);
-  otpBlock.appendChild(el('p', { className: 'sca-otp-alt' }, [
-    'or ', el('strong', {}, 'use your bank app'), ' to push-approve this sign-in — same regulatory category (Article 18), no code to type.',
-  ]));
+  otpBlock.appendChild(
+    el('p', { className: 'sca-otp-alt' }, [
+      'or ',
+      el('strong', {}, 'use your bank app'),
+      ' to push-approve this sign-in — same regulatory category (Article 18), no code to type.',
+    ]),
+  );
   form.appendChild(otpBlock);
-  form.appendChild(el('p', { className: 'sca-note' }, 'No real network call — values are decorative. Click ', el('strong', {}, 'Next →'), ' when ready.'));
+  form.appendChild(
+    el(
+      'p',
+      { className: 'sca-note' },
+      'No real network call — values are decorative. Click ',
+      el('strong', {}, 'Next →'),
+      ' when ready.',
+    ),
+  );
   inner.appendChild(form);
   mock.appendChild(inner);
   body.appendChild(mock);
@@ -1056,60 +1353,104 @@ function renderJ1SCA(body) {
 function renderJ1Consent(body) {
   const persona = selectedPersona();
   if (!persona) return;
-  const mock = el('div', { className: 'consent-mock', role: 'img', 'aria-label': 'Mock bank-own OAuth consent screen (Journey 1)' });
-  mock.appendChild(el('div', { className: 'browser-bar' }, [
-    el('span', { className: 'dots' }, [el('span'), el('span'), el('span')]),
-    el('span', { className: 'url' }, 'https://auth.your-bank-labs.example/authorize?client_id=claude&code_challenge=…&scope=…'),
-  ]));
+  const mock = el('div', {
+    className: 'consent-mock',
+    role: 'img',
+    'aria-label': 'Mock bank-own OAuth consent screen (Journey 1)',
+  });
+  mock.appendChild(
+    el('div', { className: 'browser-bar' }, [
+      el('span', { className: 'dots' }, [el('span'), el('span'), el('span')]),
+      el(
+        'span',
+        { className: 'url' },
+        'https://auth.your-bank-labs.example/authorize?client_id=claude&code_challenge=…&scope=…',
+      ),
+    ]),
+  );
   const inner = el('div', { className: 'body' });
   inner.appendChild(el('h4', {}, 'Share with Claude · your bank’s labs MCP'));
-  inner.appendChild(el('p', { className: 'sub' }, [
-    'OAuth 2.1 + PKCE. Pick the data clusters Claude can read. Revocation lives in your bank’s ',
-    el('em', {}, 'Connected apps'),
-    ' page — not Al Tareq (that’s J2).',
-  ]));
-  inner.appendChild(el('div', { className: 'persona-line' }, [
-    el('div', { className: 'avatar', style: `background:${avatarColor(persona.id)};` }, initials(persona.name)),
-    el('div', {}, [
-      el('div', { className: 'pn' }, persona.name),
-      el('div', { className: 'pm' }, `${persona.domain}${persona.segment ? ` · ${persona.segment}` : ''} · single LFI (bank-direct)`),
+  inner.appendChild(
+    el('p', { className: 'sub' }, [
+      'OAuth 2.1 + PKCE. Pick the data clusters Claude can read. Revocation lives in your bank’s ',
+      el('em', {}, 'Connected apps'),
+      ' page — not Al Tareq (that’s J2).',
     ]),
-  ]));
-
-  inner.appendChild(renderPermissionsList(
-    state.j1Permissions,
-    (next) => { state.j1Permissions = next; refresh(); },
-    { idPrefix: 'j1' },
-  ));
-
-  inner.appendChild(renderConsentParamsPanel(
-    { expirationDays: state.j1ExpirationDays, isSingleAuth: true, transactionMonths: state.j1TransactionMonths },
-    ({ expirationDays, transactionMonths }) => {
-      state.j1ExpirationDays = expirationDays;
-      state.j1TransactionMonths = transactionMonths;
-      refresh();
-    },
-    { includeSingleAuth: false },
-  ));
-
-  inner.appendChild(el('div', { className: 'scope unchecked', style: 'margin-top:12px;' }, [
-    el('span', { className: 'tick', 'aria-hidden': 'true' }),
-    el('div', {}, [
-      el('strong', {}, 'Service Initiation — payments'),
-      el('span', { className: 'scope-body' }, 'Not requested · v1 read-only'),
+  );
+  inner.appendChild(
+    el('div', { className: 'persona-line' }, [
+      el(
+        'div',
+        { className: 'avatar', style: `background:${avatarColor(persona.id)};` },
+        initials(persona.name),
+      ),
+      el('div', {}, [
+        el('div', { className: 'pn' }, persona.name),
+        el(
+          'div',
+          { className: 'pm' },
+          `${persona.domain}${persona.segment ? ` · ${persona.segment}` : ''} · single LFI (bank-direct)`,
+        ),
+      ]),
     ]),
-  ]));
+  );
 
-  inner.appendChild(el('div', { className: 'consent-id-preview' }, [
-    el('div', { className: 'consent-id-label' }, 'On approve, the bank will register:'),
-    el('code', {}, 'urn:openfinance:ae:consent:<fresh-uuid-on-approve>'),
-    el('div', { className: 'consent-id-help' }, 'A durable handle for the consent. The bank’s Connected apps page lists every active ConsentId; revocation takes a single tap there.'),
-  ]));
+  inner.appendChild(
+    renderPermissionsList(
+      state.j1Permissions,
+      (next) => {
+        state.j1Permissions = next;
+        refresh();
+      },
+      { idPrefix: 'j1' },
+    ),
+  );
+
+  inner.appendChild(
+    renderConsentParamsPanel(
+      {
+        expirationDays: state.j1ExpirationDays,
+        isSingleAuth: true,
+        transactionMonths: state.j1TransactionMonths,
+      },
+      ({ expirationDays, transactionMonths }) => {
+        state.j1ExpirationDays = expirationDays;
+        state.j1TransactionMonths = transactionMonths;
+        refresh();
+      },
+      { includeSingleAuth: false },
+    ),
+  );
+
+  inner.appendChild(
+    el('div', { className: 'scope unchecked', style: 'margin-top:12px;' }, [
+      el('span', { className: 'tick', 'aria-hidden': 'true' }),
+      el('div', {}, [
+        el('strong', {}, 'Service Initiation — payments'),
+        el('span', { className: 'scope-body' }, 'Not requested · v1 read-only'),
+      ]),
+    ]),
+  );
+
+  inner.appendChild(
+    el('div', { className: 'consent-id-preview' }, [
+      el('div', { className: 'consent-id-label' }, 'On approve, the bank will register:'),
+      el('code', {}, 'urn:openfinance:ae:consent:<fresh-uuid-on-approve>'),
+      el(
+        'div',
+        { className: 'consent-id-help' },
+        'A durable handle for the consent. The bank’s Connected apps page lists every active ConsentId; revocation takes a single tap there.',
+      ),
+    ]),
+  );
 
   const footnote = el('p', { className: 'footnote' }, [
-    'Sharing window ', el('strong', {}, `${state.j1ExpirationDays} days`),
+    'Sharing window ',
+    el('strong', {}, `${state.j1ExpirationDays} days`),
     `. Transactions readable back ${[...state.j1Permissions].filter((k) => k.startsWith('ReadTransactions')).length ? `${state.j1TransactionMonths} months` : '— (transactions permission off)'}. `,
-    'Data is ', el('strong', {}, 'SYNTHETIC'), '. No real customer. No real institution.',
+    'Data is ',
+    el('strong', {}, 'SYNTHETIC'),
+    '. No real customer. No real institution.',
   ]);
   inner.appendChild(footnote);
 
@@ -1126,25 +1467,48 @@ function renderJ1Token(body) {
   state.j1ConsentId = cid;
   const tokenTail = cid.slice(-12);
   const wrap = el('div', { className: 'token-panel' });
-  wrap.appendChild(el('div', { className: 'token-headline' }, [
-    el('span', { className: 'token-check' }, '✓'),
-    el('strong', {}, 'Bearer issued — '),
-    el('span', {}, 'Claude’s MCP client just exchanged the authorization code for an access token using its private PKCE '),
-    el('code', {}, 'code_verifier'), '.',
-  ]));
-  wrap.appendChild(el('dl', { className: 'token-dl' }, [
-    el('dt', {}, 'ConsentId'),    el('dd', {}, el('code', {}, cid)),
-    el('dt', {}, 'access_token'), el('dd', {}, el('code', {}, `ofx_at_${tokenTail}…`)),
-    el('dt', {}, 'token_type'),   el('dd', {}, 'Bearer'),
-    el('dt', {}, 'expires_in'),   el('dd', {}, `3600 (1h TTL — re-issued automatically · ${state.j1ExpirationDays}-day sharing window)`),
-    el('dt', {}, 'scope'),        el('dd', {}, `${[...state.j1Permissions].length} permissions granted`),
-  ]));
-  wrap.appendChild(el('p', { className: 'token-note' }, [
-    'From here every ', el('code', {}, 'POST /mcp'), ' call carries ', el('code', {}, 'Authorization: Bearer …'),
-    '. The bearer is checked on every request, not just initialize. Click ',
-    el('strong', {}, 'Next →'),
-    ' to land on the chat surface.',
-  ]));
+  wrap.appendChild(
+    el('div', { className: 'token-headline' }, [
+      el('span', { className: 'token-check' }, '✓'),
+      el('strong', {}, 'Bearer issued — '),
+      el(
+        'span',
+        {},
+        'Claude’s MCP client just exchanged the authorization code for an access token using its private PKCE ',
+      ),
+      el('code', {}, 'code_verifier'),
+      '.',
+    ]),
+  );
+  wrap.appendChild(
+    el('dl', { className: 'token-dl' }, [
+      el('dt', {}, 'ConsentId'),
+      el('dd', {}, el('code', {}, cid)),
+      el('dt', {}, 'access_token'),
+      el('dd', {}, el('code', {}, `ofx_at_${tokenTail}…`)),
+      el('dt', {}, 'token_type'),
+      el('dd', {}, 'Bearer'),
+      el('dt', {}, 'expires_in'),
+      el(
+        'dd',
+        {},
+        `3600 (1h TTL — re-issued automatically · ${state.j1ExpirationDays}-day sharing window)`,
+      ),
+      el('dt', {}, 'scope'),
+      el('dd', {}, `${[...state.j1Permissions].length} permissions granted`),
+    ]),
+  );
+  wrap.appendChild(
+    el('p', { className: 'token-note' }, [
+      'From here every ',
+      el('code', {}, 'POST /mcp'),
+      ' call carries ',
+      el('code', {}, 'Authorization: Bearer …'),
+      '. The bearer is checked on every request, not just initialize. Click ',
+      el('strong', {}, 'Next →'),
+      ' to land on the chat surface.',
+    ]),
+  );
   body.appendChild(wrap);
 }
 
@@ -1157,18 +1521,27 @@ function renderConnected() {
   const totalInst = state.selectedBankProfiles.size + state.selectedInsuranceLines.size;
   const fakeToken = `ofx_at_${Math.random().toString(36).slice(2, 10)}${Math.random().toString(36).slice(2, 10)}`;
 
-  body.appendChild(el('div', { className: 'connected-summary' }, [
-    el('div', { className: 'label' }, '✓ Bearer issued'),
-    el('div', { className: 'summary-line' }, [
-      el('span', {}, 'Connected as '),
-      el('strong', {}, persona.name),
-      el('span', {}, ' · '),
-      el('strong', {}, `${totalInst} institution${totalInst === 1 ? '' : 's'}`),
-      el('span', {}, ' · 90-day consent window.'),
+  body.appendChild(
+    el('div', { className: 'connected-summary' }, [
+      el('div', { className: 'label' }, '✓ Bearer issued'),
+      el('div', { className: 'summary-line' }, [
+        el('span', {}, 'Connected as '),
+        el('strong', {}, persona.name),
+        el('span', {}, ' · '),
+        el('strong', {}, `${totalInst} institution${totalInst === 1 ? '' : 's'}`),
+        el('span', {}, ' · 90-day consent window.'),
+      ]),
+      el(
+        'div',
+        {
+          className: 'summary-line',
+          style:
+            'margin-top:6px;color:var(--text-muted);font-family:ui-monospace,Menlo,monospace;font-size:11.5px;',
+        },
+        `access_token: ${fakeToken}`,
+      ),
     ]),
-    el('div', { className: 'summary-line', style: 'margin-top:6px;color:var(--text-muted);font-family:ui-monospace,Menlo,monospace;font-size:11.5px;' },
-      `access_token: ${fakeToken}`),
-  ]));
+  );
 
   // Auto-fetch on entering step 4 — no extra button click. This is the
   // Plaid + ChatGPT "return to chat" pattern: connection completes and
@@ -1177,8 +1550,13 @@ function renderConnected() {
   const container = el('div', { className: 'chat-and-strip' });
   body.appendChild(container);
   if (!persona.default_seed) {
-    container.appendChild(el('p', { className: 'skeleton', style: 'color:var(--warn-border);' },
-      `No default_seed for this persona — run \`npm run build:fixtures && npm run build:site\` first.`));
+    container.appendChild(
+      el(
+        'p',
+        { className: 'skeleton', style: 'color:var(--warn-border);' },
+        `No default_seed for this persona — run \`npm run build:fixtures && npm run build:site\` first.`,
+      ),
+    );
   } else {
     container.appendChild(el('p', { className: 'skeleton' }, 'Loading your account data…'));
     runLiveFetch(persona, lfi, container);
@@ -1194,12 +1572,17 @@ function renderConnected() {
     el('h4', {}, 'Add the sandbox as a Claude.ai custom connector'),
     el('ol', {}, [
       el('li', {}, [
-        'Open ', el('strong', {}, 'Claude.ai'),
+        'Open ',
+        el('strong', {}, 'Claude.ai'),
         ' (Free, Pro, Max, Team, or Enterprise) → ',
         el('strong', {}, 'Customize → Connectors → + Add custom connector'),
         '.',
       ]),
-      el('li', {}, 'Paste the URL below into the connector URL field. No OAuth Client ID or Secret needed — the deploy is anonymous.'),
+      el(
+        'li',
+        {},
+        'Paste the URL below into the connector URL field. No OAuth Client ID or Secret needed — the deploy is anonymous.',
+      ),
       el('li', {}, [
         'In a new chat, call the connector and pick the same persona via ',
         el('code', {}, 'set_session'),
@@ -1207,13 +1590,21 @@ function renderConnected() {
         el('em', {}, '“what’s my balance?”'),
       ]),
     ]),
-    el('div', { className: 'url-copy', 'aria-label': 'Sandbox MCP connector URL' }, 'https://data-sandbox.fly.dev/mcp'),
-    el('a', {
-      className: 'docs-link',
-      href: 'https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp',
-      target: '_blank',
-      rel: 'noopener noreferrer',
-    }, 'Claude custom-connector help →'),
+    el(
+      'div',
+      { className: 'url-copy', 'aria-label': 'Sandbox MCP connector URL' },
+      'https://data-sandbox.fly.dev/mcp',
+    ),
+    el(
+      'a',
+      {
+        className: 'docs-link',
+        href: 'https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp',
+        target: '_blank',
+        rel: 'noopener noreferrer',
+      },
+      'Claude custom-connector help →',
+    ),
   ]);
   body.appendChild(forReal);
 }
@@ -1233,8 +1624,13 @@ async function runLiveFetch(persona, lfi, container) {
     }
   } catch (err) {
     container.replaceChildren();
-    container.appendChild(el('p', { className: 'skeleton', style: 'color:#a13;' },
-      `Couldn't load the fixtures: ${err.message}. Run \`npm run build:fixtures && npm run build:site\`, then serve from \`_site\`.`));
+    container.appendChild(
+      el(
+        'p',
+        { className: 'skeleton', style: 'color:#a13;' },
+        `Couldn't load the fixtures: ${err.message}. Run \`npm run build:fixtures && npm run build:site\`, then serve from \`_site\`.`,
+      ),
+    );
   }
 }
 
@@ -1268,16 +1664,24 @@ async function renderBankingChat(persona, lfi, container) {
 
   // Phase 2: parallel per-account fan-out — same pattern the worked TPP
   // demo at examples/tpp-budgeting-demo uses.
-  const perAccount = await Promise.all(accounts.map(async (acct) => {
-    const id = acct.AccountId;
-    const [bal, tx, so, dd] = await Promise.all([
-      fetchJson(`${base}/accounts__${id}__balances.json`),
-      fetchJson(`${base}/accounts__${id}__transactions.json`),
-      fetchJson(`${base}/accounts__${id}__standing-orders.json`),
-      fetchJson(`${base}/accounts__${id}__direct-debits.json`),
-    ]);
-    return { account: acct, balances: bal, transactions: tx, standingOrders: so, directDebits: dd };
-  }));
+  const perAccount = await Promise.all(
+    accounts.map(async (acct) => {
+      const id = acct.AccountId;
+      const [bal, tx, so, dd] = await Promise.all([
+        fetchJson(`${base}/accounts__${id}__balances.json`),
+        fetchJson(`${base}/accounts__${id}__transactions.json`),
+        fetchJson(`${base}/accounts__${id}__standing-orders.json`),
+        fetchJson(`${base}/accounts__${id}__direct-debits.json`),
+      ]);
+      return {
+        account: acct,
+        balances: bal,
+        transactions: tx,
+        standingOrders: so,
+        directDebits: dd,
+      };
+    }),
+  );
 
   // Phase 3: compute the deterministic answers off the bound bundle.
   const insights = computeBankingInsights(accounts, perAccount);
@@ -1297,15 +1701,44 @@ async function renderBankingChat(persona, lfi, container) {
   ];
   for (const a of perAccount) {
     const id = a.account.AccountId;
-    if (a.balances) inventoryRows.push({ path: `/accounts/${id}/balances`, env: a.balances, count: (a.balances.Data?.Balance ?? []).length, key: 'Balance' });
-    if (a.transactions) inventoryRows.push({ path: `/accounts/${id}/transactions`, env: a.transactions, count: (a.transactions.Data?.Transaction ?? []).length, key: 'Transaction' });
-    if (a.standingOrders) inventoryRows.push({ path: `/accounts/${id}/standing-orders`, env: a.standingOrders, count: (a.standingOrders.Data?.StandingOrder ?? []).length, key: 'StandingOrder' });
-    if (a.directDebits) inventoryRows.push({ path: `/accounts/${id}/direct-debits`, env: a.directDebits, count: (a.directDebits.Data?.DirectDebit ?? []).length, key: 'DirectDebit' });
+    if (a.balances)
+      inventoryRows.push({
+        path: `/accounts/${id}/balances`,
+        env: a.balances,
+        count: (a.balances.Data?.Balance ?? []).length,
+        key: 'Balance',
+      });
+    if (a.transactions)
+      inventoryRows.push({
+        path: `/accounts/${id}/transactions`,
+        env: a.transactions,
+        count: (a.transactions.Data?.Transaction ?? []).length,
+        key: 'Transaction',
+      });
+    if (a.standingOrders)
+      inventoryRows.push({
+        path: `/accounts/${id}/standing-orders`,
+        env: a.standingOrders,
+        count: (a.standingOrders.Data?.StandingOrder ?? []).length,
+        key: 'StandingOrder',
+      });
+    if (a.directDebits)
+      inventoryRows.push({
+        path: `/accounts/${id}/direct-debits`,
+        env: a.directDebits,
+        count: (a.directDebits.Data?.DirectDebit ?? []).length,
+        key: 'DirectDebit',
+      });
   }
   container.appendChild(renderEnvelopeInventory(inventoryRows, persona, lfi));
 
-  container.appendChild(el('div', { className: 'fetch-footnote' },
-    `Every value above is read from spec-defined Data.* paths on the v2.1 envelope. The chat invents nothing — expand "All envelopes" to verify.`));
+  container.appendChild(
+    el(
+      'div',
+      { className: 'fetch-footnote' },
+      `Every value above is read from spec-defined Data.* paths on the v2.1 envelope. The chat invents nothing — expand "All envelopes" to verify.`,
+    ),
+  );
 }
 
 // Compute the answer-bearing facts off the v2.1 envelopes. Every field
@@ -1329,20 +1762,22 @@ function computeBankingInsights(accounts, perAccount) {
 
   for (const a of perAccount) {
     const balances = a.balances?.Data?.Balance ?? [];
-    const pick = balances.find((b) => b.Type === 'InterimAvailable')
-              || balances.find((b) => b.Type === 'InterimBooked')
-              || balances[0];
+    const pick =
+      balances.find((b) => b.Type === 'InterimAvailable') ||
+      balances.find((b) => b.Type === 'InterimBooked') ||
+      balances[0];
     if (pick && pick.Amount?.Currency === 'AED') {
       const amt = parseFloat(pick.Amount.Amount);
       const signed = pick.CreditDebitIndicator === 'Credit' ? amt : -amt;
       availableTotal += signed;
       if (primaryAccountBalance == null) {
         primaryAccountBalance = signed;
-        primaryAccountLabel = a.account.Nickname || a.account.AccountSubType || a.account.AccountType || 'main account';
+        primaryAccountLabel =
+          a.account.Nickname || a.account.AccountSubType || a.account.AccountType || 'main account';
       }
     }
 
-    for (const t of (a.transactions?.Data?.Transaction ?? [])) {
+    for (const t of a.transactions?.Data?.Transaction ?? []) {
       if (t.Amount?.Currency !== 'AED') continue;
       const when = Date.parse(t.BookingDateTime || '') || 0;
       if (when < cutoff) continue;
@@ -1400,9 +1835,10 @@ function buildBankingChat(ins) {
 
   exchanges.push({
     q: `What's my main account balance?`,
-    a: ins.primaryAccountBalance != null
-      ? `Your AED ${ins.primaryAccountLabel} account is at ${formatAed(ins.primaryAccountBalance)} as of the latest reported balance.`
-      : `I can see ${ins.accounts.length} account${ins.accounts.length === 1 ? '' : 's'} on file, but no balance was returned for this profile.`,
+    a:
+      ins.primaryAccountBalance != null
+        ? `Your AED ${ins.primaryAccountLabel} account is at ${formatAed(ins.primaryAccountBalance)} as of the latest reported balance.`
+        : `I can see ${ins.accounts.length} account${ins.accounts.length === 1 ? '' : 's'} on file, but no balance was returned for this profile.`,
   });
 
   if (ins.latestSalary) {
@@ -1424,14 +1860,18 @@ function buildBankingChat(ins) {
     const tops = [...ins.topMerchants];
     const lead = ins.rentTotal
       ? `Rent — ${formatAed(ins.rentTotal)} to your usual landlord.`
-      : tops.length ? `${tops[0][0]} — ${formatAed(tops[0][1])}.` : null;
+      : tops.length
+        ? `${tops[0][0]} — ${formatAed(tops[0][1])}.`
+        : null;
     const rest = (ins.rentTotal ? tops : tops.slice(1))
       .slice(0, 3)
       .map(([m, v]) => `${formatAed(v)} at ${m}`)
       .join(', ');
     exchanges.push({
       q: 'What were my biggest spends last 30 days?',
-      a: lead ? `${lead}${rest ? ` After that: ${rest}.` : ''}` : `Your total outflows were ${formatAed(ins.outflow30)} across ${ins.soCount + ins.ddCount} recurring orders.`,
+      a: lead
+        ? `${lead}${rest ? ` After that: ${rest}.` : ''}`
+        : `Your total outflows were ${formatAed(ins.outflow30)} across ${ins.soCount + ins.ddCount} recurring orders.`,
     });
   }
 
@@ -1440,7 +1880,8 @@ function buildBankingChat(ins) {
     a: (() => {
       const nonRent = ins.outflow30 - ins.rentTotal;
       const headroom = 12000 - nonRent;
-      if (headroom > 0) return `You're at ${formatAed(nonRent)} in non-rent spend over the last 30 days — about ${formatAed(headroom)} under AED 12,000.`;
+      if (headroom > 0)
+        return `You're at ${formatAed(nonRent)} in non-rent spend over the last 30 days — about ${formatAed(headroom)} under AED 12,000.`;
       return `You're at ${formatAed(nonRent)} in non-rent spend over the last 30 days, ${formatAed(-headroom)} over the AED 12,000 line. Worth a closer look.`;
     })(),
   });
@@ -1458,12 +1899,28 @@ function buildBankingChat(ins) {
 function buildBankingMiniStrip(ins) {
   const cards = [];
   if (ins.primaryAccountBalance != null) {
-    cards.push({ label: 'Main balance', value: formatAed(ins.primaryAccountBalance), hint: ins.primaryAccountLabel });
+    cards.push({
+      label: 'Main balance',
+      value: formatAed(ins.primaryAccountBalance),
+      hint: ins.primaryAccountLabel,
+    });
   }
-  cards.push({ label: 'Inflows · 30d', value: formatAed(ins.inflow30), hint: ins.latestSalary ? 'incl. payroll' : 'no payroll match' });
-  cards.push({ label: 'Outflows · 30d', value: formatAed(ins.outflow30), hint: ins.rentTotal ? `incl. ${formatAed(ins.rentTotal)} rent` : 'no rent match' });
+  cards.push({
+    label: 'Inflows · 30d',
+    value: formatAed(ins.inflow30),
+    hint: ins.latestSalary ? 'incl. payroll' : 'no payroll match',
+  });
+  cards.push({
+    label: 'Outflows · 30d',
+    value: formatAed(ins.outflow30),
+    hint: ins.rentTotal ? `incl. ${formatAed(ins.rentTotal)} rent` : 'no rent match',
+  });
   if (ins.soCount + ins.ddCount > 0) {
-    cards.push({ label: 'Recurring', value: String(ins.soCount + ins.ddCount), hint: `${ins.soCount} SO · ${ins.ddCount} DD` });
+    cards.push({
+      label: 'Recurring',
+      value: String(ins.soCount + ins.ddCount),
+      hint: `${ins.soCount} SO · ${ins.ddCount} DD`,
+    });
   } else {
     cards.push({ label: 'Accounts', value: String(ins.accounts.length), hint: 'on file' });
   }
@@ -1482,29 +1939,43 @@ function ordinalSuffix(n) {
 function renderChatTranscript(persona, exchanges) {
   const userInitials = initials(persona.name);
   const userColor = avatarColor(persona.id);
-  const wrap = el('div', { className: 'chat-mock', role: 'group', 'aria-label': 'Chat transcript' });
+  const wrap = el('div', {
+    className: 'chat-mock',
+    role: 'group',
+    'aria-label': 'Chat transcript',
+  });
   wrap.appendChild(el('div', { className: 'chat-title' }, '💬 Back in the chat with Claude'));
   for (const { q, a } of exchanges) {
-    wrap.appendChild(el('div', { className: 'chat-msg user' }, [
-      el('span', { className: 'chat-avatar', style: `background:${userColor};` }, userInitials),
-      el('span', { className: 'chat-bubble' }, q),
-    ]));
-    wrap.appendChild(el('div', { className: 'chat-msg claude' }, [
-      el('span', { className: 'chat-avatar' }, 'C'),
-      el('span', { className: 'chat-bubble' }, a),
-    ]));
+    wrap.appendChild(
+      el('div', { className: 'chat-msg user' }, [
+        el('span', { className: 'chat-avatar', style: `background:${userColor};` }, userInitials),
+        el('span', { className: 'chat-bubble' }, q),
+      ]),
+    );
+    wrap.appendChild(
+      el('div', { className: 'chat-msg claude' }, [
+        el('span', { className: 'chat-avatar' }, 'C'),
+        el('span', { className: 'chat-bubble' }, a),
+      ]),
+    );
   }
   return wrap;
 }
 
 function renderMiniStrip(cards) {
-  const strip = el('div', { className: 'mini-strip', role: 'group', 'aria-label': 'Account summary at a glance' });
+  const strip = el('div', {
+    className: 'mini-strip',
+    role: 'group',
+    'aria-label': 'Account summary at a glance',
+  });
   for (const c of cards) {
-    strip.appendChild(el('div', { className: 'mini-card' }, [
-      el('div', { className: 'mini-label' }, c.label),
-      el('div', { className: 'mini-value' }, c.value),
-      c.hint ? el('div', { className: 'mini-hint' }, c.hint) : null,
-    ]));
+    strip.appendChild(
+      el('div', { className: 'mini-card' }, [
+        el('div', { className: 'mini-label' }, c.label),
+        el('div', { className: 'mini-value' }, c.value),
+        c.hint ? el('div', { className: 'mini-hint' }, c.hint) : null,
+      ]),
+    );
   }
   return strip;
 }
@@ -1528,12 +1999,21 @@ async function renderInsuranceChat(persona, container) {
   container.appendChild(renderChatTranscript(persona, buildInsuranceChat(line, policies, first)));
   container.appendChild(renderMiniStrip(buildInsuranceMiniStrip(line, policies, first)));
 
-  container.appendChild(renderEnvelopeInventory([
-    { path: `/${line}-insurance-policies`, env, count: policies.length, key: 'Policies' },
-  ], persona, 'median'));
+  container.appendChild(
+    renderEnvelopeInventory(
+      [{ path: `/${line}-insurance-policies`, env, count: policies.length, key: 'Policies' }],
+      persona,
+      'median',
+    ),
+  );
 
-  container.appendChild(el('div', { className: 'fetch-footnote' },
-    `For richer policy detail (PolicyHolder, Premium, Product, Claims) call GET /${line}-insurance-policies/{InsurancePolicyId} via the MCP — the list endpoint per spec carries summary fields only.`));
+  container.appendChild(
+    el(
+      'div',
+      { className: 'fetch-footnote' },
+      `For richer policy detail (PolicyHolder, Premium, Product, Claims) call GET /${line}-insurance-policies/{InsurancePolicyId} via the MCP — the list endpoint per spec carries summary fields only.`,
+    ),
+  );
 }
 
 function buildInsuranceChat(line, policies, first) {
@@ -1560,10 +2040,18 @@ function buildInsuranceChat(line, policies, first) {
 
 function buildInsuranceMiniStrip(line, policies, first) {
   return [
-    { label: 'Policies', value: String(policies.length), hint: INSURANCE_LINE_LABELS[line]?.name || line },
+    {
+      label: 'Policies',
+      value: String(policies.length),
+      hint: INSURANCE_LINE_LABELS[line]?.name || line,
+    },
     { label: 'Number', value: first.PolicyNumber || '—', hint: 'Data.Policies[0].PolicyNumber' },
     { label: 'Status', value: first.PolicyStatus || '—', hint: 'Data.Policies[0].PolicyStatus' },
-    { label: 'Renews', value: first.PolicyEndDate ? formatDate(first.PolicyEndDate) : '—', hint: 'Data.Policies[0].PolicyEndDate' },
+    {
+      label: 'Renews',
+      value: first.PolicyEndDate ? formatDate(first.PolicyEndDate) : '—',
+      hint: 'Data.Policies[0].PolicyEndDate',
+    },
   ];
 }
 
@@ -1577,18 +2065,20 @@ function renderEnvelopeInventory(rows, persona, lfi) {
   const wrapper = el('details', { className: 'envelopes' });
   wrapper.appendChild(el('summary', {}, `All envelopes (${rows.length}) — verify spec compliance`));
   const table = el('table', { className: 'env-table' });
-  table.appendChild(el('thead', {}, [el('tr', {}, [
-    el('th', {}, 'OF v2.1 path'),
-    el('th', {}, 'Data.*'),
-    el('th', {}, 'Count'),
-  ])]));
+  table.appendChild(
+    el('thead', {}, [
+      el('tr', {}, [el('th', {}, 'OF v2.1 path'), el('th', {}, 'Data.*'), el('th', {}, 'Count')]),
+    ]),
+  );
   const tbody = el('tbody', {});
   for (const r of rows) {
-    tbody.appendChild(el('tr', {}, [
-      el('td', {}, el('code', {}, r.path)),
-      el('td', {}, el('code', {}, `Data.${r.key}[]`)),
-      el('td', { style: 'text-align:right;' }, String(r.count)),
-    ]));
+    tbody.appendChild(
+      el('tr', {}, [
+        el('td', {}, el('code', {}, r.path)),
+        el('td', {}, el('code', {}, `Data.${r.key}[]`)),
+        el('td', { style: 'text-align:right;' }, String(r.count)),
+      ]),
+    );
   }
   table.appendChild(tbody);
   wrapper.appendChild(table);
@@ -1596,11 +2086,16 @@ function renderEnvelopeInventory(rows, persona, lfi) {
   // Render each envelope as a collapsible JSON block.
   for (const r of rows) {
     const sub = el('details', { className: 'env-json-wrap' });
-    sub.appendChild(el('summary', {}, [
-      el('code', {}, `GET ${r.path}`),
-      el('span', { className: 'env-summary-meta' },
-        ` · Data.${r.key}[${r.count}] · persona:${persona.id} lfi:${lfi} seed:${persona.default_seed}`),
-    ]));
+    sub.appendChild(
+      el('summary', {}, [
+        el('code', {}, `GET ${r.path}`),
+        el(
+          'span',
+          { className: 'env-summary-meta' },
+          ` · Data.${r.key}[${r.count}] · persona:${persona.id} lfi:${lfi} seed:${persona.default_seed}`,
+        ),
+      ]),
+    );
     const pre = el('pre', { className: 'fetch-json' });
     pre.textContent = JSON.stringify(r.env, null, 2);
     sub.appendChild(pre);
@@ -1622,17 +2117,22 @@ function renderActions() {
 
   if (state.step === 1) {
     next.disabled = !persona;
-    next.textContent = persona ? `Continue as ${persona.name.split('—')[0].trim()} →` : 'Pick a profile →';
+    next.textContent = persona
+      ? `Continue as ${persona.name.split('—')[0].trim()} →`
+      : 'Pick a profile →';
     status.textContent = persona ? `Selected: ${persona.name}.` : 'Pick a profile to continue.';
   } else if (state.step === 2) {
     next.disabled = totalInst === 0;
-    next.textContent = totalInst ? `Share with Claude (${totalInst}) →` : 'Pick at least one to share';
+    next.textContent = totalInst
+      ? `Share with Claude (${totalInst}) →`
+      : 'Pick at least one to share';
     status.textContent = persona ? `${persona.name} · ${totalInst} selected.` : '';
   } else if (state.step === 3) {
     next.disabled = false;
     if (state.subStep === 'discovery') {
       next.textContent = 'Continue to sign-in →';
-      status.textContent = 'Sub-step 3a · MCP discovery chain — the spec-mandated handshake before consent.';
+      status.textContent =
+        'Sub-step 3a · MCP discovery chain — the spec-mandated handshake before consent.';
     } else if (state.subStep === 'sca') {
       next.textContent = 'Continue to consent →';
       status.textContent = 'Sub-step 3b · Strong Customer Authentication (Article 18).';
@@ -1687,23 +2187,40 @@ function renderJ2Persona() {
   grid.replaceChildren();
   const filtered = j2FilteredPersonas();
   for (const p of filtered) {
-    const card = el('button', {
-      type: 'button',
-      className: `persona-card${p.id === state.selectedPersonaId ? ' selected' : ''}`,
-      role: 'radio',
-      'aria-checked': p.id === state.selectedPersonaId ? 'true' : 'false',
-      dataset: { personaId: p.id },
-      onclick: () => { state.selectedPersonaId = p.id; refresh(); },
-    }, [
-      el('div', { className: 'avatar', style: `background:${avatarColor(p.id)};` }, initials(p.name)),
-      el('span', { className: 'pname' }, p.name),
-      el('span', { className: 'pmeta' }, `${(p.archetype || '').replace(/_/g, ' ')}${p.segment ? ` · ${p.segment}` : ''}`),
-      el('div', { className: 'ptags' }, [
-        el('span', { className: `tag domain-${p.domain}` }, p.domain),
-        ...(p.segment ? [el('span', { className: 'tag segment-sme' }, p.segment)] : []),
-        ...(p.multi_lfi_footprint ? [el('span', { className: 'tag' }, 'multi-LFI footprint')] : []),
-      ]),
-    ]);
+    const card = el(
+      'button',
+      {
+        type: 'button',
+        className: `persona-card${p.id === state.selectedPersonaId ? ' selected' : ''}`,
+        role: 'radio',
+        'aria-checked': p.id === state.selectedPersonaId ? 'true' : 'false',
+        dataset: { personaId: p.id },
+        onclick: () => {
+          state.selectedPersonaId = p.id;
+          refresh();
+        },
+      },
+      [
+        el(
+          'div',
+          { className: 'avatar', style: `background:${avatarColor(p.id)};` },
+          initials(p.name),
+        ),
+        el('span', { className: 'pname' }, p.name),
+        el(
+          'span',
+          { className: 'pmeta' },
+          `${(p.archetype || '').replace(/_/g, ' ')}${p.segment ? ` · ${p.segment}` : ''}`,
+        ),
+        el('div', { className: 'ptags' }, [
+          el('span', { className: `tag domain-${p.domain}` }, p.domain),
+          ...(p.segment ? [el('span', { className: 'tag segment-sme' }, p.segment)] : []),
+          ...(p.multi_lfi_footprint
+            ? [el('span', { className: 'tag' }, 'multi-LFI footprint')]
+            : []),
+        ]),
+      ],
+    );
     grid.appendChild(card);
   }
   if (!filtered.length) {
@@ -1744,28 +2261,38 @@ function renderJ2Scope() {
 
   for (const opt of options) {
     const selected = state.j2Scope === opt.key;
-    const card = el('button', {
-      type: 'button',
-      className: `scope-card${selected ? ' selected' : ''}`,
-      'aria-pressed': selected ? 'true' : 'false',
-      onclick: () => {
-        state.j2Scope = opt.key;
-        // Switching to single-LFI mode trims the selection down to at most
-        // one profile so step 3 doesn't surface a stale multi-pick.
-        if (opt.key === 'single' && state.j2SelectedLFIs.size > 1) {
-          const keep = state.j2SelectedLFIs.has('median') ? 'median' : [...state.j2SelectedLFIs][0];
-          state.j2SelectedLFIs = new Set([keep]);
-        }
-        refresh();
+    const card = el(
+      'button',
+      {
+        type: 'button',
+        className: `scope-card${selected ? ' selected' : ''}`,
+        'aria-pressed': selected ? 'true' : 'false',
+        onclick: () => {
+          state.j2Scope = opt.key;
+          // Switching to single-LFI mode trims the selection down to at most
+          // one profile so step 3 doesn't surface a stale multi-pick.
+          if (opt.key === 'single' && state.j2SelectedLFIs.size > 1) {
+            const keep = state.j2SelectedLFIs.has('median')
+              ? 'median'
+              : [...state.j2SelectedLFIs][0];
+            state.j2SelectedLFIs = new Set([keep]);
+          }
+          refresh();
+        },
       },
-    }, [
-      el('div', { className: 'sc-head' }, [
-        el('span', { className: 'sc-title' }, opt.title + (opt.recommended ? ' (suggested)' : '')),
-        el('span', { className: 'sc-pill' }, opt.pill),
-      ]),
-      el('div', { className: 'sc-body' }, opt.body),
-      el('div', { className: 'sc-meta' }, opt.meta),
-    ]);
+      [
+        el('div', { className: 'sc-head' }, [
+          el(
+            'span',
+            { className: 'sc-title' },
+            opt.title + (opt.recommended ? ' (suggested)' : ''),
+          ),
+          el('span', { className: 'sc-pill' }, opt.pill),
+        ]),
+        el('div', { className: 'sc-body' }, opt.body),
+        el('div', { className: 'sc-meta' }, opt.meta),
+      ],
+    );
     grid.appendChild(card);
   }
 }
@@ -1788,29 +2315,33 @@ function renderJ2LFIs() {
   for (const prof of LFI_PROFILES) {
     const selected = state.j2SelectedLFIs.has(prof.key);
     const disabledByCap = multi && !selected && state.j2SelectedLFIs.size >= 4;
-    const card = el('button', {
-      type: 'button',
-      className: `inst-card${selected ? ' selected' : ''}${disabledByCap ? ' cross-domain' : ''}`,
-      'aria-pressed': selected ? 'true' : 'false',
-      disabled: disabledByCap,
-      onclick: () => {
-        if (multi) {
-          if (state.j2SelectedLFIs.has(prof.key)) state.j2SelectedLFIs.delete(prof.key);
-          else if (state.j2SelectedLFIs.size < 4) state.j2SelectedLFIs.add(prof.key);
-        } else {
-          // Single mode: radio behaviour — replace, never accumulate.
-          state.j2SelectedLFIs = new Set([prof.key]);
-        }
-        refresh();
+    const card = el(
+      'button',
+      {
+        type: 'button',
+        className: `inst-card${selected ? ' selected' : ''}${disabledByCap ? ' cross-domain' : ''}`,
+        'aria-pressed': selected ? 'true' : 'false',
+        disabled: disabledByCap,
+        onclick: () => {
+          if (multi) {
+            if (state.j2SelectedLFIs.has(prof.key)) state.j2SelectedLFIs.delete(prof.key);
+            else if (state.j2SelectedLFIs.size < 4) state.j2SelectedLFIs.add(prof.key);
+          } else {
+            // Single mode: radio behaviour — replace, never accumulate.
+            state.j2SelectedLFIs = new Set([prof.key]);
+          }
+          refresh();
+        },
       },
-    }, [
-      el('div', { className: 'ihead' }, [
-        el('span', { className: 'iname' }, prof.name),
-        el('span', { className: `ibadge ${prof.key}` }, prof.key),
-      ]),
-      el('div', { className: 'ibody' }, prof.body),
-      el('div', { className: 'iendpoints' }, '12 v2.1 endpoints · OFTF mTLS · FAPI 2.0'),
-    ]);
+      [
+        el('div', { className: 'ihead' }, [
+          el('span', { className: 'iname' }, prof.name),
+          el('span', { className: `ibadge ${prof.key}` }, prof.key),
+        ]),
+        el('div', { className: 'ibody' }, prof.body),
+        el('div', { className: 'iendpoints' }, '12 v2.1 endpoints · OFTF mTLS · FAPI 2.0'),
+      ],
+    );
     grid.appendChild(card);
   }
   body.appendChild(grid);
@@ -1818,13 +2349,21 @@ function renderJ2LFIs() {
   if (persona.multi_lfi_footprint) {
     const advisory = el('div', { className: 'footprint-advisory' });
     advisory.appendChild(el('strong', {}, 'Real-world plausible UAE LFIs for this persona'));
-    advisory.appendChild(el('span', {}, 'Descriptive — from persona manifest, never bound to a populate-rate profile (NG5 / D-14).'));
+    advisory.appendChild(
+      el(
+        'span',
+        {},
+        'Descriptive — from persona manifest, never bound to a populate-rate profile (NG5 / D-14).',
+      ),
+    );
     for (const role of ['primary', 'secondary', 'tertiary']) {
       const r = persona.multi_lfi_footprint[role];
       if (!r) continue;
-      advisory.appendChild(el('div', { className: 'candidate-role' }, `${role} · ${r.role.replace(/_/g, ' ')}`));
+      advisory.appendChild(
+        el('div', { className: 'candidate-role' }, `${role} · ${r.role.replace(/_/g, ' ')}`),
+      );
       const row = el('div', { className: 'candidate-row' });
-      for (const cand of (r.plausible_lfi_candidates || [])) {
+      for (const cand of r.plausible_lfi_candidates || []) {
         row.appendChild(el('span', { className: 'cand' }, cand));
       }
       advisory.appendChild(row);
@@ -1851,9 +2390,9 @@ function renderJ2LFIs() {
 // inserts sca and manager between them.
 
 const J2_SUB_STEPS = [
-  { key: 'tpp',     label: 'TPP launchpad' },
+  { key: 'tpp', label: 'TPP launchpad' },
   { key: 'altareq', label: 'Al Tareq consent' },
-  { key: 'sca',     label: 'Per-LFI sign-in' },
+  { key: 'sca', label: 'Per-LFI sign-in' },
   { key: 'manager', label: 'Consent Manager' },
 ];
 
@@ -1890,10 +2429,12 @@ function renderJ2Consent() {
   body.replaceChildren();
   if (!persona) return;
 
-  body.appendChild(renderSubStepIndicator(J2_SUB_STEPS, state.j2SubStep, (key) => {
-    state.j2SubStep = key;
-    refresh();
-  }));
+  body.appendChild(
+    renderSubStepIndicator(J2_SUB_STEPS, state.j2SubStep, (key) => {
+      state.j2SubStep = key;
+      refresh();
+    }),
+  );
 
   if (state.j2SubStep === 'tpp') renderJ2TppLaunchpad(body, persona);
   else if (state.j2SubStep === 'altareq') renderJ2AlTareq(body, persona);
@@ -1917,60 +2458,82 @@ function renderJ2TppLaunchpad(body, persona) {
     ? 'Working capital, receivables, payables — across every regulated LFI you bank with.'
     : 'Your full financial picture — every account, every LFI, one view.';
 
-  const wrap = el('div', { className: 'tpp-launchpad', role: 'img', 'aria-label': 'Mock TPP launchpad' });
-  wrap.appendChild(el('div', { className: 'tpp-launchpad-chrome' }, [
-    el('span', { className: 'tpp-chrome-dot' }),
-    el('span', { className: 'tpp-chrome-dot' }),
-    el('span', { className: 'tpp-chrome-dot' }),
-    el('span', { className: 'tpp-chrome-app' }, `${tppName} · iOS / web`),
-  ]));
+  const wrap = el('div', {
+    className: 'tpp-launchpad',
+    role: 'img',
+    'aria-label': 'Mock TPP launchpad',
+  });
+  wrap.appendChild(
+    el('div', { className: 'tpp-launchpad-chrome' }, [
+      el('span', { className: 'tpp-chrome-dot' }),
+      el('span', { className: 'tpp-chrome-dot' }),
+      el('span', { className: 'tpp-chrome-dot' }),
+      el('span', { className: 'tpp-chrome-app' }, `${tppName} · iOS / web`),
+    ]),
+  );
   const inner = el('div', { className: 'tpp-launchpad-body' });
-  inner.appendChild(el('div', { className: 'tpp-launchpad-brand' }, [
-    el('div', { className: 'tpp-icon-large', 'aria-hidden': 'true' }, 'K'),
-    el('div', {}, [
-      el('div', { className: 'tpp-launchpad-name' }, tppName),
-      el('div', { className: 'tpp-launchpad-tagline' }, tppTagline),
+  inner.appendChild(
+    el('div', { className: 'tpp-launchpad-brand' }, [
+      el('div', { className: 'tpp-icon-large', 'aria-hidden': 'true' }, 'K'),
+      el('div', {}, [
+        el('div', { className: 'tpp-launchpad-name' }, tppName),
+        el('div', { className: 'tpp-launchpad-tagline' }, tppTagline),
+      ]),
     ]),
-  ]));
-  inner.appendChild(el('h4', { className: 'tpp-launchpad-h' }, 'Connect your bank accounts via UAE Open Finance'));
-  inner.appendChild(el('p', { className: 'tpp-launchpad-lede' }, [
-    `${tppName} is licensed by the CBUAE to read account data via UAE Open Finance. `,
-    'The next three screens are the regulated consent flow — operated by Al Tareq (Nebras), not by ',
-    el('strong', {}, tppName),
-    '. We never see your credentials or your bank login.',
-  ]));
+  );
+  inner.appendChild(
+    el('h4', { className: 'tpp-launchpad-h' }, 'Connect your bank accounts via UAE Open Finance'),
+  );
+  inner.appendChild(
+    el('p', { className: 'tpp-launchpad-lede' }, [
+      `${tppName} is licensed by the CBUAE to read account data via UAE Open Finance. `,
+      'The next three screens are the regulated consent flow — operated by Al Tareq (Nebras), not by ',
+      el('strong', {}, tppName),
+      '. We never see your credentials or your bank login.',
+    ]),
+  );
   const steps = el('ol', { className: 'tpp-launchpad-steps' });
-  steps.appendChild(el('li', {}, [
-    el('strong', {}, 'Al Tareq consent.'),
-    ' Pick the data clusters and sharing window. One consent grant covers every LFI you authorise.',
-  ]));
-  steps.appendChild(el('li', {}, [
-    el('strong', {}, 'Bank sign-in.'),
-    ' Strong Customer Authentication at each LFI. Article 18 — your bank verifies you with 2FA.',
-  ]));
-  steps.appendChild(el('li', {}, [
-    el('strong', {}, 'Back to ' + tppName + '.'),
-    ` ${isSme ? 'Your BFM dashboard' : 'Your PFM dashboard'} populates the moment consent registers with the Nebras Consent Manager.`,
-  ]));
-  inner.appendChild(steps);
-  inner.appendChild(el('div', { className: 'tpp-licence-stub' }, [
-    el('div', { className: 'tpp-licence-label' }, 'Licence'),
-    el('div', { className: 'tpp-licence-body' }, [
-      el('strong', {}, `${tppName} FZ-LLC`),
-      ' · Licensed by CBUAE · Open Finance Provider Licence ',
-      el('code', {}, 'OF-DSPL-2026-K001'),
-      ' · Data Sharing Provider · ',
-      el('strong', {}, 'AED 1,000,000'),
-      ' paid-up capital · PI insurance ',
-      el('strong', {}, 'AED 5,000,000'),
-      ' (Article 6, 7, 9).',
+  steps.appendChild(
+    el('li', {}, [
+      el('strong', {}, 'Al Tareq consent.'),
+      ' Pick the data clusters and sharing window. One consent grant covers every LFI you authorise.',
     ]),
-  ]));
-  inner.appendChild(el('p', { className: 'tpp-launchpad-note' }, [
-    'No real network call. Click ',
-    el('strong', {}, 'Continue →'),
-    ' to hand off to Al Tareq.',
-  ]));
+  );
+  steps.appendChild(
+    el('li', {}, [
+      el('strong', {}, 'Bank sign-in.'),
+      ' Strong Customer Authentication at each LFI. Article 18 — your bank verifies you with 2FA.',
+    ]),
+  );
+  steps.appendChild(
+    el('li', {}, [
+      el('strong', {}, 'Back to ' + tppName + '.'),
+      ` ${isSme ? 'Your BFM dashboard' : 'Your PFM dashboard'} populates the moment consent registers with the Nebras Consent Manager.`,
+    ]),
+  );
+  inner.appendChild(steps);
+  inner.appendChild(
+    el('div', { className: 'tpp-licence-stub' }, [
+      el('div', { className: 'tpp-licence-label' }, 'Licence'),
+      el('div', { className: 'tpp-licence-body' }, [
+        el('strong', {}, `${tppName} FZ-LLC`),
+        ' · Licensed by CBUAE · Open Finance Provider Licence ',
+        el('code', {}, 'OF-DSPL-2026-K001'),
+        ' · Data Sharing Provider · ',
+        el('strong', {}, 'AED 1,000,000'),
+        ' paid-up capital · PI insurance ',
+        el('strong', {}, 'AED 5,000,000'),
+        ' (Article 6, 7, 9).',
+      ]),
+    ]),
+  );
+  inner.appendChild(
+    el('p', { className: 'tpp-launchpad-note' }, [
+      'No real network call. Click ',
+      el('strong', {}, 'Continue →'),
+      ' to hand off to Al Tareq.',
+    ]),
+  );
   wrap.appendChild(inner);
   body.appendChild(wrap);
 }
@@ -1984,51 +2547,74 @@ function renderJ2AlTareq(body, persona) {
   const tppName = isSme ? 'Khazaa BFM' : 'Khazaa PFM';
   const tppRole = 'Regulated TPP · Data Sharing Provider · UAE OF licensed';
 
-  const consent = el('div', { className: 'altareq-consent', role: 'img', 'aria-label': 'Mock Al Tareq CAAP consent screen (Journey 2)' });
-  consent.appendChild(el('div', { className: 'browser-bar' }, [
-    el('span', { className: 'dots' }, [el('span'), el('span'), el('span')]),
-    el('span', { className: 'url' }, 'https://caap.altareq.openfinanceuae.ae/authorize?client_id=khazaa&request=…&intent_id=…'),
-  ]));
-  consent.appendChild(el('div', { className: 'ribbon' }, [
-    el('span', {}, 'Al Tareq · Consent and Authorization Application Platform'),
-    el('span', { className: 'ribbon-meta' }, 'FAPI 2.0 · OFTF mTLS · Operated by Nebras'),
-  ]));
+  const consent = el('div', {
+    className: 'altareq-consent',
+    role: 'img',
+    'aria-label': 'Mock Al Tareq CAAP consent screen (Journey 2)',
+  });
+  consent.appendChild(
+    el('div', { className: 'browser-bar' }, [
+      el('span', { className: 'dots' }, [el('span'), el('span'), el('span')]),
+      el(
+        'span',
+        { className: 'url' },
+        'https://caap.altareq.openfinanceuae.ae/authorize?client_id=khazaa&request=…&intent_id=…',
+      ),
+    ]),
+  );
+  consent.appendChild(
+    el('div', { className: 'ribbon' }, [
+      el('span', {}, 'Al Tareq · Consent and Authorization Application Platform'),
+      el('span', { className: 'ribbon-meta' }, 'FAPI 2.0 · OFTF mTLS · Operated by Nebras'),
+    ]),
+  );
 
   const inner = el('div', { className: 'body' });
   inner.appendChild(el('h4', {}, 'Authorize data sharing'));
-  inner.appendChild(el('p', { className: 'sub' }, [
-    el('strong', {}, tppName),
-    ` is requesting consent to read your Open Finance data at ${state.j2SelectedLFIs.size} LFI${state.j2SelectedLFIs.size === 1 ? '' : 's'}. `,
-    'Pick the data clusters and sharing window. After Approve, you’ll authenticate at each LFI separately (Sub-step 4c).',
-  ]));
-
-  inner.appendChild(el('div', { className: 'tpp-info' }, [
-    el('div', { className: 'tpp-icon', 'aria-hidden': 'true' }, 'K'),
-    el('div', {}, [
-      el('div', { className: 'tpp-name' }, tppName),
-      el('div', { className: 'tpp-role' }, tppRole),
+  inner.appendChild(
+    el('p', { className: 'sub' }, [
+      el('strong', {}, tppName),
+      ` is requesting consent to read your Open Finance data at ${state.j2SelectedLFIs.size} LFI${state.j2SelectedLFIs.size === 1 ? '' : 's'}. `,
+      'Pick the data clusters and sharing window. After Approve, you’ll authenticate at each LFI separately (Sub-step 4c).',
     ]),
-  ]));
+  );
 
-  inner.appendChild(renderPermissionsList(
-    state.j2Permissions,
-    (next) => { state.j2Permissions = next; refresh(); },
-    { idPrefix: 'j2' },
-  ));
+  inner.appendChild(
+    el('div', { className: 'tpp-info' }, [
+      el('div', { className: 'tpp-icon', 'aria-hidden': 'true' }, 'K'),
+      el('div', {}, [
+        el('div', { className: 'tpp-name' }, tppName),
+        el('div', { className: 'tpp-role' }, tppRole),
+      ]),
+    ]),
+  );
 
-  inner.appendChild(renderConsentParamsPanel(
-    {
-      expirationDays: state.j2ExpirationDays,
-      isSingleAuth: state.j2IsSingleAuth,
-      transactionMonths: state.j2TransactionMonths,
-    },
-    ({ expirationDays, isSingleAuth, transactionMonths }) => {
-      state.j2ExpirationDays = expirationDays;
-      state.j2IsSingleAuth = isSingleAuth;
-      state.j2TransactionMonths = transactionMonths;
-      refresh();
-    },
-  ));
+  inner.appendChild(
+    renderPermissionsList(
+      state.j2Permissions,
+      (next) => {
+        state.j2Permissions = next;
+        refresh();
+      },
+      { idPrefix: 'j2' },
+    ),
+  );
+
+  inner.appendChild(
+    renderConsentParamsPanel(
+      {
+        expirationDays: state.j2ExpirationDays,
+        isSingleAuth: state.j2IsSingleAuth,
+        transactionMonths: state.j2TransactionMonths,
+      },
+      ({ expirationDays, isSingleAuth, transactionMonths }) => {
+        state.j2ExpirationDays = expirationDays;
+        state.j2IsSingleAuth = isSingleAuth;
+        state.j2TransactionMonths = transactionMonths;
+        refresh();
+      },
+    ),
+  );
 
   // Per-LFI summary groupings — one per LFI the user picked in step 3.
   // For Part 1 these show scopes generically; Part 2 swaps in account
@@ -2037,23 +2623,35 @@ function renderJ2AlTareq(body, persona) {
     const prof = LFI_PROFILES.find((p) => p.key === key);
     if (!prof) continue;
     const block = el('div', { className: 'per-lfi' });
-    block.appendChild(el('div', { className: 'lfi-head' }, [
-      el('span', { className: 'lfi-label' }, prof.name),
-      el('span', { className: 'lfi-badge' }, prof.key),
-    ]));
-    block.appendChild(el('div', { className: 'lfi-scopes' },
-      `${[...state.j2Permissions].length} permission${[...state.j2Permissions].length === 1 ? '' : 's'} requested · account selection happens during this LFI’s sign-in (sub-step 4c)`));
+    block.appendChild(
+      el('div', { className: 'lfi-head' }, [
+        el('span', { className: 'lfi-label' }, prof.name),
+        el('span', { className: 'lfi-badge' }, prof.key),
+      ]),
+    );
+    block.appendChild(
+      el(
+        'div',
+        { className: 'lfi-scopes' },
+        `${[...state.j2Permissions].length} permission${[...state.j2Permissions].length === 1 ? '' : 's'} requested · account selection happens during this LFI’s sign-in (sub-step 4c)`,
+      ),
+    );
     inner.appendChild(block);
   }
 
-  inner.appendChild(el('p', { className: 'footnote' }, [
-    'Sharing window ', el('strong', {}, `${state.j2ExpirationDays} days`),
-    `. Transactions readable back ${state.j2TransactionMonths} months. `,
-    'Revoke any time at ',
-    el('em', {}, 'portal.openfinance.ae · My Consents'),
-    ' (Nebras Consent Manager — the single source of truth for every TPP consent under UAE Open Finance). ',
-    'Data is ', el('strong', {}, 'SYNTHETIC'), '. No real customer. No real institution.',
-  ]));
+  inner.appendChild(
+    el('p', { className: 'footnote' }, [
+      'Sharing window ',
+      el('strong', {}, `${state.j2ExpirationDays} days`),
+      `. Transactions readable back ${state.j2TransactionMonths} months. `,
+      'Revoke any time at ',
+      el('em', {}, 'portal.openfinance.ae · My Consents'),
+      ' (Nebras Consent Manager — the single source of truth for every TPP consent under UAE Open Finance). ',
+      'Data is ',
+      el('strong', {}, 'SYNTHETIC'),
+      '. No real customer. No real institution.',
+    ]),
+  );
 
   consent.appendChild(inner);
   body.appendChild(consent);
@@ -2078,47 +2676,104 @@ function renderJ2SCA(body, persona) {
   const currentLfi = lfiKeys[state.j2SCAIndex];
   const prof = LFI_PROFILES.find((p) => p.key === currentLfi);
 
-  body.appendChild(el('div', { className: 'sca-progress' }, [
-    el('span', {}, `LFI ${state.j2SCAIndex + 1} of ${lfiKeys.length}`),
-    el('span', { className: 'sca-progress-name' }, prof?.name || currentLfi),
-    el('span', { className: 'sca-progress-hint' },
-      state.j2SCAIndex < lfiKeys.length - 1
-        ? `After confirming, you'll authenticate at LFI ${state.j2SCAIndex + 2} of ${lfiKeys.length}.`
-        : 'Last LFI — confirming will register every consent with the Consent Manager.'),
-  ]));
+  body.appendChild(
+    el('div', { className: 'sca-progress' }, [
+      el('span', {}, `LFI ${state.j2SCAIndex + 1} of ${lfiKeys.length}`),
+      el('span', { className: 'sca-progress-name' }, prof?.name || currentLfi),
+      el(
+        'span',
+        { className: 'sca-progress-hint' },
+        state.j2SCAIndex < lfiKeys.length - 1
+          ? `After confirming, you'll authenticate at LFI ${state.j2SCAIndex + 2} of ${lfiKeys.length}.`
+          : 'Last LFI — confirming will register every consent with the Consent Manager.',
+      ),
+    ]),
+  );
 
-  const mock = el('div', { className: 'sca-mock', role: 'img', 'aria-label': `Mock Strong Customer Authentication screen at LFI ${currentLfi}` });
-  mock.appendChild(el('div', { className: 'browser-bar' }, [
-    el('span', { className: 'dots' }, [el('span'), el('span'), el('span')]),
-    el('span', { className: 'url' }, `https://auth.${currentLfi}-lfi.example/sca?caap_intent=urn:openfinance:ae:intent:…`),
-  ]));
+  const mock = el('div', {
+    className: 'sca-mock',
+    role: 'img',
+    'aria-label': `Mock Strong Customer Authentication screen at LFI ${currentLfi}`,
+  });
+  mock.appendChild(
+    el('div', { className: 'browser-bar' }, [
+      el('span', { className: 'dots' }, [el('span'), el('span'), el('span')]),
+      el(
+        'span',
+        { className: 'url' },
+        `https://auth.${currentLfi}-lfi.example/sca?caap_intent=urn:openfinance:ae:intent:…`,
+      ),
+    ]),
+  );
   const inner = el('div', { className: 'body' });
   inner.appendChild(el('h4', {}, `Sign in at ${prof?.name || currentLfi}`));
-  inner.appendChild(el('p', { className: 'sub' }, [
-    `Strong Customer Authentication for the ${prof?.body || currentLfi}. `,
-    'After SCA, pick which accounts at this LFI Khazaa will see.',
-  ]));
+  inner.appendChild(
+    el('p', { className: 'sub' }, [
+      `Strong Customer Authentication for the ${prof?.body || currentLfi}. `,
+      'After SCA, pick which accounts at this LFI Khazaa will see.',
+    ]),
+  );
 
-  const userBase = persona ? persona.name.split('—')[0].trim().toLowerCase().replace(/\s+/g, '.').replace(/[^a-z.]/g, '') : 'you';
+  const userBase = persona
+    ? persona.name
+        .split('—')[0]
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, '.')
+        .replace(/[^a-z.]/g, '')
+    : 'you';
   const form = el('div', { className: 'sca-form' });
   form.appendChild(el('label', { for: `sca-user-${currentLfi}` }, 'Username'));
-  form.appendChild(el('input', { type: 'text', id: `sca-user-${currentLfi}`, value: `${userBase}@${currentLfi}-lfi.example`, readonly: true }));
-  form.appendChild(el('label', { for: `sca-pass-${currentLfi}`, style: 'margin-top:10px;' }, 'Password'));
-  form.appendChild(el('input', { type: 'password', id: `sca-pass-${currentLfi}`, value: '••••••••••', readonly: true }));
+  form.appendChild(
+    el('input', {
+      type: 'text',
+      id: `sca-user-${currentLfi}`,
+      value: `${userBase}@${currentLfi}-lfi.example`,
+      readonly: true,
+    }),
+  );
+  form.appendChild(
+    el('label', { for: `sca-pass-${currentLfi}`, style: 'margin-top:10px;' }, 'Password'),
+  );
+  form.appendChild(
+    el('input', {
+      type: 'password',
+      id: `sca-pass-${currentLfi}`,
+      value: '••••••••••',
+      readonly: true,
+    }),
+  );
 
   const otpBlock = el('div', { className: 'sca-otp' });
-  otpBlock.appendChild(el('div', { className: 'sca-otp-heading' }, '2FA — enter the 6-digit code from your bank app'));
+  otpBlock.appendChild(
+    el('div', { className: 'sca-otp-heading' }, '2FA — enter the 6-digit code from your bank app'),
+  );
   const otpInputs = el('div', { className: 'sca-otp-inputs' });
-  const otpDigits = (currentLfi === 'rich' ? ['8','3','9','1','7','2']
-                  : currentLfi === 'median' ? ['4','5','0','2','8','1']
-                  : ['9','1','3','6','5','4']);
+  const otpDigits =
+    currentLfi === 'rich'
+      ? ['8', '3', '9', '1', '7', '2']
+      : currentLfi === 'median'
+        ? ['4', '5', '0', '2', '8', '1']
+        : ['9', '1', '3', '6', '5', '4'];
   for (let i = 0; i < 6; i++) {
-    otpInputs.appendChild(el('input', { type: 'text', maxlength: 1, value: otpDigits[i], readonly: true, 'aria-label': `OTP digit ${i + 1}` }));
+    otpInputs.appendChild(
+      el('input', {
+        type: 'text',
+        maxlength: 1,
+        value: otpDigits[i],
+        readonly: true,
+        'aria-label': `OTP digit ${i + 1}`,
+      }),
+    );
   }
   otpBlock.appendChild(otpInputs);
-  otpBlock.appendChild(el('p', { className: 'sca-otp-alt' }, [
-    'or ', el('strong', {}, 'use your bank app'), ' to push-approve — same regulatory category.',
-  ]));
+  otpBlock.appendChild(
+    el('p', { className: 'sca-otp-alt' }, [
+      'or ',
+      el('strong', {}, 'use your bank app'),
+      ' to push-approve — same regulatory category.',
+    ]),
+  );
   form.appendChild(otpBlock);
   inner.appendChild(form);
   mock.appendChild(inner);
@@ -2128,51 +2783,78 @@ function renderJ2SCA(body, persona) {
   // for each account; defaults to all checked. Real consent grant binds to
   // the AccountId set the user picks here.
   const acctSection = el('div', { className: 'sca-accounts' });
-  acctSection.appendChild(el('h4', { style: 'margin-top:18px;' }, 'Pick accounts to authorise at this LFI'));
-  acctSection.appendChild(el('p', { className: 'sub', style: 'margin-bottom:10px;' }, [
-    'Per-account consent. ',
-    el('strong', {}, 'Standards default'),
-    ' is all accounts; untick to grant narrower scope. Khazaa will only read transactions for the accounts you keep ticked.',
-  ]));
+  acctSection.appendChild(
+    el('h4', { style: 'margin-top:18px;' }, 'Pick accounts to authorise at this LFI'),
+  );
+  acctSection.appendChild(
+    el('p', { className: 'sub', style: 'margin-bottom:10px;' }, [
+      'Per-account consent. ',
+      el('strong', {}, 'Standards default'),
+      ' is all accounts; untick to grant narrower scope. Khazaa will only read transactions for the accounts you keep ticked.',
+    ]),
+  );
   const acctList = el('div', { className: 'sca-account-list' });
   acctList.appendChild(el('p', { className: 'skeleton' }, 'Loading accounts at this LFI…'));
   acctSection.appendChild(acctList);
   body.appendChild(acctSection);
 
-  fetchJ2AccountsFor(persona, currentLfi).then((accounts) => {
-    acctList.replaceChildren();
-    if (!accounts.length) {
-      acctList.appendChild(el('p', { className: 'skeleton' }, `No accounts returned for ${persona.name} at LFI · ${currentLfi}. Try a different persona or LFI profile.`));
-      return;
-    }
-    const selected = state.j2SelectedAccounts.get(currentLfi) || new Set();
-    for (const acct of accounts) {
-      const isOn = selected.has(acct.AccountId);
-      const id = `j2acct-${currentLfi}-${acct.AccountId}`;
-      const ident = acct.AccountIdentifiers?.[0]?.Identification?.slice(0, 18) ?? acct.AccountId;
-      const cb = el('input', { type: 'checkbox', id, checked: isOn });
-      const row = el('label', { for: id, className: 'sca-account-row' + (isOn ? ' selected' : '') }, [
-        cb,
-        el('div', { className: 'sca-account-text' }, [
-          el('div', { className: 'sca-account-name' }, acct.Nickname || acct.AccountSubType || acct.AccountType || 'Account'),
-          el('div', { className: 'sca-account-meta' }, [
-            el('code', {}, ident + '…'),
-            ` · ${acct.AccountSubType || acct.AccountType || ''}`,
-          ]),
-        ]),
-      ]);
-      cb.addEventListener('change', () => {
-        const cur = state.j2SelectedAccounts.get(currentLfi) || new Set();
-        if (cb.checked) cur.add(acct.AccountId); else cur.delete(acct.AccountId);
-        state.j2SelectedAccounts.set(currentLfi, cur);
-        row.classList.toggle('selected', cb.checked);
-      });
-      acctList.appendChild(row);
-    }
-  }).catch((err) => {
-    acctList.replaceChildren();
-    acctList.appendChild(el('p', { className: 'skeleton', style: 'color:#a13;' }, `Couldn't load accounts: ${err.message}.`));
-  });
+  fetchJ2AccountsFor(persona, currentLfi)
+    .then((accounts) => {
+      acctList.replaceChildren();
+      if (!accounts.length) {
+        acctList.appendChild(
+          el(
+            'p',
+            { className: 'skeleton' },
+            `No accounts returned for ${persona.name} at LFI · ${currentLfi}. Try a different persona or LFI profile.`,
+          ),
+        );
+        return;
+      }
+      const selected = state.j2SelectedAccounts.get(currentLfi) || new Set();
+      for (const acct of accounts) {
+        const isOn = selected.has(acct.AccountId);
+        const id = `j2acct-${currentLfi}-${acct.AccountId}`;
+        const ident = acct.AccountIdentifiers?.[0]?.Identification?.slice(0, 18) ?? acct.AccountId;
+        const cb = el('input', { type: 'checkbox', id, checked: isOn });
+        const row = el(
+          'label',
+          { for: id, className: 'sca-account-row' + (isOn ? ' selected' : '') },
+          [
+            cb,
+            el('div', { className: 'sca-account-text' }, [
+              el(
+                'div',
+                { className: 'sca-account-name' },
+                acct.Nickname || acct.AccountSubType || acct.AccountType || 'Account',
+              ),
+              el('div', { className: 'sca-account-meta' }, [
+                el('code', {}, ident + '…'),
+                ` · ${acct.AccountSubType || acct.AccountType || ''}`,
+              ]),
+            ]),
+          ],
+        );
+        cb.addEventListener('change', () => {
+          const cur = state.j2SelectedAccounts.get(currentLfi) || new Set();
+          if (cb.checked) cur.add(acct.AccountId);
+          else cur.delete(acct.AccountId);
+          state.j2SelectedAccounts.set(currentLfi, cur);
+          row.classList.toggle('selected', cb.checked);
+        });
+        acctList.appendChild(row);
+      }
+    })
+    .catch((err) => {
+      acctList.replaceChildren();
+      acctList.appendChild(
+        el(
+          'p',
+          { className: 'skeleton', style: 'color:#a13;' },
+          `Couldn't load accounts: ${err.message}.`,
+        ),
+      );
+    });
 }
 
 // 4d — Consent Manager confirmation. After all per-LFI SCAs complete, this
@@ -2185,18 +2867,29 @@ function renderJ2ConsentConfirmed(body, persona) {
   const isSme = (persona.segment || '').toLowerCase() === 'sme';
   const tppName = isSme ? 'Khazaa BFM' : 'Khazaa PFM';
 
-  body.appendChild(el('div', { className: 'consent-confirmed-headline' }, [
-    el('span', { className: 'consent-confirmed-tick' }, '✓'),
-    el('div', {}, [
-      el('div', { className: 'consent-confirmed-title' }, 'Consent registered with the Nebras Consent Manager'),
-      el('div', { className: 'consent-confirmed-sub' },
-        `${state.j2ConsentIds.size} ConsentId${state.j2ConsentIds.size === 1 ? '' : 's'} active · ${tppName} can now read your authorised data via the API Hub.`),
+  body.appendChild(
+    el('div', { className: 'consent-confirmed-headline' }, [
+      el('span', { className: 'consent-confirmed-tick' }, '✓'),
+      el('div', {}, [
+        el(
+          'div',
+          { className: 'consent-confirmed-title' },
+          'Consent registered with the Nebras Consent Manager',
+        ),
+        el(
+          'div',
+          { className: 'consent-confirmed-sub' },
+          `${state.j2ConsentIds.size} ConsentId${state.j2ConsentIds.size === 1 ? '' : 's'} active · ${tppName} can now read your authorised data via the API Hub.`,
+        ),
+      ]),
     ]),
-  ]));
+  );
 
   const table = el('div', { className: 'consent-records-table' });
   if (!state.j2ConsentIds.size) {
-    table.appendChild(el('p', { className: 'skeleton' }, 'No consents minted yet — go back to sub-step 4c.'));
+    table.appendChild(
+      el('p', { className: 'skeleton' }, 'No consents minted yet — go back to sub-step 4c.'),
+    );
   } else {
     for (const [lfi, cid] of state.j2ConsentIds.entries()) {
       const prof = LFI_PROFILES.find((p) => p.key === lfi);
@@ -2209,11 +2902,16 @@ function renderJ2ConsentConfirmed(body, persona) {
           el('span', { className: 'consent-record-badge active' }, 'Active'),
         ]),
         el('dl', { className: 'consent-record-dl' }, [
-          el('dt', {}, 'ConsentId'),    el('dd', {}, el('code', {}, cid)),
-          el('dt', {}, 'Expires'),      el('dd', {}, expiresAt.toUTCString()),
-          el('dt', {}, 'Permissions'),  el('dd', {}, `${[...state.j2Permissions].length} of ${OF_PERMISSIONS.length} clusters`),
-          el('dt', {}, 'Accounts'),     el('dd', {}, `${acctCount} authorised`),
-          el('dt', {}, 'Tx window'),    el('dd', {}, `${state.j2TransactionMonths} months back`),
+          el('dt', {}, 'ConsentId'),
+          el('dd', {}, el('code', {}, cid)),
+          el('dt', {}, 'Expires'),
+          el('dd', {}, expiresAt.toUTCString()),
+          el('dt', {}, 'Permissions'),
+          el('dd', {}, `${[...state.j2Permissions].length} of ${OF_PERMISSIONS.length} clusters`),
+          el('dt', {}, 'Accounts'),
+          el('dd', {}, `${acctCount} authorised`),
+          el('dt', {}, 'Tx window'),
+          el('dd', {}, `${state.j2TransactionMonths} months back`),
         ]),
       ]);
       table.appendChild(row);
@@ -2221,19 +2919,25 @@ function renderJ2ConsentConfirmed(body, persona) {
   }
   body.appendChild(table);
 
-  const cmLink = el('a', { href: '#', className: 'consent-manager-link' },
-    '→ View at portal.openfinance.ae · My Consents');
+  const cmLink = el(
+    'a',
+    { href: '#', className: 'consent-manager-link' },
+    '→ View at portal.openfinance.ae · My Consents',
+  );
   cmLink.addEventListener('click', (ev) => {
     ev.preventDefault();
     openConsentManager();
   });
-  body.appendChild(el('div', { className: 'consent-confirmed-actions' }, [
-    cmLink,
-    el('div', { className: 'consent-confirmed-cta-hint' }, [
-      'Click ', el('strong', {}, 'Return to ' + tppName + ' →'),
-      ` to load your aggregated ${isSme ? 'BFM' : 'PFM'} view, or open the Consent Manager above to inspect or revoke each grant.`,
+  body.appendChild(
+    el('div', { className: 'consent-confirmed-actions' }, [
+      cmLink,
+      el('div', { className: 'consent-confirmed-cta-hint' }, [
+        'Click ',
+        el('strong', {}, 'Return to ' + tppName + ' →'),
+        ` to load your aggregated ${isSme ? 'BFM' : 'PFM'} view, or open the Consent Manager above to inspect or revoke each grant.`,
+      ]),
     ]),
-  ]));
+  );
 }
 
 // ─── Consent Manager modal (Task #12) ──────────────────────────────
@@ -2276,8 +2980,13 @@ function renderConsentManagerView() {
   body.replaceChildren();
 
   if (!state.consentRecords.length) {
-    body.appendChild(el('div', { className: 'cm-empty' },
-      'No consents minted yet. Walk through J1 or J2 to register a consent — it’ll show up here.'));
+    body.appendChild(
+      el(
+        'div',
+        { className: 'cm-empty' },
+        'No consents minted yet. Walk through J1 or J2 to register a consent — it’ll show up here.',
+      ),
+    );
     return;
   }
 
@@ -2293,26 +3002,53 @@ function renderConsentManagerView() {
     const acctSummary = Array.isArray(rec.accounts)
       ? `${rec.accounts.length} authorised`
       : String(rec.accounts || '—');
-    const row = el('div', { className: 'cm-record' + (rec.status === 'Revoked' ? ' revoked' : '') });
-    row.appendChild(el('div', { className: 'cm-record-head' }, [
-      el('div', {}, [
-        el('span', { className: 'cm-record-title' }, `${rec.tpp} → ${prof?.name || rec.lfi}`),
-        el('span', { className: 'cm-record-source' }, rec.source.toUpperCase()),
+    const row = el('div', {
+      className: 'cm-record' + (rec.status === 'Revoked' ? ' revoked' : ''),
+    });
+    row.appendChild(
+      el('div', { className: 'cm-record-head' }, [
+        el('div', {}, [
+          el('span', { className: 'cm-record-title' }, `${rec.tpp} → ${prof?.name || rec.lfi}`),
+          el('span', { className: 'cm-record-source' }, rec.source.toUpperCase()),
+        ]),
+        el(
+          'span',
+          {
+            className: 'consent-record-badge ' + (rec.status === 'Revoked' ? 'revoked' : 'active'),
+          },
+          rec.status,
+        ),
       ]),
-      el('span', { className: 'consent-record-badge ' + (rec.status === 'Revoked' ? 'revoked' : 'active') }, rec.status),
-    ]));
-    row.appendChild(el('dl', { className: 'cm-record-dl' }, [
-      el('dt', {}, 'ConsentId'),    el('dd', {}, el('code', {}, rec.consentId)),
-      el('dt', {}, 'Expires'),      el('dd', {}, new Date(rec.expiresAt).toUTCString()),
-      el('dt', {}, 'Permissions'),  el('dd', {}, `${(rec.permissions || []).length} of ${OF_PERMISSIONS.length} clusters`),
-      el('dt', {}, 'Accounts'),     el('dd', {}, acctSummary),
-      el('dt', {}, 'Source'),       el('dd', {}, rec.source === 'j2' ? 'Al Tareq CAAP · Nebras Consent Manager' : 'Bank-own OAuth · Connected apps (not OF rails)'),
-    ]));
+    );
+    row.appendChild(
+      el('dl', { className: 'cm-record-dl' }, [
+        el('dt', {}, 'ConsentId'),
+        el('dd', {}, el('code', {}, rec.consentId)),
+        el('dt', {}, 'Expires'),
+        el('dd', {}, new Date(rec.expiresAt).toUTCString()),
+        el('dt', {}, 'Permissions'),
+        el('dd', {}, `${(rec.permissions || []).length} of ${OF_PERMISSIONS.length} clusters`),
+        el('dt', {}, 'Accounts'),
+        el('dd', {}, acctSummary),
+        el('dt', {}, 'Source'),
+        el(
+          'dd',
+          {},
+          rec.source === 'j2'
+            ? 'Al Tareq CAAP · Nebras Consent Manager'
+            : 'Bank-own OAuth · Connected apps (not OF rails)',
+        ),
+      ]),
+    );
     if (rec.status === 'Active') {
-      const revokeBtn = el('button', {
-        type: 'button',
-        className: 'cm-revoke-btn',
-      }, 'Revoke');
+      const revokeBtn = el(
+        'button',
+        {
+          type: 'button',
+          className: 'cm-revoke-btn',
+        },
+        'Revoke',
+      );
       revokeBtn.addEventListener('click', () => {
         rec.status = 'Revoked';
         // For J2 records, also drop the ConsentId from the active map so
@@ -2341,26 +3077,35 @@ async function renderJ2Dashboard() {
   if (!persona) return;
 
   const isSme = (persona.segment || '').toLowerCase() === 'sme';
-  document.getElementById('j2-step-5-h').textContent = isSme ? 'Aggregated BFM view' : 'Aggregated PFM view';
+  document.getElementById('j2-step-5-h').textContent = isSme
+    ? 'Aggregated BFM view'
+    : 'Aggregated PFM view';
 
   // If every J2 consent was revoked via the Consent Manager modal, the TPP
   // has no live data-sharing grant — every /accounts call would 401. Render
   // the empty state instead of fetching.
   const activeJ2 = state.consentRecords.filter((r) => r.source === 'j2' && r.status === 'Active');
-  if (state.j2Approved && activeJ2.length === 0 && state.consentRecords.some((r) => r.source === 'j2')) {
-    document.getElementById('j2-step-5-sub').textContent = 'All J2 consents revoked at the Consent Manager — the TPP can no longer read your data.';
+  if (
+    state.j2Approved &&
+    activeJ2.length === 0 &&
+    state.consentRecords.some((r) => r.source === 'j2')
+  ) {
+    document.getElementById('j2-step-5-sub').textContent =
+      'All J2 consents revoked at the Consent Manager — the TPP can no longer read your data.';
     const tppName = isSme ? 'Khazaa BFM' : 'Khazaa PFM';
-    body.appendChild(el('div', { className: 'j2-revoked-empty' }, [
-      el('h3', {}, `${tppName} is locked out`),
-      el('p', {}, [
-        'Every ConsentId minted for this session has been revoked at portal.openfinance.ae · My Consents. ',
-        'In production, the TPP\'s next ',
-        el('code', {}, 'GET /accounts'),
-        ' call would return ',
-        el('code', {}, '401 invalid_consent'),
-        '. To re-grant: back up to step 4 (Al Tareq) and walk the consent flow again.',
+    body.appendChild(
+      el('div', { className: 'j2-revoked-empty' }, [
+        el('h3', {}, `${tppName} is locked out`),
+        el('p', {}, [
+          'Every ConsentId minted for this session has been revoked at portal.openfinance.ae · My Consents. ',
+          "In production, the TPP's next ",
+          el('code', {}, 'GET /accounts'),
+          ' call would return ',
+          el('code', {}, '401 invalid_consent'),
+          '. To re-grant: back up to step 4 (Al Tareq) and walk the consent flow again.',
+        ]),
       ]),
-    ]));
+    );
     return;
   }
 
@@ -2369,42 +3114,65 @@ async function renderJ2Dashboard() {
     : `Khazaa PFM aggregates the consented data across ${state.j2SelectedLFIs.size} LFI${state.j2SelectedLFIs.size === 1 ? '' : 's'}. Every figure is computed deterministically from real v2.1 fixture data.`;
 
   if (!persona.default_seed) {
-    body.appendChild(el('p', { className: 'skeleton', style: 'color:var(--warn-border);' },
-      `No default_seed for this persona — run \`npm run build:fixtures && npm run build:site\` first.`));
+    body.appendChild(
+      el(
+        'p',
+        { className: 'skeleton', style: 'color:var(--warn-border);' },
+        `No default_seed for this persona — run \`npm run build:fixtures && npm run build:site\` first.`,
+      ),
+    );
     return;
   }
 
-  body.appendChild(el('p', { className: 'skeleton' }, `Loading consented data across ${state.j2SelectedLFIs.size} LFI${state.j2SelectedLFIs.size === 1 ? '' : 's'}…`));
+  body.appendChild(
+    el(
+      'p',
+      { className: 'skeleton' },
+      `Loading consented data across ${state.j2SelectedLFIs.size} LFI${state.j2SelectedLFIs.size === 1 ? '' : 's'}…`,
+    ),
+  );
 
   try {
-    const perLfi = await Promise.all([...state.j2SelectedLFIs].map(async (lfi) => {
-      const base = `../fixtures/v1/bundles/${persona.id}/${lfi}/seed-${persona.default_seed}`;
-      const acctEnv = await fetchJson(`${base}/accounts.json`);
-      if (!acctEnv) return { lfi, accounts: [], perAccount: [] };
-      // Respect the per-LFI account picker from step 4c — the consent
-      // grant binds to specific AccountIds, so the dashboard must only
-      // surface what the user actually authorised. If j2SelectedAccounts
-      // has no entry for this LFI (deep-link / pre-picker state), fall
-      // back to all accounts so the dashboard isn't mysteriously empty.
-      const consentedIds = state.j2SelectedAccounts.get(lfi);
-      const accounts = (acctEnv.Data?.Account ?? []).filter((a) =>
-        !consentedIds || consentedIds.size === 0 || consentedIds.has(a.AccountId)
-      );
-      const perAccount = await Promise.all(accounts.map(async (acct) => {
-        const id = acct.AccountId;
-        const [bal, tx, so, dd] = await Promise.all([
-          fetchJson(`${base}/accounts__${id}__balances.json`),
-          fetchJson(`${base}/accounts__${id}__transactions.json`),
-          fetchJson(`${base}/accounts__${id}__standing-orders.json`),
-          fetchJson(`${base}/accounts__${id}__direct-debits.json`),
-        ]);
-        return { account: acct, balances: bal, transactions: tx, standingOrders: so, directDebits: dd };
-      }));
-      return { lfi, accountsEnvelope: acctEnv, accounts, perAccount };
-    }));
+    const perLfi = await Promise.all(
+      [...state.j2SelectedLFIs].map(async (lfi) => {
+        const base = `../fixtures/v1/bundles/${persona.id}/${lfi}/seed-${persona.default_seed}`;
+        const acctEnv = await fetchJson(`${base}/accounts.json`);
+        if (!acctEnv) return { lfi, accounts: [], perAccount: [] };
+        // Respect the per-LFI account picker from step 4c — the consent
+        // grant binds to specific AccountIds, so the dashboard must only
+        // surface what the user actually authorised. If j2SelectedAccounts
+        // has no entry for this LFI (deep-link / pre-picker state), fall
+        // back to all accounts so the dashboard isn't mysteriously empty.
+        const consentedIds = state.j2SelectedAccounts.get(lfi);
+        const accounts = (acctEnv.Data?.Account ?? []).filter(
+          (a) => !consentedIds || consentedIds.size === 0 || consentedIds.has(a.AccountId),
+        );
+        const perAccount = await Promise.all(
+          accounts.map(async (acct) => {
+            const id = acct.AccountId;
+            const [bal, tx, so, dd] = await Promise.all([
+              fetchJson(`${base}/accounts__${id}__balances.json`),
+              fetchJson(`${base}/accounts__${id}__transactions.json`),
+              fetchJson(`${base}/accounts__${id}__standing-orders.json`),
+              fetchJson(`${base}/accounts__${id}__direct-debits.json`),
+            ]);
+            return {
+              account: acct,
+              balances: bal,
+              transactions: tx,
+              standingOrders: so,
+              directDebits: dd,
+            };
+          }),
+        );
+        return { lfi, accountsEnvelope: acctEnv, accounts, perAccount };
+      }),
+    );
 
     body.replaceChildren();
-    body.appendChild(isSme ? renderBfmDashboard(persona, perLfi) : renderPfmDashboard(persona, perLfi));
+    body.appendChild(
+      isSme ? renderBfmDashboard(persona, perLfi) : renderPfmDashboard(persona, perLfi),
+    );
 
     // Watermark line — one per consented LFI, so the reader can verify the
     // dashboard's numbers trace back to the real fixture corpus.
@@ -2417,8 +3185,13 @@ async function renderJ2Dashboard() {
     body.appendChild(wm);
   } catch (err) {
     body.replaceChildren();
-    body.appendChild(el('p', { className: 'skeleton', style: 'color:#a13;' },
-      `Couldn't load the fixtures: ${err.message}. Run \`npm run build:fixtures && npm run build:site\`, then serve from \`_site\`.`));
+    body.appendChild(
+      el(
+        'p',
+        { className: 'skeleton', style: 'color:#a13;' },
+        `Couldn't load the fixtures: ${err.message}. Run \`npm run build:fixtures && npm run build:site\`, then serve from \`_site\`.`,
+      ),
+    );
   }
 }
 
@@ -2435,10 +3208,12 @@ function aggregateJ2Insights(perLfi) {
   for (const { lfi, perAccount } of perLfi) {
     for (const a of perAccount) {
       const balances = a.balances?.Data?.Balance ?? [];
-      const pick = balances.find((b) => b.Type === 'InterimAvailable')
-                || balances.find((b) => b.Type === 'InterimBooked')
-                || balances[0];
-      let bal = null, ccy = null;
+      const pick =
+        balances.find((b) => b.Type === 'InterimAvailable') ||
+        balances.find((b) => b.Type === 'InterimBooked') ||
+        balances[0];
+      let bal = null,
+        ccy = null;
       if (pick && pick.Amount?.Currency) {
         const amt = parseFloat(pick.Amount.Amount);
         bal = pick.CreditDebitIndicator === 'Credit' ? amt : -amt;
@@ -2447,12 +3222,16 @@ function aggregateJ2Insights(perLfi) {
       }
       accountsRolled.push({
         lfi,
-        name: a.account.Nickname || a.account.AccountSubType || a.account.AccountType || a.account.AccountId,
+        name:
+          a.account.Nickname ||
+          a.account.AccountSubType ||
+          a.account.AccountType ||
+          a.account.AccountId,
         subtype: a.account.AccountSubType || '',
         balance: bal,
         currency: ccy || '—',
       });
-      for (const so of (a.standingOrders?.Data?.StandingOrder ?? [])) {
+      for (const so of a.standingOrders?.Data?.StandingOrder ?? []) {
         const amt = so.FirstPaymentAmount?.Amount ?? so.NextPaymentAmount?.Amount ?? '—';
         const ccyC = so.FirstPaymentAmount?.Currency ?? so.NextPaymentAmount?.Currency ?? '';
         commitments.push({
@@ -2464,7 +3243,7 @@ function aggregateJ2Insights(perLfi) {
           kind: 'SO',
         });
       }
-      for (const dd of (a.directDebits?.Data?.DirectDebit ?? [])) {
+      for (const dd of a.directDebits?.Data?.DirectDebit ?? []) {
         commitments.push({
           lfi,
           label: dd.Name || dd.MandateIdentification || 'Direct debit',
@@ -2474,7 +3253,7 @@ function aggregateJ2Insights(perLfi) {
           kind: 'DD',
         });
       }
-      for (const t of (a.transactions?.Data?.Transaction ?? [])) {
+      for (const t of a.transactions?.Data?.Transaction ?? []) {
         allTx.push({ ...t, _lfi: lfi });
       }
     }
@@ -2492,49 +3271,74 @@ function renderPfmDashboard(persona, perLfi) {
   const dash = el('div', { className: 'pfm-dashboard' });
 
   // Customer card
-  dash.appendChild(el('div', { className: 'dash-card' }, [
-    el('h3', {}, 'Customer'),
-    el('div', { className: 'stat' }, persona.name),
-    el('div', { className: 'stat-sub' }, `${(persona.archetype || '').replace(/_/g, ' ')} · Retail · ${state.j2SelectedLFIs.size} LFI${state.j2SelectedLFIs.size === 1 ? '' : 's'} consented`),
-  ]));
+  dash.appendChild(
+    el('div', { className: 'dash-card' }, [
+      el('h3', {}, 'Customer'),
+      el('div', { className: 'stat' }, persona.name),
+      el(
+        'div',
+        { className: 'stat-sub' },
+        `${(persona.archetype || '').replace(/_/g, ' ')} · Retail · ${state.j2SelectedLFIs.size} LFI${state.j2SelectedLFIs.size === 1 ? '' : 's'} consented`,
+      ),
+    ]),
+  );
 
   // Cross-LFI total balance
-  dash.appendChild(el('div', { className: 'dash-card' }, [
-    el('h3', {}, 'Total balance (AED, cross-LFI)'),
-    el('div', { className: 'stat' }, formatAed(ins.totalAed)),
-    el('div', { className: 'stat-sub' }, `Across ${ins.accountsRolled.length} accounts · non-AED accounts listed separately`),
-  ]));
+  dash.appendChild(
+    el('div', { className: 'dash-card' }, [
+      el('h3', {}, 'Total balance (AED, cross-LFI)'),
+      el('div', { className: 'stat' }, formatAed(ins.totalAed)),
+      el(
+        'div',
+        { className: 'stat-sub' },
+        `Across ${ins.accountsRolled.length} accounts · non-AED accounts listed separately`,
+      ),
+    ]),
+  );
 
   // Accounts — per-LFI badges
   const acctList = el('ul', {});
   for (const a of ins.accountsRolled) {
-    acctList.appendChild(el('li', {}, [
-      el('div', { className: 'row' }, [
-        el('span', {}, [a.name, el('span', { className: 'lfi-badge' }, a.lfi)]),
-        el('span', { className: 'right' }, a.balance != null ? `${a.currency} ${formatNumber(a.balance)}` : '—'),
+    acctList.appendChild(
+      el('li', {}, [
+        el('div', { className: 'row' }, [
+          el('span', {}, [a.name, el('span', { className: 'lfi-badge' }, a.lfi)]),
+          el(
+            'span',
+            { className: 'right' },
+            a.balance != null ? `${a.currency} ${formatNumber(a.balance)}` : '—',
+          ),
+        ]),
+        el('div', { className: 'stat-sub' }, a.subtype),
       ]),
-      el('div', { className: 'stat-sub' }, a.subtype),
-    ]));
+    );
   }
-  if (!ins.accountsRolled.length) acctList.appendChild(el('li', { className: 'stat-sub' }, 'No accounts returned.'));
+  if (!ins.accountsRolled.length)
+    acctList.appendChild(el('li', { className: 'stat-sub' }, 'No accounts returned.'));
   dash.appendChild(el('div', { className: 'dash-card' }, [el('h3', {}, 'Accounts'), acctList]));
 
   // Fixed commitments rolled up
   const soList = el('ul', {});
   if (!ins.commitments.length) {
-    soList.appendChild(el('li', { className: 'stat-sub' }, 'No standing orders or direct debits for this persona.'));
+    soList.appendChild(
+      el('li', { className: 'stat-sub' }, 'No standing orders or direct debits for this persona.'),
+    );
   } else {
     for (const c of ins.commitments.slice(0, 10)) {
-      soList.appendChild(el('li', {}, [
-        el('div', { className: 'row' }, [
-          el('span', {}, [c.label, el('span', { className: 'lfi-badge' }, c.lfi)]),
-          el('span', { className: 'right' }, `${c.currency} ${c.amount}`),
+      soList.appendChild(
+        el('li', {}, [
+          el('div', { className: 'row' }, [
+            el('span', {}, [c.label, el('span', { className: 'lfi-badge' }, c.lfi)]),
+            el('span', { className: 'right' }, `${c.currency} ${c.amount}`),
+          ]),
+          el('div', { className: 'stat-sub' }, `${c.kind} · ${c.frequency}`),
         ]),
-        el('div', { className: 'stat-sub' }, `${c.kind} · ${c.frequency}`),
-      ]));
+      );
     }
   }
-  dash.appendChild(el('div', { className: 'dash-card' }, [el('h3', {}, 'Fixed commitments'), soList]));
+  dash.appendChild(
+    el('div', { className: 'dash-card' }, [el('h3', {}, 'Fixed commitments'), soList]),
+  );
 
   // Timeline (full width)
   dash.appendChild(renderJ2Timeline(ins.recentTx));
@@ -2561,72 +3365,112 @@ function renderBfmDashboard(persona, perLfi) {
   let netInflow30 = 0;
   for (const v of byLfi.values()) netInflow30 += v;
 
-  let inflow30 = 0, outflow30 = 0;
+  let inflow30 = 0,
+    outflow30 = 0;
   for (const t of ins.recentTx) {
     const when = Date.parse(t.BookingDateTime || '');
     if (when < cutoff30) continue;
     if (t.Amount?.Currency !== 'AED') continue;
     const amt = parseFloat(t.Amount.Amount);
-    if (t.CreditDebitIndicator === 'Credit') inflow30 += amt; else outflow30 += amt;
+    if (t.CreditDebitIndicator === 'Credit') inflow30 += amt;
+    else outflow30 += amt;
   }
 
   const dash = el('div', { className: 'bfm-dashboard' });
 
   // SME entity card
-  dash.appendChild(el('div', { className: 'dash-card' }, [
-    el('h3', {}, 'SME entity'),
-    el('div', { className: 'stat' }, persona.name),
-    el('div', { className: 'stat-sub' }, `${(persona.archetype || '').replace(/_/g, ' ')} · SME · ${state.j2SelectedLFIs.size} LFI${state.j2SelectedLFIs.size === 1 ? '' : 's'} consented`),
-  ]));
+  dash.appendChild(
+    el('div', { className: 'dash-card' }, [
+      el('h3', {}, 'SME entity'),
+      el('div', { className: 'stat' }, persona.name),
+      el(
+        'div',
+        { className: 'stat-sub' },
+        `${(persona.archetype || '').replace(/_/g, ' ')} · SME · ${state.j2SelectedLFIs.size} LFI${state.j2SelectedLFIs.size === 1 ? '' : 's'} consented`,
+      ),
+    ]),
+  );
 
   // Cross-LFI working capital
-  dash.appendChild(el('div', { className: 'dash-card' }, [
-    el('h3', {}, 'Working capital (AED, cross-LFI)'),
-    el('div', { className: 'stat' }, formatAed(ins.totalAed)),
-    el('div', { className: 'stat-sub' }, `Across ${ins.accountsRolled.length} accounts at ${byLfi.size || state.j2SelectedLFIs.size} LFI${(byLfi.size || state.j2SelectedLFIs.size) === 1 ? '' : 's'}`),
-  ]));
+  dash.appendChild(
+    el('div', { className: 'dash-card' }, [
+      el('h3', {}, 'Working capital (AED, cross-LFI)'),
+      el('div', { className: 'stat' }, formatAed(ins.totalAed)),
+      el(
+        'div',
+        { className: 'stat-sub' },
+        `Across ${ins.accountsRolled.length} accounts at ${byLfi.size || state.j2SelectedLFIs.size} LFI${(byLfi.size || state.j2SelectedLFIs.size) === 1 ? '' : 's'}`,
+      ),
+    ]),
+  );
 
   // Receivables — 30-day inflow
-  dash.appendChild(el('div', { className: 'dash-card' }, [
-    el('h3', {}, 'Receivables · 30d'),
-    el('div', { className: 'stat pos' }, formatAed(inflow30)),
-    el('div', { className: 'stat-sub' }, `Total credits across all consented accounts`),
-  ]));
+  dash.appendChild(
+    el('div', { className: 'dash-card' }, [
+      el('h3', {}, 'Receivables · 30d'),
+      el('div', { className: 'stat pos' }, formatAed(inflow30)),
+      el('div', { className: 'stat-sub' }, `Total credits across all consented accounts`),
+    ]),
+  );
 
   // Payables — 30-day outflow + committed
-  dash.appendChild(el('div', { className: 'dash-card' }, [
-    el('h3', {}, 'Payables · 30d + committed'),
-    el('div', { className: 'stat neg' }, formatAed(outflow30)),
-    el('div', { className: 'stat-sub' }, `${ins.commitments.length} standing instruction${ins.commitments.length === 1 ? '' : 's'} on file`),
-  ]));
+  dash.appendChild(
+    el('div', { className: 'dash-card' }, [
+      el('h3', {}, 'Payables · 30d + committed'),
+      el('div', { className: 'stat neg' }, formatAed(outflow30)),
+      el(
+        'div',
+        { className: 'stat-sub' },
+        `${ins.commitments.length} standing instruction${ins.commitments.length === 1 ? '' : 's'} on file`,
+      ),
+    ]),
+  );
 
   // Per-LFI cashflow rollup (span 2)
   const perLfiUl = el('ul', {});
   for (const [lfi, net] of byLfi.entries()) {
-    perLfiUl.appendChild(el('li', {}, [
-      el('div', { className: 'row' }, [
-        el('span', {}, [`LFI ${lfi}`, el('span', { className: 'lfi-badge' }, lfi)]),
-        el('span', { className: `right ${net >= 0 ? 'pos' : 'neg'}` },
-          `${net >= 0 ? '+' : ''}${formatAed(net)}`),
+    perLfiUl.appendChild(
+      el('li', {}, [
+        el('div', { className: 'row' }, [
+          el('span', {}, [`LFI ${lfi}`, el('span', { className: 'lfi-badge' }, lfi)]),
+          el(
+            'span',
+            { className: `right ${net >= 0 ? 'pos' : 'neg'}` },
+            `${net >= 0 ? '+' : ''}${formatAed(net)}`,
+          ),
+        ]),
+        el('div', { className: 'stat-sub' }, 'Net AED flow · last 30 days'),
       ]),
-      el('div', { className: 'stat-sub' }, 'Net AED flow · last 30 days'),
-    ]));
+    );
   }
-  if (!byLfi.size) perLfiUl.appendChild(el('li', { className: 'stat-sub' }, 'No AED transactions in the last 30 days.'));
-  dash.appendChild(el('div', { className: 'dash-card span-2' }, [
-    el('h3', {}, 'Per-LFI cashflow · 30d (net AED)'),
-    perLfiUl,
-  ]));
+  if (!byLfi.size)
+    perLfiUl.appendChild(
+      el('li', { className: 'stat-sub' }, 'No AED transactions in the last 30 days.'),
+    );
+  dash.appendChild(
+    el('div', { className: 'dash-card span-2' }, [
+      el('h3', {}, 'Per-LFI cashflow · 30d (net AED)'),
+      perLfiUl,
+    ]),
+  );
 
   dash.appendChild(renderJ2Timeline(ins.recentTx));
   return dash;
 }
 
 function renderJ2Timeline(recentTx) {
-  const card = el('div', { className: 'dash-card span-2' }, [el('h3', {}, 'Transactions — last 90 days (cross-LFI)')]);
+  const card = el('div', { className: 'dash-card span-2' }, [
+    el('h3', {}, 'Transactions — last 90 days (cross-LFI)'),
+  ]);
   const tl = el('div', { className: 'dash-timeline' });
   if (!recentTx.length) {
-    tl.appendChild(el('div', { className: 'stat-sub' }, 'No transactions in the last 90 days across the consented LFIs.'));
+    tl.appendChild(
+      el(
+        'div',
+        { className: 'stat-sub' },
+        'No transactions in the last 90 days across the consented LFIs.',
+      ),
+    );
     card.appendChild(tl);
     return card;
   }
@@ -2640,16 +3484,24 @@ function renderJ2Timeline(recentTx) {
     const isCredit = t.CreditDebitIndicator === 'Credit';
     const sign = isCredit ? '+' : '−';
     const amt = `${sign} ${formatNumber(t.Amount?.Amount)} ${t.Amount?.Currency || ''}`;
-    const li = el('li', { style: 'border-top:1px dashed var(--border); padding:6px 0; list-style:none;' }, [
-      el('div', { className: 'row' }, [
-        el('span', {}, [
-          t.TransactionInformation || t.MerchantDetails?.MerchantName || 'Transaction',
-          el('span', { className: 'lfi-badge' }, t._lfi),
+    const li = el(
+      'li',
+      { style: 'border-top:1px dashed var(--border); padding:6px 0; list-style:none;' },
+      [
+        el('div', { className: 'row' }, [
+          el('span', {}, [
+            t.TransactionInformation || t.MerchantDetails?.MerchantName || 'Transaction',
+            el('span', { className: 'lfi-badge' }, t._lfi),
+          ]),
+          el('span', { className: `right ${isCredit ? 'pos' : 'neg'}` }, amt),
         ]),
-        el('span', { className: `right ${isCredit ? 'pos' : 'neg'}` }, amt),
-      ]),
-      el('div', { className: 'stat-sub' }, `${(t.BookingDateTime || '').slice(0, 10)} · ${t.ProprietaryBankTransactionCode?.Code || ''}`),
-    ]);
+        el(
+          'div',
+          { className: 'stat-sub' },
+          `${(t.BookingDateTime || '').slice(0, 10)} · ${t.ProprietaryBankTransactionCode?.Code || ''}`,
+        ),
+      ],
+    );
     tl.appendChild(li);
   }
   card.appendChild(tl);
@@ -2678,16 +3530,22 @@ function renderJ2Actions() {
 
   if (state.j2Step === 1) {
     next.disabled = !persona;
-    next.textContent = persona ? `Continue as ${persona.name.split('—')[0].trim()} →` : 'Pick a persona →';
+    next.textContent = persona
+      ? `Continue as ${persona.name.split('—')[0].trim()} →`
+      : 'Pick a persona →';
     status.textContent = persona ? `Selected: ${persona.name}.` : 'Pick a persona to continue.';
   } else if (state.j2Step === 2) {
     next.disabled = !state.j2Scope;
     next.textContent = state.j2Scope ? `Continue (${state.j2Scope}) →` : 'Pick scope →';
-    status.textContent = state.j2Scope ? `${state.j2Scope === 'multi' ? 'Multi-LFI' : 'Single-LFI'} scope.` : 'Single LFI or multi-LFI?';
+    status.textContent = state.j2Scope
+      ? `${state.j2Scope === 'multi' ? 'Multi-LFI' : 'Single-LFI'} scope.`
+      : 'Single LFI or multi-LFI?';
   } else if (state.j2Step === 3) {
     const ready = lfiCount >= minLfi;
     next.disabled = !ready;
-    next.textContent = ready ? `Open Al Tareq consent (${lfiCount} LFI${lfiCount === 1 ? '' : 's'}) →` : `Pick ${state.j2Scope === 'multi' ? '2–4 profiles' : 'one profile'}`;
+    next.textContent = ready
+      ? `Open Al Tareq consent (${lfiCount} LFI${lfiCount === 1 ? '' : 's'}) →`
+      : `Pick ${state.j2Scope === 'multi' ? '2–4 profiles' : 'one profile'}`;
     status.textContent = `${lfiCount} of ${state.j2Scope === 'multi' ? '2–4' : '1'} LFI profile${lfiCount === 1 ? '' : 's'} selected.`;
   } else if (state.j2Step === 4) {
     next.disabled = false;
@@ -2703,7 +3561,9 @@ function renderJ2Actions() {
       const currentLfi = lfiKeys[state.j2SCAIndex] || '?';
       const prof = LFI_PROFILES.find((p) => p.key === currentLfi);
       const isLast = state.j2SCAIndex >= lfiKeys.length - 1;
-      next.textContent = isLast ? `Confirm consent at ${prof?.name || currentLfi} →` : `Continue (${state.j2SCAIndex + 2} of ${lfiKeys.length}) →`;
+      next.textContent = isLast
+        ? `Confirm consent at ${prof?.name || currentLfi} →`
+        : `Continue (${state.j2SCAIndex + 2} of ${lfiKeys.length}) →`;
       status.textContent = `Sub-step 4c · SCA at ${prof?.name || currentLfi} (${state.j2SCAIndex + 1} / ${lfiKeys.length}).`;
     } else if (state.j2SubStep === 'manager') {
       next.textContent = `Return to ${tppName} →`;
@@ -2739,12 +3599,24 @@ function wireControls() {
   // respective journey container. The J1 wizard rehydrates from existing
   // state (persona / step) so a back-trip from the hub doesn't reset it.
   const openJ1 = document.getElementById('open-j1');
-  if (openJ1) openJ1.addEventListener('click', () => { state.view = 'j1'; refresh(); });
+  if (openJ1)
+    openJ1.addEventListener('click', () => {
+      state.view = 'j1';
+      refresh();
+    });
   const openJ2 = document.getElementById('open-j2');
-  if (openJ2) openJ2.addEventListener('click', () => { state.view = 'j2'; refresh(); });
+  if (openJ2)
+    openJ2.addEventListener('click', () => {
+      state.view = 'j2';
+      refresh();
+    });
 
   // "← Back to all journeys" links inside each journey container.
-  const goHub = (ev) => { ev.preventDefault(); state.view = 'hub'; refresh(); };
+  const goHub = (ev) => {
+    ev.preventDefault();
+    state.view = 'hub';
+    refresh();
+  };
   const backJ1 = document.getElementById('back-from-j1');
   if (backJ1) backJ1.addEventListener('click', goHub);
   const backJ2 = document.getElementById('back-from-j2');
@@ -2762,7 +3634,11 @@ function wireControls() {
   });
 
   document.getElementById('btn-next').addEventListener('click', () => {
-    if (state.step < 3) { state.step += 1; refresh(); return; }
+    if (state.step < 3) {
+      state.step += 1;
+      refresh();
+      return;
+    }
     if (state.step === 3) {
       const order = ['discovery', 'sca', 'consent', 'token'];
       const i = order.indexOf(state.subStep);
@@ -2808,14 +3684,21 @@ function wireControls() {
     if (state.step === 3) {
       const order = ['discovery', 'sca', 'consent', 'token'];
       const i = order.indexOf(state.subStep);
-      if (i > 0) { state.subStep = order[i - 1]; refresh(); return; }
+      if (i > 0) {
+        state.subStep = order[i - 1];
+        refresh();
+        return;
+      }
       // At 'discovery' (or unknown), back leaves step 3 entirely.
       state.step = 2;
       state.subStep = 'discovery';
       refresh();
       return;
     }
-    if (state.step > 1) { state.step -= 1; refresh(); }
+    if (state.step > 1) {
+      state.step -= 1;
+      refresh();
+    }
   });
   document.getElementById('btn-restart').addEventListener('click', () => {
     state.step = 1;
@@ -2838,7 +3721,10 @@ function wireControls() {
   document.querySelectorAll('#wizard-steps .step').forEach((node) => {
     node.addEventListener('click', () => {
       const target = Number(node.dataset.step);
-      if (target < state.step) { state.step = target; refresh(); }
+      if (target < state.step) {
+        state.step = target;
+        refresh();
+      }
     });
   });
 
@@ -2851,135 +3737,164 @@ function wireControls() {
   });
 
   const j2Next = document.getElementById('j2-btn-next');
-  if (j2Next) j2Next.addEventListener('click', () => {
-    if (state.j2Step < 4) { state.j2Step += 1; refresh(); return; }
-    if (state.j2Step === 4) {
-      const keys = J2_SUB_STEPS.map((s) => s.key);
-      const cur = state.j2SubStep;
+  if (j2Next)
+    j2Next.addEventListener('click', () => {
+      if (state.j2Step < 4) {
+        state.j2Step += 1;
+        refresh();
+        return;
+      }
+      if (state.j2Step === 4) {
+        const keys = J2_SUB_STEPS.map((s) => s.key);
+        const cur = state.j2SubStep;
 
-      // Special case 1: sca loop — Next mints a ConsentId for the current
-      // LFI and advances the index; if last LFI, moves to manager.
-      if (cur === 'sca') {
-        const lfiKeys = [...state.j2SelectedLFIs];
-        const i = state.j2SCAIndex;
-        const currentLfi = lfiKeys[i];
-        if (currentLfi) {
-          const cid = mintConsentId();
-          state.j2ConsentIds.set(currentLfi, cid);
-          // Append/replace consent record for this LFI
-          const expiresAt = new Date(Date.now() + state.j2ExpirationDays * 86400000).toISOString();
-          const accounts = state.j2SelectedAccounts.get(currentLfi) || new Set();
-          const record = {
-            source: 'j2',
-            tpp: (selectedPersona()?.segment || '').toLowerCase() === 'sme' ? 'Khazaa BFM' : 'Khazaa PFM',
-            lfi: currentLfi,
-            consentId: cid,
-            permissions: [...state.j2Permissions],
-            expiresAt,
-            accounts: [...accounts],
-            status: 'Active',
-          };
-          const existingIdx = state.consentRecords.findIndex((r) => r.source === 'j2' && r.lfi === currentLfi);
-          if (existingIdx >= 0) state.consentRecords[existingIdx] = record;
-          else state.consentRecords.push(record);
-        }
-        if (i + 1 < lfiKeys.length) {
-          state.j2SCAIndex = i + 1;
+        // Special case 1: sca loop — Next mints a ConsentId for the current
+        // LFI and advances the index; if last LFI, moves to manager.
+        if (cur === 'sca') {
+          const lfiKeys = [...state.j2SelectedLFIs];
+          const i = state.j2SCAIndex;
+          const currentLfi = lfiKeys[i];
+          if (currentLfi) {
+            const cid = mintConsentId();
+            state.j2ConsentIds.set(currentLfi, cid);
+            // Append/replace consent record for this LFI
+            const expiresAt = new Date(
+              Date.now() + state.j2ExpirationDays * 86400000,
+            ).toISOString();
+            const accounts = state.j2SelectedAccounts.get(currentLfi) || new Set();
+            const record = {
+              source: 'j2',
+              tpp:
+                (selectedPersona()?.segment || '').toLowerCase() === 'sme'
+                  ? 'Khazaa BFM'
+                  : 'Khazaa PFM',
+              lfi: currentLfi,
+              consentId: cid,
+              permissions: [...state.j2Permissions],
+              expiresAt,
+              accounts: [...accounts],
+              status: 'Active',
+            };
+            const existingIdx = state.consentRecords.findIndex(
+              (r) => r.source === 'j2' && r.lfi === currentLfi,
+            );
+            if (existingIdx >= 0) state.consentRecords[existingIdx] = record;
+            else state.consentRecords.push(record);
+          }
+          if (i + 1 < lfiKeys.length) {
+            state.j2SCAIndex = i + 1;
+            refresh();
+            return;
+          }
+          // Last LFI confirmed → advance to manager sub-step
+          state.j2SubStep = 'manager';
           refresh();
           return;
         }
-        // Last LFI confirmed → advance to manager sub-step
-        state.j2SubStep = 'manager';
-        refresh();
-        return;
-      }
 
-      // Special case 2: altareq → sca transition starts the LFI loop fresh.
-      if (cur === 'altareq') {
-        state.j2SubStep = 'sca';
-        state.j2SCAIndex = 0;
-        // Clear any stale ConsentIds + per-LFI record state so the loop
-        // re-mints cleanly. (Re-entries after Back-and-forth still produce
-        // fresh ConsentIds.)
-        state.j2ConsentIds = new Map();
-        state.consentRecords = state.consentRecords.filter((r) => r.source !== 'j2');
-        refresh();
-        return;
-      }
+        // Special case 2: altareq → sca transition starts the LFI loop fresh.
+        if (cur === 'altareq') {
+          state.j2SubStep = 'sca';
+          state.j2SCAIndex = 0;
+          // Clear any stale ConsentIds + per-LFI record state so the loop
+          // re-mints cleanly. (Re-entries after Back-and-forth still produce
+          // fresh ConsentIds.)
+          state.j2ConsentIds = new Map();
+          state.consentRecords = state.consentRecords.filter((r) => r.source !== 'j2');
+          refresh();
+          return;
+        }
 
-      // Default forward nav within the sub-step list, or jump out to step 5
-      // from the last sub-step (manager).
-      const i = keys.indexOf(cur);
-      if (i === -1 || i >= keys.length - 1) {
-        state.j2Approved = true;
-        state.j2Step = 5;
+        // Default forward nav within the sub-step list, or jump out to step 5
+        // from the last sub-step (manager).
+        const i = keys.indexOf(cur);
+        if (i === -1 || i >= keys.length - 1) {
+          state.j2Approved = true;
+          state.j2Step = 5;
+          state.j2SubStep = 'tpp';
+          refresh();
+          return;
+        }
+        state.j2SubStep = keys[i + 1];
+        refresh();
+      }
+    });
+  const j2Back = document.getElementById('j2-btn-back');
+  if (j2Back)
+    j2Back.addEventListener('click', () => {
+      if (state.j2Step === 4) {
+        const keys = J2_SUB_STEPS.map((s) => s.key);
+        const cur = state.j2SubStep;
+
+        // sca: back walks the LFI index down; from index 0, back returns to altareq.
+        if (cur === 'sca') {
+          if (state.j2SCAIndex > 0) {
+            state.j2SCAIndex -= 1;
+            refresh();
+            return;
+          }
+          state.j2SubStep = 'altareq';
+          refresh();
+          return;
+        }
+        // manager: back goes to the last LFI's SCA screen.
+        if (cur === 'manager') {
+          state.j2SubStep = 'sca';
+          state.j2SCAIndex = Math.max(0, [...state.j2SelectedLFIs].length - 1);
+          refresh();
+          return;
+        }
+
+        const i = keys.indexOf(cur);
+        if (i > 0) {
+          state.j2SubStep = keys[i - 1];
+          refresh();
+          return;
+        }
+        state.j2Step = 3;
         state.j2SubStep = 'tpp';
         refresh();
         return;
       }
-      state.j2SubStep = keys[i + 1];
-      refresh();
-    }
-  });
-  const j2Back = document.getElementById('j2-btn-back');
-  if (j2Back) j2Back.addEventListener('click', () => {
-    if (state.j2Step === 4) {
-      const keys = J2_SUB_STEPS.map((s) => s.key);
-      const cur = state.j2SubStep;
-
-      // sca: back walks the LFI index down; from index 0, back returns to altareq.
-      if (cur === 'sca') {
-        if (state.j2SCAIndex > 0) { state.j2SCAIndex -= 1; refresh(); return; }
-        state.j2SubStep = 'altareq';
+      if (state.j2Step > 1) {
+        state.j2Step -= 1;
         refresh();
-        return;
       }
-      // manager: back goes to the last LFI's SCA screen.
-      if (cur === 'manager') {
-        state.j2SubStep = 'sca';
-        state.j2SCAIndex = Math.max(0, [...state.j2SelectedLFIs].length - 1);
-        refresh();
-        return;
-      }
-
-      const i = keys.indexOf(cur);
-      if (i > 0) { state.j2SubStep = keys[i - 1]; refresh(); return; }
-      state.j2Step = 3;
-      state.j2SubStep = 'tpp';
-      refresh();
-      return;
-    }
-    if (state.j2Step > 1) { state.j2Step -= 1; refresh(); }
-  });
+    });
   const j2Restart = document.getElementById('j2-btn-restart');
-  if (j2Restart) j2Restart.addEventListener('click', () => {
-    state.j2Step = 1;
-    state.j2SubStep = 'tpp';
-    state.j2SCAIndex = 0;
-    state.j2Scope = null;
-    state.j2SelectedLFIs = new Set();
-    state.j2Approved = false;
-    // Clear stale ConsentIds, J2 consent records, per-LFI account picks,
-    // and reset the parameter form to defaults. Without this, the J2
-    // ConsentIds from the previous run linger and the step-5 stepper gate
-    // (which checks j2ConsentIds.size) would let the user skip the consent
-    // flow entirely after restart. Restart MUST land you somewhere where
-    // the dashboard requires re-consent to reach.
-    state.j2ConsentIds = new Map();
-    state.j2SelectedAccounts = new Map();
-    state.j2Permissions = new Set(OF_PERMISSIONS.map((p) => p.key));
-    state.j2ExpirationDays = 90;
-    state.j2IsSingleAuth = false;
-    state.j2TransactionMonths = 13;
-    state.consentRecords = state.consentRecords.filter((r) => r.source !== 'j2');
-    refresh();
-  });
+  if (j2Restart)
+    j2Restart.addEventListener('click', () => {
+      state.j2Step = 1;
+      state.j2SubStep = 'tpp';
+      state.j2SCAIndex = 0;
+      state.j2Scope = null;
+      state.j2SelectedLFIs = new Set();
+      state.j2Approved = false;
+      // Clear stale ConsentIds, J2 consent records, per-LFI account picks,
+      // and reset the parameter form to defaults. Without this, the J2
+      // ConsentIds from the previous run linger and the step-5 stepper gate
+      // (which checks j2ConsentIds.size) would let the user skip the consent
+      // flow entirely after restart. Restart MUST land you somewhere where
+      // the dashboard requires re-consent to reach.
+      state.j2ConsentIds = new Map();
+      state.j2SelectedAccounts = new Map();
+      state.j2Permissions = new Set(OF_PERMISSIONS.map((p) => p.key));
+      state.j2ExpirationDays = 90;
+      state.j2IsSingleAuth = false;
+      state.j2TransactionMonths = 13;
+      state.consentRecords = state.consentRecords.filter((r) => r.source !== 'j2');
+      refresh();
+    });
   document.querySelectorAll('#j2-wizard-steps .step').forEach((node) => {
     node.addEventListener('click', () => {
       const target = Number(node.dataset.j2step);
       // Backwards-nav is always allowed; forward-nav only when the
       // prerequisite for that step is met.
-      if (target < state.j2Step) { state.j2Step = target; refresh(); return; }
+      if (target < state.j2Step) {
+        state.j2Step = target;
+        refresh();
+        return;
+      }
       if (target === state.j2Step) return;
       if (target === 2 && !selectedPersona()) return;
       if (target === 3 && !state.j2Scope) return;
@@ -2989,8 +3904,10 @@ function wireControls() {
       // granted — j2ConsentIds is populated only after the per-LFI SCA loop
       // in step 4c mints them. Without this, the stepper could short-
       // circuit the load-bearing pedagogical step (the consent flow itself).
-      if (target === 5 && (state.j2SelectedLFIs.size < minLfi || state.j2ConsentIds.size === 0)) return;
-      state.j2Step = target; refresh();
+      if (target === 5 && (state.j2SelectedLFIs.size < minLfi || state.j2ConsentIds.size === 0))
+        return;
+      state.j2Step = target;
+      refresh();
     });
   });
 }
@@ -3002,20 +3919,25 @@ async function fillSpecMeta() {
   try {
     const res = await fetch('../fixtures/v1/manifest.json');
     if (res.ok) manifest = await res.json();
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 
   let spec = null;
   if (!manifest) {
     try {
       const res = await fetch('../dist/SPEC.json');
       if (res.ok) spec = await res.json();
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
 
   const sha = (manifest?.specSha ?? spec?.pinSha ?? 'unknown').slice(0, 7);
   document.getElementById('footer-sha').textContent = sha;
   document.getElementById('meta-sha').textContent = manifest?.specSha ?? spec?.pinSha ?? '—';
-  document.getElementById('meta-retrieved').textContent = manifest?.nowAnchor ?? spec?.retrievedAt ?? '—';
+  document.getElementById('meta-retrieved').textContent =
+    manifest?.nowAnchor ?? spec?.retrievedAt ?? '—';
   document.getElementById('meta-version').textContent = manifest?.version ?? '—';
   document.getElementById('meta-generated').textContent = manifest?.generatedAt ?? '—';
 }
@@ -3044,6 +3966,7 @@ async function init() {
 init().catch((err) => {
   const banner = document.createElement('pre');
   banner.textContent = `connect init failed: ${String(err.message ?? err)}`;
-  banner.style.cssText = 'background:#fee;color:#600;padding:8px;border-bottom:1px solid #c33;margin:0';
+  banner.style.cssText =
+    'background:#fee;color:#600;padding:8px;border-bottom:1px solid #c33;margin:0';
   document.body.insertBefore(banner, document.body.firstChild);
 });

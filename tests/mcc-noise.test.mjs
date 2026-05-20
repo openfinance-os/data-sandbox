@@ -39,7 +39,12 @@ describe('Phase R3 MCC noise', () => {
   });
 
   it('misrouting rate stays within bounds across a high-volume persona', () => {
-    const bundle = buildBundle({ persona: personas.hnw_multicurrency, lfi: 'median', seed: 1, pools });
+    const bundle = buildBundle({
+      persona: personas.hnw_multicurrency,
+      lfi: 'median',
+      seed: 1,
+      pools,
+    });
     const records = Object.values(bundle._enrichment).filter((r) => r.mcc);
     expect(records.length).toBeGreaterThan(1000);
     const misrouted = records.filter((r) => r.mccMisrouted);
@@ -51,7 +56,12 @@ describe('Phase R3 MCC noise', () => {
   });
 
   it('every wire MCC is either the canonical or a plausible target from the confusion table', () => {
-    const bundle = buildBundle({ persona: personas.salaried_expat_mid, lfi: 'median', seed: 4729, pools });
+    const bundle = buildBundle({
+      persona: personas.salaried_expat_mid,
+      lfi: 'median',
+      seed: 4729,
+      pools,
+    });
     for (const tx of bundle.transactions) {
       const wire = tx.MerchantDetails?.MerchantCategoryCode;
       const rec = bundle._enrichment[tx.TransactionId];
@@ -64,7 +74,10 @@ describe('Phase R3 MCC noise', () => {
         // Flipped — wire is one of the declared plausible targets.
         const entries = pools.mccConfusion[correct] ?? [];
         const targets = entries.map((e) => e.wrong);
-        expect(targets, `tx ${tx.TransactionId} flipped to ${wire} for canonical ${correct}`).toContain(wire);
+        expect(
+          targets,
+          `tx ${tx.TransactionId} flipped to ${wire} for canonical ${correct}`,
+        ).toContain(wire);
         expect(rec.mccRaw).toBe(wire);
         expect(rec.mccMisroutingReason, `tx ${tx.TransactionId} reason missing`).toBeTruthy();
       }
@@ -79,15 +92,22 @@ describe('Phase R3 MCC noise', () => {
     // independent so the corrected-MCC check is the same under any
     // profile (we just need a profile that exposes MerchantName so the
     // test predicate can match by merchant).
-    const bundle = buildBundle({ persona: personas.salaried_expat_mid, lfi: 'rich', seed: 4729, pools });
+    const bundle = buildBundle({
+      persona: personas.salaried_expat_mid,
+      lfi: 'rich',
+      seed: 4729,
+      pools,
+    });
     // Filter to fuel-pool merchants (canonical 5541) and check that any
     // misrouted ones still enrich as Transport / Fuel.
     const fuelMerchants = new Set([
-      'Beacon Fuel Co.', 'Crestline Petroleum',
-      'Northstar Energy Stations', 'Ridgepoint Fuel',
+      'Beacon Fuel Co.',
+      'Crestline Petroleum',
+      'Northstar Energy Stations',
+      'Ridgepoint Fuel',
     ]);
     const fuelTxs = bundle.transactions.filter((t) =>
-      fuelMerchants.has(t.MerchantDetails?.MerchantName ?? '')
+      fuelMerchants.has(t.MerchantDetails?.MerchantName ?? ''),
     );
     expect(fuelTxs.length).toBeGreaterThan(0);
     for (const t of fuelTxs) {

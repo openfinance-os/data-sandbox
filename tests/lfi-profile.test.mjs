@@ -38,8 +38,12 @@ describe('LFI profile mechanics — EXP-04 / §8.3', () => {
     for (let i = 0; i < rich.transactions.length; i++) {
       expect(median.transactions[i].TransactionId).toBe(rich.transactions[i].TransactionId);
       expect(sparse.transactions[i].TransactionId).toBe(rich.transactions[i].TransactionId);
-      expect(median.transactions[i].CreditDebitIndicator).toBe(rich.transactions[i].CreditDebitIndicator);
-      expect(sparse.transactions[i].CreditDebitIndicator).toBe(rich.transactions[i].CreditDebitIndicator);
+      expect(median.transactions[i].CreditDebitIndicator).toBe(
+        rich.transactions[i].CreditDebitIndicator,
+      );
+      expect(sparse.transactions[i].CreditDebitIndicator).toBe(
+        rich.transactions[i].CreditDebitIndicator,
+      );
       expect(median.transactions[i].Amount.Amount).toBe(rich.transactions[i].Amount.Amount);
       expect(sparse.transactions[i].Amount.Amount).toBe(rich.transactions[i].Amount.Amount);
       expect(median.transactions[i].BookingDateTime).toBe(rich.transactions[i].BookingDateTime);
@@ -60,12 +64,12 @@ describe('LFI profile mechanics — EXP-04 / §8.3', () => {
     // This locks the §8.3 contract: Sparse populates only Universal optional fields.
     // Flags is Common, so under Sparse it should be absent.
     const sparsePayroll = sparse.transactions.filter(
-      (t) => Array.isArray(t.Flags) && t.Flags.includes('Payroll')
+      (t) => Array.isArray(t.Flags) && t.Flags.includes('Payroll'),
     );
     expect(sparsePayroll.length).toBe(0);
     // Under Rich, every salary should retain its Payroll Flag.
     const richPayroll = rich.transactions.filter(
-      (t) => Array.isArray(t.Flags) && t.Flags.includes('Payroll')
+      (t) => Array.isArray(t.Flags) && t.Flags.includes('Payroll'),
     );
     expect(richPayroll.length).toBeGreaterThan(0);
   });

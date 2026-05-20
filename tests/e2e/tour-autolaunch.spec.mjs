@@ -47,9 +47,7 @@ test.describe('tour auto-launch (PR #2)', () => {
 
   test('URL with query params skips auto-launch and demotes by default', async ({ page }) => {
     await page.goto('/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729');
-    await page.waitForFunction(
-      () => document.getElementById('coverage-pct')?.textContent !== '—',
-    );
+    await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
     // No overlay — returning visitor flow.
     await expect(page.locator('#tour-overlay')).toHaveCount(0);
     // Button starts demoted.

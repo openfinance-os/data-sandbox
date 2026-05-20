@@ -22,7 +22,9 @@ async function init() {
   document.getElementById('meta-repo').textContent = spec.upstreamRepo ?? '—';
   document.getElementById('meta-sha').textContent = spec.pinSha ?? '—';
   document.getElementById('meta-retrieved').textContent = spec.retrievedAt ?? '—';
-  document.getElementById('meta-endpoints').textContent = String(Object.keys(spec.endpoints ?? {}).length);
+  document.getElementById('meta-endpoints').textContent = String(
+    Object.keys(spec.endpoints ?? {}).length,
+  );
 
   let total = 0;
   let mandatory = 0;
@@ -44,6 +46,7 @@ async function init() {
 init().catch((err) => {
   const banner = document.createElement('pre');
   banner.textContent = `about init failed: ${String(err.message ?? err)}`;
-  banner.style.cssText = 'background:#fee;color:#600;padding:8px;border-bottom:1px solid #c33;margin:0';
+  banner.style.cssText =
+    'background:#fee;color:#600;padding:8px;border-bottom:1px solid #c33;margin:0';
   document.body.insertBefore(banner, document.body.firstChild);
 });

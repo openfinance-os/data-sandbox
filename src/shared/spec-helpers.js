@@ -81,8 +81,14 @@ function collectProbes(bundle) {
     probes.push(['Transaction.TransactionReference', t.TransactionReference != null]);
     probes.push(['Transaction.MerchantDetails', t.MerchantDetails != null]);
     if (t.MerchantDetails) {
-      probes.push(['Transaction.MerchantDetails.MerchantCategoryCode', t.MerchantDetails.MerchantCategoryCode != null]);
-      probes.push(['Transaction.MerchantDetails.MerchantName', t.MerchantDetails.MerchantName != null]);
+      probes.push([
+        'Transaction.MerchantDetails.MerchantCategoryCode',
+        t.MerchantDetails.MerchantCategoryCode != null,
+      ]);
+      probes.push([
+        'Transaction.MerchantDetails.MerchantName',
+        t.MerchantDetails.MerchantName != null,
+      ]);
     }
   }
   for (const b of bundle.balances ?? []) {
@@ -98,9 +104,9 @@ function collectProbes(bundle) {
 export function coverageByBand(bundle) {
   const out = {
     Universal: { populated: 0, total: 0, pct: 0 },
-    Common:    { populated: 0, total: 0, pct: 0 },
-    Variable:  { populated: 0, total: 0, pct: 0 },
-    Rare:      { populated: 0, total: 0, pct: 0 },
+    Common: { populated: 0, total: 0, pct: 0 },
+    Variable: { populated: 0, total: 0, pct: 0 },
+    Rare: { populated: 0, total: 0, pct: 0 },
   };
   for (const [path, ok] of collectProbes(bundle)) {
     const band = PROBE_BAND[path];
@@ -145,8 +151,14 @@ function collectProbesForEndpoint(bundle, endpointPath, accountId) {
         out.push(['Transaction.TransactionReference', t.TransactionReference != null]);
         out.push(['Transaction.MerchantDetails', t.MerchantDetails != null]);
         if (t.MerchantDetails) {
-          out.push(['Transaction.MerchantDetails.MerchantCategoryCode', t.MerchantDetails.MerchantCategoryCode != null]);
-          out.push(['Transaction.MerchantDetails.MerchantName', t.MerchantDetails.MerchantName != null]);
+          out.push([
+            'Transaction.MerchantDetails.MerchantCategoryCode',
+            t.MerchantDetails.MerchantCategoryCode != null,
+          ]);
+          out.push([
+            'Transaction.MerchantDetails.MerchantName',
+            t.MerchantDetails.MerchantName != null,
+          ]);
         }
       }
       return out;

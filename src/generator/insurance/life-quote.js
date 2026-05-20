@@ -37,11 +37,9 @@ function serviceRating() {
 export function generateLifeQuote({ persona, rng, now }) {
   const l = persona.life;
   const quoteCreatedDays = l.policy.start_date_offset_days + 5;
-  const creationDateTime = new Date(
-    now.getTime() - quoteCreatedDays * 86400000
-  ).toISOString();
+  const creationDateTime = new Date(now.getTime() - quoteCreatedDays * 86400000).toISOString();
   const expirationDateTime = new Date(
-    now.getTime() - (quoteCreatedDays - 30) * 86400000
+    now.getTime() - (quoteCreatedDays - 30) * 86400000,
   ).toISOString();
 
   const annualRate = l.policy.type_of_life_insurance === 'WholeLifeInsurance' ? 0.012 : 0.005;

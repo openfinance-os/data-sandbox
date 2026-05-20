@@ -62,9 +62,7 @@ describe('custom persona builder (build_persona)', () => {
       name: 'build_persona',
       arguments: { recipe: { income_band: 'mid' }, seed: 7 },
     });
-    const accountsText = textOf(
-      await client.callTool({ name: 'get_accounts', arguments: {} }),
-    );
+    const accountsText = textOf(await client.callTool({ name: 'get_accounts', arguments: {} }));
     expect(accountsText).toMatch(/SYNTHETIC — Open Finance Data Sandbox/);
     const env = JSON.parse(accountsText.slice(accountsText.indexOf('{')));
     expect(env.Data.Account.length).toBeGreaterThanOrEqual(1);
@@ -72,9 +70,7 @@ describe('custom persona builder (build_persona)', () => {
     expect(env._lfi).toBe('median');
     expect(env._seed).toBe(7);
 
-    const balancesText = textOf(
-      await client.callTool({ name: 'get_balances', arguments: {} }),
-    );
+    const balancesText = textOf(await client.callTool({ name: 'get_balances', arguments: {} }));
     expect(balancesText).toMatch(/SYNTHETIC — Open Finance Data Sandbox/);
   });
 
@@ -86,9 +82,7 @@ describe('custom persona builder (build_persona)', () => {
 
     const second = await connect();
     await second.client.callTool({ name: 'build_persona', arguments: args });
-    const journeyB = textOf(
-      await second.client.callTool({ name: 'load_journey', arguments: {} }),
-    );
+    const journeyB = textOf(await second.client.callTool({ name: 'load_journey', arguments: {} }));
     await second.client.close();
     await second.server.close();
 
@@ -213,9 +207,7 @@ describe('custom persona builder (build_persona)', () => {
     expect(dec.valid).toBe(true);
     expect(dec.recipeHash).toBe(enc.recipeHash);
     const reEnc = JSON.parse(
-      textOf(
-        await client.callTool({ name: 'encode_recipe', arguments: { recipe: dec.recipe } }),
-      ),
+      textOf(await client.callTool({ name: 'encode_recipe', arguments: { recipe: dec.recipe } })),
     );
     expect(reEnc.encoded).toBe(enc.encoded);
   });
@@ -233,9 +225,7 @@ describe('custom persona builder (build_persona)', () => {
       textOf(await client.callTool({ name: 'encode_recipe', arguments: { recipe } })),
     );
     const dec = JSON.parse(
-      textOf(
-        await client.callTool({ name: 'decode_recipe', arguments: { encoded: enc.encoded } }),
-      ),
+      textOf(await client.callTool({ name: 'decode_recipe', arguments: { encoded: enc.encoded } })),
     );
     const builtA = textOf(
       await client.callTool({ name: 'build_persona', arguments: { recipe, seed: 11 } }),

@@ -207,9 +207,8 @@ export function generateLifePremium({ persona }) {
   // Heuristic: ~0.5% of sum-assured per year for term life on a healthy
   // adult, +5% VAT. Keeps the heuristic mid-market and recognisable.
   const sa = persona.life.policy.sum_assured_aed;
-  const annualRate = persona.life.policy.type_of_life_insurance === 'WholeLifeInsurance'
-    ? 0.012
-    : 0.005;
+  const annualRate =
+    persona.life.policy.type_of_life_insurance === 'WholeLifeInsurance' ? 0.012 : 0.005;
   const total = Math.round(sa * annualRate);
   return {
     TotalPremiumAmount: aed(total),

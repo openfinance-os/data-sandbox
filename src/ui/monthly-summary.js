@@ -4,7 +4,9 @@
 // el and the shared formatAmount helper as deps.
 
 const MONTH_FORMATTER = new Intl.DateTimeFormat('en-GB', {
-  month: 'short', year: 'numeric', timeZone: 'Asia/Dubai',
+  month: 'short',
+  year: 'numeric',
+  timeZone: 'Asia/Dubai',
 });
 
 export function createMonthlySummary(deps) {
@@ -18,9 +20,12 @@ export function createMonthlySummary(deps) {
       const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
       if (!buckets.has(key)) {
         buckets.set(key, {
-          key, label: MONTH_FORMATTER.format(d),
-          creditCount: 0, creditSum: 0,
-          debitCount: 0, debitSum: 0,
+          key,
+          label: MONTH_FORMATTER.format(d),
+          creditCount: 0,
+          creditSum: 0,
+          debitCount: 0,
+          debitSum: 0,
           nsfCount: 0,
           currency: r.Amount?.Currency ?? '',
         });
@@ -32,9 +37,11 @@ export function createMonthlySummary(deps) {
         continue; // rejected debits don't move balance, exclude from credit/debit sums
       }
       if (r.CreditDebitIndicator === 'Credit') {
-        b.creditCount += 1; b.creditSum += amt;
+        b.creditCount += 1;
+        b.creditSum += amt;
       } else {
-        b.debitCount += 1; b.debitSum += amt;
+        b.debitCount += 1;
+        b.debitSum += amt;
       }
     }
     const ordered = [...buckets.values()].sort((a, b) => a.key.localeCompare(b.key));
@@ -45,10 +52,12 @@ export function createMonthlySummary(deps) {
     const det = el('details', { class: 'tx-monthly', attrs: { open: 'open' } });
     const summary = el('summary');
     summary.appendChild(el('span', { text: 'Monthly summary' }));
-    summary.appendChild(el('span', {
-      class: 'roll-badge',
-      text: `${ordered.length} months · credits ${formatAmount(totalCredits)} · debits ${formatAmount(totalDebits)} · net ${formatAmount(net)} ${ordered[0]?.currency ?? ''}`.trim(),
-    }));
+    summary.appendChild(
+      el('span', {
+        class: 'roll-badge',
+        text: `${ordered.length} months · credits ${formatAmount(totalCredits)} · debits ${formatAmount(totalDebits)} · net ${formatAmount(net)} ${ordered[0]?.currency ?? ''}`.trim(),
+      }),
+    );
     det.appendChild(summary);
 
     const table = el('table');

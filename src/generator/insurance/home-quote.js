@@ -42,11 +42,9 @@ function serviceRating() {
 export function generateHomeQuote({ persona, rng, now }) {
   const h = persona.home;
   const quoteCreatedDays = h.policy.start_date_offset_days + 5;
-  const creationDateTime = new Date(
-    now.getTime() - quoteCreatedDays * 86400000
-  ).toISOString();
+  const creationDateTime = new Date(now.getTime() - quoteCreatedDays * 86400000).toISOString();
   const expirationDateTime = new Date(
-    now.getTime() - (quoteCreatedDays - 30) * 86400000
+    now.getTime() - (quoteCreatedDays - 30) * 86400000,
   ).toISOString();
 
   const value = h.property_value.market_value_aed;

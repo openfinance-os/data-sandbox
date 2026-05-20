@@ -112,27 +112,35 @@ export function createExportPopover(deps) {
 
   const TABS = [
     { key: 'permalink', label: 'Permalink' },
-    { key: 'embed',     label: 'Embed iframe' },
-    { key: 'json',      label: 'JSON' },
-    { key: 'csv',       label: 'CSV' },
-    { key: 'tarball',   label: 'Tarball' },
-    { key: 'npm',       label: 'npm' },
-    { key: 'python',    label: 'Python' },
-    { key: 'curl',      label: 'curl' },
-    { key: 'mcp',       label: 'MCP' },
+    { key: 'embed', label: 'Embed iframe' },
+    { key: 'json', label: 'JSON' },
+    { key: 'csv', label: 'CSV' },
+    { key: 'tarball', label: 'Tarball' },
+    { key: 'npm', label: 'npm' },
+    { key: 'python', label: 'Python' },
+    { key: 'curl', label: 'curl' },
+    { key: 'mcp', label: 'MCP' },
   ];
 
   function open() {
-    if (overlay) { closeOverlay(); return; }
+    if (overlay) {
+      closeOverlay();
+      return;
+    }
     // PR-13 (Greptile P2) — remember who opened us so we can return
     // focus on close. Falls back gracefully if document.activeElement
     // is null or body (e.g. ⌘E from outside any focused element).
     triggerElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    overlay = el('div', { class: 'export-overlay', attrs: { role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'export-title' } });
+    overlay = el('div', {
+      class: 'export-overlay',
+      attrs: { role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'export-title' },
+    });
     const card = el('div', { class: 'export-card' });
 
     const head = el('div', { class: 'export-head' });
-    head.appendChild(el('h3', { class: 'export-title', text: 'Export', attrs: { id: 'export-title' } }));
+    head.appendChild(
+      el('h3', { class: 'export-title', text: 'Export', attrs: { id: 'export-title' } }),
+    );
     const closeBtn = el('button', {
       class: 'export-close',
       text: '×',
@@ -142,7 +150,10 @@ export function createExportPopover(deps) {
     head.appendChild(closeBtn);
     card.appendChild(head);
 
-    const tabStrip = el('div', { class: 'export-tabs', attrs: { role: 'tablist', 'aria-label': 'Export format' } });
+    const tabStrip = el('div', {
+      class: 'export-tabs',
+      attrs: { role: 'tablist', 'aria-label': 'Export format' },
+    });
     for (const t of TABS) {
       // PR-13 (Greptile P2) — ARIA tab pattern: each tab has a stable
       // id and aria-controls pointing at the panel; arrow-key
@@ -162,9 +173,13 @@ export function createExportPopover(deps) {
           tabindex: activeTabKey === t.key ? '0' : '-1',
         },
       });
-      btn.addEventListener('click', () => { activeTabKey = t.key; renderActiveTab(); });
+      btn.addEventListener('click', () => {
+        activeTabKey = t.key;
+        renderActiveTab();
+      });
       btn.addEventListener('keydown', (e) => {
-        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && e.key !== 'Home' && e.key !== 'End') return;
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && e.key !== 'Home' && e.key !== 'End')
+          return;
         e.preventDefault();
         const idx = TABS.findIndex((x) => x.key === activeTabKey);
         let next;
@@ -193,7 +208,9 @@ export function createExportPopover(deps) {
     overlay.appendChild(card);
 
     // Click outside closes.
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeOverlay(); });
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeOverlay();
+    });
 
     document.body.appendChild(overlay);
     renderActiveTab();
@@ -234,7 +251,10 @@ export function createExportPopover(deps) {
         text: 'Download tarball',
         attrs: { type: 'button' },
       });
-      dl.addEventListener('click', () => { exportTarball(); track('export', { format: 'tarball' }); });
+      dl.addEventListener('click', () => {
+        exportTarball();
+        track('export', { format: 'tarball' });
+      });
       body.appendChild(dl);
       return;
     }
@@ -249,7 +269,10 @@ export function createExportPopover(deps) {
       attrs: { type: 'button', 'aria-label': 'Copy snippet to clipboard' },
     });
     copyBtn.addEventListener('click', () => {
-      copyToClipboard(snip.text, `${TABS.find((t) => t.key === activeTabKey)?.label ?? 'Snippet'} copied.`);
+      copyToClipboard(
+        snip.text,
+        `${TABS.find((t) => t.key === activeTabKey)?.label ?? 'Snippet'} copied.`,
+      );
       // Map tab key → existing analytics format allowlist where possible.
       // Permalink + Embed reuse the 'share' event; the rest fall under 'export'.
       if (activeTabKey === 'permalink') track('share', { kind: 'permalink' });
@@ -259,12 +282,26 @@ export function createExportPopover(deps) {
     copyRow.appendChild(copyBtn);
     // Active-endpoint download shortcuts where available.
     if (activeTabKey === 'json') {
-      const dl = el('button', { class: 'export-copy-btn export-copy-btn-secondary', text: 'Download .json', attrs: { type: 'button' } });
-      dl.addEventListener('click', () => { exportActiveJson(); track('export', { format: 'json' }); });
+      const dl = el('button', {
+        class: 'export-copy-btn export-copy-btn-secondary',
+        text: 'Download .json',
+        attrs: { type: 'button' },
+      });
+      dl.addEventListener('click', () => {
+        exportActiveJson();
+        track('export', { format: 'json' });
+      });
       copyRow.appendChild(dl);
     } else if (activeTabKey === 'csv') {
-      const dl = el('button', { class: 'export-copy-btn export-copy-btn-secondary', text: 'Download .csv', attrs: { type: 'button' } });
-      dl.addEventListener('click', () => { exportActiveCsv(); track('export', { format: 'csv' }); });
+      const dl = el('button', {
+        class: 'export-copy-btn export-copy-btn-secondary',
+        text: 'Download .csv',
+        attrs: { type: 'button' },
+      });
+      dl.addEventListener('click', () => {
+        exportActiveCsv();
+        track('export', { format: 'csv' });
+      });
       copyRow.appendChild(dl);
     }
     body.appendChild(copyRow);
@@ -273,5 +310,11 @@ export function createExportPopover(deps) {
   // Esc routing is owned by app.js's global keydown handler via
   // exportPopover.isOpen + exportPopover.close() — see PR-13 (Greptile)
   // for why this module no longer ships its own handleKey export.
-  return { open, close: closeOverlay, get isOpen() { return overlay !== null; } };
+  return {
+    open,
+    close: closeOverlay,
+    get isOpen() {
+      return overlay !== null;
+    },
+  };
 }

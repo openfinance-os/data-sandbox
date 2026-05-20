@@ -37,11 +37,8 @@ export function createInsurance(deps) {
     nav.replaceChildren();
     const dom = state.domains?.[state.domain];
     const wrap = el('div', { class: 'nav-account is-bundle' });
-    wrap.appendChild(
-      el('div', { class: 'nav-account-header', text: dom?.label ?? 'Insurance' })
-    );
-    const inScope =
-      state.spec?.inScopePaths ?? Object.keys(state.spec?.endpoints ?? {});
+    wrap.appendChild(el('div', { class: 'nav-account-header', text: dom?.label ?? 'Insurance' }));
+    const inScope = state.spec?.inScopePaths ?? Object.keys(state.spec?.endpoints ?? {});
     for (const ep of inScope) {
       const isActive = state.endpoint === ep;
       const cov = insuranceCoverageForEndpoint(ep);
@@ -60,7 +57,7 @@ export function createInsurance(deps) {
             track('endpoint_nav', { endpoint: ep, domain: state.domain });
           },
         },
-        el('span', { class: 'nav-endpoint-label', text: ep })
+        el('span', { class: 'nav-endpoint-label', text: ep }),
       );
       if (cov.total > 0) {
         const meter = el('span', {
@@ -93,9 +90,7 @@ export function createInsurance(deps) {
           ? { kind: 'detail', Data: state.bundle.paymentDetails }
           : null;
       case '/motor-insurance-quotes/{QuoteId}':
-        return state.bundle.motorQuote
-          ? { kind: 'detail', Data: state.bundle.motorQuote }
-          : null;
+        return state.bundle.motorQuote ? { kind: 'detail', Data: state.bundle.motorQuote } : null;
       case '/home-insurance-policies':
         return {
           kind: 'list',
@@ -110,9 +105,7 @@ export function createInsurance(deps) {
           ? { kind: 'detail', Data: state.bundle.paymentDetails }
           : null;
       case '/home-insurance-quotes/{QuoteId}':
-        return state.bundle.homeQuote
-          ? { kind: 'detail', Data: state.bundle.homeQuote }
-          : null;
+        return state.bundle.homeQuote ? { kind: 'detail', Data: state.bundle.homeQuote } : null;
       case '/health-insurance-policies':
         return {
           kind: 'list',
@@ -127,9 +120,7 @@ export function createInsurance(deps) {
           ? { kind: 'detail', Data: state.bundle.paymentDetails }
           : null;
       case '/health-insurance-quotes/{QuoteId}':
-        return state.bundle.healthQuote
-          ? { kind: 'detail', Data: state.bundle.healthQuote }
-          : null;
+        return state.bundle.healthQuote ? { kind: 'detail', Data: state.bundle.healthQuote } : null;
       case '/life-insurance-policies':
         return {
           kind: 'list',
@@ -144,9 +135,7 @@ export function createInsurance(deps) {
           ? { kind: 'detail', Data: state.bundle.paymentDetails }
           : null;
       case '/life-insurance-quotes/{QuoteId}':
-        return state.bundle.lifeQuote
-          ? { kind: 'detail', Data: state.bundle.lifeQuote }
-          : null;
+        return state.bundle.lifeQuote ? { kind: 'detail', Data: state.bundle.lifeQuote } : null;
       case '/travel-insurance-policies':
         return {
           kind: 'list',
@@ -161,9 +150,7 @@ export function createInsurance(deps) {
           ? { kind: 'detail', Data: state.bundle.paymentDetails }
           : null;
       case '/travel-insurance-quotes/{QuoteId}':
-        return state.bundle.travelQuote
-          ? { kind: 'detail', Data: state.bundle.travelQuote }
-          : null;
+        return state.bundle.travelQuote ? { kind: 'detail', Data: state.bundle.travelQuote } : null;
       case '/renters-insurance-policies':
         return {
           kind: 'list',
@@ -220,13 +207,18 @@ export function createInsurance(deps) {
     // who arrived here by mistake back to banking.
     const wrap = el('div', { class: 'insurance-empty-banner', attrs: { role: 'note' } });
     wrap.appendChild(el('strong', { text: 'Insurance is in early calibration.' }));
-    wrap.appendChild(document.createTextNode(
-      ' The 30 endpoints across 7 lines are spec-anchored and deterministic, but populate-rate bands are still maturing — treat the LFI Rich/Median/Sparse axis as indicative until v1.1.'
-    ));
+    wrap.appendChild(
+      document.createTextNode(
+        ' The 30 endpoints across 7 lines are spec-anchored and deterministic, but populate-rate bands are still maturing — treat the LFI Rich/Median/Sparse axis as indicative until v1.1.',
+      ),
+    );
     const link = el('a', {
       class: 'insurance-empty-link',
       text: 'Switch to Banking →',
-      attrs: { href: '#', title: 'Back to the banking domain (18 personas, 12 endpoints, fully calibrated).' },
+      attrs: {
+        href: '#',
+        title: 'Back to the banking domain (18 personas, 12 endpoints, fully calibrated).',
+      },
     });
     link.addEventListener('click', (e) => {
       e.preventDefault();
@@ -250,18 +242,12 @@ export function createInsurance(deps) {
 
     // Sync the rendered/raw toggle aria state so a switch from the banking flow
     // (where the toggle was already wired) stays consistent.
-    document
-      .getElementById('view-rendered')
-      ?.classList.toggle('active', state.view === 'rendered');
-    document
-      .getElementById('view-raw')
-      ?.classList.toggle('active', state.view === 'raw');
+    document.getElementById('view-rendered')?.classList.toggle('active', state.view === 'rendered');
+    document.getElementById('view-raw')?.classList.toggle('active', state.view === 'raw');
     document
       .getElementById('view-rendered')
       ?.setAttribute('aria-selected', state.view === 'rendered');
-    document
-      .getElementById('view-raw')
-      ?.setAttribute('aria-selected', state.view === 'raw');
+    document.getElementById('view-raw')?.setAttribute('aria-selected', state.view === 'raw');
 
     // PR #9 — insurance early-calibration banner.
     body.appendChild(renderInsuranceCalibrationBanner());
@@ -272,7 +258,7 @@ export function createInsurance(deps) {
         el('p', {
           text: `No data for ${state.endpoint} in this bundle.`,
           attrs: { style: 'color:var(--text-muted);padding:8px 12px' },
-        })
+        }),
       );
       return;
     }
@@ -288,7 +274,7 @@ export function createInsurance(deps) {
         el('pre', {
           class: 'payload-raw',
           text: JSON.stringify(slice.Data, null, 2),
-        })
+        }),
       );
       return;
     }
@@ -361,7 +347,7 @@ export function createInsurance(deps) {
               title: `${badge.text}${meta.format ? ` · format: ${meta.format}` : ''}`,
             },
             text: badge.label,
-          })
+          }),
         );
       }
       dt.appendChild(el('span', { class: 'field-name', text: k }));
@@ -369,9 +355,7 @@ export function createInsurance(deps) {
         dt.appendChild(el('span', { class: 'field-format', text: meta.format }));
       }
       if (meta?.enum && Array.isArray(meta.enum) && meta.enum.length <= 6) {
-        dt.appendChild(
-          el('span', { class: 'field-enum', text: `[${meta.enum.join(' | ')}]` })
-        );
+        dt.appendChild(el('span', { class: 'field-enum', text: `[${meta.enum.join(' | ')}]` }));
       }
       const dd = el('dd', { class: 'insurance-field-value' });
       dd.appendChild(insuranceFieldTree(v, fieldsByName));
@@ -397,7 +381,10 @@ export function createInsurance(deps) {
     let populated = 0;
     for (const f of optional) {
       const values = valuesByName.get(f.name);
-      if (values && values.some((v) => v != null && v !== '' && !(Array.isArray(v) && v.length === 0))) {
+      if (
+        values &&
+        values.some((v) => v != null && v !== '' && !(Array.isArray(v) && v.length === 0))
+      ) {
         populated += 1;
       }
     }

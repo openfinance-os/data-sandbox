@@ -38,11 +38,9 @@ function serviceRating() {
 export function generateHealthQuote({ persona, rng, now }) {
   const h = persona.health;
   const quoteCreatedDays = h.policy.start_date_offset_days + 5;
-  const creationDateTime = new Date(
-    now.getTime() - quoteCreatedDays * 86400000
-  ).toISOString();
+  const creationDateTime = new Date(now.getTime() - quoteCreatedDays * 86400000).toISOString();
   const expirationDateTime = new Date(
-    now.getTime() - (quoteCreatedDays - 30) * 86400000
+    now.getTime() - (quoteCreatedDays - 30) * 86400000,
   ).toISOString();
 
   const numInsured = 1 + (h.insured_parties?.length ?? 0);

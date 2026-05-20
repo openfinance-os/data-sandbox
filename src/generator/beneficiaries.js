@@ -14,9 +14,13 @@ export function generateBeneficiaries({ persona, accounts, rng, pools, excludeBa
   // beneficiary doesn't coincidentally land at the same bank — keeping
   // the rendered bundle's multi-bank surface visually distinct.
   const reservedNames = new Set(excludeBankNames ?? []);
-  const filteredBanksPool = reservedNames.size === 0
-    ? pools.counterpartyBanks
-    : { ...pools.counterpartyBanks, banks: pools.counterpartyBanks.banks.filter((b) => !reservedNames.has(b.name)) };
+  const filteredBanksPool =
+    reservedNames.size === 0
+      ? pools.counterpartyBanks
+      : {
+          ...pools.counterpartyBanks,
+          banks: pools.counterpartyBanks.banks.filter((b) => !reservedNames.has(b.name)),
+        };
   // Phase 1 default: 3 named beneficiaries per current account, 1 per credit-card account.
   for (const acc of accounts) {
     const count = acc._meta.kind === 'CurrentAccount' ? 3 : 1;
@@ -46,9 +50,7 @@ export function generateBeneficiaries({ persona, accounts, rng, pools, excludeBa
           ...(counterpartyBank.name ? { Name: counterpartyBank.name } : {}),
           PostalAddress: { AddressLine: ['Synthetic Branch'], Country: 'AE' },
         },
-        CreditorAccount: [
-          { SchemeName: 'IBAN', Identification: iban },
-        ],
+        CreditorAccount: [{ SchemeName: 'IBAN', Identification: iban }],
       });
     }
   }

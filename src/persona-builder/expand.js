@@ -26,22 +26,20 @@ export function expandRecipe(recipeIn, indexedPools) {
   const distressBand =
     DISTRESS_LEVELS[recipe.distress] ?? DISTRESS_LEVELS[RECIPE_DEFAULTS.distress];
 
-  const accounts = (recipe.products?.length ? recipe.products : ['CurrentAccount']).map(
-    (kind) => {
-      const acc = {
-        type: kind,
-        currency: 'AED',
-        age_months: 36,
-      };
-      if (kind === 'CreditCard') {
-        acc.credit_limit_aed = CARD_LIMITS[recipe.card_limit] ?? CARD_LIMITS.mid;
-      }
-      if (kind === 'Mortgage') {
-        acc.age_months = 60;
-      }
-      return acc;
+  const accounts = (recipe.products?.length ? recipe.products : ['CurrentAccount']).map((kind) => {
+    const acc = {
+      type: kind,
+      currency: 'AED',
+      age_months: 36,
+    };
+    if (kind === 'CreditCard') {
+      acc.credit_limit_aed = CARD_LIMITS[recipe.card_limit] ?? CARD_LIMITS.mid;
     }
-  );
+    if (kind === 'Mortgage') {
+      acc.age_months = 60;
+    }
+    return acc;
+  });
 
   const persona = {
     persona_id: `custom_${recipeHash(recipe)}`,
@@ -50,9 +48,10 @@ export function expandRecipe(recipeIn, indexedPools) {
     archetype: `custom_${segment.toLowerCase()}`,
     default_seed: 1,
     segment,
-    stress_coverage: Array.isArray(recipe.stress_tags) && recipe.stress_tags.length > 0
-      ? [...recipe.stress_tags]
-      : ['custom_persona'],
+    stress_coverage:
+      Array.isArray(recipe.stress_tags) && recipe.stress_tags.length > 0
+        ? [...recipe.stress_tags]
+        : ['custom_persona'],
     demographics: {
       nationality_pool: recipe.name_pool,
       age_band: recipe.age_band,
@@ -93,8 +92,7 @@ export function expandRecipe(recipeIn, indexedPools) {
       ],
     };
     const cfBand =
-      (CASH_FLOW_BANDS[segment] ?? {})[recipe.cash_flow_intensity] ??
-      CASH_FLOW_BANDS[segment].med;
+      (CASH_FLOW_BANDS[segment] ?? {})[recipe.cash_flow_intensity] ?? CASH_FLOW_BANDS[segment].med;
     persona.cash_flow = {
       customer_inflows: {
         counterparty_pool: recipe.customer_inflow_pool,

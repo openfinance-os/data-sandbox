@@ -36,11 +36,9 @@ function serviceRating() {
 export function generateRentersQuote({ persona, rng, now }) {
   const r = persona.renters;
   const quoteCreatedDays = r.policy.start_date_offset_days + 5;
-  const creationDateTime = new Date(
-    now.getTime() - quoteCreatedDays * 86400000
-  ).toISOString();
+  const creationDateTime = new Date(now.getTime() - quoteCreatedDays * 86400000).toISOString();
   const expirationDateTime = new Date(
-    now.getTime() - (quoteCreatedDays - 30) * 86400000
+    now.getTime() - (quoteCreatedDays - 30) * 86400000,
   ).toISOString();
 
   const base = Math.round(r.contents.declared_value_aed * 0.005);

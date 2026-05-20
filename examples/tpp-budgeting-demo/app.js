@@ -11,9 +11,9 @@
 
 const params = new URLSearchParams(window.location.search);
 const ORIGIN = (
-  params.get('origin')
-    || (window.location.origin && window.location.origin !== 'null' ? window.location.origin : '')
-    || 'https://openfinance-os.org/commons/data-sandbox'
+  params.get('origin') ||
+  (window.location.origin && window.location.origin !== 'null' ? window.location.origin : '') ||
+  'https://openfinance-os.org/commons/data-sandbox'
 ).replace(/\/$/, '');
 const FX = `${ORIGIN}/fixtures/v1`;
 
@@ -79,7 +79,9 @@ async function init() {
   try {
     manifest = await getJSON(`${FX}/manifest.json`);
   } catch (err) {
-    showErr(`Could not fetch ${FX}/manifest.json — ${err.message}. If running locally, start a server in _site/ and open this file from there, or pass ?origin=https://openfinance-os.org/commons/data-sandbox.`);
+    showErr(
+      `Could not fetch ${FX}/manifest.json — ${err.message}. If running locally, start a server in _site/ and open this file from there, or pass ?origin=https://openfinance-os.org/commons/data-sandbox.`,
+    );
     return;
   }
 
@@ -88,8 +90,9 @@ async function init() {
   // transactions + standing-orders, which only exist for banking personas.
   // Insurance personas live in the same manifest but have no banking bundle,
   // so listing them would 404 the moment the user picked one.
-  const bankingPersonaIds = Object.keys(manifest.personas)
-    .filter((id) => (manifest.personas[id].domain ?? 'banking') === 'banking');
+  const bankingPersonaIds = Object.keys(manifest.personas).filter(
+    (id) => (manifest.personas[id].domain ?? 'banking') === 'banking',
+  );
   for (const id of bankingPersonaIds) {
     const opt = document.createElement('option');
     opt.value = id;
@@ -101,7 +104,8 @@ async function init() {
   for (const r of document.querySelectorAll('input[name="lfi"]')) {
     r.addEventListener('change', render);
   }
-  $('spec-pin').textContent = `${manifest.specVersion} @ ${manifest.specSha.slice(0, 7)} · sandbox v${manifest.version}`;
+  $('spec-pin').textContent =
+    `${manifest.specVersion} @ ${manifest.specSha.slice(0, 7)} · sandbox v${manifest.version}`;
   await render();
 }
 
@@ -139,16 +143,20 @@ async function render() {
   const accountList = accounts.Data?.Account ?? [];
   const ids = accountList.map((a) => a.AccountId);
 
-  const perAccount = await Promise.all(ids.map(async (id) => {
-    const [bal, tx, so] = await Promise.all([
-      getJSON(`${base}/accounts__${id}__balances.json`).catch(() => null),
-      // Transactions and standing-orders are paginated the same way a real
-      // LFI would serve them — walk Links.Next until it is absent.
-      getJSONPaged(`${base}/accounts__${id}__transactions.json`, 'Transaction').catch(() => null),
-      getJSONPaged(`${base}/accounts__${id}__standing-orders.json`, 'StandingOrder').catch(() => null),
-    ]);
-    return { id, account: accountList.find((a) => a.AccountId === id), bal, tx, so };
-  }));
+  const perAccount = await Promise.all(
+    ids.map(async (id) => {
+      const [bal, tx, so] = await Promise.all([
+        getJSON(`${base}/accounts__${id}__balances.json`).catch(() => null),
+        // Transactions and standing-orders are paginated the same way a real
+        // LFI would serve them — walk Links.Next until it is absent.
+        getJSONPaged(`${base}/accounts__${id}__transactions.json`, 'Transaction').catch(() => null),
+        getJSONPaged(`${base}/accounts__${id}__standing-orders.json`, 'StandingOrder').catch(
+          () => null,
+        ),
+      ]);
+      return { id, account: accountList.find((a) => a.AccountId === id), bal, tx, so };
+    }),
+  );
 
   renderAccounts(perAccount);
   renderTotalBalance(perAccount);
@@ -163,8 +171,8 @@ function renderAccounts(rows) {
     const li = document.createElement('li');
     const a = r.account || {};
     const ident = a.AccountIdentifiers?.[0]?.Identification?.slice(0, 14) ?? a.AccountId;
-    const balance = r.bal?.Data?.Balance?.find((b) => b.Type === 'ClosingAvailable')
-                 ?? r.bal?.Data?.Balance?.[0];
+    const balance =
+      r.bal?.Data?.Balance?.find((b) => b.Type === 'ClosingAvailable') ?? r.bal?.Data?.Balance?.[0];
     li.innerHTML = `<div class="row"><span>${escape(a.Nickname || a.AccountSubType || a.AccountId)}</span><span>${balance ? `${fmt(balance.Amount.Amount)} ${balance.Amount.Currency}` : '—'}</span></div><div class="stat-sub">${a.AccountSubType ?? ''} · ${ident}…</div>`;
     ul.appendChild(li);
   }
@@ -173,8 +181,8 @@ function renderAccounts(rows) {
 function renderTotalBalance(rows) {
   let aed = 0;
   for (const r of rows) {
-    const b = r.bal?.Data?.Balance?.find((x) => x.Type === 'ClosingAvailable')
-           ?? r.bal?.Data?.Balance?.[0];
+    const b =
+      r.bal?.Data?.Balance?.find((x) => x.Type === 'ClosingAvailable') ?? r.bal?.Data?.Balance?.[0];
     if (!b) continue;
     if (b.Amount.Currency === 'AED') aed += parseFloat(b.Amount.Amount);
     // Non-AED skipped intentionally — a real TPP would FX-convert here.
@@ -224,7 +232,8 @@ function renderTimeline(rows) {
   const tl = $('tx-timeline');
   tl.innerHTML = '';
   if (!recent.length) {
-    tl.innerHTML = '<div class="stat-sub">No transactions in the last 90 days for this persona.</div>';
+    tl.innerHTML =
+      '<div class="stat-sub">No transactions in the last 90 days for this persona.</div>';
     return;
   }
   let lastMonth = '';
@@ -251,6 +260,8 @@ function fmt(n) {
   if (!Number.isFinite(x)) return '—';
   return x.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
-function escape(s) { return String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
+function escape(s) {
+  return String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
+}
 
 init().catch((err) => showErr(err.message));

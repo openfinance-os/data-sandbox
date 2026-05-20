@@ -55,7 +55,9 @@ function enumOf(name) {
 function enumOfInsurance(name) {
   const s = insuranceSchemas[name];
   if (!s || !Array.isArray(s.enum)) {
-    throw new Error(`insurance spec schema ${name} missing or has no enum (${INSURANCE_SPEC_PATH})`);
+    throw new Error(
+      `insurance spec schema ${name} missing or has no enum (${INSURANCE_SPEC_PATH})`,
+    );
   }
   return new Set(s.enum);
 }
@@ -107,7 +109,7 @@ function checkEnum(file, fieldLabel, value, allowed) {
   if (!allowed.has(value)) {
     bad(
       file,
-      `${fieldLabel}=${JSON.stringify(value)} is not in v2.1-errata1 spec enum {${[...allowed].join('|')}}`
+      `${fieldLabel}=${JSON.stringify(value)} is not in v2.1-errata1 spec enum {${[...allowed].join('|')}}`,
     );
   }
 }
@@ -278,7 +280,10 @@ for (const file of listManifests()) {
       checkEnum(file, `multi_lfi_footprint.${label}.role`, v.role, LFI_ROLES);
       checkEnum(file, `multi_lfi_footprint.${label}.lfi_default`, v.lfi_default, LFI_DEFAULTS);
       if (v.plausible_lfi_candidates != null && !Array.isArray(v.plausible_lfi_candidates)) {
-        bad(file, `multi_lfi_footprint.${label}.plausible_lfi_candidates must be an array of strings`);
+        bad(
+          file,
+          `multi_lfi_footprint.${label}.plausible_lfi_candidates must be an array of strings`,
+        );
       }
       if (v.role) declaredRoles.add(v.role);
     }
@@ -289,9 +294,7 @@ for (const file of listManifests()) {
     // an `acquiring` slot on a persona with no merchant inflows).
     if (declaredRoles.has('trade_finance')) {
       const hasFx = m.fx_activity === true;
-      const hasNonAedAccount = (m.accounts ?? []).some(
-        (a) => a.currency && a.currency !== 'AED',
-      );
+      const hasNonAedAccount = (m.accounts ?? []).some((a) => a.currency && a.currency !== 'AED');
       if (!hasFx && !hasNonAedAccount) {
         bad(
           file,
@@ -327,16 +330,16 @@ for (const file of listManifests()) {
   // declared banking-slot key.
   const insurerFootprint = m?.multi_insurer_footprint;
   if (insurerFootprint && typeof insurerFootprint === 'object') {
-    const insurerSlots = Array.isArray(insurerFootprint.slots)
-      ? insurerFootprint.slots
-      : [];
+    const insurerSlots = Array.isArray(insurerFootprint.slots) ? insurerFootprint.slots : [];
     insurerSlots.forEach((s, i) => {
       if (s == null) return;
       const label = `multi_insurer_footprint.slots[${i}]`;
       checkEnum(file, `${label}.line`, s.line, INSURANCE_LINE);
       checkEnum(file, `${label}.insurer_default`, s.insurer_default, LFI_DEFAULTS);
-      if (s.plausible_insurer_candidates != null
-        && !Array.isArray(s.plausible_insurer_candidates)) {
+      if (
+        s.plausible_insurer_candidates != null &&
+        !Array.isArray(s.plausible_insurer_candidates)
+      ) {
         bad(file, `${label}.plausible_insurer_candidates must be an array of strings`);
       }
       // cross_domain_link must reference a declared banking-slot key

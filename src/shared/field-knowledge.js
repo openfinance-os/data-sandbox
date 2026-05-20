@@ -16,36 +16,31 @@ export const CONDITIONAL_RULES = Object.freeze({
   // CurrencyExchange block — present only on FX-bearing transactions.
   'CurrencyExchange.SourceCurrency':
     'Required when CurrencyExchange is present (i.e. on transactions where TransactionType is InternationalTransfer or otherwise crosses currencies).',
-  'CurrencyExchange.TargetCurrency':
-    'Required when CurrencyExchange is present.',
+  'CurrencyExchange.TargetCurrency': 'Required when CurrencyExchange is present.',
   'CurrencyExchange.UnitCurrency':
     'Required when CurrencyExchange is present. The currency the exchange rate is expressed in (e.g. AED in `1 AED = 0.27 USD`).',
-  'CurrencyExchange.ExchangeRate':
-    'Required when CurrencyExchange is present.',
+  'CurrencyExchange.ExchangeRate': 'Required when CurrencyExchange is present.',
   'CurrencyExchange.InstructedAmount':
     'Required when CurrencyExchange is present — the amount in the source currency, before conversion.',
   // Balance.CreditLine — only on accounts with a credit facility.
   'CreditLine.Type':
     'Required when CreditLine is populated. Indicates whether the line is Available, Credit, Emergency, Pre-Agreed, or Temporary.',
-  'CreditLine.Amount':
-    'Required when CreditLine is populated.',
+  'CreditLine.Amount': 'Required when CreditLine is populated.',
   'CreditLine.Included':
     'Required when CreditLine is populated. Indicates whether the credit line is rolled into the balance Amount.',
   // MerchantDetails — only on POS / ECommerce transactions.
   'MerchantDetails.MerchantName':
     'Optional even when MerchantDetails is present. Population varies — Common-band across the ecosystem.',
   'MerchantDetails.MerchantCategoryCode':
-    'Optional. MCC identifies the merchant\'s line of business (e.g. 5411 = grocery). Variable-band populate rate.',
+    "Optional. MCC identifies the merchant's line of business (e.g. 5411 = grocery). Variable-band populate rate.",
   // StandingOrder amounts — required when the standing order is populated.
-  'NextPaymentAmount.Amount':
-    'Required when StandingOrder.NextPaymentAmount is present.',
+  'NextPaymentAmount.Amount': 'Required when StandingOrder.NextPaymentAmount is present.',
   'FinalPaymentAmount.Amount':
     'Required when StandingOrder.FinalPaymentAmount is present (only on standing orders with a planned end date).',
   // Beneficiary — PostalAddress is required only on the v2.1 international-payment shape.
   'PostalAddress.AddressLine':
     'Required when PostalAddress is populated. v2.1 mandates AddressLine + Country at minimum.',
-  'PostalAddress.Country':
-    'Required when PostalAddress is populated.',
+  'PostalAddress.Country': 'Required when PostalAddress is populated.',
   // VerifiedClaims — populated only on KYC-rich /parties responses.
   'Verification.TrustFramework':
     'Required when a VerifiedClaim entry is present. Identity-assurance framework reference (per OpenID Connect for Identity Assurance 1.0).',
@@ -58,22 +53,24 @@ export const CONDITIONAL_RULES = Object.freeze({
 // Phase 1 marker: a small badge in the column header + field card. Phase 1.5
 // expands this into a dedicated PII overlay (per the v0.9 plan footnote on
 // Reem's JTBDs).
-export const PII_FIELDS = Object.freeze(new Set([
-  'AccountHolderName',
-  'AccountHolderShortName',
-  'Name',                // appears on AccountIdentifiers + CreditorAccount items
-  'FullLegalName',
-  'EmailAddress',
-  'PhoneNumber',
-  'BirthDate',
-  'Identification',      // IBAN / account number
-  'AddressLine',
-  'PostCode',
-  'GeoLocation',
-  'CardInstrument',
-  'TerminalId',
-  'MandateIdentification',
-]));
+export const PII_FIELDS = Object.freeze(
+  new Set([
+    'AccountHolderName',
+    'AccountHolderShortName',
+    'Name', // appears on AccountIdentifiers + CreditorAccount items
+    'FullLegalName',
+    'EmailAddress',
+    'PhoneNumber',
+    'BirthDate',
+    'Identification', // IBAN / account number
+    'AddressLine',
+    'PostCode',
+    'GeoLocation',
+    'CardInstrument',
+    'TerminalId',
+    'MandateIdentification',
+  ]),
+);
 
 // Returns the conditional-rule prose for a field, falling back to a generic
 // stub when the field isn't in the curated lookup.
@@ -86,7 +83,9 @@ export function conditionalRule(fieldName, fieldPath) {
 }
 
 function lastTwo(path) {
-  const segs = String(path || '').split('.').filter((s) => !s.endsWith('[]'));
+  const segs = String(path || '')
+    .split('.')
+    .filter((s) => !s.endsWith('[]'));
   if (segs.length < 2) return segs[0] ?? '';
   return `${segs[segs.length - 2]}.${segs[segs.length - 1]}`;
 }
@@ -115,7 +114,8 @@ export function whyEmpty({ field, lfi, persona, band, parentPopulated, condition
     }
   }
   if (lfi === 'median' && band) {
-    const median = { Universal: 1.0, Common: 0.7, Variable: 0.4, Rare: 0.1, Unknown: 0.0 }[band] ?? 0;
+    const median =
+      { Universal: 1.0, Common: 0.7, Variable: 0.4, Rare: 0.1, Unknown: 0.0 }[band] ?? 0;
     if (median < 1.0) {
       // The Median LFI redactor decides keep/drop once per (field, band) per
       // bundle — modelling a single ecosystem LFI that either populates the

@@ -7,9 +7,7 @@ import { repoRoot, personaDomains } from '../tools/load-fixtures.mjs';
 const MANIFEST_DIR = path.join(repoRoot, 'personas');
 
 function listManifests() {
-  return fs
-    .readdirSync(MANIFEST_DIR)
-    .filter((f) => f.endsWith('.yaml') && !f.startsWith('_'));
+  return fs.readdirSync(MANIFEST_DIR).filter((f) => f.endsWith('.yaml') && !f.startsWith('_'));
 }
 
 // Domain-specific required top-level keys. Common keys live at the top of
@@ -73,11 +71,12 @@ describe('persona manifests — EXP-02', () => {
       for (const k of REQUIRED_BY_DOMAIN.banking) requiredKeys.add(k);
     }
     if (declaredDomains.includes('insurance')) {
-      const lines = Array.isArray(m.insurance?.lines)
-        ? m.insurance.lines
-        : [m.line ?? 'motor'];
+      const lines = Array.isArray(m.insurance?.lines) ? m.insurance.lines : [m.line ?? 'motor'];
       for (const line of lines) {
-        expect(REQUIRED_BY_INSURANCE_LINE[line], `${file} has unknown insurance line ${line}`).toBeTruthy();
+        expect(
+          REQUIRED_BY_INSURANCE_LINE[line],
+          `${file} has unknown insurance line ${line}`,
+        ).toBeTruthy();
         for (const k of REQUIRED_BY_INSURANCE_LINE[line]) requiredKeys.add(k);
       }
     }
@@ -107,59 +106,73 @@ describe('persona manifests — EXP-02', () => {
       }
     }
     if (declaredDomains.includes('insurance')) {
-      const insLines = Array.isArray(m.insurance?.lines)
-        ? m.insurance.lines
-        : [m.line ?? 'motor'];
+      const insLines = Array.isArray(m.insurance?.lines) ? m.insurance.lines : [m.line ?? 'motor'];
       // Run per-line shape checks for every line the persona claims.
       for (const line of insLines) {
-      if (line === 'motor') {
-        expect(m.vehicle).toHaveProperty('make');
-        expect(m.vehicle).toHaveProperty('model');
-        expect(typeof m.vehicle.year).toBe('number');
-        expect(['Comprehensive', 'ThirdPartyLiability']).toContain(m.policy.type);
-      } else if (line === 'home') {
-        expect(m.home.property).toHaveProperty('type_of_property');
-        expect(['Villa', 'House', 'Apartment', 'Flat']).toContain(m.home.property.type_of_property);
-        expect(typeof m.home.property_value.market_value_aed).toBe('number');
-        expect(typeof m.home.policy.excess_aed).toBe('number');
-      } else if (line === 'health') {
-        expect(m.health.policy).toHaveProperty('cover_subjects');
-        expect(['Self', 'SelfAndSpouse', 'Spouse', 'SelfAndFamily', 'Dependents', 'Other'])
-          .toContain(m.health.policy.cover_subjects);
-        expect(typeof m.health.policy.annual_limit_aed).toBe('number');
-        expect(typeof m.health.policy.policyholder_insured).toBe('boolean');
-      } else if (line === 'life') {
-        expect(['Sole', 'Joint']).toContain(m.life.policy.cover_type);
-        expect(['WholeLifeInsurance', 'LevelTermInsurance', 'DecreasingTermInsurance'])
-          .toContain(m.life.policy.type_of_life_insurance);
-        expect(['PersonalCover', 'FamilyProtection', 'MortgageCover'])
-          .toContain(m.life.policy.insurance_purpose);
-        expect(typeof m.life.policy.sum_assured_aed).toBe('number');
-        expect(typeof m.life.policy.term_years).toBe('number');
-      } else if (line === 'travel') {
-        expect(typeof m.travel.policy.trip_duration_days).toBe('number');
-        expect(typeof m.travel.policy.multi_trip).toBe('boolean');
-        expect(['Personal', 'Business']).toContain(m.travel.policy.purpose);
-        expect(['Individual', 'Couple', 'Family', 'Group'])
-          .toContain(m.travel.policy.travelling_with);
-        expect(['WithinUAE', 'Worldwide', 'WorldwideExcludingUSAandCanada'])
-          .toContain(m.travel.policy.destination_region);
-      } else if (line === 'renters') {
-        expect(['Villa', 'House', 'Apartment', 'Flat']).toContain(m.renters.property.type_of_property);
-        expect(typeof m.renters.contents.declared_value_aed).toBe('number');
-        expect(typeof m.renters.policy.excess_aed).toBe('number');
-      } else if (line === 'employment') {
-        expect(['CategoryA', 'CategoryB']).toContain(m.employment.policy.scheme_category);
-        expect(['Private', 'FederalGovernment']).toContain(m.employment.policy.sector);
-        expect(typeof m.employment.policy.term_years).toBe('number');
-        expect(typeof m.employment.employer.monthly_income_aed).toBe('number');
-      }
+        if (line === 'motor') {
+          expect(m.vehicle).toHaveProperty('make');
+          expect(m.vehicle).toHaveProperty('model');
+          expect(typeof m.vehicle.year).toBe('number');
+          expect(['Comprehensive', 'ThirdPartyLiability']).toContain(m.policy.type);
+        } else if (line === 'home') {
+          expect(m.home.property).toHaveProperty('type_of_property');
+          expect(['Villa', 'House', 'Apartment', 'Flat']).toContain(
+            m.home.property.type_of_property,
+          );
+          expect(typeof m.home.property_value.market_value_aed).toBe('number');
+          expect(typeof m.home.policy.excess_aed).toBe('number');
+        } else if (line === 'health') {
+          expect(m.health.policy).toHaveProperty('cover_subjects');
+          expect([
+            'Self',
+            'SelfAndSpouse',
+            'Spouse',
+            'SelfAndFamily',
+            'Dependents',
+            'Other',
+          ]).toContain(m.health.policy.cover_subjects);
+          expect(typeof m.health.policy.annual_limit_aed).toBe('number');
+          expect(typeof m.health.policy.policyholder_insured).toBe('boolean');
+        } else if (line === 'life') {
+          expect(['Sole', 'Joint']).toContain(m.life.policy.cover_type);
+          expect(['WholeLifeInsurance', 'LevelTermInsurance', 'DecreasingTermInsurance']).toContain(
+            m.life.policy.type_of_life_insurance,
+          );
+          expect(['PersonalCover', 'FamilyProtection', 'MortgageCover']).toContain(
+            m.life.policy.insurance_purpose,
+          );
+          expect(typeof m.life.policy.sum_assured_aed).toBe('number');
+          expect(typeof m.life.policy.term_years).toBe('number');
+        } else if (line === 'travel') {
+          expect(typeof m.travel.policy.trip_duration_days).toBe('number');
+          expect(typeof m.travel.policy.multi_trip).toBe('boolean');
+          expect(['Personal', 'Business']).toContain(m.travel.policy.purpose);
+          expect(['Individual', 'Couple', 'Family', 'Group']).toContain(
+            m.travel.policy.travelling_with,
+          );
+          expect(['WithinUAE', 'Worldwide', 'WorldwideExcludingUSAandCanada']).toContain(
+            m.travel.policy.destination_region,
+          );
+        } else if (line === 'renters') {
+          expect(['Villa', 'House', 'Apartment', 'Flat']).toContain(
+            m.renters.property.type_of_property,
+          );
+          expect(typeof m.renters.contents.declared_value_aed).toBe('number');
+          expect(typeof m.renters.policy.excess_aed).toBe('number');
+        } else if (line === 'employment') {
+          expect(['CategoryA', 'CategoryB']).toContain(m.employment.policy.scheme_category);
+          expect(['Private', 'FederalGovernment']).toContain(m.employment.policy.sector);
+          expect(typeof m.employment.policy.term_years).toBe('number');
+          expect(typeof m.employment.employer.monthly_income_aed).toBe('number');
+        }
       }
     }
   });
 
   it('persona ids are unique across the library', () => {
-    const ids = manifests.map((f) => yaml.load(fs.readFileSync(path.join(MANIFEST_DIR, f), 'utf8')).persona_id);
+    const ids = manifests.map(
+      (f) => yaml.load(fs.readFileSync(path.join(MANIFEST_DIR, f), 'utf8')).persona_id,
+    );
     expect(new Set(ids).size).toBe(ids.length);
   });
 

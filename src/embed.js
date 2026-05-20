@@ -39,7 +39,7 @@ async function init() {
   // Filter the persona pool to the active domain so the default fallback
   // can't bleed an insurance persona into a banking embed (or vice versa).
   const activePersonas = Object.fromEntries(
-    Object.entries(data.personas).filter(([, p]) => (p.domain ?? 'banking') === domain)
+    Object.entries(data.personas).filter(([, p]) => (p.domain ?? 'banking') === domain),
   );
 
   // Workstream B — materialise a custom persona from the URL recipe param.
@@ -54,9 +54,8 @@ async function init() {
     }
   }
 
-  const personaId = url.personaId && activePersonas[url.personaId]
-    ? url.personaId
-    : Object.keys(activePersonas)[0];
+  const personaId =
+    url.personaId && activePersonas[url.personaId] ? url.personaId : Object.keys(activePersonas)[0];
   const persona = activePersonas[personaId];
   const endpoint = url.endpoint || domainEntry.defaultEndpoint || '/accounts';
   const lfi = url.lfi;
@@ -135,11 +134,15 @@ function rowsFor(bundle, endpoint, accountId) {
     case '/parties':
       return bundle.callingUserParty ? [bundle.callingUserParty] : [];
     case '/accounts/{AccountId}':
-      return accountId ? bundle.accounts.filter((a) => a.AccountId === accountId) : bundle.accounts.slice(0, 1);
+      return accountId
+        ? bundle.accounts.filter((a) => a.AccountId === accountId)
+        : bundle.accounts.slice(0, 1);
     case '/accounts/{AccountId}/balances':
       return accountId ? bundle.balances.filter((b) => b._accountId === accountId) : [];
     case '/accounts/{AccountId}/transactions':
-      return accountId ? bundle.transactions.filter((t) => t._accountId === accountId).slice(0, 50) : [];
+      return accountId
+        ? bundle.transactions.filter((t) => t._accountId === accountId).slice(0, 50)
+        : [];
     case '/accounts/{AccountId}/standing-orders':
       return accountId ? bundle.standingOrders.filter((x) => x._accountId === accountId) : [];
     case '/accounts/{AccountId}/direct-debits':
@@ -207,7 +210,7 @@ function renderTable(rows, fieldsByName) {
     for (const k of allKeys) {
       const v = stripped[k];
       const td = document.createElement('td');
-      td.textContent = v == null ? '—' : (typeof v === 'object' ? JSON.stringify(v) : String(v));
+      td.textContent = v == null ? '—' : typeof v === 'object' ? JSON.stringify(v) : String(v);
       tr.appendChild(td);
     }
     tbody.appendChild(tr);
@@ -229,6 +232,7 @@ function stripInternal(rec) {
 init().catch((err) => {
   const banner = document.createElement('pre');
   banner.textContent = `embed init failed: ${String(err.message ?? err)}`;
-  banner.style.cssText = 'background:#fee;color:#600;padding:8px;border-bottom:1px solid #c33;margin:0';
+  banner.style.cssText =
+    'background:#fee;color:#600;padding:8px;border-bottom:1px solid #c33;margin:0';
   document.body.insertBefore(banner, document.body.firstChild);
 });

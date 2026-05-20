@@ -45,8 +45,12 @@ describe('parsePaginationParams', () => {
   });
 
   it('engages when offset OR limit is set', () => {
-    expect(parsePaginationParams(new URL('https://x.test/q?offset=10').searchParams).requested).toBe(true);
-    expect(parsePaginationParams(new URL('https://x.test/q?limit=5').searchParams).requested).toBe(true);
+    expect(
+      parsePaginationParams(new URL('https://x.test/q?offset=10').searchParams).requested,
+    ).toBe(true);
+    expect(parsePaginationParams(new URL('https://x.test/q?limit=5').searchParams).requested).toBe(
+      true,
+    );
   });
 
   it('clamps limit to [1, maxLimit] and defaults offset to 0', () => {
@@ -85,12 +89,16 @@ describe('findListKey / isPaginatableEnvelope', () => {
 });
 
 describe('paginateEnvelope', () => {
-  const REQ_URL = 'https://x.test/fixtures/v1/bundles/p/median/seed-1/accounts__acct-01__transactions.json';
+  const REQ_URL =
+    'https://x.test/fixtures/v1/bundles/p/median/seed-1/accounts__acct-01__transactions.json';
 
   it('returns a shallow copy with refreshed Self when not requested', () => {
     const env = txEnvelope(60);
     const out = paginateEnvelope(env, {
-      offset: 0, limit: Infinity, requested: false, requestUrl: REQ_URL,
+      offset: 0,
+      limit: Infinity,
+      requested: false,
+      requestUrl: REQ_URL,
     });
     expect(out.Data.Transaction).toHaveLength(60);
     expect(out.Links.Self).toBe(REQ_URL);
@@ -100,7 +108,12 @@ describe('paginateEnvelope', () => {
 
   it('slices Data and emits First/Last/Next when on the first page', () => {
     const env = txEnvelope(60);
-    const out = paginateEnvelope(env, { offset: 0, limit: 25, requested: true, requestUrl: REQ_URL });
+    const out = paginateEnvelope(env, {
+      offset: 0,
+      limit: 25,
+      requested: true,
+      requestUrl: REQ_URL,
+    });
     expect(out.Data.Transaction).toHaveLength(25);
     expect(out.Data.Transaction[0].TransactionId).toBe('tx-0000');
     expect(out.Meta.TotalPages).toBe(3);
@@ -110,14 +123,24 @@ describe('paginateEnvelope', () => {
     expect(out.Links.Next).toContain('offset=25&limit=25');
     expect(out.Links.Prev).toBeUndefined();
     expect(out._pagination).toEqual({
-      offset: 0, limit: 25, totalRecords: 60, totalPages: 3,
-      pageNumber: 1, hasNext: true, hasPrevious: false,
+      offset: 0,
+      limit: 25,
+      totalRecords: 60,
+      totalPages: 3,
+      pageNumber: 1,
+      hasNext: true,
+      hasPrevious: false,
     });
   });
 
   it('emits Prev (no Next) on the last page', () => {
     const env = txEnvelope(60);
-    const out = paginateEnvelope(env, { offset: 50, limit: 25, requested: true, requestUrl: REQ_URL });
+    const out = paginateEnvelope(env, {
+      offset: 50,
+      limit: 25,
+      requested: true,
+      requestUrl: REQ_URL,
+    });
     expect(out.Data.Transaction).toHaveLength(10);
     expect(out.Links.Next).toBeUndefined();
     expect(out.Links.Prev).toContain('offset=25&limit=25');
@@ -127,7 +150,12 @@ describe('paginateEnvelope', () => {
 
   it('preserves Data sibling fields like AccountId across slicing', () => {
     const env = txEnvelope(10, 'acct-XYZ');
-    const out = paginateEnvelope(env, { offset: 0, limit: 5, requested: true, requestUrl: REQ_URL });
+    const out = paginateEnvelope(env, {
+      offset: 0,
+      limit: 5,
+      requested: true,
+      requestUrl: REQ_URL,
+    });
     expect(out.Data.AccountId).toBe('acct-XYZ');
     expect(out.Data.Transaction).toHaveLength(5);
   });
@@ -142,7 +170,12 @@ describe('paginateEnvelope', () => {
 
   it('handles empty arrays without dividing by zero', () => {
     const env = txEnvelope(0);
-    const out = paginateEnvelope(env, { offset: 0, limit: 25, requested: true, requestUrl: REQ_URL });
+    const out = paginateEnvelope(env, {
+      offset: 0,
+      limit: 25,
+      requested: true,
+      requestUrl: REQ_URL,
+    });
     expect(out.Data.Transaction).toHaveLength(0);
     expect(out.Meta.TotalPages).toBe(1);
     expect(out.Links.Next).toBeUndefined();
@@ -154,7 +187,12 @@ describe('paginateEnvelope', () => {
       Links: { Self: 'https://x.test/insurance-consents' },
       Meta: { TotalPages: 1 },
     };
-    const out = paginateEnvelope(env, { offset: 2, limit: 2, requested: true, requestUrl: 'https://x.test/insurance-consents' });
+    const out = paginateEnvelope(env, {
+      offset: 2,
+      limit: 2,
+      requested: true,
+      requestUrl: 'https://x.test/insurance-consents',
+    });
     expect(Array.isArray(out.Data)).toBe(true);
     expect(out.Data).toHaveLength(2);
     expect(out.Data[0].ConsentId).toBe('c2');
@@ -163,21 +201,31 @@ describe('paginateEnvelope', () => {
 
 describe('curated-fixture-handler URL detection', () => {
   it('matches curated bundle paths', () => {
-    expect(isCuratedFixtureUrl(
-      'https://x.test/fixtures/v1/bundles/salaried_expat_mid/median/seed-4729/accounts.json'
-    )).toBe(true);
+    expect(
+      isCuratedFixtureUrl(
+        'https://x.test/fixtures/v1/bundles/salaried_expat_mid/median/seed-4729/accounts.json',
+      ),
+    ).toBe(true);
   });
 
   it('excludes the custom-persona subtree', () => {
-    expect(isCuratedFixtureUrl(
-      'https://x.test/fixtures/v1/bundles/custom/abc/median/seed-1/accounts.json'
-    )).toBe(false);
+    expect(
+      isCuratedFixtureUrl(
+        'https://x.test/fixtures/v1/bundles/custom/abc/median/seed-1/accounts.json',
+      ),
+    ).toBe(false);
   });
 
   it('isPaginatedRequest only returns true with offset/limit', () => {
-    expect(isPaginatedRequest('https://x.test/fixtures/v1/bundles/p/median/seed-1/x.json')).toBe(false);
-    expect(isPaginatedRequest('https://x.test/fixtures/v1/bundles/p/median/seed-1/x.json?limit=10')).toBe(true);
-    expect(isPaginatedRequest('https://x.test/fixtures/v1/bundles/p/median/seed-1/x.json?offset=5')).toBe(true);
+    expect(isPaginatedRequest('https://x.test/fixtures/v1/bundles/p/median/seed-1/x.json')).toBe(
+      false,
+    );
+    expect(
+      isPaginatedRequest('https://x.test/fixtures/v1/bundles/p/median/seed-1/x.json?limit=10'),
+    ).toBe(true);
+    expect(
+      isPaginatedRequest('https://x.test/fixtures/v1/bundles/p/median/seed-1/x.json?offset=5'),
+    ).toBe(true);
   });
 });
 
@@ -190,7 +238,8 @@ describe('handleCuratedFixtureRequest', () => {
   });
 
   it('fetches the static file once and slices the Data array', async () => {
-    const url = 'https://x.test/fixtures/v1/bundles/p/median/seed-1/accounts__acct-01__transactions.json?offset=0&limit=10';
+    const url =
+      'https://x.test/fixtures/v1/bundles/p/median/seed-1/accounts__acct-01__transactions.json?offset=0&limit=10';
     let fetched = null;
     const fetchJson = async (u) => {
       fetched = u;
@@ -199,7 +248,9 @@ describe('handleCuratedFixtureRequest', () => {
     const res = await handleCuratedFixtureRequest(url, { fetchJson });
     expect(res.status).toBe(200);
     // SW must fetch the bare static URL (no query) to bypass its own intercept.
-    expect(fetched).toBe('https://x.test/fixtures/v1/bundles/p/median/seed-1/accounts__acct-01__transactions.json');
+    expect(fetched).toBe(
+      'https://x.test/fixtures/v1/bundles/p/median/seed-1/accounts__acct-01__transactions.json',
+    );
     const env = JSON.parse(res.body);
     expect(env.Data.Transaction).toHaveLength(10);
     expect(env.Meta.TotalPages).toBe(10);
@@ -210,7 +261,9 @@ describe('handleCuratedFixtureRequest', () => {
 
   it('reports upstream failures as 502', async () => {
     const url = 'https://x.test/fixtures/v1/bundles/p/median/seed-1/x.json?limit=5';
-    const fetchJson = async () => { throw new Error('boom'); };
+    const fetchJson = async () => {
+      throw new Error('boom');
+    };
     const res = await handleCuratedFixtureRequest(url, { fetchJson });
     expect(res.status).toBe(502);
   });

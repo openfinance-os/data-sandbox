@@ -33,99 +33,102 @@ if (!FIXTURES_BUILT) {
   describe.skip("Phase D Slice 5 (run 'npm run build:fixtures')", () => {
     it.skip('fixture package not built', () => {});
   });
-} else describe('Phase D Slice 5 — role-bundle generation + cross-bundle IBAN identity', () => {
-  const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
-  const roleFixtures = manifest.roleFixtures ?? {};
+} else
+  describe('Phase D Slice 5 — role-bundle generation + cross-bundle IBAN identity', () => {
+    const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
+    const roleFixtures = manifest.roleFixtures ?? {};
 
-  // Personas with multi_lfi_footprint and at least one declared
-  // secondary / tertiary slot whose candidates resolve into the pool.
-  const expectedRolePersonas = new Set();
-  for (const key of Object.keys(roleFixtures)) {
-    expectedRolePersonas.add(key.split('|')[0]);
-  }
-
-  it('roleFixtures map is non-empty (at least one persona declares a footprint)', () => {
-    expect(Object.keys(roleFixtures).length).toBeGreaterThan(0);
-    expect(expectedRolePersonas.size).toBeGreaterThan(0);
-  });
-
-  it('every role-fixture entry carries personaId, slot, role, lfi, seed, accountIds, endpoints', () => {
-    for (const [key, rfx] of Object.entries(roleFixtures)) {
-      expect(rfx.personaId, `${key} personaId`).toBeDefined();
-      // Phase 2.2 — slot is a free-form kebab key. Legacy SME personas
-      // use 'secondary' / 'tertiary'; multi-banker personas use custom
-      // keys like 'everyday-card' / 'mortgage-lender'.
-      expect(typeof rfx.slot).toBe('string');
-      expect(rfx.slot.length).toBeGreaterThan(0);
-      expect(rfx.role, `${key} role`).toBeDefined();
-      expect(['rich', 'median', 'sparse']).toContain(rfx.lfi);
-      expect(rfx.seed, `${key} seed`).toBeGreaterThan(0);
-      expect(rfx.accountIds.length, `${key} accountIds`).toBeGreaterThan(0);
-      expect(rfx.endpoints['/accounts'], `${key} /accounts endpoint`).toBeDefined();
+    // Personas with multi_lfi_footprint and at least one declared
+    // secondary / tertiary slot whose candidates resolve into the pool.
+    const expectedRolePersonas = new Set();
+    for (const key of Object.keys(roleFixtures)) {
+      expectedRolePersonas.add(key.split('|')[0]);
     }
-  });
 
-  for (const [key, rfx] of Object.entries(roleFixtures)) {
-    it(`${key} — /accounts envelope is spec-shaped (mod-97 IBANs)`, () => {
-      const env = JSON.parse(fs.readFileSync(path.join(PKG_DIR, rfx.endpoints['/accounts']), 'utf8'));
-      // Phase 2.2 — role bundles can now carry multiple accounts when
-      // the source persona tags multiple products at the same slot
-      // (e.g. CurrentAccount + CreditCard at an SME's everyday-card LFI).
-      // Legacy SME role bundles stay single-account.
-      expect(env.Data?.Account?.length).toBeGreaterThanOrEqual(1);
-      expect(env.Links?.Self).toBeDefined();
-      expect(env.Meta).toBeDefined();
-      expect(env._watermark).toMatch(/SYNTHETIC/);
-      for (const acc of env.Data.Account) {
-        const iban = acc.AccountIdentifiers?.[0]?.Identification;
-        expect(typeof iban).toBe('string');
-        expect(iban.length).toBe(23);
-        expect(isValidMod97Iban(iban), `${key} IBAN ${iban} fails mod-97`).toBe(true);
+    it('roleFixtures map is non-empty (at least one persona declares a footprint)', () => {
+      expect(Object.keys(roleFixtures).length).toBeGreaterThan(0);
+      expect(expectedRolePersonas.size).toBeGreaterThan(0);
+    });
+
+    it('every role-fixture entry carries personaId, slot, role, lfi, seed, accountIds, endpoints', () => {
+      for (const [key, rfx] of Object.entries(roleFixtures)) {
+        expect(rfx.personaId, `${key} personaId`).toBeDefined();
+        // Phase 2.2 — slot is a free-form kebab key. Legacy SME personas
+        // use 'secondary' / 'tertiary'; multi-banker personas use custom
+        // keys like 'everyday-card' / 'mortgage-lender'.
+        expect(typeof rfx.slot).toBe('string');
+        expect(rfx.slot.length).toBeGreaterThan(0);
+        expect(rfx.role, `${key} role`).toBeDefined();
+        expect(['rich', 'median', 'sparse']).toContain(rfx.lfi);
+        expect(rfx.seed, `${key} seed`).toBeGreaterThan(0);
+        expect(rfx.accountIds.length, `${key} accountIds`).toBeGreaterThan(0);
+        expect(rfx.endpoints['/accounts'], `${key} /accounts endpoint`).toBeDefined();
       }
     });
 
-    it(`${key} — IBAN matches the primary bundle's self-to-${rfx.slot} beneficiary IBAN (cross-bundle reference loop)`, () => {
-      const roleEnv = JSON.parse(
-        fs.readFileSync(path.join(PKG_DIR, rfx.endpoints['/accounts']), 'utf8'),
-      );
-      const roleIban = roleEnv.Data.Account[0].AccountIdentifiers[0].Identification;
+    for (const [key, rfx] of Object.entries(roleFixtures)) {
+      it(`${key} — /accounts envelope is spec-shaped (mod-97 IBANs)`, () => {
+        const env = JSON.parse(
+          fs.readFileSync(path.join(PKG_DIR, rfx.endpoints['/accounts']), 'utf8'),
+        );
+        // Phase 2.2 — role bundles can now carry multiple accounts when
+        // the source persona tags multiple products at the same slot
+        // (e.g. CurrentAccount + CreditCard at an SME's everyday-card LFI).
+        // Legacy SME role bundles stay single-account.
+        expect(env.Data?.Account?.length).toBeGreaterThanOrEqual(1);
+        expect(env.Links?.Self).toBeDefined();
+        expect(env.Meta).toBeDefined();
+        expect(env._watermark).toMatch(/SYNTHETIC/);
+        for (const acc of env.Data.Account) {
+          const iban = acc.AccountIdentifiers?.[0]?.Identification;
+          expect(typeof iban).toBe('string');
+          expect(iban.length).toBe(23);
+          expect(isValidMod97Iban(iban), `${key} IBAN ${iban} fails mod-97`).toBe(true);
+        }
+      });
 
-      // Primary bundle for the same (persona, lfi, seed)
-      const primaryKey = `${rfx.personaId}|${rfx.lfi}|${rfx.seed}`;
-      const primary = manifest.fixtures[primaryKey];
-      expect(primary, `primary fixture ${primaryKey} must exist`).toBeDefined();
-      const primaryAccountId = primary.accountIds[0];
-      const benEnv = JSON.parse(
-        fs.readFileSync(
-          path.join(PKG_DIR, primary.endpoints[`/accounts/${primaryAccountId}/beneficiaries`]),
-          'utf8',
-        ),
-      );
-      const selfBen = (benEnv.Data?.Beneficiary ?? []).find(
-        (b) => b.Reference === `self-to-${rfx.slot}`,
-      );
-      expect(selfBen, `primary bundle missing self-to-${rfx.slot} beneficiary`).toBeDefined();
-      expect(selfBen.CreditorAccount?.[0]?.Identification).toBe(roleIban);
+      it(`${key} — IBAN matches the primary bundle's self-to-${rfx.slot} beneficiary IBAN (cross-bundle reference loop)`, () => {
+        const roleEnv = JSON.parse(
+          fs.readFileSync(path.join(PKG_DIR, rfx.endpoints['/accounts']), 'utf8'),
+        );
+        const roleIban = roleEnv.Data.Account[0].AccountIdentifiers[0].Identification;
+
+        // Primary bundle for the same (persona, lfi, seed)
+        const primaryKey = `${rfx.personaId}|${rfx.lfi}|${rfx.seed}`;
+        const primary = manifest.fixtures[primaryKey];
+        expect(primary, `primary fixture ${primaryKey} must exist`).toBeDefined();
+        const primaryAccountId = primary.accountIds[0];
+        const benEnv = JSON.parse(
+          fs.readFileSync(
+            path.join(PKG_DIR, primary.endpoints[`/accounts/${primaryAccountId}/beneficiaries`]),
+            'utf8',
+          ),
+        );
+        const selfBen = (benEnv.Data?.Beneficiary ?? []).find(
+          (b) => b.Reference === `self-to-${rfx.slot}`,
+        );
+        expect(selfBen, `primary bundle missing self-to-${rfx.slot} beneficiary`).toBeDefined();
+        expect(selfBen.CreditorAccount?.[0]?.Identification).toBe(roleIban);
+      });
+    }
+
+    it('npm loader API: loadFixture({lfi_role: "secondary"}) resolves a role-bundle envelope', async () => {
+      const m = await import(path.join(PKG_DIR, 'index.mjs'));
+      const env = m.loadFixture({
+        persona: 'sme_fnb_multi_outlet',
+        lfi: 'rich',
+        lfi_role: 'secondary',
+        endpoint: '/accounts',
+      });
+      expect(env.Data?.Account?.length).toBe(1);
+      expect(env._watermark).toMatch(/SYNTHETIC/);
     });
-  }
 
-  it('npm loader API: loadFixture({lfi_role: "secondary"}) resolves a role-bundle envelope', async () => {
-    const m = await import(path.join(PKG_DIR, 'index.mjs'));
-    const env = m.loadFixture({
-      persona: 'sme_fnb_multi_outlet',
-      lfi: 'rich',
-      lfi_role: 'secondary',
-      endpoint: '/accounts',
+    it('npm loader API: listRoleBundles returns the declared slots for a footprint persona', async () => {
+      const m = await import(path.join(PKG_DIR, 'index.mjs'));
+      const slots = m.listRoleBundles('sme_fnb_multi_outlet');
+      expect(slots).toEqual(expect.arrayContaining(['secondary', 'tertiary']));
+      // Personas without multi_lfi_footprint return [].
+      expect(m.listRoleBundles('senior_retiree')).toEqual([]);
     });
-    expect(env.Data?.Account?.length).toBe(1);
-    expect(env._watermark).toMatch(/SYNTHETIC/);
   });
-
-  it('npm loader API: listRoleBundles returns the declared slots for a footprint persona', async () => {
-    const m = await import(path.join(PKG_DIR, 'index.mjs'));
-    const slots = m.listRoleBundles('sme_fnb_multi_outlet');
-    expect(slots).toEqual(expect.arrayContaining(['secondary', 'tertiary']));
-    // Personas without multi_lfi_footprint return [].
-    expect(m.listRoleBundles('senior_retiree')).toEqual([]);
-  });
-});

@@ -8,7 +8,16 @@ import { loadPersona, loadAllPools } from '../tools/load-fixtures.mjs';
 
 // Mirror of the URL builder in src/app.js — tests both the snapshot of the
 // pre-filled body and the structural invariants the spec card depends on.
-function buildIssueUrl({ fieldName, field, persona, lfi, seed, endpoint, sha, repo = 'openfinance-os/data-sandbox' }) {
+function buildIssueUrl({
+  fieldName,
+  field,
+  persona,
+  lfi,
+  seed,
+  endpoint,
+  sha,
+  repo = 'openfinance-os/data-sandbox',
+}) {
   const title = `[field-card] ${endpoint} — ${fieldName} (${field.status})`;
   const lines = [
     '## Field',

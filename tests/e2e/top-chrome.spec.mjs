@@ -29,9 +29,7 @@ test.describe('top chrome compression (PR-10)', () => {
     await expect(page.locator('#topbar-persona-name')).toContainText('Sara');
     // PR-11 — the dropdown is gone; persona switching is driven solely by
     // clicking a card in the left-pane persona library.
-    await page
-      .locator('.persona-card[data-persona-id="hnw_multicurrency"]')
-      .click();
+    await page.locator('.persona-card[data-persona-id="hnw_multicurrency"]').click();
     await expect(page.locator('#topbar-persona-name')).toContainText('Layla');
   });
 
@@ -61,7 +59,9 @@ test.describe('top chrome compression (PR-10)', () => {
     await expect(chip).toHaveAttribute('aria-expanded', 'false');
   });
 
-  test('SYNTHETIC popover moves focus in on open + returns it on close (PR-16 Greptile P1)', async ({ page }) => {
+  test('SYNTHETIC popover moves focus in on open + returns it on close (PR-16 Greptile P1)', async ({
+    page,
+  }) => {
     await loadPersona(page);
     await page.locator('#banner-chip').focus();
     await page.locator('#banner-chip').click();
@@ -88,7 +88,10 @@ test.describe('top chrome compression (PR-10)', () => {
     expect(height).toBeGreaterThanOrEqual(2);
   });
 
-  test('opening the SYNTHETIC popover writes nothing to storage (EXP-22)', async ({ page, context }) => {
+  test('opening the SYNTHETIC popover writes nothing to storage (EXP-22)', async ({
+    page,
+    context,
+  }) => {
     await loadPersona(page);
     await page.locator('#banner-chip').click();
     await expect(page.locator('#banner-popover')).toBeVisible();
@@ -101,7 +104,9 @@ test.describe('top chrome compression (PR-10)', () => {
     expect(cookies).toEqual([]);
   });
 
-  test('attribution wordmark is in the topbar, not duplicated as a 2-line block', async ({ page }) => {
+  test('attribution wordmark is in the topbar, not duplicated as a 2-line block', async ({
+    page,
+  }) => {
     await loadPersona(page);
     // The wordmark lives inside the topbar as a single inline span.
     const attr = page.locator('.topbar-attribution');

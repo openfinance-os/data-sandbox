@@ -41,9 +41,10 @@ export function generateAccounts({ persona, identity, rng, pools, now }) {
   const hasAtSlotTags = sourceAccounts.some((a) => a.at_slot != null);
   const fp = normalizeFootprint(sourcePersona.multi_lfi_footprint);
   const primarySlotKey = fp?.slots[0]?.key;
-  const filteredAccounts = (!isProjection && hasAtSlotTags && primarySlotKey)
-    ? sourceAccounts.filter((a) => a.at_slot === primarySlotKey)
-    : sourceAccounts;
+  const filteredAccounts =
+    !isProjection && hasAtSlotTags && primarySlotKey
+      ? sourceAccounts.filter((a) => a.at_slot === primarySlotKey)
+      : sourceAccounts;
 
   const firstCurrentIdx = wantsPrimaryAnchor
     ? filteredAccounts.findIndex((s) => s.type === 'CurrentAccount')

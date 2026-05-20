@@ -54,9 +54,14 @@ export function isDateField(name) {
 }
 
 const DATE_FORMATTER = new Intl.DateTimeFormat('en-GB', {
-  day: '2-digit', month: 'short', year: 'numeric',
-  hour: '2-digit', minute: '2-digit',
-  timeZone: 'Asia/Dubai', timeZoneName: 'short', hour12: false,
+  day: '2-digit',
+  month: 'short',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  timeZone: 'Asia/Dubai',
+  timeZoneName: 'short',
+  hour12: false,
 });
 
 /**

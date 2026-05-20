@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+# Runs eslint --fix + prettier --write on staged *.{js,mjs,cjs} files.
+# Configured via the "lint-staged" block in package.json.
+#
+# The 7 custom domain lints (lint:no-handauthored, lint:pii-leak, etc.)
+# depend on dist/ being rebuilt and can take 10–20s — too slow for a
+# pre-commit hook. CI is the source of truth for those.
+npx lint-staged

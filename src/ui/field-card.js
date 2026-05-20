@@ -6,20 +6,19 @@
 // GitHub issue body. Pure UI module; takes state, the DOM helper, and
 // the row/field-map / pane-collapse helpers as deps.
 
-import { bandForFieldName, realLfisGuidance, specCitationUrl, statusBadge } from '../shared/spec-helpers.js';
+import {
+  bandForFieldName,
+  realLfisGuidance,
+  specCitationUrl,
+  statusBadge,
+} from '../shared/spec-helpers.js';
 import { conditionalRule, isPii } from '../shared/field-knowledge.js';
 import { track } from '../analytics.js';
 
 const ISSUE_REPO = 'openfinance-os/data-sandbox';
 
 export function createFieldCard(deps) {
-  const {
-    state,
-    el,
-    endpointFieldsByName,
-    rowsForActiveEndpoint,
-    setPaneCollapsed,
-  } = deps;
+  const { state, el, endpointFieldsByName, rowsForActiveEndpoint, setPaneCollapsed } = deps;
 
   function openFieldCard(name) {
     const fieldsByName = endpointFieldsByName();
@@ -56,7 +55,12 @@ export function createFieldCard(deps) {
       ['Example', formatExample(example)],
       ['Conditional', conditionalLine],
       ['Real LFIs', guidance],
-      ['PII', isPii(name) ? 'Yes — under PDPL this field requires explicit data-handling controls.' : 'No (per the v1 PII allowlist).'],
+      [
+        'PII',
+        isPii(name)
+          ? 'Yes — under PDPL this field requires explicit data-handling controls.'
+          : 'No (per the v1 PII allowlist).',
+      ],
       ['Spec', null], // rendered specially as a link
     ];
     for (const [k, v] of rowsToRender) {
@@ -66,7 +70,11 @@ export function createFieldCard(deps) {
         const badge = statusBadge(f.status);
         const ve = el('span', { class: 'v' });
         ve.appendChild(
-          el('span', { class: `pill ${badge.shape}`, text: badge.label, attrs: { 'aria-label': badge.text } })
+          el('span', {
+            class: `pill ${badge.shape}`,
+            text: badge.label,
+            attrs: { 'aria-label': badge.text },
+          }),
         );
         ve.appendChild(document.createTextNode(badge.text));
         row.appendChild(ve);
@@ -77,7 +85,7 @@ export function createFieldCard(deps) {
             el('a', {
               text: 'View on Nebras GitHub at pinned SHA →',
               attrs: { href: citation, target: '_blank', rel: 'noopener noreferrer' },
-            })
+            }),
           );
         } else {
           ve.appendChild(document.createTextNode('—'));
@@ -101,7 +109,7 @@ export function createFieldCard(deps) {
         class: 'fc-report-link',
         text: 'Report an issue with this field →',
         attrs: { href: buildIssueUrl(name, f), target: '_blank', rel: 'noopener noreferrer' },
-      })
+      }),
     );
     reportRow.appendChild(reportV);
     content.appendChild(reportRow);
@@ -137,7 +145,9 @@ export function createFieldCard(deps) {
       '## What you saw / expected',
       '<!-- describe -->',
       '',
-    ].filter((s) => s != null).join('\n');
+    ]
+      .filter((s) => s != null)
+      .join('\n');
     const params = new URLSearchParams();
     params.set('title', title);
     params.set('body', body);

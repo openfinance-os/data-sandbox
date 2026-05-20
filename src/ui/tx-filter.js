@@ -11,36 +11,42 @@ export function createTxFilter(deps) {
     const f = state.txFilter;
     const bar = el('div', { class: 'tx-filter-bar', attrs: { role: 'search' } });
     bar.appendChild(filterInput('search', 'search', f.search, 'Search TransactionInformation…'));
-    bar.appendChild(filterSelect('type', f.type, [
-      ['', 'TransactionType: any'],
-      ['POS', 'POS'],
-      ['ECommerce', 'ECommerce'],
-      ['ATM', 'ATM'],
-      ['BillPayments', 'BillPayments'],
-      ['LocalBankTransfer', 'LocalBankTransfer'],
-      ['SameBankTransfer', 'SameBankTransfer'],
-      ['InternationalTransfer', 'InternationalTransfer'],
-      ['Teller', 'Teller'],
-      ['Cheque', 'Cheque'],
-      ['Other', 'Other'],
-    ]));
-    bar.appendChild(filterSelect('subType', f.subType, [
-      ['', 'SubTransactionType: any'],
-      ['Purchase', 'Purchase'],
-      ['Reversal', 'Reversal'],
-      ['Refund', 'Refund'],
-      ['Withdrawal', 'Withdrawal'],
-      ['Deposit', 'Deposit'],
-      ['MoneyTransfer', 'MoneyTransfer'],
-      ['Repayments', 'Repayments'],
-      ['Fee', 'Fee'],
-      ['Interest', 'Interest'],
-    ]));
-    bar.appendChild(filterSelect('debitCredit', f.debitCredit, [
-      ['', 'Debit/Credit: any'],
-      ['Debit', 'Debit only'],
-      ['Credit', 'Credit only'],
-    ]));
+    bar.appendChild(
+      filterSelect('type', f.type, [
+        ['', 'TransactionType: any'],
+        ['POS', 'POS'],
+        ['ECommerce', 'ECommerce'],
+        ['ATM', 'ATM'],
+        ['BillPayments', 'BillPayments'],
+        ['LocalBankTransfer', 'LocalBankTransfer'],
+        ['SameBankTransfer', 'SameBankTransfer'],
+        ['InternationalTransfer', 'InternationalTransfer'],
+        ['Teller', 'Teller'],
+        ['Cheque', 'Cheque'],
+        ['Other', 'Other'],
+      ]),
+    );
+    bar.appendChild(
+      filterSelect('subType', f.subType, [
+        ['', 'SubTransactionType: any'],
+        ['Purchase', 'Purchase'],
+        ['Reversal', 'Reversal'],
+        ['Refund', 'Refund'],
+        ['Withdrawal', 'Withdrawal'],
+        ['Deposit', 'Deposit'],
+        ['MoneyTransfer', 'MoneyTransfer'],
+        ['Repayments', 'Repayments'],
+        ['Fee', 'Fee'],
+        ['Interest', 'Interest'],
+      ]),
+    );
+    bar.appendChild(
+      filterSelect('debitCredit', f.debitCredit, [
+        ['', 'Debit/Credit: any'],
+        ['Debit', 'Debit only'],
+        ['Credit', 'Credit only'],
+      ]),
+    );
     bar.appendChild(filterInput('dateFrom', 'date', f.dateFrom, '', 'From'));
     bar.appendChild(filterInput('dateTo', 'date', f.dateTo, '', 'To'));
     bar.appendChild(filterInput('amountFrom', 'number', f.amountFrom, 'AED ≥'));
@@ -63,7 +69,13 @@ export function createTxFilter(deps) {
     // enrichment sidecar by TransactionId and overlays a clean merchant
     // name + Category + Subcategory columns. Pure render-time toggle;
     // generator output is unchanged. Persists in URL via updateUrl.
-    const enrichLabel = el('label', { class: 'filter-toggle', attrs: { title: 'Overlay enrichment-engine output: clean merchant, category, subcategory. Raw mode (off) is what a UAE core actually emits over Open Finance.' } });
+    const enrichLabel = el('label', {
+      class: 'filter-toggle',
+      attrs: {
+        title:
+          'Overlay enrichment-engine output: clean merchant, category, subcategory. Raw mode (off) is what a UAE core actually emits over Open Finance.',
+      },
+    });
     const enrichCheckbox = el('input', { attrs: { type: 'checkbox' } });
     enrichCheckbox.checked = !!state.enriched;
     enrichCheckbox.addEventListener('change', (e) => {
@@ -78,7 +90,10 @@ export function createTxFilter(deps) {
     const clear = el('button', {
       class: 'filter-clear',
       text: 'Clear filters',
-      onClick: () => { state.txFilter = emptyTxFilter(); renderPayload(); },
+      onClick: () => {
+        state.txFilter = emptyTxFilter();
+        renderPayload();
+      },
     });
     bar.appendChild(clear);
     return bar;
@@ -86,7 +101,13 @@ export function createTxFilter(deps) {
 
   function filterInput(name, type, value, placeholder, ariaLabel) {
     const input = el('input', {
-      attrs: { type, name, value: value ?? '', placeholder: placeholder || '', 'aria-label': ariaLabel ?? placeholder ?? name },
+      attrs: {
+        type,
+        name,
+        value: value ?? '',
+        placeholder: placeholder || '',
+        'aria-label': ariaLabel ?? placeholder ?? name,
+      },
     });
     input.addEventListener('input', (e) => {
       state.txFilter[name] = e.target.value;

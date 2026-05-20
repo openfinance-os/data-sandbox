@@ -47,53 +47,51 @@ if (!FIXTURES_BUILT) {
   describe.skip("Slice 3 — every fixture-package IBAN is mod-97 valid (run 'npm run build:fixtures')", () => {
     it.skip('fixture package not built', () => {});
   });
-} else describe('Slice 3 — every fixture-package IBAN is mod-97 valid', () => {
-  const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
-  const bankingFixtures = Object.entries(manifest.fixtures).filter(
-    ([, fx]) => (fx.domain ?? 'banking') === 'banking',
-  );
+} else
+  describe('Slice 3 — every fixture-package IBAN is mod-97 valid', () => {
+    const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
+    const bankingFixtures = Object.entries(manifest.fixtures).filter(
+      ([, fx]) => (fx.domain ?? 'banking') === 'banking',
+    );
 
-  function readEnv(rel) {
-    return JSON.parse(fs.readFileSync(path.join(PKG_DIR, rel), 'utf8'));
-  }
-
-  function* allIbansInBundle(fx) {
-    const accountsEnv = readEnv(fx.endpoints['/accounts']);
-    for (const acc of accountsEnv.Data?.Account ?? []) {
-      for (const ai of acc.AccountIdentifiers ?? []) {
-        if (ai.SchemeName === 'IBAN') yield { iban: ai.Identification, where: '/accounts' };
-      }
+    function readEnv(rel) {
+      return JSON.parse(fs.readFileSync(path.join(PKG_DIR, rel), 'utf8'));
     }
-    for (const id of fx.accountIds ?? []) {
-      for (const [suffix, listKey] of [
-        ['beneficiaries', 'Beneficiary'],
-        ['standing-orders', 'StandingOrder'],
-        ['scheduled-payments', 'ScheduledPayment'],
-      ]) {
-        const env = readEnv(fx.endpoints[`/accounts/${id}/${suffix}`]);
-        for (const rec of env.Data?.[listKey] ?? []) {
-          for (const ca of rec.CreditorAccount ?? []) {
-            if (ca.SchemeName === 'IBAN') yield { iban: ca.Identification, where: `${suffix}` };
+
+    function* allIbansInBundle(fx) {
+      const accountsEnv = readEnv(fx.endpoints['/accounts']);
+      for (const acc of accountsEnv.Data?.Account ?? []) {
+        for (const ai of acc.AccountIdentifiers ?? []) {
+          if (ai.SchemeName === 'IBAN') yield { iban: ai.Identification, where: '/accounts' };
+        }
+      }
+      for (const id of fx.accountIds ?? []) {
+        for (const [suffix, listKey] of [
+          ['beneficiaries', 'Beneficiary'],
+          ['standing-orders', 'StandingOrder'],
+          ['scheduled-payments', 'ScheduledPayment'],
+        ]) {
+          const env = readEnv(fx.endpoints[`/accounts/${id}/${suffix}`]);
+          for (const rec of env.Data?.[listKey] ?? []) {
+            for (const ca of rec.CreditorAccount ?? []) {
+              if (ca.SchemeName === 'IBAN') yield { iban: ca.Identification, where: `${suffix}` };
+            }
           }
         }
       }
     }
-  }
 
-  for (const [key, fx] of bankingFixtures) {
-    it(`${key} — every IBAN in the rendered bundle passes mod-97`, () => {
-      let checked = 0;
-      for (const { iban, where } of allIbansInBundle(fx)) {
-        expect(typeof iban).toBe('string');
-        expect(iban.length).toBe(23);
-        expect(iban.slice(0, 2)).toBe('AE');
-        expect(
-          isValidMod97Iban(iban),
-          `${key} ${where} IBAN ${iban} fails mod-97`,
-        ).toBe(true);
-        checked += 1;
-      }
-      expect(checked).toBeGreaterThan(0);
-    });
-  }
-});
+    for (const [key, fx] of bankingFixtures) {
+      it(`${key} — every IBAN in the rendered bundle passes mod-97`, () => {
+        let checked = 0;
+        for (const { iban, where } of allIbansInBundle(fx)) {
+          expect(typeof iban).toBe('string');
+          expect(iban.length).toBe(23);
+          expect(iban.slice(0, 2)).toBe('AE');
+          expect(isValidMod97Iban(iban), `${key} ${where} IBAN ${iban} fails mod-97`).toBe(true);
+          checked += 1;
+        }
+        expect(checked).toBeGreaterThan(0);
+      });
+    }
+  });

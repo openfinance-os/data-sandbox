@@ -58,7 +58,12 @@ const baseLinks = (resource) => ({
   Self: `https://example.test/open-finance/account-information/v2.1/${resource}`,
 });
 const baseMeta = () => ({ TotalPages: 1 });
-const txnsMeta = (count) => ({ TotalPages: 1, FirstAvailableDateTime: '2025-04-01T00:00:00Z', LastAvailableDateTime: '2026-04-01T00:00:00Z', TotalRecords: count });
+const txnsMeta = (count) => ({
+  TotalPages: 1,
+  FirstAvailableDateTime: '2025-04-01T00:00:00Z',
+  LastAvailableDateTime: '2026-04-01T00:00:00Z',
+  TotalRecords: count,
+});
 
 function strip(rec) {
   const out = {};
@@ -79,11 +84,13 @@ describe('spec validation — EXP-10 (all 12 endpoints, every persona × LFI)', 
   const personas = loadPersonasByDomain('banking');
   const pools = loadAllPools();
   const validators = Object.fromEntries(
-    Object.entries(parsed.endpoints).map(([p, e]) => [p, compileSchema(spec, e.schemaRef)])
+    Object.entries(parsed.endpoints).map(([p, e]) => [p, compileSchema(spec, e.schemaRef)]),
   );
 
   function envelope({ resource, payload, accountId, includeMeta = baseMeta }) {
-    const data = accountId ? { AccountId: accountId, [resource]: payload } : { [resource]: payload };
+    const data = accountId
+      ? { AccountId: accountId, [resource]: payload }
+      : { [resource]: payload };
     return { Data: data, Links: baseLinks(resource.toLowerCase()), Meta: includeMeta() };
   }
 
@@ -133,7 +140,9 @@ describe('spec validation — EXP-10 (all 12 endpoints, every persona × LFI)', 
         return envelope({
           resource: 'ScheduledPayment',
           accountId: acc.AccountId,
-          payload: bundle.scheduledPayments.filter((x) => x._accountId === acc.AccountId).map(strip),
+          payload: bundle.scheduledPayments
+            .filter((x) => x._accountId === acc.AccountId)
+            .map(strip),
         });
       case '/accounts/{AccountId}/product':
         return envelope({
@@ -175,23 +184,20 @@ describe('spec validation — EXP-10 (all 12 endpoints, every persona × LFI)', 
   // accidentally hardcode 'Retail'.
   describe('segment propagation — SME + Corporate', () => {
     const businessIds = personaIds.filter(
-      (pid) => personas[pid].segment && personas[pid].segment !== 'Retail'
+      (pid) => personas[pid].segment && personas[pid].segment !== 'Retail',
     );
-    it.each(businessIds)(
-      '%s emits AccountType + PartyCategory matching persona.segment',
-      (pid) => {
-        const persona = personas[pid];
-        const bundle = buildBundle({ persona, lfi: 'rich', seed: persona.default_seed, pools });
-        expect(bundle.accounts.length).toBeGreaterThan(0);
-        for (const acc of bundle.accounts) {
-          expect(acc.AccountType).toBe(persona.segment);
-        }
-        for (const party of bundle.parties) {
-          expect(party.PartyCategory).toBe(persona.segment);
-        }
-        expect(bundle.callingUserParty.PartyCategory).toBe(persona.segment);
+    it.each(businessIds)('%s emits AccountType + PartyCategory matching persona.segment', (pid) => {
+      const persona = personas[pid];
+      const bundle = buildBundle({ persona, lfi: 'rich', seed: persona.default_seed, pools });
+      expect(bundle.accounts.length).toBeGreaterThan(0);
+      for (const acc of bundle.accounts) {
+        expect(acc.AccountType).toBe(persona.segment);
       }
-    );
+      for (const party of bundle.parties) {
+        expect(party.PartyCategory).toBe(persona.segment);
+      }
+      expect(bundle.callingUserParty.PartyCategory).toBe(persona.segment);
+    });
   });
 
   describe.each(personaIds)('persona=%s', (pid) => {
@@ -203,13 +209,21 @@ describe('spec validation — EXP-10 (all 12 endpoints, every persona × LFI)', 
         if (endpoint === '/accounts' || endpoint === '/parties') {
           const env = envelopeFor(endpoint, bundle, null);
           const ok = validate(env);
-          if (!ok) console.error(`${pid} ${lfi} ${endpoint} errors:`, JSON.stringify(validate.errors?.slice(0, 3), null, 2));
+          if (!ok)
+            console.error(
+              `${pid} ${lfi} ${endpoint} errors:`,
+              JSON.stringify(validate.errors?.slice(0, 3), null, 2),
+            );
           expect(ok, endpoint).toBe(true);
         } else {
           for (const acc of bundle.accounts) {
             const env = envelopeFor(endpoint, bundle, acc);
             const ok = validate(env);
-            if (!ok) console.error(`${pid} ${lfi} ${endpoint} ${acc.AccountId} errors:`, JSON.stringify(validate.errors?.slice(0, 3), null, 2));
+            if (!ok)
+              console.error(
+                `${pid} ${lfi} ${endpoint} ${acc.AccountId} errors:`,
+                JSON.stringify(validate.errors?.slice(0, 3), null, 2),
+              );
             expect(ok, `${pid} ${endpoint} ${acc.AccountId}`).toBe(true);
           }
         }

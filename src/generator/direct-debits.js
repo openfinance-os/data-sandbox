@@ -11,9 +11,7 @@ export function generateDirectDebits({ persona, accounts, rng, now }) {
   // generateStandingOrders). If any fixed_commitment declares at_slot,
   // every commitment is routed via its slot; otherwise the legacy
   // "all commitments on every CA" behaviour holds.
-  const hasAtSlotCommitments = (persona.fixed_commitments ?? []).some(
-    (c) => c.at_slot != null,
-  );
+  const hasAtSlotCommitments = (persona.fixed_commitments ?? []).some((c) => c.at_slot != null);
   for (const acc of currentAccounts) {
     const accSlot = acc._meta?.slotKey ?? null;
     const dds = (persona.fixed_commitments ?? []).filter((c) => {

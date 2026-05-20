@@ -12,7 +12,27 @@ on:
         type: boolean
         default: false
 
+# Cancel superseded PR runs so a fresh push doesn't leave stale runs
+# occupying a runner. Pushes to main never cancel (we want every
+# main-branch commit to finish and report its result).
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
+  # Lints the workflow files themselves (YAML syntax, unknown context
+  # expressions, shellcheck on `run:` blocks). Fast — runs in ~5s and
+  # in parallel with the heavy `test` job below.
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download actionlint
+        id: get_actionlint
+        run: bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) 1.7.7
+      - name: Run actionlint
+        run: ${{ steps.get_actionlint.outputs.executable }} -color
+
   test:
     runs-on: ubuntu-latest
     steps:
@@ -22,26 +42,57 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
+      # Non-blocking advisory: surface high/critical CVEs in the job log
+      # without failing the build. The maintainer can decide when to bump.
+      - name: npm audit (advisory)
+        run: npm audit --omit=dev --audit-level=high
+        continue-on-error: true
       - run: npm run verify:spec-shape
       - run: npm run build:spec
       - run: npm run build:data
+      - run: npm run build:avatars
       # Fail fast if dist/ artifacts are stale relative to sources, so a
       # contributor who forgot to re-bake them sees a clear signal here
       # rather than a downstream test surprise.
       - run: npm run check:dist-clean
       # tests/fixture-package.test.mjs reads from packages/sandbox-fixtures/
-      # which is generated, not checked in.
-      - run: npm run build:fixtures
+      # which is generated, not checked in. Use the :pkgs variant since
+      # build:spec already ran above.
+      - run: npm run build:fixtures:pkgs
       # tests/integrate-staging.test.mjs reads from _site/, which stage-site.mjs
-      # populates. The fixture-package step covers everything else build:site
-      # would do, so we only need the staging step here (avoids double work).
+      # populates.
       - run: node tools/stage-site.mjs
+      # Lints + eslint + prettier all run in parallel (run-p in package.json
+      # `lint` script). Cuts ~10s off the lint phase.
       - run: npm run lint
+      # Surfaces persona-data conformance against the pinned UAE Open Finance
+      # v2.1 OpenAPI specs as a named CI step (EXP-01 + EXP-10). Wraps:
+      #   - lint-persona-spec-conformance (persona-manifest enums vs spec enums)
+      #   - spec-validation.test.mjs (banking in-memory bundle AJV check)
+      #   - spec-validation.insurance.test.mjs (insurance in-memory bundle AJV)
+      #   - rendered-fixture-spec-validation.test.mjs (every emitted fixture)
+      # A failure here points the reader directly at the conformance contract
+      # rather than burying it inside `npm test`.
+      - name: Validate persona data conforms to v2.1 OpenAPI spec
+        run: npm run validate:spec-conformance
       - run: npm test
       # @openfinance-os/sandbox-mcp has its own vitest config under
       # packages/sandbox-mcp/. Exercises the determinism + watermark + HTTP
       # transport guarantees against the just-built fixture corpus.
       - run: npm run test:mcp
+      # Share the built artefacts with the e2e and lighthouse jobs so they
+      # don't have to rebuild spec/data/fixtures from scratch on fresh runners.
+      - name: Upload built artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-artefacts
+          path: |
+            dist/
+            _site/
+            packages/sandbox-fixtures/
+            packages/sandbox-fixtures-py/
+          retention-days: 1
+          if-no-files-found: error
 
   e2e:
     runs-on: ubuntu-latest
@@ -56,11 +107,21 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
-      - run: npm run build:spec
-      - run: npm run build:data
-      # The persona library + payload table render from dist/data.json. Visual
-      # baselines and several smoke assertions depend on it being present.
-      - run: npx playwright install --with-deps chromium firefox webkit
+      - name: Download built artefacts
+        uses: actions/download-artifact@v4
+        with:
+          name: built-artefacts
+      # Cache Playwright browser binaries. Keyed on package-lock so the
+      # cache invalidates whenever @playwright/test bumps. Saves ~60–90s
+      # per run on a cache hit.
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox webkit
       # Run all cross-browser / mobile projects. The `visual` project is
       # excluded here until baselines are generated on Linux via the
       # e2e-update-baselines workflow_dispatch — see tests/e2e/README.md.
@@ -90,6 +151,7 @@ jobs:
   e2e-update-baselines:
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.update_visual_baselines == 'true'
+    needs: test
     permissions:
       contents: write
       pull-requests: write
@@ -100,8 +162,15 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
-      - run: npm run build:spec
-      - run: npm run build:data
+      - name: Download built artefacts
+        uses: actions/download-artifact@v4
+        with:
+          name: built-artefacts
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
       - run: npx playwright install --with-deps chromium
       - name: Regenerate visual baselines
         run: npx playwright test --project=visual --update-snapshots
@@ -127,8 +196,10 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
-      - run: npm run build:spec
-      - run: node tools/build-data.mjs
+      - name: Download built artefacts
+        uses: actions/download-artifact@v4
+        with:
+          name: built-artefacts
       - run: npm run test:perf
       # Note: lhci uploads each run's report to temporary-public-storage
       # (URLs printed in the job log). No local artifact upload needed —

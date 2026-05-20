@@ -70,11 +70,17 @@ function bankingEnvelopesFromBundle(bundle, ctx) {
     envelopes[`/accounts/${id}`] = wrap(
       { Data: { AccountId: id, Account: strip(acc) } },
       `accounts/${id}`,
-      ctx
+      ctx,
     );
     envelopes[`/accounts/${id}/balances`] = wrap(
-      { Data: { AccountId: id, Balance: bundle.balances.filter((b) => b._accountId === id).map(strip) } },
-      `accounts/${id}/balances`, ctx
+      {
+        Data: {
+          AccountId: id,
+          Balance: bundle.balances.filter((b) => b._accountId === id).map(strip),
+        },
+      },
+      `accounts/${id}/balances`,
+      ctx,
     );
     envelopes[`/accounts/${id}/transactions`] = wrap(
       {
@@ -83,31 +89,68 @@ function bankingEnvelopesFromBundle(bundle, ctx) {
           Transaction: bundle.transactions.filter((t) => t._accountId === id).map(strip),
         },
       },
-      `accounts/${id}/transactions`, ctx
+      `accounts/${id}/transactions`,
+      ctx,
     );
     envelopes[`/accounts/${id}/standing-orders`] = wrap(
-      { Data: { AccountId: id, StandingOrder: bundle.standingOrders.filter((x) => x._accountId === id).map(strip) } },
-      `accounts/${id}/standing-orders`, ctx
+      {
+        Data: {
+          AccountId: id,
+          StandingOrder: bundle.standingOrders.filter((x) => x._accountId === id).map(strip),
+        },
+      },
+      `accounts/${id}/standing-orders`,
+      ctx,
     );
     envelopes[`/accounts/${id}/direct-debits`] = wrap(
-      { Data: { AccountId: id, DirectDebit: bundle.directDebits.filter((x) => x._accountId === id).map(strip) } },
-      `accounts/${id}/direct-debits`, ctx
+      {
+        Data: {
+          AccountId: id,
+          DirectDebit: bundle.directDebits.filter((x) => x._accountId === id).map(strip),
+        },
+      },
+      `accounts/${id}/direct-debits`,
+      ctx,
     );
     envelopes[`/accounts/${id}/beneficiaries`] = wrap(
-      { Data: { AccountId: id, Beneficiary: bundle.beneficiaries.filter((x) => x._accountId === id).map(strip) } },
-      `accounts/${id}/beneficiaries`, ctx
+      {
+        Data: {
+          AccountId: id,
+          Beneficiary: bundle.beneficiaries.filter((x) => x._accountId === id).map(strip),
+        },
+      },
+      `accounts/${id}/beneficiaries`,
+      ctx,
     );
     envelopes[`/accounts/${id}/scheduled-payments`] = wrap(
-      { Data: { AccountId: id, ScheduledPayment: bundle.scheduledPayments.filter((x) => x._accountId === id).map(strip) } },
-      `accounts/${id}/scheduled-payments`, ctx
+      {
+        Data: {
+          AccountId: id,
+          ScheduledPayment: bundle.scheduledPayments.filter((x) => x._accountId === id).map(strip),
+        },
+      },
+      `accounts/${id}/scheduled-payments`,
+      ctx,
     );
     envelopes[`/accounts/${id}/product`] = wrap(
-      { Data: { AccountId: id, Product: bundle.product.filter((x) => x._accountId === id).map(strip) } },
-      `accounts/${id}/product`, ctx
+      {
+        Data: {
+          AccountId: id,
+          Product: bundle.product.filter((x) => x._accountId === id).map(strip),
+        },
+      },
+      `accounts/${id}/product`,
+      ctx,
     );
     envelopes[`/accounts/${id}/parties`] = wrap(
-      { Data: { AccountId: id, Party: bundle.parties.filter((x) => x._accountId === id).map(strip) } },
-      `accounts/${id}/parties`, ctx
+      {
+        Data: {
+          AccountId: id,
+          Party: bundle.parties.filter((x) => x._accountId === id).map(strip),
+        },
+      },
+      `accounts/${id}/parties`,
+      ctx,
     );
     envelopes[`/accounts/${id}/statements`] = wrap(
       {
@@ -117,7 +160,8 @@ function bankingEnvelopesFromBundle(bundle, ctx) {
           Statements: bundle.statements.filter((x) => x._accountId === id).map(strip),
         },
       },
-      `accounts/${id}/statements`, ctx
+      `accounts/${id}/statements`,
+      ctx,
     );
   }
   return envelopes;
@@ -137,9 +181,7 @@ function bankingEnvelopesFromBundle(bundle, ctx) {
  */
 function insuranceEnvelopesFromBundle(bundle, ctx) {
   const envelopes = {};
-  for (const line of [
-    'motor', 'home', 'health', 'life', 'travel', 'renters', 'employment',
-  ]) {
+  for (const line of ['motor', 'home', 'health', 'life', 'travel', 'renters', 'employment']) {
     const cap = line.charAt(0).toUpperCase() + line.slice(1);
     emitLineEnvelopes(envelopes, bundle, ctx, {
       line,
@@ -167,13 +209,13 @@ function insuranceEnvelopesFromBundle(bundle, ctx) {
     envelopes['/insurance-consents'] = wrapInsurance(
       { Data: bundle.consents },
       'insurance-consents',
-      ctx
+      ctx,
     );
     for (const consent of bundle.consents) {
       envelopes[`/insurance-consents/${consent.ConsentId}`] = wrapInsurance(
         { Data: consent },
         `insurance-consents/${consent.ConsentId}`,
-        ctx
+        ctx,
       );
     }
     const firstConsent = bundle.consents[0];
@@ -193,7 +235,7 @@ function emitLineEnvelopes(envelopes, bundle, ctx, cfg) {
     envelopes[`/${cfg.pathPrefix}-policies`] = wrapInsurance(
       { Data: { Policies: summaries } },
       `${cfg.pathPrefix}-policies`,
-      ctx
+      ctx,
     );
   }
 
@@ -202,7 +244,7 @@ function emitLineEnvelopes(envelopes, bundle, ctx, cfg) {
     envelopes[`/${cfg.pathPrefix}-policies/${policyId}`] = wrapInsurance(
       { Data: policy },
       `${cfg.pathPrefix}-policies/${policyId}`,
-      ctx
+      ctx,
     );
     envelopes[`/${cfg.pathPrefix}-policies/{InsurancePolicyId}`] =
       envelopes[`/${cfg.pathPrefix}-policies/${policyId}`];
@@ -215,7 +257,7 @@ function emitLineEnvelopes(envelopes, bundle, ctx, cfg) {
     envelopes[`/${cfg.pathPrefix}-policies/${policyId}/payment-details`] = wrapInsurance(
       { Data: paymentDetails },
       `${cfg.pathPrefix}-policies/${policyId}/payment-details`,
-      ctx
+      ctx,
     );
     envelopes[`/${cfg.pathPrefix}-policies/{InsurancePolicyId}/payment-details`] =
       envelopes[`/${cfg.pathPrefix}-policies/${policyId}/payment-details`];
@@ -226,7 +268,7 @@ function emitLineEnvelopes(envelopes, bundle, ctx, cfg) {
     envelopes[`/${cfg.pathPrefix}-quotes/${quoteId}`] = wrapInsurance(
       { Data: quote },
       `${cfg.pathPrefix}-quotes/${quoteId}`,
-      ctx
+      ctx,
     );
     envelopes[`/${cfg.pathPrefix}-quotes/{QuoteId}`] =
       envelopes[`/${cfg.pathPrefix}-quotes/${quoteId}`];
@@ -277,7 +319,7 @@ export function csvForResource(rows, ctx) {
     cleaned.reduce((set, r) => {
       for (const k of Object.keys(r)) set.add(k);
       return set;
-    }, new Set())
+    }, new Set()),
   );
   const escape = (v) => {
     if (v == null) return '';
@@ -350,7 +392,14 @@ function makeTarHeader(name, size) {
   writeTarStr(buf, 108, '0000000 ', 8);
   writeTarStr(buf, 116, '0000000 ', 8);
   writeTarStr(buf, 124, size.toString(8).padStart(11, '0') + ' ', 12);
-  writeTarStr(buf, 136, Math.floor(Date.now() / 1000).toString(8).padStart(11, '0') + ' ', 12);
+  writeTarStr(
+    buf,
+    136,
+    Math.floor(Date.now() / 1000)
+      .toString(8)
+      .padStart(11, '0') + ' ',
+    12,
+  );
   // Checksum placeholder is 8 spaces; written after sum is computed.
   for (let i = 148; i < 156; i++) buf[i] = 0x20;
   buf[156] = 0x30; // typeflag = '0' regular file

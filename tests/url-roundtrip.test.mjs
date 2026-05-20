@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { encodePermalink, encodeEmbed, encodeFixtureUrl, decodeFromUrl, DEFAULTS } from '../src/url.js';
+import {
+  encodePermalink,
+  encodeEmbed,
+  encodeFixtureUrl,
+  decodeFromUrl,
+  DEFAULTS,
+} from '../src/url.js';
 
 describe('URL shapes — §6.8', () => {
   it('persona permalink encodes persona+lfi+seed', () => {
@@ -43,7 +49,9 @@ describe('URL shapes — §6.8', () => {
   });
 
   it('decode handles embed-shape URLs', () => {
-    const state = decodeFromUrl('/embed?persona=sara&lfi=rich&seed=12&endpoint=/parties&height=400');
+    const state = decodeFromUrl(
+      '/embed?persona=sara&lfi=rich&seed=12&endpoint=/parties&height=400',
+    );
     expect(state.personaId).toBe('sara');
     expect(state.lfi).toBe('rich');
     expect(state.seed).toBe(12);
@@ -61,7 +69,9 @@ describe('URL shapes — §6.8', () => {
       seed: 4729,
       endpoint: '/accounts/{AccountId}/transactions',
     });
-    expect(url).toBe('https://openfinance-os.org/fixtures/v1/bundles/salaried_expat_mid/median/seed-4729/accounts__AccountId__transactions.json');
+    expect(url).toBe(
+      'https://openfinance-os.org/fixtures/v1/bundles/salaried_expat_mid/median/seed-4729/accounts__AccountId__transactions.json',
+    );
   });
 
   it('encodeFixtureUrl handles bundle-level endpoints', () => {
@@ -72,7 +82,9 @@ describe('URL shapes — §6.8', () => {
       seed: 2046,
       endpoint: '/accounts',
     });
-    expect(url).toBe('https://openfinance-os.org/fixtures/v1/bundles/hnw_multicurrency/rich/seed-2046/accounts.json');
+    expect(url).toBe(
+      'https://openfinance-os.org/fixtures/v1/bundles/hnw_multicurrency/rich/seed-2046/accounts.json',
+    );
   });
 
   it('encodeFixtureUrl falls back to /accounts when endpoint omitted', () => {
@@ -96,7 +108,7 @@ describe('URL shapes — §6.8', () => {
 
   it('decode reads ?domain= and ?preview=1', () => {
     const state = decodeFromUrl(
-      '/commons/sandbox/p/motor_comprehensive_mid?lfi=median&seed=4729&domain=insurance&preview=1'
+      '/commons/sandbox/p/motor_comprehensive_mid?lfi=median&seed=4729&domain=insurance&preview=1',
     );
     expect(state.domain).toBe('insurance');
     expect(state.preview).toBe(true);
@@ -161,7 +173,9 @@ describe('URL shapes — §6.8', () => {
   });
 
   it('decodeFromUrl returns recipe=null for non-custom personas', () => {
-    const state = decodeFromUrl('/commons/sandbox/p/salaried_expat_mid?lfi=median&seed=1&recipe=ABC');
+    const state = decodeFromUrl(
+      '/commons/sandbox/p/salaried_expat_mid?lfi=median&seed=1&recipe=ABC',
+    );
     expect(state.personaId).toBe('salaried_expat_mid');
     expect(state.recipe).toBeNull();
   });

@@ -13,11 +13,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import {
-  ALLOWED_EVENTS,
-  ALLOWED_PROP_KEYS,
-  track,
-} from '../src/analytics.js';
+import { ALLOWED_EVENTS, ALLOWED_PROP_KEYS, track } from '../src/analytics.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,7 +26,8 @@ const ALLOWED_PROP_KEY_SET = new Set(ALLOWED_PROP_KEYS);
 // they imply user-input or PII capture. The list is broader than
 // strictly necessary on purpose: the lint is a check, not a typing
 // system, and false positives are cheap to fix.
-const BANNED_PROP_KEY_PATTERN = /^(name|fullName|email|phone|iban|amount|merchant|address|searchQuery|userInput|ip|url|referrer|query|input|value|text)$/i;
+const BANNED_PROP_KEY_PATTERN =
+  /^(name|fullName|email|phone|iban|amount|merchant|address|searchQuery|userInput|ip|url|referrer|query|input|value|text)$/i;
 
 function* walk(dir) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

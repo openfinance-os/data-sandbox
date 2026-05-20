@@ -76,16 +76,16 @@ function wireLegacyBanner(banner) {
   btn.setAttribute('aria-label', 'Dismiss synthetic data notice');
   btn.title = 'Dismiss';
   btn.textContent = '×';
-  btn.addEventListener('click', () => { banner.hidden = true; });
+  btn.addEventListener('click', () => {
+    banner.hidden = true;
+  });
   banner.appendChild(btn);
 }
 
 function init() {
   const chip = document.getElementById('banner-chip');
   if (chip) wireChip(chip);
-  document
-    .querySelectorAll('.banner[data-dismissible]')
-    .forEach((el) => wireLegacyBanner(el));
+  document.querySelectorAll('.banner[data-dismissible]').forEach((el) => wireLegacyBanner(el));
 }
 
 if (document.readyState === 'loading') {

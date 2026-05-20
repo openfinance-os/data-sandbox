@@ -63,22 +63,20 @@ function resolvePools(persona, indexedPools) {
   const namePool = indexedPools.namesByPoolId[persona.demographics.nationality_pool];
   if (!namePool) {
     throw new Error(
-      `name pool '${persona.demographics.nationality_pool}' not found for persona ${persona.persona_id}`
+      `name pool '${persona.demographics.nationality_pool}' not found for persona ${persona.persona_id}`,
     );
   }
   const employerPoolId = persona.income?.primary_employer_pool;
   const employerPool = employerPoolId ? indexedPools.employersByPoolId[employerPoolId] : null;
   if (employerPoolId && !employerPool) {
-    throw new Error(`employer pool '${employerPoolId}' not found for persona ${persona.persona_id}`);
+    throw new Error(
+      `employer pool '${employerPoolId}' not found for persona ${persona.persona_id}`,
+    );
   }
   const orgPoolId = persona.organisation?.legal_name_pool;
-  const orgPool = orgPoolId
-    ? (indexedPools.organisationsByPoolId ?? {})[orgPoolId]
-    : null;
+  const orgPool = orgPoolId ? (indexedPools.organisationsByPoolId ?? {})[orgPoolId] : null;
   if (orgPoolId && !orgPool) {
-    throw new Error(
-      `organisation pool '${orgPoolId}' not found for persona ${persona.persona_id}`
-    );
+    throw new Error(`organisation pool '${orgPoolId}' not found for persona ${persona.persona_id}`);
   }
   // Resolve signatory name pools eagerly so parties.js can draw without
   // having to plumb the indexed-pools structure through.
@@ -89,7 +87,7 @@ function resolvePools(persona, indexedPools) {
     const pool = indexedPools.namesByPoolId[poolId];
     if (!pool) {
       throw new Error(
-        `signatory name pool '${poolId}' not found for persona ${persona.persona_id}`
+        `signatory name pool '${poolId}' not found for persona ${persona.persona_id}`,
       );
     }
     signatoryPools.push(pool);
@@ -302,13 +300,17 @@ function buildBankingBundle({ persona, lfi, seed, pools, now = DEFAULT_NOW }) {
     // persona's account list. Its IBAN was overridden in accounts.js
     // to a deterministic synthetic AE99/999 value (see
     // derivePrimaryAccountIban).
-    const firstCurrentIdx = (sourcePersona.accounts ?? []).findIndex((s) => s.type === 'CurrentAccount');
-    const primaryAccountId = firstCurrentIdx >= 0
-      ? `${sourcePersona.persona_id.replace(/_/g, '-')}-acct-${String(firstCurrentIdx + 1).padStart(2, '0')}`
-      : null;
-    const primaryIban = firstCurrentIdx >= 0
-      ? derivePrimaryAccountIban(sourcePersona.persona_id, firstCurrentIdx)
-      : null;
+    const firstCurrentIdx = (sourcePersona.accounts ?? []).findIndex(
+      (s) => s.type === 'CurrentAccount',
+    );
+    const primaryAccountId =
+      firstCurrentIdx >= 0
+        ? `${sourcePersona.persona_id.replace(/_/g, '-')}-acct-${String(firstCurrentIdx + 1).padStart(2, '0')}`
+        : null;
+    const primaryIban =
+      firstCurrentIdx >= 0
+        ? derivePrimaryAccountIban(sourcePersona.persona_id, firstCurrentIdx)
+        : null;
     if (primaryAccountId && primaryIban) {
       const ledger = computeCrossLfiLedger({
         persona: sourcePersona,
@@ -337,7 +339,9 @@ function buildBankingBundle({ persona, lfi, seed, pools, now = DEFAULT_NOW }) {
   // stays visually distinct (no coincidental overlap between a regular
   // beneficiary and a self-to-<role> link).
   const crossLfiSelfBeneficiaries = buildCrossLfiSelfBeneficiaries({
-    persona, accounts, identity,
+    persona,
+    accounts,
+    identity,
     pools: { counterpartyBanks: p.counterpartyBanks },
   });
   const reservedBankNames = crossLfiSelfBeneficiaries
@@ -397,17 +401,13 @@ function buildBankingBundle({ persona, lfi, seed, pools, now = DEFAULT_NOW }) {
 // `_resolved` block instead of re-drawing.
 function enrichPersona(persona, p, rng) {
   if (!persona.organisation) return persona;
-  const legalName = p.organisation
-    ? drawOrganisationName(rng, p.organisation)
-    : null;
+  const legalName = p.organisation ? drawOrganisationName(rng, p.organisation) : null;
   const signatories = (persona.organisation.signatories ?? []).map((sig, i) => {
     const namePool = p.signatoryPools[i];
     const name = namePool ? drawName(rng, namePool) : null;
     return {
       ...sig,
-      _resolved: name
-        ? { fullName: name.full, given: name.given, surname: name.surname }
-        : null,
+      _resolved: name ? { fullName: name.full, given: name.given, surname: name.surname } : null,
     };
   });
   return {

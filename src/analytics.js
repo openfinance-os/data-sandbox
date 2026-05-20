@@ -93,7 +93,7 @@ function loadPosthog() {
     // and .github/workflows/deploy.yml for the per-target wiring story.
     if (typeof console !== 'undefined') {
       console.info(
-        '[analytics] POSTHOG_KEY not configured (window.__POSTHOG_KEY__ is unset); analytics disabled'
+        '[analytics] POSTHOG_KEY not configured (window.__POSTHOG_KEY__ is unset); analytics disabled',
       );
     }
     posthogPromise = Promise.resolve(null);

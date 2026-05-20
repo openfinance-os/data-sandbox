@@ -68,9 +68,10 @@ async function emitPersona(personaId, persona, domain) {
   // Phase 2.2 — multi-domain personas declare `domains: [banking, insurance]`;
   // single-domain personas keep `domain: <string>`. Surface both shapes in
   // the manifest so npm / PyPI / MCP consumers can filter on either.
-  const personaDomainList = Array.isArray(persona.domains) && persona.domains.length > 0
-    ? persona.domains
-    : [persona.domain ?? domain];
+  const personaDomainList =
+    Array.isArray(persona.domains) && persona.domains.length > 0
+      ? persona.domains
+      : [persona.domain ?? domain];
   const personaDomainLabel = personaDomainList.length > 1 ? 'multi' : personaDomainList[0];
   manifest.personas[personaId] = {
     name: persona.name,
@@ -90,13 +91,16 @@ async function emitPersona(personaId, persona, domain) {
   };
   fs.writeFileSync(
     path.join(OUT, 'personas', `${personaId}.json`),
-    JSON.stringify(persona, null, 2)
+    JSON.stringify(persona, null, 2),
   );
 
   for (const lfi of ['rich', 'median', 'sparse']) {
     const ctx = {
-      personaId, lfi, seed,
-      specVersion: 'v2.1', specSha: SHA,
+      personaId,
+      lfi,
+      seed,
+      specVersion: 'v2.1',
+      specSha: SHA,
       retrievedAt: NOW_ANCHOR,
     };
     const bundle = buildBundle({ persona, lfi, seed, pools, now });
@@ -118,13 +122,17 @@ async function emitPersona(personaId, persona, domain) {
       const enrichDir = path.join(OUT, 'enrichment', personaId);
       fs.mkdirSync(enrichDir, { recursive: true });
       const enrichFp = path.join(enrichDir, `seed-${seed}.json`);
-      const enrichText = JSON.stringify({
-        schema: 'openfinance-os/data-sandbox/enrichment/v1',
-        personaId,
-        seed,
-        generatedAt: new Date(NOW_ANCHOR).toISOString(),
-        records: bundle._enrichment,
-      }, null, 2);
+      const enrichText = JSON.stringify(
+        {
+          schema: 'openfinance-os/data-sandbox/enrichment/v1',
+          personaId,
+          seed,
+          generatedAt: new Date(NOW_ANCHOR).toISOString(),
+          records: bundle._enrichment,
+        },
+        null,
+        2,
+      );
       fs.writeFileSync(enrichFp, enrichText);
       const relEnrich = path.relative(OUT, enrichFp).split(path.sep).join('/');
       const prevEntry = manifest.personas[personaId] ?? {};
@@ -176,8 +184,13 @@ async function emitPersona(personaId, persona, domain) {
     const rentersPolicyIds = bundle.rentersPolicies?.map((p) => p.InsurancePolicyId) ?? [];
     const employmentPolicyIds = bundle.employmentPolicies?.map((p) => p.InsurancePolicyId) ?? [];
     const policyIds = [
-      ...motorPolicyIds, ...homePolicyIds, ...healthPolicyIds, ...lifePolicyIds,
-      ...travelPolicyIds, ...rentersPolicyIds, ...employmentPolicyIds,
+      ...motorPolicyIds,
+      ...homePolicyIds,
+      ...healthPolicyIds,
+      ...lifePolicyIds,
+      ...travelPolicyIds,
+      ...rentersPolicyIds,
+      ...employmentPolicyIds,
     ];
     const motorQuoteId = bundle.motorQuote?.QuoteId ?? null;
     const homeQuoteId = bundle.homeQuote?.QuoteId ?? null;
@@ -186,8 +199,14 @@ async function emitPersona(personaId, persona, domain) {
     const travelQuoteId = bundle.travelQuote?.QuoteId ?? null;
     const rentersQuoteId = bundle.rentersQuote?.QuoteId ?? null;
     const employmentQuoteId = bundle.employmentQuote?.QuoteId ?? null;
-    const quoteId = motorQuoteId ?? homeQuoteId ?? healthQuoteId ?? lifeQuoteId
-      ?? travelQuoteId ?? rentersQuoteId ?? employmentQuoteId;
+    const quoteId =
+      motorQuoteId ??
+      homeQuoteId ??
+      healthQuoteId ??
+      lifeQuoteId ??
+      travelQuoteId ??
+      rentersQuoteId ??
+      employmentQuoteId;
     const consentIds = bundle.consents?.map((c) => c.ConsentId) ?? [];
     // For multi-domain personas the bundle carries a `domains` array;
     // single-domain bundles use the `domain` field set by the generator
@@ -197,7 +216,9 @@ async function emitPersona(personaId, persona, domain) {
       ? bundle.domains
       : [bundle.domain ?? domain];
     manifest.fixtures[`${personaId}|${lfi}|${seed}`] = {
-      personaId, lfi, seed,
+      personaId,
+      lfi,
+      seed,
       domain: bundleDomains[0],
       domains: bundleDomains,
       line: bundle.line ?? null,
@@ -251,15 +272,22 @@ async function emitPersona(personaId, persona, domain) {
         const firstRoleAccountId = roleAccountIds[0];
         if (firstRoleAccountId) {
           for (const [endpoint, rel] of Object.entries(roleFiles)) {
-            const alias = endpoint.replace(`/accounts/${firstRoleAccountId}`, '/accounts/{AccountId}');
+            const alias = endpoint.replace(
+              `/accounts/${firstRoleAccountId}`,
+              '/accounts/{AccountId}',
+            );
             if (alias !== endpoint && !aliasRoleEndpoints[alias]) {
               aliasRoleEndpoints[alias] = rel;
             }
           }
         }
         manifest.roleFixtures[`${personaId}|${slotKey}|${lfi}|${seed}`] = {
-          personaId, slot: slotKey, role: slot.role,
-          lfi, seed, domain,
+          personaId,
+          slot: slotKey,
+          role: slot.role,
+          lfi,
+          seed,
+          domain,
           accountIds: roleAccountIds,
           endpoints: aliasRoleEndpoints,
         };
@@ -292,7 +320,7 @@ for (const [personaId, persona] of Object.entries(insurancePersonas)) {
 fs.copyFileSync(path.join(repoRoot, 'dist/SPEC.json'), path.join(OUT, 'spec.json'));
 fs.copyFileSync(
   path.join(repoRoot, 'dist/SPEC.insurance.json'),
-  path.join(OUT, 'spec.insurance.json')
+  path.join(OUT, 'spec.insurance.json'),
 );
 
 fs.writeFileSync(path.join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 2));
@@ -331,10 +359,24 @@ fs.writeFileSync(path.join(OUT, 'pools.json'), JSON.stringify(pools));
 const pkgJson = {
   name: '@openfinance-os/sandbox-fixtures',
   version: PKG_VERSION,
-  description: 'Deterministic, v2.1-shaped UAE Open Finance synthetic fixtures from the Open Finance Data Sandbox. 18 banking personas + 3 insurance preview personas × 3 LFI profiles × every in-scope endpoint. CC0 data, MIT loader code.',
-  keywords: ['open-finance', 'uae', 'synthetic-data', 'fixtures', 'v2.1', 'tpp', 'commons', 'insurance'],
+  description:
+    'Deterministic, v2.1-shaped UAE Open Finance synthetic fixtures from the Open Finance Data Sandbox. 18 banking personas + 3 insurance preview personas × 3 LFI profiles × every in-scope endpoint. CC0 data, MIT loader code.',
+  keywords: [
+    'open-finance',
+    'uae',
+    'synthetic-data',
+    'fixtures',
+    'v2.1',
+    'tpp',
+    'commons',
+    'insurance',
+  ],
   homepage: 'https://github.com/openfinance-os/data-sandbox',
-  repository: { type: 'git', url: 'https://github.com/openfinance-os/data-sandbox.git', directory: 'packages/sandbox-fixtures' },
+  repository: {
+    type: 'git',
+    url: 'https://github.com/openfinance-os/data-sandbox.git',
+    directory: 'packages/sandbox-fixtures',
+  },
   license: 'MIT',
   type: 'module',
   main: './index.cjs',
@@ -349,7 +391,22 @@ const pkgJson = {
     './personas/*': './personas/*',
     './lib/*': './lib/*',
   },
-  files: ['index.mjs', 'index.cjs', 'index.d.ts', 'manifest.json', 'spec.json', 'spec.insurance.json', 'pools.json', 'bundles/', 'personas/', 'enrichment/', 'brands/', 'brand-registry.json', 'lib/', 'README.md'],
+  files: [
+    'index.mjs',
+    'index.cjs',
+    'index.d.ts',
+    'manifest.json',
+    'spec.json',
+    'spec.insurance.json',
+    'pools.json',
+    'bundles/',
+    'personas/',
+    'enrichment/',
+    'brands/',
+    'brand-registry.json',
+    'lib/',
+    'README.md',
+  ],
   publishConfig: { access: 'public' },
 };
 fs.writeFileSync(path.join(OUT, 'package.json'), JSON.stringify(pkgJson, null, 2));
@@ -1146,8 +1203,8 @@ const personaSummary = Object.entries(personasByDomain)
   .join(' + ');
 
 console.log(
-  `built fixture package → ${path.relative(repoRoot, OUT)}/`
-  + `\n  ${fileCount} fixture files (${(totalBytes / 1024).toFixed(1)} KB raw)`
-  + `\n  ${Object.keys(manifest.personas).length} personas (${personaSummary}) · ${Object.keys(manifest.fixtures).length} (persona × lfi) keys`
-  + `\n  spec ${manifest.specVersion} @ ${manifest.specSha.slice(0, 7)}`
+  `built fixture package → ${path.relative(repoRoot, OUT)}/` +
+    `\n  ${fileCount} fixture files (${(totalBytes / 1024).toFixed(1)} KB raw)` +
+    `\n  ${Object.keys(manifest.personas).length} personas (${personaSummary}) · ${Object.keys(manifest.fixtures).length} (persona × lfi) keys` +
+    `\n  spec ${manifest.specVersion} @ ${manifest.specSha.slice(0, 7)}`,
 );

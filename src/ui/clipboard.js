@@ -23,8 +23,14 @@ function fallbackCopy(text, doneLabel) {
   ta.style.opacity = '0';
   document.body.appendChild(ta);
   ta.select();
-  try { document.execCommand('copy'); showCopyToast(doneLabel); }
-  catch { showCopyToast('Copy blocked — selecting snippet for ⌘C / Ctrl+C.'); ta.style.opacity = '1'; return; }
+  try {
+    document.execCommand('copy');
+    showCopyToast(doneLabel);
+  } catch {
+    showCopyToast('Copy blocked — selecting snippet for ⌘C / Ctrl+C.');
+    ta.style.opacity = '1';
+    return;
+  }
   ta.remove();
 }
 

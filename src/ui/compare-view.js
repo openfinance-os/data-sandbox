@@ -18,25 +18,45 @@ export function createCompareView(deps) {
     // affordance is just a thin context line + diff legend.
     const leftLfi = state.lfi;
     const rightLfi = state.compareWith;
-    const leftBundle = buildBundle({ persona, lfi: leftLfi, seed: state.seed, pools: state.data.pools, now });
-    const rightBundle = buildBundle({ persona, lfi: rightLfi, seed: state.seed, pools: state.data.pools, now });
+    const leftBundle = buildBundle({
+      persona,
+      lfi: leftLfi,
+      seed: state.seed,
+      pools: state.data.pools,
+      now,
+    });
+    const rightBundle = buildBundle({
+      persona,
+      lfi: rightLfi,
+      seed: state.seed,
+      pools: state.data.pools,
+      now,
+    });
 
     const leftRows = compareRowsFor(leftBundle);
     const rightRows = compareRowsFor(rightBundle);
     const stats = compareStats(leftRows, rightRows);
     if (personaAvatarEl) {
-      body.appendChild(el('div', { class: 'compare-persona' },
-        personaAvatarEl(state.personaId, persona, 'md'),
-        el('div', { class: 'compare-persona-text' },
-          el('div', { class: 'compare-persona-name', text: persona.name }),
-          el('div', { class: 'compare-persona-lfis', text: `${leftLfi} vs ${rightLfi}` }),
+      body.appendChild(
+        el(
+          'div',
+          { class: 'compare-persona' },
+          personaAvatarEl(state.personaId, persona, 'md'),
+          el(
+            'div',
+            { class: 'compare-persona-text' },
+            el('div', { class: 'compare-persona-name', text: persona.name }),
+            el('div', { class: 'compare-persona-lfis', text: `${leftLfi} vs ${rightLfi}` }),
+          ),
         ),
-      ));
+      );
     }
-    body.appendChild(el('div', {
-      class: 'compare-summary',
-      text: `${stats.totalCellsLeft} populated cells on ${leftLfi} · ${stats.totalCellsRight} on ${rightLfi} · ${stats.diffCount} fields differ across ${Math.max(leftRows.length, rightRows.length)} rows. Cells highlighted: green = present only on this side, amber = changed, red = missing.`,
-    }));
+    body.appendChild(
+      el('div', {
+        class: 'compare-summary',
+        text: `${stats.totalCellsLeft} populated cells on ${leftLfi} · ${stats.totalCellsRight} on ${rightLfi} · ${stats.diffCount} fields differ across ${Math.max(leftRows.length, rightRows.length)} rows. Cells highlighted: green = present only on this side, amber = changed, red = missing.`,
+      }),
+    );
 
     // Union of column keys across both sides so each half renders the same
     // columns. That's how a "missing" cell on Sparse gets a column to live in
@@ -54,15 +74,21 @@ export function createCompareView(deps) {
   }
 
   function compareRowsFor(bundle) {
-    const acc = bundle.accounts.find((a) => a.AccountId === state.selectedAccountId) ?? bundle.accounts[0];
+    const acc =
+      bundle.accounts.find((a) => a.AccountId === state.selectedAccountId) ?? bundle.accounts[0];
     switch (state.endpoint) {
-      case '/accounts': return bundle.accounts;
-      case '/parties': return bundle.callingUserParty ? [bundle.callingUserParty] : [];
-      case '/accounts/{AccountId}': return acc ? [acc] : [];
+      case '/accounts':
+        return bundle.accounts;
+      case '/parties':
+        return bundle.callingUserParty ? [bundle.callingUserParty] : [];
+      case '/accounts/{AccountId}':
+        return acc ? [acc] : [];
       case '/accounts/{AccountId}/balances':
         return acc ? bundle.balances.filter((b) => b._accountId === acc.AccountId) : [];
       case '/accounts/{AccountId}/transactions':
-        return acc ? bundle.transactions.filter((t) => t._accountId === acc.AccountId).slice(0, 60) : [];
+        return acc
+          ? bundle.transactions.filter((t) => t._accountId === acc.AccountId).slice(0, 60)
+          : [];
       case '/accounts/{AccountId}/standing-orders':
         return acc ? bundle.standingOrders.filter((x) => x._accountId === acc.AccountId) : [];
       case '/accounts/{AccountId}/direct-debits':
@@ -77,14 +103,25 @@ export function createCompareView(deps) {
         return acc ? bundle.parties.filter((x) => x._accountId === acc.AccountId) : [];
       case '/accounts/{AccountId}/statements':
         return acc ? bundle.statements.filter((x) => x._accountId === acc.AccountId) : [];
-      default: return [];
+      default:
+        return [];
     }
   }
 
   function rowKey(row) {
-    return row.TransactionId || row.AccountId || row.StandingOrderId || row.DirectDebitId
-      || row.BeneficiaryId || row.ScheduledPaymentId || row.ProductId || row.PartyId
-      || row.StatementId || row._accountId || JSON.stringify(row).slice(0, 64);
+    return (
+      row.TransactionId ||
+      row.AccountId ||
+      row.StandingOrderId ||
+      row.DirectDebitId ||
+      row.BeneficiaryId ||
+      row.ScheduledPaymentId ||
+      row.ProductId ||
+      row.PartyId ||
+      row.StatementId ||
+      row._accountId ||
+      JSON.stringify(row).slice(0, 64)
+    );
   }
 
   function compareStats(leftRows, rightRows) {
@@ -114,18 +151,24 @@ export function createCompareView(deps) {
 
   function renderCompareHalf(bundle, ownRows, otherRows, lfi, allKeys) {
     const half = el('div', { class: 'compare-half' });
-    half.appendChild(el('div', {
-      class: 'compare-half-header',
-      text: `${lfi.toUpperCase()} · ${ownRows.length} row${ownRows.length === 1 ? '' : 's'}`,
-    }));
+    half.appendChild(
+      el('div', {
+        class: 'compare-half-header',
+        text: `${lfi.toUpperCase()} · ${ownRows.length} row${ownRows.length === 1 ? '' : 's'}`,
+      }),
+    );
     const inner = el('div', { class: 'payload-body', attrs: { tabindex: '0' } });
     if (ownRows.length === 0) {
-      inner.appendChild(el('p', { text: 'No records.', attrs: { style: 'color:var(--text-muted);padding:8px' } }));
+      inner.appendChild(
+        el('p', { text: 'No records.', attrs: { style: 'color:var(--text-muted);padding:8px' } }),
+      );
       half.appendChild(inner);
       void bundle;
       return half;
     }
-    const fieldsByName = new Map((leafFields(state.spec, state.endpoint) ?? []).map((f) => [f.name, f]));
+    const fieldsByName = new Map(
+      (leafFields(state.spec, state.endpoint) ?? []).map((f) => [f.name, f]),
+    );
     const otherByKey = new Map(otherRows.map((r) => [rowKey(r), r]));
 
     const wrap = el('div', { class: 'payload-rendered' });
@@ -138,7 +181,13 @@ export function createCompareView(deps) {
       if (f) th.dataset.status = f.status;
       if (f) {
         const badge = statusBadge(f.status);
-        th.appendChild(el('span', { class: `pill ${badge.shape}`, text: badge.label, attrs: { 'aria-label': badge.text } }));
+        th.appendChild(
+          el('span', {
+            class: `pill ${badge.shape}`,
+            text: badge.label,
+            attrs: { 'aria-label': badge.text },
+          }),
+        );
       }
       th.appendChild(el('span', { class: 'field-name', text: k }));
       headRow.appendChild(th);
@@ -156,13 +205,14 @@ export function createCompareView(deps) {
         const v = stripped[k];
         const ov = otherStripped ? otherStripped[k] : undefined;
         const td = el('td');
-        td.textContent = v == null ? '—' : (typeof v === 'object' ? JSON.stringify(v) : String(v));
+        td.textContent = v == null ? '—' : typeof v === 'object' ? JSON.stringify(v) : String(v);
         if (otherStripped) {
           const here = v != null;
           const there = ov != null;
           if (here && !there) td.classList.add('diff-only-here');
           else if (!here && there) td.classList.add('diff-missing');
-          else if (here && there && JSON.stringify(v) !== JSON.stringify(ov)) td.classList.add('diff-changed');
+          else if (here && there && JSON.stringify(v) !== JSON.stringify(ov))
+            td.classList.add('diff-changed');
         }
         tr.appendChild(td);
       }

@@ -44,7 +44,12 @@ export const DEFAULT_MCC_NOISE_RATE = 0.05;
  *                    or null to disable noise entirely.
  *   rate             probability of misrouting. Default 5%.
  */
-export function maybeMisrouteMcc({ correctMcc, transactionId, confusionTable, rate = DEFAULT_MCC_NOISE_RATE }) {
+export function maybeMisrouteMcc({
+  correctMcc,
+  transactionId,
+  confusionTable,
+  rate = DEFAULT_MCC_NOISE_RATE,
+}) {
   if (!correctMcc || !confusionTable) {
     return { mcc: correctMcc, misrouted: false, reason: null };
   }

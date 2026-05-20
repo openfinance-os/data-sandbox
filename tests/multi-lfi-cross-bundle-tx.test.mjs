@@ -47,7 +47,11 @@ describe('Slice 7 — computeCrossLfiLedger purity', () => {
 
   it('returns CROSS_LFI_HISTORY_MONTHS monthly entries per declared non-primary slot, no entries for primary slot itself', () => {
     const a = computeCrossLfiLedger({
-      persona: fakePersona, primaryAccountId, primaryIban, counterpartyBanksPool: POOL, now,
+      persona: fakePersona,
+      primaryAccountId,
+      primaryIban,
+      counterpartyBanksPool: POOL,
+      now,
     });
     // 24 secondary + 24 tertiary = 48 (CROSS_LFI_HISTORY_MONTHS bumped from
     // 12 → 24 alongside the transaction-stream HISTORY_MONTHS bump).
@@ -58,17 +62,29 @@ describe('Slice 7 — computeCrossLfiLedger purity', () => {
 
   it('two calls with identical inputs return byte-identical ledgers (EXP-05 across-bundle)', () => {
     const a = computeCrossLfiLedger({
-      persona: fakePersona, primaryAccountId, primaryIban, counterpartyBanksPool: POOL, now,
+      persona: fakePersona,
+      primaryAccountId,
+      primaryIban,
+      counterpartyBanksPool: POOL,
+      now,
     });
     const b = computeCrossLfiLedger({
-      persona: fakePersona, primaryAccountId, primaryIban, counterpartyBanksPool: POOL, now,
+      persona: fakePersona,
+      primaryAccountId,
+      primaryIban,
+      counterpartyBanksPool: POOL,
+      now,
     });
     expect(JSON.stringify(a)).toBe(JSON.stringify(b));
   });
 
   it('primary outflows + role inflows mirror by Amount, Currency, DateTime, Reference', () => {
     const a = computeCrossLfiLedger({
-      persona: fakePersona, primaryAccountId, primaryIban, counterpartyBanksPool: POOL, now,
+      persona: fakePersona,
+      primaryAccountId,
+      primaryIban,
+      counterpartyBanksPool: POOL,
+      now,
     });
     // Pair primary outflows with their role-side inflows by _crossLfiPairId.
     const byPair = new Map();
@@ -94,116 +110,125 @@ if (!FIXTURES_BUILT) {
   describe.skip("Slice 7 — cross-LFI mirror in built fixtures (run 'npm run build:fixtures')", () => {
     it.skip('fixture package not built', () => {});
   });
-} else describe('Slice 7 — cross-LFI mirror in built fixtures', () => {
-  const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
-  function readEnv(rel) {
-    return JSON.parse(fs.readFileSync(path.join(PKG_DIR, rel), 'utf8'));
-  }
+} else
+  describe('Slice 7 — cross-LFI mirror in built fixtures', () => {
+    const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
+    function readEnv(rel) {
+      return JSON.parse(fs.readFileSync(path.join(PKG_DIR, rel), 'utf8'));
+    }
 
-  // For each role-fixture entry, check the cross-bundle mirror.
-  const roleFixtures = manifest.roleFixtures ?? {};
-  // XLFI markers survive any LFI profile via the always-mandatory
-  // TransactionId field — the format is `<persona-slug>-xlfi-<sN>-<NN>-<dir>`.
-  const isXlfi = (t) => typeof t.TransactionId === 'string' && t.TransactionId.includes('-xlfi-');
+    // For each role-fixture entry, check the cross-bundle mirror.
+    const roleFixtures = manifest.roleFixtures ?? {};
+    // XLFI markers survive any LFI profile via the always-mandatory
+    // TransactionId field — the format is `<persona-slug>-xlfi-<sN>-<NN>-<dir>`.
+    const isXlfi = (t) => typeof t.TransactionId === 'string' && t.TransactionId.includes('-xlfi-');
 
-  for (const [rkey, rfx] of Object.entries(roleFixtures)) {
-    const primaryKey = `${rfx.personaId}|${rfx.lfi}|${rfx.seed}`;
-    const primary = manifest.fixtures[primaryKey];
-    const primaryAccountId = primary.accountIds[0];
+    for (const [rkey, rfx] of Object.entries(roleFixtures)) {
+      const primaryKey = `${rfx.personaId}|${rfx.lfi}|${rfx.seed}`;
+      const primary = manifest.fixtures[primaryKey];
+      const primaryAccountId = primary.accountIds[0];
 
-    it(`${rkey} — primary bundle has 24 XLFI outflows targeting this slot (TransactionId-keyed; field-redaction-stable)`, () => {
-      const primaryTx = readEnv(primary.endpoints[`/accounts/${primaryAccountId}/transactions`]);
-      // Phase 2.2 — slot suffix is derived from slot index, not name. Use
-      // TransactionReference (XLFI-<SLOT3>-NN) which encodes the slot key
-      // directly. Legacy SME slots: 'secondary' → 'SEC', 'tertiary' → 'TER'.
-      // Phase 2.2 custom keys: 'everyday-card' → 'EVE', 'digital' → 'DIG',
-      // 'mortgage-lender' → 'MOR'.
-      const refPrefix = `XLFI-${rfx.slot.slice(0, 3).toUpperCase()}-`;
-      const xlfiToSlot = (primaryTx.Data.Transaction ?? []).filter(
-        (t) => isXlfi(t)
-          && (t.TransactionReference?.startsWith(refPrefix) || t.TransactionInformation?.includes(`XLFI SWEEP TO ${rfx.slot.toUpperCase()}`))
-          && t.TransactionId.endsWith('-out'),
-      );
-      expect(xlfiToSlot.length).toBe(24);
-      for (const t of xlfiToSlot) {
-        expect(t.CreditDebitIndicator).toBe('Debit');
-        expect(t.TransactionType).toBe('LocalBankTransfer');
-        expect(t.SubTransactionType).toBe('MoneyTransfer');
-      }
-    });
-
-    it(`${rkey} — role bundle has 24 XLFI inflows`, () => {
-      const roleAccountId = rfx.accountIds[0];
-      const roleTx = readEnv(rfx.endpoints[`/accounts/${roleAccountId}/transactions`]);
-      const xlfiIn = (roleTx.Data.Transaction ?? []).filter(
-        (t) => isXlfi(t) && t.TransactionId.endsWith('-in'),
-      );
-      expect(xlfiIn.length).toBe(24);
-      for (const t of xlfiIn) {
-        expect(t.CreditDebitIndicator).toBe('Credit');
-        expect(t.TransactionType).toBe('LocalBankTransfer');
-        expect(t.SubTransactionType).toBe('MoneyTransfer');
-      }
-    });
-
-    it(`${rkey} — primary outflows and role inflows mirror by datetime + amount`, () => {
-      const primaryTx = readEnv(primary.endpoints[`/accounts/${primaryAccountId}/transactions`]);
-      const roleAccountId = rfx.accountIds[0];
-      const roleTx = readEnv(rfx.endpoints[`/accounts/${roleAccountId}/transactions`]);
-
-      const refPrefix = `XLFI-${rfx.slot.slice(0, 3).toUpperCase()}-`;
-      const xlfiOut = (primaryTx.Data.Transaction ?? []).filter(
-        (t) => isXlfi(t)
-          && (t.TransactionReference?.startsWith(refPrefix) || t.TransactionInformation?.includes(`XLFI SWEEP TO ${rfx.slot.toUpperCase()}`))
-          && t.TransactionId.endsWith('-out'),
-      );
-      const xlfiIn = (roleTx.Data.Transaction ?? []).filter(
-        (t) => isXlfi(t) && t.TransactionId.endsWith('-in'),
-      );
-
-      // Pair by TransactionId stem (drop the -out / -in suffix).
-      const stem = (id) => id.replace(/-(?:out|in)$/, '');
-      const inByStem = new Map(xlfiIn.map((t) => [stem(t.TransactionId), t]));
-      for (const out of xlfiOut) {
-        const inRecord = inByStem.get(stem(out.TransactionId));
-        expect(inRecord, `role inflow for ${out.TransactionId} missing`).toBeDefined();
-        expect(inRecord.Amount).toEqual(out.Amount);
-        expect(inRecord.TransactionDateTime).toBe(out.TransactionDateTime);
-      }
-    });
-
-    // Cross-IBAN check: counterparty fields are Common-band, kept under
-    // Rich, sometimes Median, stripped under Sparse. Only the Rich
-    // bundle carries a guaranteed cross-IBAN signal.
-    if (rfx.lfi === 'rich') {
-      it(`${rkey} (rich) — cross-IBAN pointers byte-match`, () => {
-        const primaryAccounts = readEnv(primary.endpoints['/accounts']);
-        const primaryIban = primaryAccounts.Data.Account[0].AccountIdentifiers[0].Identification;
-        const roleAccounts = readEnv(rfx.endpoints['/accounts']);
-        const roleIban = roleAccounts.Data.Account[0].AccountIdentifiers[0].Identification;
-
+      it(`${rkey} — primary bundle has 24 XLFI outflows targeting this slot (TransactionId-keyed; field-redaction-stable)`, () => {
         const primaryTx = readEnv(primary.endpoints[`/accounts/${primaryAccountId}/transactions`]);
+        // Phase 2.2 — slot suffix is derived from slot index, not name. Use
+        // TransactionReference (XLFI-<SLOT3>-NN) which encodes the slot key
+        // directly. Legacy SME slots: 'secondary' → 'SEC', 'tertiary' → 'TER'.
+        // Phase 2.2 custom keys: 'everyday-card' → 'EVE', 'digital' → 'DIG',
+        // 'mortgage-lender' → 'MOR'.
         const refPrefix = `XLFI-${rfx.slot.slice(0, 3).toUpperCase()}-`;
-        const xlfiOut = (primaryTx.Data.Transaction ?? []).filter(
-          (t) => isXlfi(t)
-            && (t.TransactionReference?.startsWith(refPrefix) || t.TransactionInformation?.includes(`XLFI SWEEP TO ${rfx.slot.toUpperCase()}`))
-            && t.TransactionId.endsWith('-out'),
+        const xlfiToSlot = (primaryTx.Data.Transaction ?? []).filter(
+          (t) =>
+            isXlfi(t) &&
+            (t.TransactionReference?.startsWith(refPrefix) ||
+              t.TransactionInformation?.includes(`XLFI SWEEP TO ${rfx.slot.toUpperCase()}`)) &&
+            t.TransactionId.endsWith('-out'),
         );
-        for (const t of xlfiOut) {
-          expect(t.CreditorAccount?.[0]?.Identification).toBe(roleIban);
-          expect(isValidMod97Iban(t.CreditorAccount[0].Identification)).toBe(true);
+        expect(xlfiToSlot.length).toBe(24);
+        for (const t of xlfiToSlot) {
+          expect(t.CreditDebitIndicator).toBe('Debit');
+          expect(t.TransactionType).toBe('LocalBankTransfer');
+          expect(t.SubTransactionType).toBe('MoneyTransfer');
         }
+      });
 
+      it(`${rkey} — role bundle has 24 XLFI inflows`, () => {
         const roleAccountId = rfx.accountIds[0];
         const roleTx = readEnv(rfx.endpoints[`/accounts/${roleAccountId}/transactions`]);
         const xlfiIn = (roleTx.Data.Transaction ?? []).filter(
           (t) => isXlfi(t) && t.TransactionId.endsWith('-in'),
         );
+        expect(xlfiIn.length).toBe(24);
         for (const t of xlfiIn) {
-          expect(t.DebtorAccount?.Identification).toBe(primaryIban);
-          expect(isValidMod97Iban(t.DebtorAccount.Identification)).toBe(true);
+          expect(t.CreditDebitIndicator).toBe('Credit');
+          expect(t.TransactionType).toBe('LocalBankTransfer');
+          expect(t.SubTransactionType).toBe('MoneyTransfer');
         }
       });
+
+      it(`${rkey} — primary outflows and role inflows mirror by datetime + amount`, () => {
+        const primaryTx = readEnv(primary.endpoints[`/accounts/${primaryAccountId}/transactions`]);
+        const roleAccountId = rfx.accountIds[0];
+        const roleTx = readEnv(rfx.endpoints[`/accounts/${roleAccountId}/transactions`]);
+
+        const refPrefix = `XLFI-${rfx.slot.slice(0, 3).toUpperCase()}-`;
+        const xlfiOut = (primaryTx.Data.Transaction ?? []).filter(
+          (t) =>
+            isXlfi(t) &&
+            (t.TransactionReference?.startsWith(refPrefix) ||
+              t.TransactionInformation?.includes(`XLFI SWEEP TO ${rfx.slot.toUpperCase()}`)) &&
+            t.TransactionId.endsWith('-out'),
+        );
+        const xlfiIn = (roleTx.Data.Transaction ?? []).filter(
+          (t) => isXlfi(t) && t.TransactionId.endsWith('-in'),
+        );
+
+        // Pair by TransactionId stem (drop the -out / -in suffix).
+        const stem = (id) => id.replace(/-(?:out|in)$/, '');
+        const inByStem = new Map(xlfiIn.map((t) => [stem(t.TransactionId), t]));
+        for (const out of xlfiOut) {
+          const inRecord = inByStem.get(stem(out.TransactionId));
+          expect(inRecord, `role inflow for ${out.TransactionId} missing`).toBeDefined();
+          expect(inRecord.Amount).toEqual(out.Amount);
+          expect(inRecord.TransactionDateTime).toBe(out.TransactionDateTime);
+        }
+      });
+
+      // Cross-IBAN check: counterparty fields are Common-band, kept under
+      // Rich, sometimes Median, stripped under Sparse. Only the Rich
+      // bundle carries a guaranteed cross-IBAN signal.
+      if (rfx.lfi === 'rich') {
+        it(`${rkey} (rich) — cross-IBAN pointers byte-match`, () => {
+          const primaryAccounts = readEnv(primary.endpoints['/accounts']);
+          const primaryIban = primaryAccounts.Data.Account[0].AccountIdentifiers[0].Identification;
+          const roleAccounts = readEnv(rfx.endpoints['/accounts']);
+          const roleIban = roleAccounts.Data.Account[0].AccountIdentifiers[0].Identification;
+
+          const primaryTx = readEnv(
+            primary.endpoints[`/accounts/${primaryAccountId}/transactions`],
+          );
+          const refPrefix = `XLFI-${rfx.slot.slice(0, 3).toUpperCase()}-`;
+          const xlfiOut = (primaryTx.Data.Transaction ?? []).filter(
+            (t) =>
+              isXlfi(t) &&
+              (t.TransactionReference?.startsWith(refPrefix) ||
+                t.TransactionInformation?.includes(`XLFI SWEEP TO ${rfx.slot.toUpperCase()}`)) &&
+              t.TransactionId.endsWith('-out'),
+          );
+          for (const t of xlfiOut) {
+            expect(t.CreditorAccount?.[0]?.Identification).toBe(roleIban);
+            expect(isValidMod97Iban(t.CreditorAccount[0].Identification)).toBe(true);
+          }
+
+          const roleAccountId = rfx.accountIds[0];
+          const roleTx = readEnv(rfx.endpoints[`/accounts/${roleAccountId}/transactions`]);
+          const xlfiIn = (roleTx.Data.Transaction ?? []).filter(
+            (t) => isXlfi(t) && t.TransactionId.endsWith('-in'),
+          );
+          for (const t of xlfiIn) {
+            expect(t.DebtorAccount?.Identification).toBe(primaryIban);
+            expect(isValidMod97Iban(t.DebtorAccount.Identification)).toBe(true);
+          }
+        });
+      }
     }
-  }
-});
+  });

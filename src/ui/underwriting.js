@@ -26,9 +26,21 @@ export function createUnderwriting(deps) {
   // (not exhaustive), driven by PRD §4.4. DBR is derived and has no
   // single source field, so it's omitted from the map.
   const DEEP_PIN_MAP = Object.freeze({
-    income:      { endpoint: '/accounts/{AccountId}/transactions',    fieldName: 'Flags',              accountFirst: true },
-    commitments: { endpoint: '/accounts/{AccountId}/standing-orders', fieldName: 'NextPaymentAmount',  accountFirst: true },
-    nsf:         { endpoint: '/accounts/{AccountId}/transactions',    fieldName: 'Status',             accountFirst: true },
+    income: {
+      endpoint: '/accounts/{AccountId}/transactions',
+      fieldName: 'Flags',
+      accountFirst: true,
+    },
+    commitments: {
+      endpoint: '/accounts/{AccountId}/standing-orders',
+      fieldName: 'NextPaymentAmount',
+      accountFirst: true,
+    },
+    nsf: {
+      endpoint: '/accounts/{AccountId}/transactions',
+      fieldName: 'Status',
+      accountFirst: true,
+    },
   });
   function deepPinSourceField(signalKey) {
     const target = DEEP_PIN_MAP[signalKey];
@@ -51,30 +63,40 @@ export function createUnderwriting(deps) {
   function renderUnderwritingStrip() {
     const now = new Date(state.data.buildInfo.nowIso);
     const r = computeUnderwriting(state.bundle, now);
-    const strip = el('div', { class: 'uw-strip', attrs: { role: 'region', 'aria-label': 'Underwriting at-a-glance' } });
+    const strip = el('div', {
+      class: 'uw-strip',
+      attrs: { role: 'region', 'aria-label': 'Underwriting at-a-glance' },
+    });
     const head = el('div', { class: 'uw-strip-head' });
     head.appendChild(el('span', { class: 'uw-strip-eyebrow', text: 'Underwriting at-a-glance' }));
     if (r.guard.triggered) {
       head.appendChild(el('span', { class: 'uw-strip-guard', text: 'Low-volume guard active' }));
     }
-    head.appendChild(el('button', {
-      class: 'uw-strip-jump',
-      attrs: { type: 'button', title: 'Open the full Underwriting Scenario panel — formulas, source fields, contributors.' },
-      text: 'Open full panel →',
-      onClick: () => {
-        state.endpoint = UNDERWRITING_PSEUDO;
-        state.selectedAccountId = null;
-        renderNavigator();
-        renderPayload();
-      },
-    }));
+    head.appendChild(
+      el('button', {
+        class: 'uw-strip-jump',
+        attrs: {
+          type: 'button',
+          title:
+            'Open the full Underwriting Scenario panel — formulas, source fields, contributors.',
+        },
+        text: 'Open full panel →',
+        onClick: () => {
+          state.endpoint = UNDERWRITING_PSEUDO;
+          state.selectedAccountId = null;
+          renderNavigator();
+          renderPayload();
+        },
+      }),
+    );
     strip.appendChild(head);
 
     const grid = el('div', { class: 'uw-strip-grid' });
     const stats = [
       {
         title: 'Income',
-        value: r.income.value != null ? `${formatAmount(r.income.value)} ${r.income.currency}` : '—',
+        value:
+          r.income.value != null ? `${formatAmount(r.income.value)} ${r.income.currency}` : '—',
         sub: r.income.sourceLabel,
       },
       {
@@ -109,70 +131,98 @@ export function createUnderwriting(deps) {
     const result = computeUnderwriting(state.bundle, now);
 
     const wrap = el('div', { class: 'uw-panel' });
-    wrap.appendChild(el('h2', { class: 'uw-title', text: 'Underwriting Scenario — illustrative signals' }));
-    wrap.appendChild(el('p', {
-      class: 'uw-disclaimer',
-      text: UNDERWRITING_FOOTNOTE,
-    }));
+    wrap.appendChild(
+      el('h2', { class: 'uw-title', text: 'Underwriting Scenario — illustrative signals' }),
+    );
+    wrap.appendChild(
+      el('p', {
+        class: 'uw-disclaimer',
+        text: UNDERWRITING_FOOTNOTE,
+      }),
+    );
 
     if (result.guard.triggered) {
-      wrap.appendChild(el('div', {
-        class: 'uw-guard',
-        attrs: { role: 'status' },
-        text: `Low-volume guard triggered. ${result.guard.reason} Off-the-shelf affordability formulas don't generalise to this segment — DBR is suppressed below.`,
-      }));
+      wrap.appendChild(
+        el('div', {
+          class: 'uw-guard',
+          attrs: { role: 'status' },
+          text: `Low-volume guard triggered. ${result.guard.reason} Off-the-shelf affordability formulas don't generalise to this segment — DBR is suppressed below.`,
+        }),
+      );
     }
 
     const grid = el('div', { class: 'uw-grid' });
-    grid.appendChild(renderUwSignal({
-      signalKey: 'income',
-      title: 'Implied monthly net income',
-      value: result.income.value != null ? `${formatAmount(result.income.value)} ${result.income.currency}` : '—',
-      sub: result.income.sourceLabel,
-      contributors: result.income.contributors,
-      formula:
-        'Trailing-12-month average of credits where Flags=Payroll. ' +
-        'Fallback A: largest recurring credit on the same calendar day each month (≥3 occurrences). ' +
-        'Fallback B: monthly average of credits from the top recurring counterparty (≥6 inflows). ' +
-        'Final fallback: "—" with persona-specific guidance.',
-      contributorRender: renderTxContributor,
-    }));
-    grid.appendChild(renderUwSignal({
-      signalKey: 'commitments',
-      title: 'Total fixed commitments (monthly)',
-      value: `${formatAmount(result.commitments.value)} ${result.commitments.currency}`,
-      sub: `${result.commitments.contributors.length} active commitments — standing orders + direct debits, normalised to monthly via the resource's Frequency, multi-currency converted to AED at the pinned snapshot rate.`,
-      contributors: result.commitments.contributors,
-      formula:
-        'Σ (NextPaymentAmount on active StandingOrders) + Σ (PreviousPaymentAmount on active DirectDebits, normalised by Frequency).',
-      contributorRender: renderCommitmentContributor,
-    }));
-    grid.appendChild(renderUwSignal({
-      signalKey: 'dbr',
-      title: 'Implied DBR',
-      value: result.dbr.value != null ? result.dbr.label : '—',
-      sub: result.dbr.value != null
-        ? 'Commitments ÷ income, expressed as percentage. Treat values >50% as a stretch indicator; >100% means the persona is structurally unable to meet commitments from inferred income.'
-        : (result.dbr.reason ?? 'Undefined.'),
-      contributors: [],
-      formula: 'Implied DBR = Total fixed commitments / Implied monthly net income.',
-    }));
-    grid.appendChild(renderUwSignal({
-      signalKey: 'nsf',
-      title: 'NSF / distress event count',
-      value: String(result.nsf.value),
-      sub: result.nsf.value > 0
-        ? `${result.nsf.value} rejected debit${result.nsf.value === 1 ? '' : 's'} in the trailing 12 months — see /transactions for the rows.`
-        : 'No rejected debits in the trailing 12 months.',
-      contributors: result.nsf.contributors,
-      formula: 'Count of transactions in trailing 12 months where Status=Rejected. Phase 1.5 minimum — Phase 2 widens to "debit posted on a day where ClosingBooked balance for that account became negative".',
-      contributorRender: renderTxContributor,
-    }));
+    grid.appendChild(
+      renderUwSignal({
+        signalKey: 'income',
+        title: 'Implied monthly net income',
+        value:
+          result.income.value != null
+            ? `${formatAmount(result.income.value)} ${result.income.currency}`
+            : '—',
+        sub: result.income.sourceLabel,
+        contributors: result.income.contributors,
+        formula:
+          'Trailing-12-month average of credits where Flags=Payroll. ' +
+          'Fallback A: largest recurring credit on the same calendar day each month (≥3 occurrences). ' +
+          'Fallback B: monthly average of credits from the top recurring counterparty (≥6 inflows). ' +
+          'Final fallback: "—" with persona-specific guidance.',
+        contributorRender: renderTxContributor,
+      }),
+    );
+    grid.appendChild(
+      renderUwSignal({
+        signalKey: 'commitments',
+        title: 'Total fixed commitments (monthly)',
+        value: `${formatAmount(result.commitments.value)} ${result.commitments.currency}`,
+        sub: `${result.commitments.contributors.length} active commitments — standing orders + direct debits, normalised to monthly via the resource's Frequency, multi-currency converted to AED at the pinned snapshot rate.`,
+        contributors: result.commitments.contributors,
+        formula:
+          'Σ (NextPaymentAmount on active StandingOrders) + Σ (PreviousPaymentAmount on active DirectDebits, normalised by Frequency).',
+        contributorRender: renderCommitmentContributor,
+      }),
+    );
+    grid.appendChild(
+      renderUwSignal({
+        signalKey: 'dbr',
+        title: 'Implied DBR',
+        value: result.dbr.value != null ? result.dbr.label : '—',
+        sub:
+          result.dbr.value != null
+            ? 'Commitments ÷ income, expressed as percentage. Treat values >50% as a stretch indicator; >100% means the persona is structurally unable to meet commitments from inferred income.'
+            : (result.dbr.reason ?? 'Undefined.'),
+        contributors: [],
+        formula: 'Implied DBR = Total fixed commitments / Implied monthly net income.',
+      }),
+    );
+    grid.appendChild(
+      renderUwSignal({
+        signalKey: 'nsf',
+        title: 'NSF / distress event count',
+        value: String(result.nsf.value),
+        sub:
+          result.nsf.value > 0
+            ? `${result.nsf.value} rejected debit${result.nsf.value === 1 ? '' : 's'} in the trailing 12 months — see /transactions for the rows.`
+            : 'No rejected debits in the trailing 12 months.',
+        contributors: result.nsf.contributors,
+        formula:
+          'Count of transactions in trailing 12 months where Status=Rejected. Phase 1.5 minimum — Phase 2 widens to "debit posted on a day where ClosingBooked balance for that account became negative".',
+        contributorRender: renderTxContributor,
+      }),
+    );
     wrap.appendChild(grid);
     body.appendChild(wrap);
   }
 
-  function renderUwSignal({ signalKey, title, value, sub, contributors, formula, contributorRender }) {
+  function renderUwSignal({
+    signalKey,
+    title,
+    value,
+    sub,
+    contributors,
+    formula,
+    contributorRender,
+  }) {
     const card = el('div', { class: 'uw-card' });
     const header = el('div', { class: 'uw-card-header' });
     header.appendChild(el('div', { class: 'uw-card-title', text: title }));
@@ -202,7 +252,10 @@ export function createUnderwriting(deps) {
           },
           text: `Pin ${pinTarget.fieldName} →`,
         });
-        pinBtn.addEventListener('click', (ev) => { ev.preventDefault(); deepPinSourceField(signalKey); });
+        pinBtn.addEventListener('click', (ev) => {
+          ev.preventDefault();
+          deepPinSourceField(signalKey);
+        });
         det.appendChild(pinBtn);
       }
       const list = el('ul');
@@ -219,8 +272,14 @@ export function createUnderwriting(deps) {
   function renderTxContributor(c) {
     const li = el('li');
     const date = c.BookingDateTime?.slice(0, 10) ?? '—';
-    const amt = c.Amount ? `${formatAmount(parseFloat(c.Amount.Amount))} ${c.Amount.Currency}` : '—';
-    const tail = c.CreditorName ? ` · ${c.CreditorName}` : (c.TransactionInformation ? ` · ${c.TransactionInformation}` : '');
+    const amt = c.Amount
+      ? `${formatAmount(parseFloat(c.Amount.Amount))} ${c.Amount.Currency}`
+      : '—';
+    const tail = c.CreditorName
+      ? ` · ${c.CreditorName}`
+      : c.TransactionInformation
+        ? ` · ${c.TransactionInformation}`
+        : '';
     li.textContent = `${date} · ${amt}${tail}`;
     return li;
   }

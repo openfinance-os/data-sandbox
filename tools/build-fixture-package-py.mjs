@@ -11,7 +11,10 @@ const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..');
 
 const SRC = path.join(repoRoot, 'packages/sandbox-fixtures');
-const DST = path.join(repoRoot, 'packages/sandbox-fixtures-py/src/openfinance_os_sandbox_fixtures/data');
+const DST = path.join(
+  repoRoot,
+  'packages/sandbox-fixtures-py/src/openfinance_os_sandbox_fixtures/data',
+);
 
 if (!fs.existsSync(SRC)) {
   console.error(`source not built: ${SRC}. Run \`npm run build:fixtures\` first.`);
@@ -29,16 +32,22 @@ for (const child of ['manifest.json', 'spec.json', 'personas', 'bundles']) {
 }
 
 const stat = walkSize(DST);
-console.log(`mirrored fixture package into Python data dir → ${path.relative(repoRoot, DST)} (${(stat.bytes / 1024).toFixed(1)} KB across ${stat.files} files)`);
+console.log(
+  `mirrored fixture package into Python data dir → ${path.relative(repoRoot, DST)} (${(stat.bytes / 1024).toFixed(1)} KB across ${stat.files} files)`,
+);
 
 function walkSize(dir) {
-  let bytes = 0; let files = 0;
+  let bytes = 0;
+  let files = 0;
   for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
     const p = path.join(dir, ent.name);
     if (ent.isDirectory()) {
-      const s = walkSize(p); bytes += s.bytes; files += s.files;
+      const s = walkSize(p);
+      bytes += s.bytes;
+      files += s.files;
     } else {
-      bytes += fs.statSync(p).size; files += 1;
+      bytes += fs.statSync(p).size;
+      files += 1;
     }
   }
   return { bytes, files };

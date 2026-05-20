@@ -27,9 +27,7 @@ function bandsFromSpec(distPath) {
 }
 
 function bandsFromRuntime(getOptionalFieldBands) {
-  return Object.fromEntries(
-    getOptionalFieldBands().map(({ path: p, band }) => [p, band])
-  );
+  return Object.fromEntries(getOptionalFieldBands().map(({ path: p, band }) => [p, band]));
 }
 
 describe('LFI bands — runtime vs SPEC.json', () => {

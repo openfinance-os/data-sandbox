@@ -32,12 +32,12 @@
 //                            persona's own VAT return — modelled as
 //                            zero-rated at the transaction layer)
 const VAT_BY_POOL = {
-  b2b_local:          { rate: 0.05, category: 'standard' },
-  b2b_intl:           { rate: 0,    category: 'zero-rated' },
-  aggregator_payors:  { rate: 0.05, category: 'standard' },
+  b2b_local: { rate: 0.05, category: 'standard' },
+  b2b_intl: { rate: 0, category: 'zero-rated' },
+  aggregator_payors: { rate: 0.05, category: 'standard' },
   marketplace_payors: { rate: 0.05, category: 'standard' },
-  insurer_payors:     { rate: 0,    category: 'exempt' },
-  cloud_suppliers:    { rate: 0,    category: 'zero-rated' },
+  insurer_payors: { rate: 0, category: 'exempt' },
+  cloud_suppliers: { rate: 0, category: 'zero-rated' },
 };
 
 const DEFAULT_VAT = { rate: 0.05, category: 'standard' };

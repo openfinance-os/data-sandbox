@@ -71,7 +71,8 @@ const SUPPORTED_SCOPES = [
 const DEFAULT_SCOPE = SUPPORTED_SCOPES.join(' ');
 
 function b64url(buf) {
-  return Buffer.from(buf).toString('base64')
+  return Buffer.from(buf)
+    .toString('base64')
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=+$/, '');
@@ -109,8 +110,9 @@ function sendHtml(res, status, html) {
 
 function redirectWithError(res, redirectUri, error, errorDescription, state) {
   const sep = redirectUri.includes('?') ? '&' : '?';
-  let url = `${redirectUri}${sep}error=${encodeURIComponent(error)}` +
-            `&error_description=${encodeURIComponent(errorDescription)}`;
+  let url =
+    `${redirectUri}${sep}error=${encodeURIComponent(error)}` +
+    `&error_description=${encodeURIComponent(errorDescription)}`;
   if (state) url += `&state=${encodeURIComponent(state)}`;
   res.statusCode = 302;
   res.setHeader('Location', url);
@@ -123,7 +125,11 @@ function readFormBody(req) {
     const chunks = [];
     req.on('data', (chunk) => {
       total += chunk.length;
-      if (total > 100_000) { reject(new Error('body too large')); req.destroy(); return; }
+      if (total > 100_000) {
+        reject(new Error('body too large'));
+        req.destroy();
+        return;
+      }
       chunks.push(chunk);
     });
     req.on('end', () => {
@@ -139,7 +145,18 @@ function readFormBody(req) {
 
 function consentScreenHtml({ nonce, clientId, redirectUri, scope }) {
   const scopes = (scope || DEFAULT_SCOPE).split(/\s+/).filter(Boolean);
-  const hasBanking = scopes.some((s) => s.startsWith('accounts') || s.startsWith('balances') || s.startsWith('transactions') || s.startsWith('parties') || s.startsWith('standing-orders') || s.startsWith('direct-debits') || s.startsWith('beneficiaries') || s.startsWith('statements') || s.startsWith('products'));
+  const hasBanking = scopes.some(
+    (s) =>
+      s.startsWith('accounts') ||
+      s.startsWith('balances') ||
+      s.startsWith('transactions') ||
+      s.startsWith('parties') ||
+      s.startsWith('standing-orders') ||
+      s.startsWith('direct-debits') ||
+      s.startsWith('beneficiaries') ||
+      s.startsWith('statements') ||
+      s.startsWith('products'),
+  );
   const hasInsurance = scopes.some((s) => s.startsWith('insurance'));
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"/>
@@ -181,7 +198,7 @@ function consentScreenHtml({ nonce, clientId, redirectUri, scope }) {
     <h1>Share with Claude</h1>
     <p class="sub">OAuth 2.1 + PKCE. <strong>${htmlEscape(clientId)}</strong> will be able to read what you tick below. You can stop sharing at any time in your bank’s <em>Connected apps</em> page.</p>
 
-    ${hasBanking ? `<div class="scope"><span class="tick">✓</span><div><strong>Bank Data Sharing</strong><span class="body">${htmlEscape(scopes.filter(s=>!s.startsWith('insurance')).join(' · '))}</span></div></div>` : ''}
+    ${hasBanking ? `<div class="scope"><span class="tick">✓</span><div><strong>Bank Data Sharing</strong><span class="body">${htmlEscape(scopes.filter((s) => !s.startsWith('insurance')).join(' · '))}</span></div></div>` : ''}
     ${hasInsurance ? `<div class="scope"><span class="tick">✓</span><div><strong>Insurance Data Sharing</strong><span class="body">motor · home · health · life · travel · renters · employment renewals and payment details</span></div></div>` : ''}
     <div class="scope off"><span class="tick">✓</span><div><strong>Service Initiation — payments</strong><span class="body">Not requested · v1 read-only</span></div></div>
 
@@ -210,8 +227,8 @@ function consentScreenHtml({ nonce, clientId, redirectUri, scope }) {
 export function createOAuthSimulation({ issuer, resource, allowedHosts } = {}) {
   // Server-side state — all in-memory. Sweeps cull expired entries.
   const consentRequests = new Map(); // nonce → { clientId, redirectUri, scope, state, codeChallenge, codeChallengeMethod, expiresAt }
-  const authCodes = new Map();       // code → { clientId, redirectUri, scope, codeChallenge, codeChallengeMethod, expiresAt }
-  const tokens = new Map();          // token → { scope, clientId, expiresAt }
+  const authCodes = new Map(); // code → { clientId, redirectUri, scope, codeChallenge, codeChallengeMethod, expiresAt }
+  const tokens = new Map(); // token → { scope, clientId, expiresAt }
 
   const allowedHostSet = allowedHosts ? new Set(allowedHosts) : null;
 
@@ -258,7 +275,11 @@ export function createOAuthSimulation({ issuer, resource, allowedHosts } = {}) {
   function validateAuthzParams(q) {
     const responseType = q.get('response_type');
     if (responseType !== 'code') {
-      return { ok: false, error: 'unsupported_response_type', errorDescription: 'only response_type=code is supported' };
+      return {
+        ok: false,
+        error: 'unsupported_response_type',
+        errorDescription: 'only response_type=code is supported',
+      };
     }
     const codeChallenge = q.get('code_challenge') || null;
     const codeChallengeMethod = q.get('code_challenge_method') || null;
@@ -267,13 +288,26 @@ export function createOAuthSimulation({ issuer, resource, allowedHosts } = {}) {
     // with invalid_request — don't burn an auth code at the token endpoint.
     if (codeChallenge) {
       if (!codeChallengeMethod) {
-        return { ok: false, error: 'invalid_request', errorDescription: 'code_challenge_method is required when code_challenge is present (only S256 is supported)' };
+        return {
+          ok: false,
+          error: 'invalid_request',
+          errorDescription:
+            'code_challenge_method is required when code_challenge is present (only S256 is supported)',
+        };
       }
       if (codeChallengeMethod !== 'S256') {
-        return { ok: false, error: 'invalid_request', errorDescription: `unsupported code_challenge_method "${codeChallengeMethod}" — only S256 is supported` };
+        return {
+          ok: false,
+          error: 'invalid_request',
+          errorDescription: `unsupported code_challenge_method "${codeChallengeMethod}" — only S256 is supported`,
+        };
       }
     } else if (codeChallengeMethod) {
-      return { ok: false, error: 'invalid_request', errorDescription: 'code_challenge_method requires code_challenge' };
+      return {
+        ok: false,
+        error: 'invalid_request',
+        errorDescription: 'code_challenge_method requires code_challenge',
+      };
     }
     return {
       ok: true,
@@ -315,7 +349,8 @@ export function createOAuthSimulation({ issuer, resource, allowedHosts } = {}) {
         authorization_servers: [effectiveIssuer(req)],
         scopes_supported: SUPPORTED_SCOPES,
         bearer_methods_supported: ['header'],
-        resource_documentation: 'https://github.com/openfinance-os/data-sandbox/blob/main/CLAUDE_PERSONAL_BANKING.md',
+        resource_documentation:
+          'https://github.com/openfinance-os/data-sandbox/blob/main/CLAUDE_PERSONAL_BANKING.md',
       });
       return true;
     }
@@ -342,11 +377,20 @@ export function createOAuthSimulation({ issuer, resource, allowedHosts } = {}) {
       // it's missing or invalid (we cannot redirect errors without a URI).
       const redirectUri = q.get('redirect_uri') || '';
       if (!redirectUri) {
-        sendJson(res, 400, { error: 'invalid_request', error_description: 'redirect_uri is required' });
+        sendJson(res, 400, {
+          error: 'invalid_request',
+          error_description: 'redirect_uri is required',
+        });
         return true;
       }
       if (!validation.ok) {
-        redirectWithError(res, redirectUri, validation.error, validation.errorDescription, q.get('state'));
+        redirectWithError(
+          res,
+          redirectUri,
+          validation.error,
+          validation.errorDescription,
+          q.get('state'),
+        );
         return true;
       }
 
@@ -354,14 +398,21 @@ export function createOAuthSimulation({ issuer, resource, allowedHosts } = {}) {
       // nonce — POST /authorize will never trust client-supplied values for
       // redirect_uri / scope / etc.
       const nonce = newId(24);
-      consentRequests.set(nonce, { ...validation.params, expiresAt: Date.now() + CONSENT_NONCE_TTL_MS });
+      consentRequests.set(nonce, {
+        ...validation.params,
+        expiresAt: Date.now() + CONSENT_NONCE_TTL_MS,
+      });
 
-      sendHtml(res, 200, consentScreenHtml({
-        nonce,
-        clientId: validation.params.clientId,
-        redirectUri: validation.params.redirectUri,
-        scope: validation.params.scope,
-      }));
+      sendHtml(
+        res,
+        200,
+        consentScreenHtml({
+          nonce,
+          clientId: validation.params.clientId,
+          redirectUri: validation.params.redirectUri,
+          scope: validation.params.scope,
+        }),
+      );
       return true;
     }
 
@@ -371,7 +422,11 @@ export function createOAuthSimulation({ issuer, resource, allowedHosts } = {}) {
       sweep();
       const consent = nonce ? consentRequests.get(nonce) : null;
       if (!consent) {
-        sendJson(res, 400, { error: 'invalid_request', error_description: 'unknown, expired, or missing consent nonce — re-request authorization' });
+        sendJson(res, 400, {
+          error: 'invalid_request',
+          error_description:
+            'unknown, expired, or missing consent nonce — re-request authorization',
+        });
         return true;
       }
       // Single-use: the nonce is burned no matter the decision.
@@ -406,7 +461,12 @@ export function createOAuthSimulation({ issuer, resource, allowedHosts } = {}) {
 
     if (req.method === 'POST' && p === '/token') {
       const form = await readFormBody(req);
-      const { grant_type: grantType, code, redirect_uri: redirectUri, code_verifier: codeVerifier } = form;
+      const {
+        grant_type: grantType,
+        code,
+        redirect_uri: redirectUri,
+        code_verifier: codeVerifier,
+      } = form;
       if (grantType !== 'authorization_code') {
         sendJson(res, 400, { error: 'unsupported_grant_type' });
         return true;
@@ -414,7 +474,10 @@ export function createOAuthSimulation({ issuer, resource, allowedHosts } = {}) {
       sweep();
       const entry = code ? authCodes.get(code) : null;
       if (!entry) {
-        sendJson(res, 400, { error: 'invalid_grant', error_description: 'unknown or expired authorization code' });
+        sendJson(res, 400, {
+          error: 'invalid_grant',
+          error_description: 'unknown or expired authorization code',
+        });
         return true;
       }
       // Single-use: burn the code now whatever happens next.
@@ -429,18 +492,27 @@ export function createOAuthSimulation({ issuer, resource, allowedHosts } = {}) {
       }
       if (entry.codeChallenge) {
         if (!codeVerifier) {
-          sendJson(res, 400, { error: 'invalid_grant', error_description: 'code_verifier required' });
+          sendJson(res, 400, {
+            error: 'invalid_grant',
+            error_description: 'code_verifier required',
+          });
           return true;
         }
         // codeChallengeMethod is guaranteed to be 'S256' here because GET
         // /authorize already rejected anything else — but assert for safety.
         if (entry.codeChallengeMethod !== 'S256') {
-          sendJson(res, 400, { error: 'invalid_grant', error_description: 'unexpected code_challenge_method on stored entry' });
+          sendJson(res, 400, {
+            error: 'invalid_grant',
+            error_description: 'unexpected code_challenge_method on stored entry',
+          });
           return true;
         }
         const expect = b64url(sha256(codeVerifier));
         if (expect !== entry.codeChallenge) {
-          sendJson(res, 400, { error: 'invalid_grant', error_description: 'code_verifier does not match code_challenge' });
+          sendJson(res, 400, {
+            error: 'invalid_grant',
+            error_description: 'code_verifier does not match code_challenge',
+          });
           return true;
         }
       }
@@ -452,15 +524,20 @@ export function createOAuthSimulation({ issuer, resource, allowedHosts } = {}) {
         expiresAt: Date.now() + TOKEN_TTL_MS,
       });
 
-      sendJson(res, 200, {
-        access_token: token,
-        token_type: 'Bearer',
-        expires_in: Math.floor(TOKEN_TTL_MS / 1000),
-        scope: entry.scope,
-      }, {
-        'Cache-Control': 'no-store',
-        Pragma: 'no-cache',
-      });
+      sendJson(
+        res,
+        200,
+        {
+          access_token: token,
+          token_type: 'Bearer',
+          expires_in: Math.floor(TOKEN_TTL_MS / 1000),
+          scope: entry.scope,
+        },
+        {
+          'Cache-Control': 'no-store',
+          Pragma: 'no-cache',
+        },
+      );
       return true;
     }
 
