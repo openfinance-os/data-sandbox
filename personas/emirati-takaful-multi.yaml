@@ -115,6 +115,7 @@ multi_insurer_footprint:
       plausible_insurer_candidates:
         - "Methaq Takaful"
         - "Salama Islamic Arab Insurance"
+      cross_domain_link: mortgage-lender         # life is mortgage-protection
 
 insurance:
   lines: [motor, home, life]

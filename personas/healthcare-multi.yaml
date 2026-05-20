@@ -99,6 +99,7 @@ multi_insurer_footprint:
       plausible_insurer_candidates:
         - "Sukoon Insurance"
         - "AXA Gulf"
+      cross_domain_link: mortgage-lender         # mortgage-cover life
 
 insurance:
   lines: [motor, home, life]
