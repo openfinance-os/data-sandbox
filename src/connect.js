@@ -28,17 +28,6 @@
 // is also rendered in a collapsible so the reader can verify nothing
 // was fabricated.
 
-const SCOPE_LABELS = {
-  banking: {
-    title: 'Bank Data Sharing',
-    body: 'accounts · balances · transactions · standing orders · direct debits · beneficiaries · statements · products',
-  },
-  insurance: {
-    title: 'Insurance Data Sharing',
-    body: 'motor · home · health · life · travel · renters · employment renewals and payment details',
-  },
-};
-
 // Three populate-rate profiles per PRD §8.3 / EXP-04. Anonymous-by-design
 // (NG5 / D-14) — these are never tied to a named real bank.
 const LFI_PROFILES = [
@@ -167,13 +156,9 @@ const OF_MANDATORY_PERMISSIONS = new Set(
 // Mint a UAE-OF-flavoured ConsentId. Format mirrors what the API Hub returns
 // from POST /account-access-consents: a URN that the Consent Manager uses as
 // the durable handle for the consent record. crypto.randomUUID() is available
-// in every browser the rest of this page targets.
+// in every browser the rest of this page targets, so no fallback is needed.
 function mintConsentId() {
-  const uuid =
-    crypto && typeof crypto.randomUUID === 'function'
-      ? crypto.randomUUID()
-      : `${Date.now().toString(16)}-${Math.random().toString(16).slice(2, 10)}`;
-  return `urn:openfinance:ae:consent:${uuid}`;
+  return `urn:openfinance:ae:consent:${crypto.randomUUID()}`;
 }
 
 const INSURANCE_LINE_LABELS = {
@@ -236,15 +221,6 @@ function el(tag, attrs = {}, children = []) {
     node.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
   }
   return node;
-}
-
-function escapeHtml(s) {
-  return String(s ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
 }
 
 function formatAed(n) {
@@ -1383,13 +1359,11 @@ function renderJ1SCA(body) {
   );
   form.appendChild(otpBlock);
   form.appendChild(
-    el(
-      'p',
-      { className: 'sca-note' },
+    el('p', { className: 'sca-note' }, [
       'No real network call — values are decorative. Click ',
       el('strong', {}, 'Next →'),
       ' when ready.',
-    ),
+    ]),
   );
   inner.appendChild(form);
   mock.appendChild(inner);
