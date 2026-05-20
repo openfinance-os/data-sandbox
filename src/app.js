@@ -15,13 +15,7 @@ import {
   realLfisGuidance,
   bandForFieldName,
 } from './shared/spec-helpers.js';
-import {
-  decodeFromUrl,
-  encodeEmbed,
-  encodeFixtureUrl,
-  encodePermalink,
-  CUSTOM_PERSONA_SLUG,
-} from './url.js';
+import { decodeFromUrl, encodeEmbed, encodeFixtureUrl, CUSTOM_PERSONA_SLUG } from './url.js';
 import { expandRecipe } from './persona-builder/expand.js';
 import { decodeRecipe, encodeRecipe, RECIPE_DEFAULTS } from './persona-builder/recipe.js';
 import { mountPersonaBuilder } from './ui/persona-builder-ui.js';

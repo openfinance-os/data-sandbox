@@ -173,7 +173,6 @@ if (!FIXTURES_BUILT) {
       for (const { endpoint, rel, source } of allBankingFixtureRels) {
         const ref = bankingRefFor(endpoint);
         if (!ref) continue;
-        const validate = bankingValidators[ref] ?? bankingValidators[endpoint];
         const compiled =
           bankingValidators[Object.keys(BANKING_REFS).find((k) => BANKING_REFS[k] === ref)];
         if (!compiled) continue;
