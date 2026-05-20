@@ -418,6 +418,15 @@ function buildLifeBundle({ persona, lfi, seed, pools, now }) {
     now,
   });
 
+  // Phase 2.2 — if the persona declares a cross_domain_link from the
+  // life insurer slot to a banking slot (typically mortgage-lender,
+  // when life is mortgage-protection cover), resolve the linked
+  // bank up front and pass it as the preferred FinanceAgainstPolicy
+  // FinanceProvider. Mirrors the motor + home cross-domain flow.
+  const lifeLinkSlot = findInsuranceCrossDomainLink(persona, 'life');
+  const preferredFinanceBank = lifeLinkSlot
+    ? pickFootprintSlotBank(persona, lifeLinkSlot, p.banks)
+    : null;
   const { product, policyNumber, startDate, endDate } = generateLifeProduct({
     persona,
     policyHolder,
@@ -425,6 +434,7 @@ function buildLifeBundle({ persona, lfi, seed, pools, now }) {
     banks: p.banks,
     rng,
     now,
+    preferredFinanceBank,
   });
   const claims = generateLifeClaims({ persona });
   const premium = generateLifePremium({ persona });

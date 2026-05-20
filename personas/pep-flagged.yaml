@@ -1,0 +1,82 @@
+persona_id: pep_flagged
+domain: banking
+name: "Sheikh Khalifa — PEP-Flagged Retail (EDD Required)"
+archetype: pep_retail_eddu_high_balance
+default_seed: 28419
+segment: Retail
+stress_coverage:
+  # An Emirati Politically Exposed Person whose account-opening
+  # required Enhanced Due Diligence (EDD) at every LFI. Single-LFI
+  # for this persona — the EDD-flag test is about how a TPP handles
+  # large unexplained inflows + outflows AND the PEP screening
+  # signal (carried as a Party-level note in the narrative; the v2.1
+  # spec doesn't surface a PEP flag directly).
+  - pep_flagged_enhanced_due_diligence
+
+demographics:
+  nationality_pool: emirati
+  age_band: 50-65
+  emirate: abu_dhabi
+
+income:
+  primary_employer_pool: pension_gcc
+  monthly_amount_aed: 120000
+  pay_day: 1
+  variability: low
+  flag_payroll: true
+
+accounts:
+  - type: CurrentAccount
+    currency: AED
+    age_months: 240
+  - type: Savings
+    currency: AED
+    age_months: 180
+  - type: CreditCard
+    currency: AED
+    age_months: 120
+    credit_limit_aed: 200000
+
+fixed_commitments:
+  - kind: standing_order
+    purpose: family_support_distribution
+    amount_aed: 25000
+    schedule: monthly_5
+  - kind: standing_order
+    purpose: charity_zakat_distribution
+    amount_aed: 8000
+    schedule: monthly_15
+  - kind: direct_debit
+    purpose: utilities_adwea
+    amount_aed_band: [2500, 4500]
+    schedule: monthly_5
+  - kind: direct_debit
+    purpose: credit_card_repayment
+    amount_aed_band: [15000, 45000]
+    schedule: monthly_10
+
+spend_profile:
+  groceries_aed_per_month_band: [4000, 7500]
+  fuel_aed_per_month_band: [1500, 2500]
+  dining_per_month_count_band: [22, 40]
+
+fx_activity: true
+cash_deposit_activity: false
+
+distress_signals:
+  nsf_events_per_year_band: [0, 0]
+
+narrative: |
+  Senior Emirati national (50–65, AED 120k/mo from a long-tenured
+  position whose nature triggers PEP screening at every UAE LFI).
+  Single-LFI footprint for this persona's test purpose: one
+  long-tenure CurrentAccount, a Savings account, and a high-limit
+  credit card all at the same bank. The persona's load-bearing
+  stress is what a TPP underwriting / categorisation flow does when
+  the customer's salary lands monthly with no employer transaction
+  metadata, a large recurring "family-support" SO obscures the
+  true discretionary spend, and a zakat-distribution SO creates a
+  monthly charity outflow distinct from regular DDs. The PEP flag
+  itself is metadata external to the v2.1 spec — captured here in
+  the persona narrative + stress tag so a downstream TPP that wants
+  to wire an enhanced-screening UX has a synthetic test target.

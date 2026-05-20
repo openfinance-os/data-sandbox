@@ -92,22 +92,18 @@ describe('sandbox-mcp server', () => {
     expect(names).toEqual([...EXPECTED_TOOLS].sort());
   });
 
-  it('list_personas returns all 35 personas across both domains by default', async () => {
+  it('list_personas returns all 38 personas across both domains by default', async () => {
     const r = await client.callTool({ name: 'list_personas', arguments: {} });
     const payload = JSON.parse(textOf(r));
-    // 18 banking + 9 insurance + 8 multi-domain
-    expect(payload.count).toBe(35);
+    // 21 banking (18 + restored v1.5 trio) + 9 insurance + 8 multi-domain
+    expect(payload.count).toBe(38);
     const ids = payload.personas.map((p) => p.id);
     expect(ids).toContain('salaried_expat_mid');
     expect(ids).toContain('motor_comprehensive_mid');
     expect(ids).toContain('retail_multi_banker');
-    expect(ids).toContain('emirati_takaful_multi');
-    expect(ids).toContain('hnw_intl_multi');
-    expect(ids).toContain('tech_pro_multi');
-    expect(ids).toContain('recent_expat_multi');
-    expect(ids).toContain('retired_multi');
-    expect(ids).toContain('healthcare_multi');
-    expect(ids).toContain('gcc_commuter_multi');
+    expect(ids).toContain('domestic_worker');
+    expect(ids).toContain('pep_flagged');
+    expect(ids).toContain('returning_expat');
     expect(payload.domain).toBe('all');
     // Every entry surfaces its domain (single string or 'multi') so the
     // LLM can route to the right tools.
@@ -121,7 +117,7 @@ describe('sandbox-mcp server', () => {
     const banking = JSON.parse(
       textOf(await client.callTool({ name: 'list_personas', arguments: { domain: 'banking' } })),
     );
-    expect(banking.count).toBe(26); // 18 single-banking + 8 multi-domain
+    expect(banking.count).toBe(29); // 21 single-banking + 8 multi-domain
     expect(banking.personas.every(
       (p) => p.domain === 'banking' || p.domain === 'multi',
     )).toBe(true);

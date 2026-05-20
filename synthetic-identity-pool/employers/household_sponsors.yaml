@@ -1,0 +1,26 @@
+# Synthetic UAE household sponsors used as WPS payroll originators for
+# domestic-worker-style personas. In UAE labour reality, a domestic
+# worker's salary credit lists an INDIVIDUAL sponsor (the head of the
+# sponsoring household) rather than a corporate entity, so the names
+# here are synthetic personal-name composites — fictional combinations
+# of given + family names common among UAE residents. None reference
+# any real specific person. EXP-07: this is the only place these names
+# may originate.
+pool_id: household_sponsors
+description: Synthetic UAE household sponsors (individuals) for domestic-worker WPS payroll.
+employers:
+  - "Ahmed Al Mansoori"
+  - "Fatima Al Suwaidi"
+  - "Khalid Al Hashimi"
+  - "Maryam Al Falasi"
+  - "Omar Al Nuaimi"
+  - "Aisha Al Tayer"
+  - "Hassan Al Marri"
+  - "Noora Al Qubaisi"
+  - "Saif Al Shamsi"
+  - "Latifa Al Mazrouei"
+  - "Yousef Al Rashid"
+  - "Sarah Al Owais"
+  - "Mohammed Al Awadhi"
+  - "Hanan Al Kaabi"
+  - "Rashid Al Dhaheri"
