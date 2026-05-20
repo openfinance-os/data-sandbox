@@ -127,10 +127,20 @@ function generateBeneficiaries({ persona, names, rng }) {
   return out;
 }
 
-function generateFinanceAgainstPolicy({ persona, banks, rng }) {
+function generateFinanceAgainstPolicy({ persona, banks, rng, preferredBank }) {
   const f = persona.life.finance;
   if (!f) return null;
-  const bank = banks.banks[Math.floor(rng() * banks.banks.length)];
+  // Phase 2.2 — multi-domain personas can declare a cross_domain_link
+  // from the life insurer slot to a banking slot (typically the
+  // mortgage-lender, when life is mortgage-protection cover). The
+  // FinanceProvider name resolves from that banking slot's deterministic
+  // bank pick so the life-insurance and banking views agree on which
+  // LFI holds the finance against the policy. The fallback random
+  // draw runs unconditionally (and is discarded when preferredBank is
+  // set) so RNG state is identical regardless of link presence —
+  // EXP-05 trap-fix, mirrors motor + home.
+  const fallbackBank = banks.banks[Math.floor(rng() * banks.banks.length)];
+  const bank = preferredBank ?? fallbackBank;
   return {
     FinanceProvider: bank.name,
     FinanceAmount: aed(f.amount_aed),
@@ -138,7 +148,15 @@ function generateFinanceAgainstPolicy({ persona, banks, rng }) {
   };
 }
 
-export function generateLifeProduct({ persona, policyHolder, names, banks, rng, now }) {
+export function generateLifeProduct({
+  persona,
+  policyHolder,
+  names,
+  banks,
+  rng,
+  now,
+  preferredFinanceBank,
+}) {
   const l = persona.life;
   const startOffset = l.policy.start_date_offset_days;
   const startDate = isoDate(now, -startOffset);
@@ -183,7 +201,12 @@ export function generateLifeProduct({ persona, policyHolder, names, banks, rng, 
   const beneficiaries = generateBeneficiaries({ persona, names, rng });
   if (beneficiaries.length > 0) product.Beneficiaries = beneficiaries;
 
-  const finance = generateFinanceAgainstPolicy({ persona, banks, rng });
+  const finance = generateFinanceAgainstPolicy({
+    persona,
+    banks,
+    rng,
+    preferredBank: preferredFinanceBank,
+  });
   if (finance) product.FinanceAgainstPolicy = finance;
 
   return { product, policyNumber: policyNumber(rng), startDate, endDate: policyEnd };

@@ -1,0 +1,70 @@
+persona_id: domestic_worker
+domain: banking
+name: "Maria — Domestic Worker (Employer-Sponsored, Low Income)"
+archetype: domestic_worker_sponsored
+default_seed: 18327
+segment: Retail
+stress_coverage:
+  # A common UAE retail archetype that's structurally absent from
+  # the rest of the library: low monthly income (AED 2.5–3.5k),
+  # employer-as-account-opener, high remittance-as-share-of-income,
+  # thin-file credit history with no card / loan exposure. Tests
+  # whether a TPP underwriting flow gracefully handles a persona
+  # whose net surplus after remittance is functionally zero.
+  - domestic_worker_low_income_high_remittance
+
+demographics:
+  nationality_pool: expat_indian
+  age_band: 28-45
+  emirate: dubai
+
+income:
+  # UAE domestic workers are sponsored by an INDIVIDUAL (head of the
+  # sponsoring household), not a corporate entity. The
+  # household_sponsors pool surfaces personal-name WPS-originator
+  # labels matching that reality.
+  primary_employer_pool: household_sponsors
+  monthly_amount_aed: 3000
+  pay_day: 28
+  variability: none
+  flag_payroll: true
+
+accounts:
+  - type: CurrentAccount
+    currency: AED
+    age_months: 36
+
+fixed_commitments:
+  - kind: direct_debit
+    purpose: international_remittance_home
+    amount_aed_band: [2000, 2400]
+    schedule: monthly_30
+  - kind: direct_debit
+    purpose: mobile_topup
+    amount_aed_band: [40, 80]
+    schedule: monthly_2
+
+spend_profile:
+  groceries_aed_per_month_band: [150, 350]
+  fuel_aed_per_month_band: [0, 0]
+  dining_per_month_count_band: [0, 2]
+
+fx_activity: false
+cash_deposit_activity: false
+
+distress_signals:
+  nsf_events_per_year_band: [0, 0]
+
+narrative: |
+  Maria is a 28–45yo domestic worker in Dubai under employer
+  sponsorship (AED 3,000/mo WPS payroll, paid like clockwork on the
+  28th). Single basic CurrentAccount opened by the sponsoring
+  employer; no credit card, no loan, no savings vehicle. Almost the
+  entire salary leaves on the 30th as a remittance home; ~AED 250
+  remains for groceries + telco top-up. The persona's load-bearing
+  stress is what an underwriter does with a customer whose net
+  surplus is functionally zero — the PFM / cash-flow forecasting
+  views must not fail or mislead on the absent credit-card spend
+  histogram, the absent fuel pattern, and the salary-equals-
+  remittance shape that any "average monthly savings" computation
+  would otherwise show as exactly zero.

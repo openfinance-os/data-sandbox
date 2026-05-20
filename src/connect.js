@@ -773,6 +773,10 @@ function toPersonaList(map) {
       default_seed: v.default_seed || null,
       stress_coverage: v.stress_coverage || [],
       multi_lfi_footprint: v.multi_lfi_footprint || null,
+      // Phase 2.2 — surface the insurer footprint to the UI so the
+      // persona-gallery card can show "N banks · M carriers" for
+      // multi-domain personas at-a-glance.
+      multi_insurer_footprint: v.multi_insurer_footprint || null,
     }))
     .sort((a, b) => {
       if (a.domain !== b.domain) return a.domain.localeCompare(b.domain);
@@ -858,6 +862,14 @@ function renderPersonaGallery() {
     return true;
   });
   for (const p of filtered) {
+    const summary = multiFootprintSummary(p);
+    const metaParts = [(p.archetype || '').replace(/_/g, ' ')];
+    if (p.segment) metaParts.push(p.segment);
+    if (summary) {
+      metaParts.push(
+        `${summary.lfi} bank${summary.lfi === 1 ? '' : 's'} · ${summary.ins} carrier${summary.ins === 1 ? '' : 's'}`,
+      );
+    }
     const card = el(
       'button',
       {
@@ -879,11 +891,7 @@ function renderPersonaGallery() {
           initials(p.name),
         ),
         el('span', { className: 'pname' }, p.name),
-        el(
-          'span',
-          { className: 'pmeta' },
-          `${(p.archetype || '').replace(/_/g, ' ')}${p.segment ? ` · ${p.segment}` : ''}`,
-        ),
+        el('span', { className: 'pmeta' }, metaParts.join(' · ')),
         el('div', { className: 'ptags' }, [
           el('span', { className: `tag domain-${p.domain}` }, p.domain),
           ...(p.segment ? [el('span', { className: 'tag segment-sme' }, p.segment)] : []),
@@ -898,6 +906,20 @@ function renderPersonaGallery() {
   if (!filtered.length) {
     grid.appendChild(el('p', { className: 'skeleton' }, 'No personas match this filter.'));
   }
+}
+
+// Phase 2.2 — compact slot counts for the persona-gallery card.
+// Returns null for personas without a multi-LFI / multi-insurer
+// footprint; otherwise returns an object the card can render as
+// "N banks · M carriers".
+function multiFootprintSummary(persona) {
+  if (persona.domain !== 'multi') return null;
+  const lfi = footprintSlots(persona).length;
+  const ins = Array.isArray(persona.multi_insurer_footprint?.slots)
+    ? persona.multi_insurer_footprint.slots.length
+    : 0;
+  if (lfi === 0 && ins === 0) return null;
+  return { lfi, ins };
 }
 
 // Phase 2.2 — normalise a persona's multi_lfi_footprint to a slots[]
@@ -979,12 +1001,40 @@ function renderInstitutions() {
     return;
   }
   const sub = document.getElementById('step-2-sub');
-  sub.innerHTML =
-    `You're connecting as <strong>${escapeHtml(persona.name)}</strong>. A real customer would see both ` +
-    `<strong>Bank Data Sharing</strong> and <strong>Insurance Data Sharing</strong> sections — both are below. ` +
-    `Pre-ticks reflect what's actually in this persona's bundle; cross-domain ticks are allowed for the ` +
-    `consent simulation but fixtures only exist for the persona's primary domain ` +
-    `(<strong>${escapeHtml(persona.domain)}</strong>).`;
+  sub.replaceChildren();
+  const summary = multiFootprintSummary(persona);
+  if (summary) {
+    // Phase 2.2 — multi-domain personas: tailored copy calling out
+    // the full multi-LFI + multi-insurer shape.
+    sub.append(
+      document.createTextNode(`You're connecting as `),
+      el('strong', {}, persona.name),
+      document.createTextNode(' — a multi-LFI persona with '),
+      el('strong', {}, `${summary.lfi} bank${summary.lfi === 1 ? '' : 's'}`),
+      document.createTextNode(' and '),
+      el('strong', {}, `${summary.ins} insurance carrier${summary.ins === 1 ? '' : 's'}`),
+      document.createTextNode(
+        `. Pre-ticks below reflect the persona's declared footprint; this is the canonical ` +
+          `shape the J2 (TPP + Al Tareq) multi-LFI consent flow is built for.`,
+      ),
+    );
+  } else {
+    sub.append(
+      document.createTextNode(`You're connecting as `),
+      el('strong', {}, persona.name),
+      document.createTextNode('. A real customer would see both '),
+      el('strong', {}, 'Bank Data Sharing'),
+      document.createTextNode(' and '),
+      el('strong', {}, 'Insurance Data Sharing'),
+      document.createTextNode(
+        ` sections — both are below. Pre-ticks reflect what's actually in this persona's bundle; ` +
+          `cross-domain ticks are allowed for the consent simulation but fixtures only exist for the ` +
+          `persona's primary domain (`,
+      ),
+      el('strong', {}, persona.domain),
+      document.createTextNode(').'),
+    );
+  }
 
   // ─── Bank Data Sharing block (always shown) ───
   const bankHeader = el(

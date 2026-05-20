@@ -47,6 +47,26 @@ describe('Phase 2.2 — cross_domain_link resolution', () => {
     expect(mortgageBank).toBe(expectedBank.name);
   });
 
+  it('life FinanceAgainstPolicy.FinanceProvider resolves to the linked banking slot (mortgage-protection)', () => {
+    // healthcare_multi declares life.cross_domain_link: mortgage-lender
+    // (mortgage-protection cover). The FinanceProvider should match the
+    // linked banking slot's deterministic bank pick.
+    const linkedPersona = loadPersona('healthcare_multi');
+    const expectedBank = pickFootprintSlotBank(linkedPersona, 'mortgage-lender', counterpartyBanks);
+    expect(expectedBank).toBeTruthy();
+    const bundle = buildBundle({
+      persona: linkedPersona,
+      lfi: 'rich',
+      seed: linkedPersona.default_seed,
+      pools,
+      now: NOW,
+    });
+    const lifePolicy = bundle.lifePolicies?.[0];
+    expect(lifePolicy).toBeTruthy();
+    const provider = findStringByKeyPath(lifePolicy, ['FinanceAgainstPolicy', 'FinanceProvider']);
+    expect(provider).toBe(expectedBank.name);
+  });
+
   it("motor CarFinance.BankName resolves to the persona's salary slot bank", () => {
     const expectedBank = pickFootprintSlotBank(persona, 'salary', counterpartyBanks);
     expect(expectedBank).toBeTruthy();
