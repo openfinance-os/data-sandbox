@@ -137,12 +137,17 @@
 
   <h2>What this gets you</h2>
   <ul>
-    <li><strong>12 narratively-coherent banking personas</strong> — salaried
-        expat, salaried Emirati affluent, HNW multi-currency, gig variable
-        income, mortgage DBR-heavy, NSF-distressed, joint-account family,
-        SME cash-heavy, SME trading business, corporate treasury (listed),
-        recent graduate thin-file, senior retiree. Each stresses a distinct
-        spec area (EXP-25).</li>
+    <li><strong>38 narratively-coherent UAE personas</strong> — 21
+        banking-only (retail, SME, corporate), 9 insurance-only (motor / home
+        / health / life / travel / renters / employment), and 8 multi-domain
+        personas whose <code>domains: [banking, insurance]</code> declaration
+        emits both endpoint families at the same persona path. The banking
+        tab in the sandbox UI renders 29 personas (21 banking-only + 8
+        multi-domain); the insurance tab renders 17 (9 insurance-only + 8
+        multi-domain). Each persona stresses a distinct spec area (EXP-25);
+        the flagship <code>retail-multi-banker</code> exercises N-slot
+        multi-LFI banking (4 LFIs × multiple products) plus multi-insurer
+        coverage in a single connect journey.</li>
     <li><strong>3 LFI populate-rate profiles</strong> per persona — Rich (most
         optionals populated), Median (Commons-curated assumption), Sparse
         (worst-case mandatory-only). Mandatory fields are never redacted by

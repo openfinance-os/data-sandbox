@@ -29,15 +29,21 @@ field shapes.
 
 ## What's in the box
 
-- **21 synthetic UAE personas** — 18 banking (retail, SME, corporate) + 3
-  insurance (motor) — covering 30+ globally-unique stress-coverage terms.
-  Banking set spans salaried expat / Emirati, gig, senior, thin-file, mortgage
-  DBR-heavy, NSF / distressed, HNW multi-currency, joint family, corporate
-  treasury, and 7 SME archetypes (cash-heavy retail, F&B multi-outlet,
-  e-commerce marketplace, free-zone SaaS, construction sub-contractor,
-  healthcare clinic, RAK Emirati-owned trading). Most SME personas declare a
-  `multi_lfi_footprint` so primary + secondary + tertiary bundles can be
-  fetched independently and reconciled by IBAN.
+- **38 synthetic UAE personas** — 21 banking-only (retail, SME, corporate) +
+  9 insurance-only (motor / home / health / life / travel / renters /
+  employment) + 8 multi-domain personas whose `domains: [banking, insurance]`
+  declaration emits both endpoint families at the same persona path. The
+  sandbox banking tab renders 29 personas (21 + 8 multi-domain); the
+  insurance tab renders 17 (9 + 8). Together they cover 30+ globally-unique
+  stress-coverage terms. The banking set spans salaried expat / Emirati, gig,
+  senior, thin-file, mortgage DBR-heavy, NSF / distressed, HNW
+  multi-currency, joint family, corporate treasury, and 8 SME archetypes
+  (cash-heavy retail, F&B multi-outlet, e-commerce marketplace, free-zone
+  SaaS, construction sub-contractor, healthcare clinic, RAK Emirati-owned
+  trading, general trading). Most SME personas declare a
+  `multi_lfi_footprint` so role bundles can be fetched independently and
+  reconciled by IBAN; the flagship multi-domain `retail-multi-banker` adds
+  N-slot multi-LFI (4 banks × multiple products) + multi-insurer coverage.
 - **All 12 v2.1 Account Information endpoints** for banking + the 4-endpoint
   motor-MVP for insurance — all generated and validated against the v2.1
   OpenAPI schema (1500+ spec-validation tests across persona × LFI × endpoint

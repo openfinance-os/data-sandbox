@@ -373,7 +373,7 @@ const pkgJson = {
   name: '@openfinance-os/sandbox-fixtures',
   version: PKG_VERSION,
   description:
-    'Deterministic, v2.1-shaped UAE Open Finance synthetic fixtures from the Open Finance Data Sandbox. 18 banking personas + 3 insurance preview personas × 3 LFI profiles × every in-scope endpoint. CC0 data, MIT loader code.',
+    'Deterministic, v2.1-shaped UAE Open Finance synthetic fixtures from the Open Finance Data Sandbox. 38 personas (21 banking + 9 insurance + 8 multi-domain) × 3 LFI profiles × every in-scope endpoint. CC0 data, MIT loader code.',
   keywords: [
     'open-finance',
     'uae',
@@ -1134,9 +1134,12 @@ const readme = `# @openfinance-os/sandbox-fixtures
 Deterministic, v2.1-shaped UAE Open Finance synthetic fixtures from the
 [Open Finance Data Sandbox](https://github.com/openfinance-os/data-sandbox).
 
-27 personas (18 banking + 9 insurance) × 3 LFI profiles × every v2.1 endpoint
-per persona's accounts/policies = **~2,000 fixtures**, plus the parsed v2.1
-OpenAPI specs (banking + insurance) and the persona manifests.
+38 personas (21 banking + 9 insurance + 8 multi-domain) × 3 LFI profiles ×
+every v2.1 endpoint per persona's accounts/policies = **~2,000 fixtures**,
+plus the parsed v2.1 OpenAPI specs (banking + insurance) and the persona
+manifests. Multi-domain personas are surfaced by both
+\`loadPersonasByDomain('banking')\` and \`loadPersonasByDomain('insurance')\`,
+matching the way the sandbox UI renders them in both tabs.
 
 ## Install
 
