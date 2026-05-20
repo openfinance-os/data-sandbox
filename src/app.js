@@ -642,7 +642,7 @@ function personaAvatarEl(id, persona, size) {
     wrap.appendChild(node);
   } else {
     // Fallback initials — covers any future persona that lands before its
-    // avatar is built. Never reached for the curated 27 + custom slug.
+    // avatar is built. Never reached for the curated set + custom slug.
     // Mirrors tools/build-avatars.mjs initials(): first+last word, or the
     // first two chars when only one word is available.
     const head = (name ?? '').split(/\s+[—–-]\s+/)[0].trim();

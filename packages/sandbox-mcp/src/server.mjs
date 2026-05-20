@@ -32,10 +32,12 @@ const PKG_VERSION = '0.0.1';
 
 const PFM_INSTRUCTIONS = [
   'You are wired to a sandbox of synthetic UAE Open Finance v2.1 payloads across two domains:',
-  '  • Bank Data Sharing (18 banking personas) — accounts, balances, transactions, parties, etc.',
-  '  • Insurance Data Sharing (9 insurance personas across 7 lines: motor, home, health, life, travel,',
-  '    renters, employment). Per-line MCP tools — `get_<line>_policies`, `get_<line>_policy`,',
-  '    `get_<line>_payment_details`, `get_<line>_quote` — cover every line.',
+  '  • Bank Data Sharing (29 personas in the banking domain: 21 banking-only + 8 multi-domain) —',
+  '    accounts, balances, transactions, parties, etc.',
+  '  • Insurance Data Sharing (17 personas in the insurance domain: 9 insurance-only + 8 multi-domain',
+  '    across 7 lines: motor, home, health, life, travel, renters, employment). Per-line MCP tools —',
+  '    `get_<line>_policies`, `get_<line>_policy`, `get_<line>_payment_details`, `get_<line>_quote` —',
+  '    cover every line. Multi-domain personas (e.g. `retail_multi_banker`) accept tools from both sides.',
   'All data is fictional — no real customer, no real institution. Every response carries a `_watermark`',
   'field; preserve it in any user-visible summary, table, or export.',
   '',
@@ -531,7 +533,7 @@ export function createServer() {
     {
       title: 'List synthetic personas',
       description:
-        'List the curated synthetic UAE personas in this sandbox: 18 banking + 9 insurance (3 motor, 1 home, 1 health, 1 life, 1 travel, 1 renters, 1 employment). Returns id, display name, archetype, default seed, domain, stress-coverage tags, and a `multi_lfi_footprint` field declaring the persona\'s plausible multi-bank reality (primary / secondary / tertiary LFI roles, each with named real-UAE bank candidates — D-14 allow-site). Pass { domain: "banking" } or { domain: "insurance" } to filter; omit to get all 27.',
+        'List the curated synthetic UAE personas in this sandbox: 21 banking-only + 9 insurance-only + 8 multi-domain = 38 personas (the 9 insurance personas cover all 7 lines — 3 motor, 1 home, 1 health, 1 life, 1 travel, 1 renters, 1 employment). Returns id, display name, archetype, default seed, domain (`"banking"` / `"insurance"` / `"multi"`), stress-coverage tags, and `multi_lfi_footprint` / `multi_insurer_footprint` slot arrays declaring the persona\'s plausible multi-LFI / multi-insurer reality (each slot with named real-UAE candidates — D-14 allow-site). Pass { domain: "banking" } or { domain: "insurance" } to filter; multi-domain personas appear under both filters. Omit to get all 38.',
       inputSchema: {
         domain: z
           .enum(['banking', 'insurance'])

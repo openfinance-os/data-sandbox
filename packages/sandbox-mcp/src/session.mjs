@@ -89,7 +89,7 @@ export function createSessionStore() {
   function get() {
     if (!active) {
       throw new Error(
-        'no active session — call set_session (curated) or build_persona (custom) first. Use list_personas to see the 18 banking personas, or get_recipe_defaults to compose a custom one.',
+        'no active session — call set_session (curated) or build_persona (custom) first. Use list_personas to see the 38 curated personas (21 banking + 9 insurance + 8 multi-domain), or get_recipe_defaults to compose a custom one.',
       );
     }
     return active;

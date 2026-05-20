@@ -3,9 +3,10 @@
 Deterministic, v2.1-shaped UAE Open Finance synthetic fixtures from the
 [Open Finance Data Sandbox](https://github.com/openfinance-os/data-sandbox).
 
-27 personas (18 banking + 9 insurance) × 3 LFI profiles × every v2.1 endpoint
-per persona's accounts/policies = **~2,000 fixtures**, plus the parsed v2.1
-OpenAPI specs (banking + insurance) and the persona manifests.
+38 personas (21 banking + 9 insurance + 8 multi-domain) × 3 LFI profiles ×
+every v2.1 endpoint per persona's accounts/policies = **~2,000 fixtures**,
+plus the parsed v2.1 OpenAPI specs (banking + insurance) and the persona
+manifests.
 
 Python wrapper around the npm package
 [`@openfinance-os/sandbox-fixtures`](https://www.npmjs.com/package/@openfinance-os/sandbox-fixtures).

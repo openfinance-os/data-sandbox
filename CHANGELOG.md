@@ -57,10 +57,15 @@ keep producing byte-identical fixtures:
   banking slot (e.g. home cover bundled with the mortgage-lender slot).
 
 All ~1934 vitest tests + 98 MCP tests + 7 lints pass. `npm run build:fixtures`
-now reports `28 personas (18 banking + 1 multi + 9 insurance)`. Determinism
-(EXP-05) preserved across the multi-domain compose. EXP-10 spec validation
-holds for all 28 personas × 3 LFIs × 12 banking + 30 insurance endpoints.
-NG5 / D-14 invariants preserved by the lint extension.
+now reports `38 personas (21 banking-only + 9 insurance-only + 8 multi-domain)`
+after the v1.5-trio restoration (`domestic-worker`, `pep-flagged`,
+`returning-expat`) and the multi-domain upgrade of seven previously
+banking-only personas (`emirati-takaful-multi`, `gcc-commuter-multi`,
+`healthcare-multi`, `hnw-intl-multi`, `recent-expat-multi`, `retired-multi`,
+`tech-pro-multi`). Determinism (EXP-05) preserved across the multi-domain
+compose. EXP-10 spec validation holds for all 38 personas × 3 LFIs × 12
+banking + 30 insurance endpoints. NG5 / D-14 invariants preserved by the
+lint extension.
 
 ### Changed — connector journey reshaped from "Claude for Small Business" to "Plaid + ChatGPT"
 
