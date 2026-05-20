@@ -19,7 +19,11 @@ demographics:
   emirate: dubai
 
 income:
-  primary_employer_pool: tech_freezone
+  # UAE domestic workers are sponsored by an INDIVIDUAL (head of the
+  # sponsoring household), not a corporate entity. The
+  # household_sponsors pool surfaces personal-name WPS-originator
+  # labels matching that reality.
+  primary_employer_pool: household_sponsors
   monthly_amount_aed: 3000
   pay_day: 28
   variability: none
