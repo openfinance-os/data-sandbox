@@ -21,7 +21,6 @@ import {
   pendingForRecent,
   buildDirtyPosNarrative,
   emirateCode,
-  aggregatorPrefix,
   terminalSuffix,
   fxClutter,
 } from './realism.js';
@@ -29,6 +28,7 @@ import { vatTreatmentForPool, computeVatBreakdown } from './vat.js';
 import { EXTENDED_SPEND_CATEGORIES, defaultCountBand } from './banking/spend-profiles.js';
 import { maybeMisrouteMcc } from './mcc-noise.js';
 import { buildRefunds } from './refunds.js';
+import { attachBankTransactionCode } from './banking/transaction-codes.js';
 
 // Trailing history window for transaction generation. Phase R1 of the
 // enrichment-realism plan bumped this from 12 → 24 months so downstream
@@ -550,7 +550,7 @@ function fxRateFor(ccy) {
 function makeCashDeposit({ rng, account, date, amount, txState, now }) {
   const posted = applyPostingTime(date, rng);
   const branch = String(rngInt(rng, 100, 999));
-  return {
+  return attachBankTransactionCode({
     _accountId: account.AccountId,
     TransactionId: nextTxId(account, posted, txState),
     TransactionReference: referenceNumber(rng, 'Teller', posted),
@@ -564,7 +564,7 @@ function makeCashDeposit({ rng, account, date, amount, txState, now }) {
     TransactionType: 'Teller',
     SubTransactionType: 'Deposit',
     _v: rng(),
-  };
+  });
 }
 
 function makeFxTransaction({
@@ -579,7 +579,7 @@ function makeFxTransaction({
   now,
 }) {
   const posted = applyPostingTime(date, rng);
-  return {
+  return attachBankTransactionCode({
     _accountId: account.AccountId,
     TransactionId: nextTxId(account, posted, txState),
     TransactionReference: referenceNumber(rng, 'InternationalTransfer', posted),
@@ -609,12 +609,13 @@ function makeFxTransaction({
       InstructedAmount: { Amount: fxAmount.toFixed(2), Currency: fxCurrency },
     },
     _v: rng(),
-  };
+  });
 }
 
 function makeNsfRejection({ rng, account, date, amount, txState, now, purpose = 'DD' }) {
+  void now;
   const posted = applyPostingTime(date, rng);
-  return {
+  return attachBankTransactionCode({
     _accountId: account.AccountId,
     TransactionId: nextTxId(account, posted, txState),
     TransactionReference: referenceNumber(rng, 'BillPayments', posted, purpose),
@@ -627,15 +628,20 @@ function makeNsfRejection({ rng, account, date, amount, txState, now, purpose = 
     Amount: { Amount: amount.toFixed(2), Currency: account.Currency },
     TransactionType: 'BillPayments',
     SubTransactionType: 'Reversal',
+    // _isNsfReturn drives transaction-codes.js to emit the
+    // PMNT/RDDT/DRTR (Direct Debit Return) BTC + ProprietaryCode
+    // DDA-RTN so credit-team filters can disambiguate this from a
+    // generic Reversal. Strips on export per the underscore convention.
+    _isNsfReturn: true,
     _v: rng(),
-  };
+  });
 }
 
 function makeNsfFee({ rng, account, date, amount, txState, now, purpose = 'DD' }) {
   // Bounce fee — the small Booked debit the customer pays for the rejection.
   // Real cores often post this same-day or T+1 with TransactionType=BillPayments.
   const posted = applyPostingTime(date, rng);
-  return {
+  return attachBankTransactionCode({
     _accountId: account.AccountId,
     TransactionId: nextTxId(account, posted, txState),
     TransactionReference: referenceNumber(rng, 'BillPayments', posted, 'NSFE'),
@@ -650,7 +656,7 @@ function makeNsfFee({ rng, account, date, amount, txState, now, purpose = 'DD' }
     SubTransactionType: 'Fee',
     _v: rng(),
     _now: now,
-  };
+  });
 }
 
 function parseScheduleDay(schedule) {
@@ -697,7 +703,7 @@ function makeSalary({ rng, persona, date, accountId, currency, employerName, txS
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, '')
     .slice(0, 10);
-  return {
+  return attachBankTransactionCode({
     _accountId: accountId,
     TransactionId: nextTxId({ AccountId: accountId }, posted, txState),
     TransactionReference: referenceNumber(rng, 'LocalBankTransfer', posted, 'SAL'),
@@ -724,16 +730,23 @@ function makeSalary({ rng, persona, date, accountId, currency, employerName, txS
     TransactionType: 'LocalBankTransfer',
     SubTransactionType: 'Deposit',
     Flags: ['Payroll'],
+    // _isPayroll is the WPS marker — drives the ISO 20022 SALA SubFamily,
+    // the CBUAE Proprietary code WPS-CR, and (in lfi-profile.js) the
+    // exception that keeps DebtorAgent + DebtorAccount populated on every
+    // LFI profile. Real LFIs reliably populate counterparty fields on
+    // payroll credits because WPS reconciliation requires traceable
+    // employer→employee identification. Strips on export.
+    _isPayroll: true,
     _v: rng(),
     _now: now,
-  };
+  });
 }
 
 function makeFixedCommitment({ rng, account, date, amount, purpose, kind, txState, now }) {
   const posted = applyPostingTime(date, rng);
   const txType = kind === 'standing_order' ? 'LocalBankTransfer' : 'BillPayments';
   const billerHint = purpose.split('_')[0].toUpperCase();
-  return {
+  return attachBankTransactionCode({
     _accountId: account.AccountId,
     TransactionId: nextTxId(account, posted, txState),
     TransactionReference: referenceNumber(rng, txType, posted, billerHint),
@@ -751,7 +764,7 @@ function makeFixedCommitment({ rng, account, date, amount, purpose, kind, txStat
     SubTransactionType: 'Repayments',
     Flags: [kind === 'standing_order' ? 'StandingOrder' : 'DirectDebit'],
     _v: rng(),
-  };
+  });
 }
 
 function makePosTransaction({
@@ -794,7 +807,7 @@ function makePosTransaction({
     transactionId: txId,
     confusionTable: mccConfusion,
   });
-  return {
+  return attachBankTransactionCode({
     _accountId: account.AccountId,
     TransactionId: txId,
     TransactionReference: referenceNumber(rng, transactionType, posted),
@@ -829,7 +842,7 @@ function makePosTransaction({
     _trueMcc: noise.misrouted ? mcc : null,
     _mccMisrouted: noise.misrouted,
     _mccMisroutingReason: noise.misrouted ? noise.reason : null,
-  };
+  });
 }
 
 function makeAtmWithdrawal({ rng, account, date, amount, merchant, mcc, txState, now }) {
@@ -845,7 +858,7 @@ function makeAtmWithdrawal({ rng, account, date, amount, merchant, mcc, txState,
   const parts = terminal
     ? [networkToken, branch, terminal, emirate]
     : [networkToken, branch, emirate];
-  return {
+  return attachBankTransactionCode({
     _accountId: account.AccountId,
     TransactionId: nextTxId(account, posted, txState),
     TransactionReference: referenceNumber(rng, 'ATM', posted),
@@ -860,7 +873,7 @@ function makeAtmWithdrawal({ rng, account, date, amount, merchant, mcc, txState,
     SubTransactionType: 'Withdrawal',
     MerchantDetails: { MerchantName: merchant.name, MerchantCategoryCode: mcc },
     _mccCategory: 'ATM',
-  };
+  });
 }
 
 function makeGovBillPayment({ rng, account, date, amount, merchant, mcc, txState, now }) {
@@ -874,7 +887,7 @@ function makeGovBillPayment({ rng, account, date, amount, merchant, mcc, txState
   // code on the statement. Aggregator prefixes don't apply (this rail
   // doesn't route via TST*/SQ*/PYPL*).
   const ref = String(rngInt(rng, 1000, 9999));
-  return {
+  return attachBankTransactionCode({
     _accountId: account.AccountId,
     TransactionId: nextTxId(account, posted, txState),
     TransactionReference: referenceNumber(rng, 'BillPayments', posted, 'GOV'),
@@ -889,7 +902,7 @@ function makeGovBillPayment({ rng, account, date, amount, merchant, mcc, txState
     SubTransactionType: 'Repayments',
     MerchantDetails: { MerchantName: merchant.name, MerchantCategoryCode: mcc },
     _mccCategory: 'GOV',
-  };
+  });
 }
 
 function maybePending(date, now, rng) {
@@ -966,7 +979,7 @@ function cadenceToCount(cadence) {
 function makeB2bInflow({ rng, account, date, grossAmount, counterparty, poolId, txState, now }) {
   const posted = applyPostingTime(date, rng);
   const treatment = vatTreatmentForPool(poolId);
-  return {
+  return attachBankTransactionCode({
     _accountId: account.AccountId,
     _vatBreakdown: computeVatBreakdown(grossAmount, account.Currency, treatment),
     TransactionId: nextTxId(account, posted, txState),
@@ -990,7 +1003,7 @@ function makeB2bInflow({ rng, account, date, grossAmount, counterparty, poolId, 
       Identification: synthCounterpartyIban(rng),
       Name: counterparty,
     },
-  };
+  });
 }
 
 function makeB2bOutflow({ rng, account, date, grossAmount, counterparty, poolId, txState, now }) {
@@ -1000,7 +1013,7 @@ function makeB2bOutflow({ rng, account, date, grossAmount, counterparty, poolId,
   // local b2b via LocalBankTransfer. Heuristic on poolId.
   const isIntl = poolId === 'b2b_intl' || poolId === 'cloud_suppliers';
   const txType = isIntl ? 'InternationalTransfer' : 'LocalBankTransfer';
-  return {
+  return attachBankTransactionCode({
     _accountId: account.AccountId,
     _vatBreakdown: computeVatBreakdown(grossAmount, account.Currency, treatment),
     TransactionId: nextTxId(account, posted, txState),
@@ -1021,7 +1034,7 @@ function makeB2bOutflow({ rng, account, date, grossAmount, counterparty, poolId,
     CreditorAccount: [
       { SchemeName: 'IBAN', Identification: synthCounterpartyIban(rng), Name: counterparty },
     ],
-  };
+  });
 }
 
 function synthEmployerIbanFor(accountId, posted) {

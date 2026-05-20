@@ -97,11 +97,20 @@ export function applyLfiProfile({ bundle, personaId, lfi, seed }) {
       }
     }
     // Slice 7: counterparty fields on Transaction.
+    // WPS payroll-credit exception: real LFIs always populate
+    // DebtorAgent + DebtorAccount on salary credits because the CBUAE
+    // WPS reconciliation requires traceable employer→employee identity.
+    // The `_isPayroll` marker (set in transactions.js → makeSalary) opts
+    // these two paths out of the LFI populate-rate filter so income
+    // verification stays usable on Sparse as well as Rich/Median.
+    const payrollPinned = tx._isPayroll === true;
     if (tx.CreditorAccount && !decide('Transaction.CreditorAccount', 'Common'))
       delete tx.CreditorAccount;
-    if (tx.DebtorAccount && !decide('Transaction.DebtorAccount', 'Common')) delete tx.DebtorAccount;
+    if (tx.DebtorAccount && !payrollPinned && !decide('Transaction.DebtorAccount', 'Common'))
+      delete tx.DebtorAccount;
     if (tx.CreditorAgent && !decide('Transaction.CreditorAgent', 'Common')) delete tx.CreditorAgent;
-    if (tx.DebtorAgent && !decide('Transaction.DebtorAgent', 'Common')) delete tx.DebtorAgent;
+    if (tx.DebtorAgent && !payrollPinned && !decide('Transaction.DebtorAgent', 'Common'))
+      delete tx.DebtorAgent;
   }
 
   for (const bal of bundle.balances ?? []) {

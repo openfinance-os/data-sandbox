@@ -29,6 +29,7 @@
 
 import { makePrng, rngInt } from '../prng.js';
 import { mod97IbanCheck } from './identity.js';
+import { attachBankTransactionCode } from './banking/transaction-codes.js';
 
 // Slot suffix codes derived from slot index. Slots[1] → x2/s2,
 // slots[2] → x3/s3, etc. For SME personas migrated from the legacy
@@ -560,49 +561,53 @@ export function computeCrossLfiLedger({
       const reference = `XLFI-${slotKey.slice(0, 3).toUpperCase()}-${String(m + 1).padStart(2, '0')}`;
       const txIdBase = `${persona.persona_id.replace(/_/g, '-')}-xlfi-${slot.txCode}-${String(m + 1).padStart(2, '0')}`;
 
-      out.primary.push({
-        _accountId: primaryAccountId,
-        _crossLfiPairId: `${slotKey}-${m}`,
-        TransactionId: `${txIdBase}-out`,
-        TransactionReference: reference,
-        CreditDebitIndicator: 'Debit',
-        Status: 'Booked',
-        BookingDateTime: isoNoMs,
-        TransactionDateTime: isoNoMs,
-        ValueDateTime: isoNoMs,
-        TransactionInformation: `XLFI SWEEP TO ${slotKey.toUpperCase()} ${reference}`,
-        Amount: { Amount: amount.toFixed(2), Currency: ccy },
-        TransactionType: 'LocalBankTransfer',
-        SubTransactionType: 'MoneyTransfer',
-        CreditorAgent: {
-          SchemeName: 'BICFI',
-          Identification: slotBank.bic,
-          Name: slotBank.name,
-        },
-        CreditorAccount: [{ SchemeName: 'IBAN', Identification: roleIban, Name: persona.name }],
-      });
+      out.primary.push(
+        attachBankTransactionCode({
+          _accountId: primaryAccountId,
+          _crossLfiPairId: `${slotKey}-${m}`,
+          TransactionId: `${txIdBase}-out`,
+          TransactionReference: reference,
+          CreditDebitIndicator: 'Debit',
+          Status: 'Booked',
+          BookingDateTime: isoNoMs,
+          TransactionDateTime: isoNoMs,
+          ValueDateTime: isoNoMs,
+          TransactionInformation: `XLFI SWEEP TO ${slotKey.toUpperCase()} ${reference}`,
+          Amount: { Amount: amount.toFixed(2), Currency: ccy },
+          TransactionType: 'LocalBankTransfer',
+          SubTransactionType: 'MoneyTransfer',
+          CreditorAgent: {
+            SchemeName: 'BICFI',
+            Identification: slotBank.bic,
+            Name: slotBank.name,
+          },
+          CreditorAccount: [{ SchemeName: 'IBAN', Identification: roleIban, Name: persona.name }],
+        }),
+      );
 
-      out[slotKey].push({
-        _accountId: roleAccountId,
-        _crossLfiPairId: `${slotKey}-${m}`,
-        TransactionId: `${txIdBase}-in`,
-        TransactionReference: reference,
-        CreditDebitIndicator: 'Credit',
-        Status: 'Booked',
-        BookingDateTime: isoNoMs,
-        TransactionDateTime: isoNoMs,
-        ValueDateTime: isoNoMs,
-        TransactionInformation: `XLFI SWEEP FROM PRIMARY ${reference}`,
-        Amount: { Amount: amount.toFixed(2), Currency: ccy },
-        TransactionType: 'LocalBankTransfer',
-        SubTransactionType: 'MoneyTransfer',
-        DebtorAgent: {
-          SchemeName: 'BICFI',
-          Identification: 'SYNAEAA', // anonymous primary servicer
-          Name: 'Sandbox Synthetic LFI',
-        },
-        DebtorAccount: { SchemeName: 'IBAN', Identification: primaryIban, Name: persona.name },
-      });
+      out[slotKey].push(
+        attachBankTransactionCode({
+          _accountId: roleAccountId,
+          _crossLfiPairId: `${slotKey}-${m}`,
+          TransactionId: `${txIdBase}-in`,
+          TransactionReference: reference,
+          CreditDebitIndicator: 'Credit',
+          Status: 'Booked',
+          BookingDateTime: isoNoMs,
+          TransactionDateTime: isoNoMs,
+          ValueDateTime: isoNoMs,
+          TransactionInformation: `XLFI SWEEP FROM PRIMARY ${reference}`,
+          Amount: { Amount: amount.toFixed(2), Currency: ccy },
+          TransactionType: 'LocalBankTransfer',
+          SubTransactionType: 'MoneyTransfer',
+          DebtorAgent: {
+            SchemeName: 'BICFI',
+            Identification: 'SYNAEAA', // anonymous primary servicer
+            Name: 'Sandbox Synthetic LFI',
+          },
+          DebtorAccount: { SchemeName: 'IBAN', Identification: primaryIban, Name: persona.name },
+        }),
+      );
     }
   }
   return out;
