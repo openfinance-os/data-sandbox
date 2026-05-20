@@ -119,14 +119,24 @@ function listManifests() {
     .map((f) => path.join(PERSONAS_DIR, f));
 }
 
+function resolveDomainsForLint(m) {
+  if (Array.isArray(m.domains) && m.domains.length > 0) return m.domains;
+  return [m.domain ?? 'banking'];
+}
+
 for (const file of listManifests()) {
   const m = yaml.load(fs.readFileSync(file, 'utf8'));
   if (!m) continue;
 
-  // Every persona must declare a recognised domain.
-  checkEnum(file, 'domain', m.domain, VALID_DOMAIN);
+  // Every persona must declare a recognised domain (or domains[]).
+  const personaDomains = resolveDomainsForLint(m);
+  for (const d of personaDomains) {
+    checkEnum(file, `domains[${d}]`, d, VALID_DOMAIN);
+  }
+  const isInsurance = personaDomains.includes('insurance');
+  const isBanking = personaDomains.includes('banking');
 
-  if (m.domain === 'insurance') {
+  if (isInsurance) {
     // line is a manifest-level discriminator (defaults to 'motor' for
     // back-compat per personas/_schema.insurance.yaml). Validate when
     // present.
@@ -140,10 +150,12 @@ for (const file of listManifests()) {
     if (effectiveLine === 'motor' && m.policy?.type != null) {
       checkEnum(file, 'policy.type', m.policy.type, MOTOR_POLICY_TYPE);
     }
-    continue;
   }
 
-  if (m.domain !== 'banking') continue;
+  // Banking-side checks run for any persona that declares the banking
+  // domain — single-domain `domain: banking` or multi-domain
+  // `domains: [banking, ...]`.
+  if (!isBanking) continue;
 
   // segment ⊆ AccountType ∩ PartyCategory (the spec's two enums are identical
   // here — Retail|SME|Corporate — and the persona's segment drives both).
@@ -152,11 +164,84 @@ for (const file of listManifests()) {
     checkEnum(file, 'segment', m.segment, PARTY_CATEGORY);
   }
 
+  // Resolve declared slot keys so we can validate accounts[].at_slot
+  // against them. Empty set means the persona has no footprint slots,
+  // in which case any at_slot value is a violation (orphan tag).
+  const declaredSlotKeys = new Set();
+  const fpRaw = m?.multi_lfi_footprint;
+  if (fpRaw && typeof fpRaw === 'object') {
+    if (Array.isArray(fpRaw.slots)) {
+      for (const s of fpRaw.slots) {
+        if (s?.key) declaredSlotKeys.add(s.key);
+      }
+    } else {
+      for (const k of ['primary', 'secondary', 'tertiary']) {
+        if (fpRaw[k] != null) declaredSlotKeys.add(k);
+      }
+    }
+  }
+
   if (Array.isArray(m.accounts)) {
+    let taggedCount = 0;
     for (let i = 0; i < m.accounts.length; i++) {
       const a = m.accounts[i] ?? {};
       checkEnum(file, `accounts[${i}].type`, a.type, ACCOUNT_SUBTYPE);
       checkEnum(file, `accounts[${i}].account_type`, a.account_type, ACCOUNT_TYPE);
+      if (a.at_slot != null) {
+        taggedCount += 1;
+        if (typeof a.at_slot !== 'string') {
+          bad(file, `accounts[${i}].at_slot must be a string`);
+        } else if (declaredSlotKeys.size === 0) {
+          bad(
+            file,
+            `accounts[${i}].at_slot=${JSON.stringify(a.at_slot)} but persona declares no multi_lfi_footprint slots — drop the tag or add a footprint`,
+          );
+        } else if (!declaredSlotKeys.has(a.at_slot)) {
+          bad(
+            file,
+            `accounts[${i}].at_slot=${JSON.stringify(a.at_slot)} doesn't match any declared footprint slot key (have: {${[...declaredSlotKeys].join('|')}})`,
+          );
+        }
+      }
+    }
+    // Enforce all-or-nothing: if any account is tagged, all must be —
+    // mixed states silently misroute accounts to the wrong slot.
+    if (taggedCount > 0 && taggedCount < m.accounts.length) {
+      bad(
+        file,
+        `accounts mix tagged + untagged at_slot — when using at_slot, every account must carry a tag (have ${taggedCount}/${m.accounts.length} tagged)`,
+      );
+    }
+  }
+
+  // Phase 2.2 — fixed_commitments[].at_slot (same shape as accounts).
+  // Same all-or-nothing rule and same slot-key reference check.
+  if (Array.isArray(m.fixed_commitments)) {
+    let taggedCount = 0;
+    for (let i = 0; i < m.fixed_commitments.length; i++) {
+      const c = m.fixed_commitments[i] ?? {};
+      if (c.at_slot != null) {
+        taggedCount += 1;
+        if (typeof c.at_slot !== 'string') {
+          bad(file, `fixed_commitments[${i}].at_slot must be a string`);
+        } else if (declaredSlotKeys.size === 0) {
+          bad(
+            file,
+            `fixed_commitments[${i}].at_slot=${JSON.stringify(c.at_slot)} but persona declares no multi_lfi_footprint slots`,
+          );
+        } else if (!declaredSlotKeys.has(c.at_slot)) {
+          bad(
+            file,
+            `fixed_commitments[${i}].at_slot=${JSON.stringify(c.at_slot)} doesn't match any declared footprint slot key (have: {${[...declaredSlotKeys].join('|')}})`,
+          );
+        }
+      }
+    }
+    if (taggedCount > 0 && taggedCount < m.fixed_commitments.length) {
+      bad(
+        file,
+        `fixed_commitments mix tagged + untagged at_slot — when using at_slot, every entry must carry a tag (have ${taggedCount}/${m.fixed_commitments.length} tagged)`,
+      );
     }
   }
 
@@ -169,19 +254,31 @@ for (const file of listManifests()) {
     }
   }
 
-  // multi_lfi_footprint (D-14): role drawn from spec/lfi-roles.yaml,
-  // lfi_default drawn from {Rich,Median,Sparse}. plausible_lfi_candidates
-  // is a free string list (named UAE banks allowed per D-14).
+  // multi_lfi_footprint (D-14 + Phase 2.2): role drawn from
+  // spec/lfi-roles.yaml, lfi_default drawn from {Rich,Median,Sparse}.
+  // plausible_lfi_candidates is a free string list (named UAE banks
+  // allowed per D-14). Accepts two shapes — the legacy
+  // {primary, secondary, tertiary} triad and the Phase 2.2 slots[]
+  // array — and lints each slot uniformly.
   const footprint = m?.multi_lfi_footprint;
   if (footprint && typeof footprint === 'object') {
     const declaredRoles = new Set();
-    for (const slot of ['primary', 'secondary', 'tertiary']) {
-      const v = footprint[slot];
-      if (v == null) continue;
-      checkEnum(file, `multi_lfi_footprint.${slot}.role`, v.role, LFI_ROLES);
-      checkEnum(file, `multi_lfi_footprint.${slot}.lfi_default`, v.lfi_default, LFI_DEFAULTS);
+    const slotEntries = [];
+    if (Array.isArray(footprint.slots)) {
+      footprint.slots.forEach((v, i) => {
+        if (v != null) slotEntries.push({ label: `slots[${i}]`, slot: v });
+      });
+    } else {
+      for (const label of ['primary', 'secondary', 'tertiary']) {
+        const v = footprint[label];
+        if (v != null) slotEntries.push({ label, slot: v });
+      }
+    }
+    for (const { label, slot: v } of slotEntries) {
+      checkEnum(file, `multi_lfi_footprint.${label}.role`, v.role, LFI_ROLES);
+      checkEnum(file, `multi_lfi_footprint.${label}.lfi_default`, v.lfi_default, LFI_DEFAULTS);
       if (v.plausible_lfi_candidates != null && !Array.isArray(v.plausible_lfi_candidates)) {
-        bad(file, `multi_lfi_footprint.${slot}.plausible_lfi_candidates must be an array of strings`);
+        bad(file, `multi_lfi_footprint.${label}.plausible_lfi_candidates must be an array of strings`);
       }
       if (v.role) declaredRoles.add(v.role);
     }
@@ -221,6 +318,45 @@ for (const file of listManifests()) {
         );
       }
     }
+  }
+
+  // Phase 2.2 — multi_insurer_footprint slot validation. Same shape
+  // as the banking footprint above: `line` ∈ INSURANCE_LINE,
+  // `insurer_default` ∈ {Rich,Median,Sparse}, `plausible_insurer_candidates`
+  // is an array of strings, optional `cross_domain_link` references a
+  // declared banking-slot key.
+  const insurerFootprint = m?.multi_insurer_footprint;
+  if (insurerFootprint && typeof insurerFootprint === 'object') {
+    const insurerSlots = Array.isArray(insurerFootprint.slots)
+      ? insurerFootprint.slots
+      : [];
+    insurerSlots.forEach((s, i) => {
+      if (s == null) return;
+      const label = `multi_insurer_footprint.slots[${i}]`;
+      checkEnum(file, `${label}.line`, s.line, INSURANCE_LINE);
+      checkEnum(file, `${label}.insurer_default`, s.insurer_default, LFI_DEFAULTS);
+      if (s.plausible_insurer_candidates != null
+        && !Array.isArray(s.plausible_insurer_candidates)) {
+        bad(file, `${label}.plausible_insurer_candidates must be an array of strings`);
+      }
+      // cross_domain_link must reference a declared banking-slot key
+      // (mirrors the at_slot validation above).
+      if (s.cross_domain_link != null) {
+        if (typeof s.cross_domain_link !== 'string') {
+          bad(file, `${label}.cross_domain_link must be a string`);
+        } else if (declaredSlotKeys.size === 0) {
+          bad(
+            file,
+            `${label}.cross_domain_link=${JSON.stringify(s.cross_domain_link)} but persona declares no multi_lfi_footprint slots`,
+          );
+        } else if (!declaredSlotKeys.has(s.cross_domain_link)) {
+          bad(
+            file,
+            `${label}.cross_domain_link=${JSON.stringify(s.cross_domain_link)} doesn't match any declared banking-slot key (have: {${[...declaredSlotKeys].join('|')}})`,
+          );
+        }
+      }
+    });
   }
 }
 

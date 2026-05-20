@@ -41,6 +41,19 @@ const insuranceBaseLinks = (resource) => ({
  * spec-validation tests assert against the AJV-compiled schema.
  */
 export function envelopesFromBundle(bundle, ctx) {
+  // Phase 2.2 — multi-domain bundles carry a `domains` array and have
+  // both banking and insurance fields populated. Emit both envelope
+  // sets so all endpoints land at the same persona path.
+  if (Array.isArray(bundle.domains) && bundle.domains.length > 1) {
+    const envelopes = {};
+    if (bundle.domains.includes('banking')) {
+      Object.assign(envelopes, bankingEnvelopesFromBundle(bundle, ctx));
+    }
+    if (bundle.domains.includes('insurance')) {
+      Object.assign(envelopes, insuranceEnvelopesFromBundle(bundle, ctx));
+    }
+    return envelopes;
+  }
   if (bundle.domain === 'insurance') {
     return insuranceEnvelopesFromBundle(bundle, ctx);
   }
@@ -124,73 +137,48 @@ function bankingEnvelopesFromBundle(bundle, ctx) {
  */
 function insuranceEnvelopesFromBundle(bundle, ctx) {
   const envelopes = {};
-  emitLineEnvelopes(envelopes, bundle, ctx, {
-    line: 'motor',
-    policiesKey: 'motorPolicies',
-    summariesKey: 'motorPolicySummaries',
-    quoteKey: 'motorQuote',
-    pathPrefix: 'motor-insurance',
-  });
-  emitLineEnvelopes(envelopes, bundle, ctx, {
-    line: 'home',
-    policiesKey: 'homePolicies',
-    summariesKey: 'homePolicySummaries',
-    quoteKey: 'homeQuote',
-    pathPrefix: 'home-insurance',
-  });
-  emitLineEnvelopes(envelopes, bundle, ctx, {
-    line: 'health',
-    policiesKey: 'healthPolicies',
-    summariesKey: 'healthPolicySummaries',
-    quoteKey: 'healthQuote',
-    pathPrefix: 'health-insurance',
-  });
-  emitLineEnvelopes(envelopes, bundle, ctx, {
-    line: 'life',
-    policiesKey: 'lifePolicies',
-    summariesKey: 'lifePolicySummaries',
-    quoteKey: 'lifeQuote',
-    pathPrefix: 'life-insurance',
-  });
-  emitLineEnvelopes(envelopes, bundle, ctx, {
-    line: 'travel',
-    policiesKey: 'travelPolicies',
-    summariesKey: 'travelPolicySummaries',
-    quoteKey: 'travelQuote',
-    pathPrefix: 'travel-insurance',
-  });
-  emitLineEnvelopes(envelopes, bundle, ctx, {
-    line: 'renters',
-    policiesKey: 'rentersPolicies',
-    summariesKey: 'rentersPolicySummaries',
-    quoteKey: 'rentersQuote',
-    pathPrefix: 'renters-insurance',
-  });
-  emitLineEnvelopes(envelopes, bundle, ctx, {
-    line: 'employment',
-    policiesKey: 'employmentPolicies',
-    summariesKey: 'employmentPolicySummaries',
-    quoteKey: 'employmentQuote',
-    pathPrefix: 'employment-insurance',
-  });
-  // Insurance Consents — every insurance bundle carries one consent
-  // record covering its own line. The list endpoint returns the array;
-  // the detail endpoint returns the same single record (resolved + as
-  // a templated key for callers that don't know the synthetic id).
+  for (const line of [
+    'motor', 'home', 'health', 'life', 'travel', 'renters', 'employment',
+  ]) {
+    const cap = line.charAt(0).toUpperCase() + line.slice(1);
+    emitLineEnvelopes(envelopes, bundle, ctx, {
+      line,
+      policiesKey: `${line}Policies`,
+      summariesKey: `${line}PolicySummaries`,
+      quoteKey: `${line}Quote`,
+      // Phase 2.2 — multi-domain bundles carry per-line payment-details
+      // (e.g. `motorPaymentDetails`) because each insurance line writes
+      // its own. emitLineEnvelopes falls back to the singular
+      // `paymentDetails` for single-line bundles. The `cap` is just
+      // here to keep the per-line variable name readable below.
+      paymentDetailsKey: `${line}PaymentDetails`,
+      pathPrefix: `${line}-insurance`,
+    });
+    void cap;
+  }
+  // Insurance Consents — every insurance bundle carries at least one
+  // consent record. Single-line bundles carry one; multi-line
+  // (multi-domain) bundles accumulate one per line. The list endpoint
+  // returns the full array; every consent gets its own resolved-id
+  // detail endpoint, and the FIRST consent additionally backs the
+  // templated `/insurance-consents/{ConsentId}` path for callers that
+  // don't know the synthetic id.
   if (bundle.consents?.length > 0) {
-    const consent = bundle.consents[0];
     envelopes['/insurance-consents'] = wrapInsurance(
       { Data: bundle.consents },
       'insurance-consents',
       ctx
     );
-    envelopes[`/insurance-consents/${consent.ConsentId}`] = wrapInsurance(
-      { Data: consent },
-      `insurance-consents/${consent.ConsentId}`,
-      ctx
-    );
+    for (const consent of bundle.consents) {
+      envelopes[`/insurance-consents/${consent.ConsentId}`] = wrapInsurance(
+        { Data: consent },
+        `insurance-consents/${consent.ConsentId}`,
+        ctx
+      );
+    }
+    const firstConsent = bundle.consents[0];
     envelopes['/insurance-consents/{ConsentId}'] =
-      envelopes[`/insurance-consents/${consent.ConsentId}`];
+      envelopes[`/insurance-consents/${firstConsent.ConsentId}`];
   }
   return envelopes;
 }
@@ -219,8 +207,13 @@ function emitLineEnvelopes(envelopes, bundle, ctx, cfg) {
     envelopes[`/${cfg.pathPrefix}-policies/{InsurancePolicyId}`] =
       envelopes[`/${cfg.pathPrefix}-policies/${policyId}`];
 
+    // Phase 2.2 — prefer the per-line payment-details key (set when a
+    // multi-domain persona iterates lines and renames to avoid
+    // collision); fall back to the singular `paymentDetails` for
+    // single-line insurance bundles.
+    const paymentDetails = bundle[cfg.paymentDetailsKey] ?? bundle.paymentDetails;
     envelopes[`/${cfg.pathPrefix}-policies/${policyId}/payment-details`] = wrapInsurance(
-      { Data: bundle.paymentDetails },
+      { Data: paymentDetails },
       `${cfg.pathPrefix}-policies/${policyId}/payment-details`,
       ctx
     );

@@ -1,0 +1,243 @@
+persona_id: healthcare_multi
+domains: [banking, insurance]
+name: "Healthcare Pro Multi-Banker — Family Health + Mortgage"
+archetype: retail_healthcare_pro_family
+default_seed: 53842
+segment: Retail
+stress_coverage:
+  # Healthcare professional (clinic-side) with a family of four,
+  # banking across three LFIs and insured across motor, family
+  # health, and mortgage-protection life. The cross_domain_link
+  # from home + life to the mortgage-lender slot is the load-
+  # bearing realism: home cover and life mortgage-protection both
+  # bind to the same LFI as the mortgage itself.
+  - healthcare_pro_employer_family_health_plus_mortgage
+
+demographics:
+  nationality_pool: expat_indian
+  age_band: 38-46
+  emirate: dubai
+
+income:
+  primary_employer_pool: tech_freezone
+  monthly_amount_aed: 55000
+  pay_day: 25
+  variability: medium
+  flag_payroll: true
+
+accounts:
+  # ── Salary primary (Mashreq-class) ────────────────────────────────
+  - type: CurrentAccount
+    at_slot: salary
+    currency: AED
+    age_months: 84
+  - type: CreditCard
+    at_slot: salary
+    currency: AED
+    age_months: 60
+    credit_limit_aed: 60000
+  # ── Digital sidekick (Wio-class) — household savings stack ────────
+  - type: CurrentAccount
+    at_slot: digital
+    currency: AED
+    age_months: 24
+  - type: Savings
+    at_slot: digital
+    currency: AED
+    age_months: 18
+  # ── Mortgage-lender (HSBC-class) ──────────────────────────────────
+  - type: CurrentAccount
+    at_slot: mortgage-lender
+    currency: AED
+    age_months: 72
+  - type: Mortgage
+    at_slot: mortgage-lender
+    currency: AED
+    age_months: 60
+
+multi_lfi_footprint:
+  slots:
+    - key: salary
+      role: salary_primary
+      lfi_default: Median
+      plausible_lfi_candidates:
+        - "Mashreq Bank"
+        - "Abu Dhabi Commercial Bank"
+        - "Commercial Bank of Dubai"
+    - key: digital
+      role: digital_sidekick
+      lfi_default: Sparse
+      plausible_lfi_candidates:
+        - "Wio Bank"
+        - "Zand Bank"
+    - key: mortgage-lender
+      role: mortgage_lender
+      lfi_default: Rich
+      plausible_lfi_candidates:
+        - "HSBC Bank Middle East"
+        - "Standard Chartered Bank"
+
+multi_insurer_footprint:
+  slots:
+    - line: motor
+      key: motor-family
+      insurer_default: Median
+      plausible_insurer_candidates:
+        - "Sukoon Insurance"
+        - "AXA Gulf"
+        - "Orient Insurance"
+    - line: home
+      key: home-mortgage
+      insurer_default: Median
+      plausible_insurer_candidates:
+        - "Sukoon Insurance"
+        - "AXA Gulf"
+      cross_domain_link: mortgage-lender
+    - line: life
+      key: life-mortgage-protect
+      insurer_default: Rich
+      plausible_insurer_candidates:
+        - "Sukoon Insurance"
+        - "AXA Gulf"
+
+insurance:
+  lines: [motor, home, life]
+
+# Motor — comprehensive family SUV
+vehicle:
+  make: Toyota
+  model: Fortuner
+  year: 2022
+  body_type: SUV
+  passenger_capacity: 7
+  valuation_aed: 165000
+  registration_emirate: Dubai
+policy:
+  type: Comprehensive
+  takaful: false
+  excess_aed: 1500
+  start_date_offset_days: 100
+  channel: Broker
+finance:
+  has_finance: false
+additional_drivers:
+  count: 1
+claims:
+  history_months: 24
+  claims_in_period: 0
+  approved_claims: 0
+  total_gross_aed: 0
+
+# Home — apartment with mortgage at the mortgage-lender slot
+home:
+  property:
+    type_of_property: Apartment
+    ownership_status: OwnerWithMortgage
+    address_emirate: Dubai
+    number_of_floors: 1
+    number_of_rooms: 3
+    year_of_construction: 2018
+  property_value:
+    market_value_aed: 2200000
+    appraisal_value_aed: 2150000
+    purchase_price_aed: 1900000
+  mortgage:
+    has_mortgage: true
+    bank_pool: counterparty_banks_uae_real
+    balance_aed: 1100000
+    monthly_payment_aed: 8500
+  policy:
+    excess_aed: 2500
+    start_date_offset_days: 60
+    channel: Bank
+    takaful: false
+  claims:
+    history_months: 24
+    claims_in_period: 0
+    approved_claims: 0
+    total_gross_aed: 0
+
+# Life — decreasing-term mortgage-protection sized to mortgage balance
+life:
+  policy:
+    cover_type: Joint
+    policyholder_life_assured: true
+    type_of_life_insurance: DecreasingTermInsurance
+    insurance_purpose: MortgageCover
+    sum_assured_aed: 1100000
+    term_years: 15
+    takaful: false
+    start_date_offset_days: 60
+    channel: Bank
+    product_name: Mortgage Cover Joint Life
+  beneficiaries:
+    - relationship: Spouse
+    - relationship: Child
+    - relationship: Child
+  finance:
+    has_finance: true
+    bank_pool: counterparty_banks_uae_real
+    amount_aed: 1100000
+    value_against_policy_aed: 1100000
+  claims:
+    history_months: 24
+    claims_in_period: 0
+    approved_claims: 0
+    total_gross_aed: 0
+
+fixed_commitments:
+  - kind: standing_order
+    purpose: mortgage_payment
+    at_slot: mortgage-lender
+    amount_aed: 8500
+    schedule: monthly_1
+  - kind: standing_order
+    purpose: kids_school_fees
+    at_slot: salary
+    amount_aed: 9500
+    schedule: monthly_5
+  - kind: direct_debit
+    purpose: utilities_dewa
+    at_slot: salary
+    amount_aed_band: [800, 1400]
+    schedule: monthly_5
+  - kind: direct_debit
+    purpose: home_insurance_premium
+    at_slot: mortgage-lender
+    amount_aed_band: [1400, 1900]
+    schedule: monthly_22
+  - kind: direct_debit
+    purpose: motor_insurance_premium
+    at_slot: salary
+    amount_aed_band: [550, 800]
+    schedule: monthly_22
+  - kind: direct_debit
+    purpose: life_insurance_premium
+    at_slot: mortgage-lender
+    amount_aed_band: [600, 850]
+    schedule: monthly_22
+
+spend_profile:
+  groceries_aed_per_month_band: [2500, 4500]
+  fuel_aed_per_month_band: [900, 1500]
+  dining_per_month_count_band: [8, 18]
+
+fx_activity: false
+cash_deposit_activity: false
+
+distress_signals:
+  nsf_events_per_year_band: [0, 0]
+
+narrative: |
+  38–46yo expat-Indian healthcare professional in Dubai (AED 55k/mo
+  WPS payroll plus variable on-call uplift), supporting a family of
+  four. Three-LFI footprint: a Tier-1 mainstream salary primary
+  (day-to-day CurrentAccount + premium consumer card); a digital
+  sidekick CurrentAccount + Savings (household-budget compartment);
+  an international-branch mortgage-lender slot holding the
+  CurrentAccount and Mortgage for the family's Dubai apartment.
+  Insurance: motor comprehensive, home (cross_domain_link → mortgage-
+  lender), and decreasing-term joint-life mortgage-protection
+  (sum_assured matches outstanding mortgage). Underwriter view: the
+  household's DBR + savings rate is legible only by aggregating
+  across all three LFIs.

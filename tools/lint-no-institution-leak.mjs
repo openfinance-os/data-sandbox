@@ -4,13 +4,20 @@
 // a populate-rate, product mix, categorisation rule, or other operational
 // claim could attach to a name.
 //
-//   ALLOWED sites (per D-14):
+//   ALLOWED sites (per D-14 + Phase 2.2):
 //     - synthetic-identity-pool/counterparty-banks/*.yaml
 //         (banks named here are third-party counterparties to the persona's
 //          transactions / standing orders / beneficiaries — descriptive of
 //          the persona's relationships, not of any LFI's data quality.)
+//     - synthetic-identity-pool/counterparty-insurers/*.yaml
+//         (Phase 2.2 — same shape, for real UAE insurers named as
+//          counterparties on policy / quote envelopes.)
 //     - personas/*.yaml under multi_lfi_footprint.{primary,secondary,
-//       tertiary}.plausible_lfi_candidates
+//       tertiary}.plausible_lfi_candidates  (legacy D-14 shape)
+//     - personas/*.yaml under multi_lfi_footprint.slots[].plausible_lfi_candidates
+//       (Phase 2.2+ shape — N-slot array)
+//     - personas/*.yaml under multi_insurer_footprint.slots[].plausible_insurer_candidates
+//       (Phase 2.2 — insurer candidate set)
 //         (a candidate set with no populate-rate binding.)
 //
 //   FORBIDDEN sites (everything else under personas/, synthetic-identity-pool/,
@@ -81,14 +88,38 @@ const DENYLIST = [
   'NEOPay',
   // Historical / merged entities — still flag as leak risk
   'Noor Bank',
+
+  // ─── Phase 2.2 — UAE insurers ───────────────────────────────────
+  // Real UAE insurance carriers. Same NG5 / D-14 invariant: names allowed
+  // only in the counterparty-insurers pool and in persona manifests'
+  // multi_insurer_footprint.slots[].plausible_insurer_candidates arrays.
+  'Sukoon Insurance', 'Sukoon',
+  'Orient Insurance', 'Orient UNB Takaful',
+  'AXA Gulf',
+  'Abu Dhabi National Insurance Company', 'ADNIC',
+  'Dubai Insurance',
+  'Emirates Insurance',
+  'Al Sagr National Insurance', 'Al Sagr',
+  'Union Insurance',
+  'Insurance House',
+  'Daman',
+  'Mednet',
+  // Salama-the-insurer is matched by the full name only — "Salama" alone
+  // collides with the Arabic given name (سلامة) which appears legitimately
+  // in the emirati/expat name pools.
+  'Salama Islamic Arab Insurance',
+  'Methaq Takaful',
+  'Watania Takaful',
+  'Noor Takaful',
 ];
 
 const SCAN_DIRS = ['personas', 'synthetic-identity-pool', 'src'];
 const ALLOWED_EXT = /\.(yaml|yml|json|md|js|mjs|html|css)$/;
 
-// ALLOWED-by-D-14 sites are matched as path prefixes (POSIX form).
+// ALLOWED-by-D-14 + Phase 2.2 sites are matched as path prefixes (POSIX form).
 const ALLOWED_PATH_PREFIXES = [
   'synthetic-identity-pool/counterparty-banks/',
+  'synthetic-identity-pool/counterparty-insurers/',
 ];
 
 function isAllowedPath(rel) {
@@ -139,17 +170,38 @@ function scanPersonaManifest(file, rel) {
   }
 
   function isCandidateArrayPath(segs) {
-    // segs ends in plausible_lfi_candidates and the parent is one of the
-    // three slots under multi_lfi_footprint.
+    // Accept four shapes (all candidate-set, no populate-rate binding):
+    //   Legacy bank (D-14):
+    //     multi_lfi_footprint.{primary|secondary|tertiary}.plausible_lfi_candidates
+    //   Phase 2.2 bank N-slot:
+    //     multi_lfi_footprint.slots.<idx>.plausible_lfi_candidates
+    //   Phase 2.2 insurer N-slot:
+    //     multi_insurer_footprint.slots.<idx>.plausible_insurer_candidates
     if (segs.length < 3) return false;
     const last = segs[segs.length - 1];
-    const slot = segs[segs.length - 2];
-    const head = segs[segs.length - 3];
-    return (
-      last === 'plausible_lfi_candidates' &&
-      ['primary', 'secondary', 'tertiary'].includes(slot) &&
-      head === 'multi_lfi_footprint'
-    );
+    if (last !== 'plausible_lfi_candidates' && last !== 'plausible_insurer_candidates') {
+      return false;
+    }
+    // Legacy bank: ...multi_lfi_footprint.<slot>.plausible_lfi_candidates
+    if (segs.length >= 3 && last === 'plausible_lfi_candidates') {
+      const slot = segs[segs.length - 2];
+      const head = segs[segs.length - 3];
+      if (
+        ['primary', 'secondary', 'tertiary'].includes(slot) &&
+        head === 'multi_lfi_footprint'
+      ) return true;
+    }
+    // N-slot bank: ...multi_lfi_footprint.slots.<idx>.plausible_lfi_candidates
+    // N-slot insurer: ...multi_insurer_footprint.slots.<idx>.plausible_insurer_candidates
+    if (segs.length >= 4) {
+      const idx = segs[segs.length - 2];
+      const slotsKey = segs[segs.length - 3];
+      const head = segs[segs.length - 4];
+      if (!/^\d+$/.test(idx) || slotsKey !== 'slots') return false;
+      if (head === 'multi_lfi_footprint' && last === 'plausible_lfi_candidates') return true;
+      if (head === 'multi_insurer_footprint' && last === 'plausible_insurer_candidates') return true;
+    }
+    return false;
   }
 
   walkNode(doc, []);

@@ -65,6 +65,10 @@ import {
   makeBundleIdentity,
   pickRandomBankName,
 } from './_shared.js';
+import {
+  findInsuranceCrossDomainLink,
+  pickFootprintSlotBank,
+} from '../multi-lfi.js';
 
 const DEFAULT_NOW = new Date(Date.UTC(2026, 3, 1, 0, 0, 0));
 
@@ -130,7 +134,15 @@ export function buildInsuranceBundle({ persona, lfi, seed, pools, now = DEFAULT_
   // by the upstream line generator's draw count. Consents come AFTER LFI
   // redaction (each per-line builder applies the redaction itself) — the
   // consent record itself isn't subject to LFI bands.
-  const consentRng = makePrng(persona.persona_id, 'consents', seed);
+  //
+  // Phase 2.2 — the line is included in the consent PRNG seed so that
+  // multi-domain personas (whose buildMultiDomainBundle calls this
+  // function once per declared line, all with the same persona_id +
+  // seed) get a DISTINCT ConsentId per line. Without the line in the
+  // seed, motor/home/travel consents collide on identical IDs and the
+  // /insurance-consents/{ConsentId} detail endpoint overwrites itself
+  // — a TPP asking for the motor consent would get travel data back.
+  const consentRng = makePrng(persona.persona_id, 'consents', line, seed);
   bundle.consents = [generateConsentRecord({ persona, rng: consentRng, now })];
   return bundle;
 }
@@ -146,12 +158,21 @@ function buildMotorBundle({ persona, lfi, seed, pools, now }) {
     now,
   });
 
+  // Phase 2.2 — if the persona declares a cross_domain_link from the
+  // motor insurer slot to a banking slot (typically the salary slot
+  // where the auto loan sits), resolve the linked bank up front and
+  // pass it to motor-policy as the preferred CarFinance bank.
+  const motorLinkSlot = findInsuranceCrossDomainLink(persona, 'motor');
+  const preferredFinanceBank = motorLinkSlot
+    ? pickFootprintSlotBank(persona, motorLinkSlot, p.banks)
+    : null;
   const product = generateMotorProduct({
     persona,
     names: p.names,
     banks: p.banks,
     rng,
     now,
+    preferredFinanceBank,
   });
   const claims = generateClaims({ persona });
   const premium = generatePremium({ persona });
@@ -450,9 +471,28 @@ function buildHomeBundle({ persona, lfi, seed, pools, now }) {
   // Resolve mortgage bank deterministically up front so home-policy.js can
   // reference it without re-drawing — keeps bank identity consistent between
   // the persona's Mortgage.BankName and the payment-details Bank.Name.
+  //
+  // Phase 2.2 — for multi-domain personas declaring a `cross_domain_link`
+  // from the home insurer slot to a banking slot (typically mortgage-lender),
+  // resolve the mortgage bank from THAT banking slot's deterministic bank
+  // pick. This keeps the home-insurance Mortgage.BankName visually
+  // consistent with where the persona's mortgage actually sits in the
+  // banking bundle. Falls back to the random pool draw for personas
+  // without the cross-domain link declared.
   let mortgageBankName = null;
   if (persona.home?.mortgage?.has_mortgage) {
-    mortgageBankName = pickRandomBankName(p.banks, rng);
+    // Always advance the RNG with a random pool draw FIRST, then
+    // prefer the cross-domain-linked bank when declared. Otherwise the
+    // RNG state diverges between personas with vs. without a
+    // cross_domain_link, and retro-adding the link to an existing
+    // persona silently shifts every downstream draw (insurance policy
+    // id, IBAN, quote) — EXP-05 trap.
+    const fallbackBankName = pickRandomBankName(p.banks, rng);
+    const linkedSlotKey = findInsuranceCrossDomainLink(persona, 'home');
+    const linkedBank = linkedSlotKey
+      ? pickFootprintSlotBank(persona, linkedSlotKey, p.banks)
+      : null;
+    mortgageBankName = linkedBank?.name ?? fallbackBankName;
     persona = {
       ...persona,
       home: {

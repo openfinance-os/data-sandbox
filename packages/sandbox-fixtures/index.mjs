@@ -15,7 +15,14 @@ const SPEC_FILE_BY_DOMAIN = {
 export function listPersonas(opts = {}) {
   const ids = Object.keys(manifest.personas);
   if (!opts.domain) return ids;
-  return ids.filter((id) => manifest.personas[id]?.domain === opts.domain);
+  // Phase 2.2 — multi-domain personas (domains:[banking, insurance])
+  // appear in BOTH banking and insurance filters.
+  return ids.filter((id) => {
+    const info = manifest.personas[id];
+    if (!info) return false;
+    const ds = Array.isArray(info.domains) ? info.domains : [info.domain ?? 'banking'];
+    return ds.includes(opts.domain);
+  });
 }
 export function getPersonaInfo(personaId) {
   return manifest.personas[personaId] ?? null;

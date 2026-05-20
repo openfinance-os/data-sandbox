@@ -1,0 +1,293 @@
+persona_id: retail_multi_banker
+domains: [banking, insurance]
+name: "Retail Multi-Banker — Four-Bank, Three-Carrier"
+archetype: salaried_multi_banker
+default_seed: 99072
+segment: Retail
+stress_coverage:
+  # Phase 2.2 flagship persona — exercises the full multi-LFI +
+  # multi-domain stack. The two tags below are added by this persona
+  # (verified globally unique by lint-stress-coverage-uniqueness).
+  - retail_multi_lfi_aggregation_consolidation
+  - retail_multi_product_dbsr_visibility
+
+demographics:
+  nationality_pool: expat_arab
+  age_band: 38-50
+  emirate: dubai
+
+income:
+  primary_employer_pool: tech_freezone
+  monthly_amount_aed: 65000
+  pay_day: 25
+  variability: low
+  flag_payroll: true                          # WPS salary → primary slot
+
+# 10 accounts spread across 4 LFI slots. Phase 2.2 at_slot tagging
+# anchors each account to one slot in multi_lfi_footprint.slots[] below.
+# All-or-nothing per lint-persona-spec-conformance.
+accounts:
+  # ── Salary primary (ADCB equivalent) ──────────────────────────────
+  - type: CurrentAccount
+    at_slot: salary
+    currency: AED
+    age_months: 96
+  - type: CreditCard
+    at_slot: salary
+    currency: AED
+    age_months: 72
+    credit_limit_aed: 50000
+  - type: CreditCard
+    at_slot: salary
+    currency: AED
+    age_months: 48
+    credit_limit_aed: 80000
+  - type: Finance
+    at_slot: salary
+    currency: AED
+    age_months: 24
+  # ── Everyday-card secondary (ENBD equivalent) ─────────────────────
+  - type: CurrentAccount
+    at_slot: everyday-card
+    currency: AED
+    age_months: 60
+  - type: CreditCard
+    at_slot: everyday-card
+    currency: AED
+    age_months: 36
+    credit_limit_aed: 40000
+  # ── Digital sidekick (Wio equivalent) ─────────────────────────────
+  - type: CurrentAccount
+    at_slot: digital
+    currency: AED
+    age_months: 18
+  - type: CreditCard
+    at_slot: digital
+    currency: AED
+    age_months: 12
+    credit_limit_aed: 20000
+  # ── Mortgage-lender / international branch (HSBC equivalent) ──────
+  - type: CurrentAccount
+    at_slot: mortgage-lender
+    currency: AED
+    age_months: 84
+  - type: Mortgage
+    at_slot: mortgage-lender
+    currency: AED
+    age_months: 60
+
+multi_lfi_footprint:
+  slots:
+    - key: salary
+      role: salary_primary
+      lfi_default: Median
+      plausible_lfi_candidates:
+        - "Abu Dhabi Commercial Bank"
+        - "First Abu Dhabi Bank"
+        - "Mashreq Bank"
+    - key: everyday-card
+      role: secondary_card
+      lfi_default: Median
+      plausible_lfi_candidates:
+        - "Emirates NBD"
+        - "Commercial Bank of Dubai"
+    - key: digital
+      role: digital_sidekick
+      lfi_default: Sparse
+      plausible_lfi_candidates:
+        - "Wio Bank"
+        - "Zand Bank"
+    - key: mortgage-lender
+      role: international_branch
+      lfi_default: Rich
+      plausible_lfi_candidates:
+        - "HSBC Bank Middle East"
+        - "Standard Chartered Bank"
+        - "Citibank N.A."
+
+multi_insurer_footprint:
+  slots:
+    - line: motor
+      key: motor-primary
+      insurer_default: Median
+      plausible_insurer_candidates:
+        - "Sukoon Insurance"
+        - "Orient Insurance"
+        - "AXA Gulf"
+      cross_domain_link: salary                  # auto loan at salary primary (ADCB)
+    - line: home
+      key: home-mortgage
+      insurer_default: Median
+      plausible_insurer_candidates:
+        - "Sukoon Insurance"
+        - "Salama Islamic Arab Insurance"
+        - "Orient Insurance"
+      cross_domain_link: mortgage-lender         # home cover bundled with HSBC mortgage
+    - line: travel
+      key: travel-annual
+      insurer_default: Rich
+      plausible_insurer_candidates:
+        - "AXA Gulf"
+        - "Sukoon Insurance"
+
+insurance:
+  lines: [motor, home, travel]
+
+# ── Motor line: car loan-financed comprehensive policy ──────────────
+vehicle:
+  make: Toyota
+  model: Land Cruiser
+  year: 2022
+  body_type: SUV
+  passenger_capacity: 7
+  valuation_aed: 280000
+  registration_emirate: Dubai
+policy:
+  type: Comprehensive
+  takaful: false
+  excess_aed: 2500
+  start_date_offset_days: 120
+  channel: Bank
+finance:
+  has_finance: true
+  bank_pool: counterparty_banks_uae_real
+  amount_aed: 220000
+  outstanding_aed: 145000
+additional_drivers:
+  count: 1
+claims:
+  history_months: 24
+  claims_in_period: 0
+  approved_claims: 0
+  total_gross_aed: 0
+
+# ── Home line: villa with mortgage (cross-domain link → HSBC slot) ──
+home:
+  property:
+    type_of_property: Villa
+    ownership_status: OwnerWithMortgage
+    address_emirate: Dubai
+    number_of_floors: 2
+    number_of_rooms: 5
+    year_of_construction: 2017
+  property_value:
+    market_value_aed: 4200000
+    appraisal_value_aed: 4100000
+    purchase_price_aed: 3650000
+  mortgage:
+    has_mortgage: true
+    bank_pool: counterparty_banks_uae_real
+    balance_aed: 2100000
+    monthly_payment_aed: 14000
+  policy:
+    excess_aed: 5000
+    start_date_offset_days: 60
+    channel: Bank
+    takaful: false
+  claims:
+    history_months: 24
+    claims_in_period: 0
+    approved_claims: 0
+    total_gross_aed: 0
+
+# ── Travel line: annual multi-trip worldwide ────────────────────────
+travel:
+  policy:
+    trip_duration_days: 14
+    multi_trip: true
+    purpose: Business
+    travelling_with: Family
+    destination_region: Worldwide
+    cover_limit_aed: 50000
+    medical_limit_aed: 2000000
+    excess_aed: 250
+    takaful: false
+    product_name: Travel Annual Worldwide Premier
+    start_date_offset_days: 90
+    channel: OnlineInsideUAE
+  adults: 2
+  children: 2
+  seniors: 0
+  claims:
+    history_months: 24
+    claims_in_period: 0
+    approved_claims: 0
+    total_gross_aed: 0
+
+# Banking fixed commitments — Phase 2.2 per-slot routing. Each
+# commitment lives at the LFI hosting the related product so role
+# bundles surface their own SOs/DDs (HSBC mortgage SO on the HSBC
+# CurrentAccount, ENBD card DD on the ENBD CurrentAccount, etc.).
+# All-or-nothing: every commitment carries an at_slot tag (lint-
+# persona-spec-conformance enforces).
+fixed_commitments:
+  - kind: standing_order
+    purpose: mortgage_payment
+    at_slot: mortgage-lender      # paid from the HSBC CurrentAccount
+    amount_aed: 14000
+    schedule: monthly_1
+  - kind: standing_order
+    purpose: car_loan_payment
+    at_slot: salary               # ADCB auto loan repaid from ADCB CA
+    amount_aed: 4800
+    schedule: monthly_5
+  - kind: direct_debit
+    purpose: credit_card_repayment_card_everyday
+    at_slot: everyday-card        # ENBD card repaid from ENBD CA
+    amount_aed_band: [3000, 8000]
+    schedule: monthly_10
+  - kind: direct_debit
+    purpose: credit_card_repayment_card_digital
+    at_slot: digital              # Wio card repaid from Wio CA
+    amount_aed_band: [800, 2500]
+    schedule: monthly_12
+  - kind: direct_debit
+    purpose: utilities_dewa
+    at_slot: salary               # household DDs from the main CA
+    amount_aed_band: [900, 1800]
+    schedule: monthly_5
+  - kind: direct_debit
+    purpose: home_insurance_premium
+    at_slot: mortgage-lender      # home cover bundled w/ the HSBC mortgage
+    amount_aed_band: [2400, 3200]
+    schedule: monthly_22
+  - kind: direct_debit
+    purpose: motor_insurance_premium
+    at_slot: salary               # motor cover paid from the main CA
+    amount_aed_band: [350, 550]
+    schedule: monthly_22
+
+spend_profile:
+  groceries_aed_per_month_band: [2200, 3800]
+  fuel_aed_per_month_band: [900, 1400]
+  dining_per_month_count_band: [10, 22]
+
+fx_activity: true
+cash_deposit_activity: false
+
+distress_signals:
+  nsf_events_per_year_band: [0, 0]
+
+narrative: |
+  The "Connect-journeys hero" persona — a 38–50 year-old expat-Arab
+  professional living in Dubai with a senior salaried role (AED 65k/mo
+  WPS payroll). Banking footprint spans four LFI slots: the salary
+  primary holds the day-to-day CurrentAccount plus two consumer credit
+  cards and a car loan; a secondary mainstream relationship hosts a
+  CurrentAccount plus a parallel everyday card; a digital-only sidekick
+  hosts a CurrentAccount plus a low-limit digital card; an
+  international-branch slot hosts the CurrentAccount + mortgage on the
+  Dubai villa. Insurance footprint mirrors the banking spread: motor
+  comprehensive bundled with the car loan, home insurance bundled with
+  the mortgage (cross_domain_link → mortgage-lender), and a family
+  annual travel policy.
+
+  The persona's load-bearing stress is **multi-LFI aggregation
+  consolidation**: total debt service (mortgage + car loan + three
+  cards) is only legible to a TPP via Open Finance aggregation across
+  all four banks — no single LFI sees the full picture. The cross-LFI
+  mirror ledger demonstrates salary-to-non-primary sweeps every month,
+  closing the reference loop between primary and role bundles by IBAN
+  identity. EXP-18 underwriting-scenario panel and the Connect
+  three-journey J2 (TPP + Al Tareq) consent flow are both built for
+  exactly this persona's shape.

@@ -7,7 +7,13 @@ const SPEC_FILE_BY_DOMAIN = { banking: 'spec.json', insurance: 'spec.insurance.j
 function listPersonas(opts) {
   const ids = Object.keys(manifest.personas);
   if (!opts || !opts.domain) return ids;
-  return ids.filter(function (id) { return manifest.personas[id] && manifest.personas[id].domain === opts.domain; });
+  // Phase 2.2 — multi-domain personas appear in BOTH banking and insurance filters.
+  return ids.filter(function (id) {
+    const info = manifest.personas[id];
+    if (!info) return false;
+    const ds = Array.isArray(info.domains) ? info.domains : [info.domain || 'banking'];
+    return ds.indexOf(opts.domain) !== -1;
+  });
 }
 function getPersonaInfo(personaId) { return manifest.personas[personaId] || null; }
 function listEndpoints(personaId, lfi) {

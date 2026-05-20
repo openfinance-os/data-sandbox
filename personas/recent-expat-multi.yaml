@@ -1,0 +1,238 @@
+persona_id: recent_expat_multi
+domains: [banking, insurance]
+name: "Recent Arrival Multi-Banker — Onboarding-Year 3-Bank Expat"
+archetype: retail_recent_arrival_expat
+default_seed: 41039
+segment: Retail
+stress_coverage:
+  # An expat in their first 12 months in the UAE who has rapidly
+  # onboarded to three LFIs in a short window — international anchor
+  # bank for the new-account / wire-in moment, mainstream salary
+  # primary once the visa lands, and a digital onboarding for
+  # immediate card access. Thin-file across all three but visible
+  # only via Open Finance aggregation.
+  - recent_arrival_thin_file_multi_lfi_onboarding
+
+demographics:
+  nationality_pool: expat_arab
+  age_band: 30-40
+  emirate: dubai
+
+income:
+  primary_employer_pool: tech_freezone
+  monthly_amount_aed: 45000
+  pay_day: 27
+  variability: low
+  flag_payroll: true
+
+accounts:
+  # ── International anchor (HSBC-class) — opened pre-arrival ────────
+  - type: CurrentAccount
+    at_slot: international
+    currency: AED
+    age_months: 11
+  - type: CurrentAccount
+    at_slot: international
+    currency: USD
+    age_months: 11
+  # ── Salary primary (mainstream) — opened once visa landed ─────────
+  - type: CurrentAccount
+    at_slot: salary
+    currency: AED
+    age_months: 8
+  - type: CreditCard
+    at_slot: salary
+    currency: AED
+    age_months: 6
+    credit_limit_aed: 30000
+  # ── Digital (Wio) — opened in onboarding week ─────────────────────
+  - type: CurrentAccount
+    at_slot: digital
+    currency: AED
+    age_months: 10
+  - type: CreditCard
+    at_slot: digital
+    currency: AED
+    age_months: 9
+    credit_limit_aed: 15000
+
+multi_lfi_footprint:
+  slots:
+    - key: international
+      role: international_branch
+      lfi_default: Rich
+      plausible_lfi_candidates:
+        - "HSBC Bank Middle East"
+        - "Standard Chartered Bank"
+        - "Citibank N.A."
+    - key: salary
+      role: salary_primary
+      lfi_default: Median
+      plausible_lfi_candidates:
+        - "Abu Dhabi Commercial Bank"
+        - "Mashreq Bank"
+        - "Emirates NBD"
+    - key: digital
+      role: digital_sidekick
+      lfi_default: Sparse
+      plausible_lfi_candidates:
+        - "Wio Bank"
+        - "Zand Bank"
+
+multi_insurer_footprint:
+  slots:
+    - line: motor
+      key: motor-newcomer
+      insurer_default: Median
+      plausible_insurer_candidates:
+        - "Sukoon Insurance"
+        - "AXA Gulf"
+        - "Orient Insurance"
+      cross_domain_link: salary
+    - line: health
+      key: health-individual
+      insurer_default: Median
+      plausible_insurer_candidates:
+        - "Daman"
+        - "Mednet"
+        - "Sukoon Insurance"
+    - line: travel
+      key: travel-frequent-home
+      insurer_default: Rich
+      plausible_insurer_candidates:
+        - "AXA Gulf"
+        - "Sukoon Insurance"
+        - "Orient Insurance"
+
+insurance:
+  lines: [motor, health, travel]
+
+# Motor — comprehensive on a financed mid-tier SUV
+vehicle:
+  make: Mazda
+  model: CX-5
+  year: 2023
+  body_type: SUV
+  passenger_capacity: 5
+  valuation_aed: 130000
+  registration_emirate: Dubai
+policy:
+  type: Comprehensive
+  takaful: false
+  excess_aed: 1500
+  start_date_offset_days: 45
+  channel: Broker
+finance:
+  has_finance: true
+  bank_pool: counterparty_banks_uae_real
+  amount_aed: 100000
+  outstanding_aed: 88000
+additional_drivers:
+  count: 1
+claims:
+  history_months: 12
+  claims_in_period: 0
+  approved_claims: 0
+  total_gross_aed: 0
+
+# Health — individual cover for self + spouse
+health:
+  policy:
+    cover_subjects: SelfAndSpouse
+    annual_limit_aed: 750000
+    policyholder_insured: true
+    excess_aed: 300
+    start_date_offset_days: 90
+    channel: Broker
+    takaful: false
+    product_name: Newcomer Care Plus
+  claims:
+    history_months: 12
+    claims_in_period: 1
+    approved_claims: 1
+    total_gross_aed: 1800
+
+# Travel — annual multi-trip family policy for frequent home visits
+travel:
+  policy:
+    trip_duration_days: 21
+    multi_trip: true
+    purpose: Personal
+    travelling_with: Couple
+    destination_region: Worldwide
+    cover_limit_aed: 35000
+    medical_limit_aed: 1500000
+    excess_aed: 300
+    takaful: false
+    product_name: Travel Annual Worldwide
+    start_date_offset_days: 60
+    channel: OnlineInsideUAE
+  adults: 2
+  children: 0
+  seniors: 0
+  claims:
+    history_months: 12
+    claims_in_period: 1
+    approved_claims: 1
+    total_gross_aed: 2200
+
+fixed_commitments:
+  - kind: standing_order
+    purpose: rent_payment
+    at_slot: salary
+    amount_aed: 12000
+    schedule: monthly_28
+  - kind: standing_order
+    purpose: car_loan_payment
+    at_slot: salary
+    amount_aed: 2400
+    schedule: monthly_5
+  - kind: direct_debit
+    purpose: credit_card_repayment_card_digital
+    at_slot: digital
+    amount_aed_band: [500, 1500]
+    schedule: monthly_12
+  - kind: direct_debit
+    purpose: utilities_dewa
+    at_slot: salary
+    amount_aed_band: [400, 800]
+    schedule: monthly_5
+  - kind: direct_debit
+    purpose: international_remittance_home
+    at_slot: international
+    amount_aed_band: [3000, 8000]
+    schedule: monthly_28
+  - kind: direct_debit
+    purpose: motor_insurance_premium
+    at_slot: salary
+    amount_aed_band: [380, 580]
+    schedule: monthly_22
+  - kind: direct_debit
+    purpose: travel_insurance_premium
+    at_slot: salary
+    amount_aed_band: [250, 400]
+    schedule: monthly_22
+
+spend_profile:
+  groceries_aed_per_month_band: [1800, 3200]
+  fuel_aed_per_month_band: [600, 1100]
+  dining_per_month_count_band: [8, 18]
+
+fx_activity: true
+cash_deposit_activity: false
+
+distress_signals:
+  nsf_events_per_year_band: [0, 1]
+
+narrative: |
+  Expat-Arab professional 11 months into a Dubai posting (AED 45k/mo
+  WPS payroll). Onboarded across three LFIs in rapid succession: an
+  international branch CurrentAccount opened pre-arrival to receive
+  the relocation lump-sum + initial USD float; a mainstream salary
+  primary opened once the work permit cleared (hosting WPS payroll +
+  car loan); a digital-only CurrentAccount + card opened
+  in onboarding week for immediate spend before the salary primary's
+  card arrived. Frequent home-country travel for family.
+  Underwriter view: each LFI sees ≤12 months of tenure; only Open
+  Finance aggregation shows the full picture (which still totals
+  ≤12 months — the thin-file-yet-multi-banker stress vector).

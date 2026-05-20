@@ -52,7 +52,11 @@ if (!FIXTURES_BUILT) {
   it('every role-fixture entry carries personaId, slot, role, lfi, seed, accountIds, endpoints', () => {
     for (const [key, rfx] of Object.entries(roleFixtures)) {
       expect(rfx.personaId, `${key} personaId`).toBeDefined();
-      expect(['secondary', 'tertiary']).toContain(rfx.slot);
+      // Phase 2.2 — slot is a free-form kebab key. Legacy SME personas
+      // use 'secondary' / 'tertiary'; multi-banker personas use custom
+      // keys like 'everyday-card' / 'mortgage-lender'.
+      expect(typeof rfx.slot).toBe('string');
+      expect(rfx.slot.length).toBeGreaterThan(0);
       expect(rfx.role, `${key} role`).toBeDefined();
       expect(['rich', 'median', 'sparse']).toContain(rfx.lfi);
       expect(rfx.seed, `${key} seed`).toBeGreaterThan(0);
@@ -62,17 +66,22 @@ if (!FIXTURES_BUILT) {
   });
 
   for (const [key, rfx] of Object.entries(roleFixtures)) {
-    it(`${key} — /accounts envelope is spec-shaped (single account, mod-97 IBAN)`, () => {
+    it(`${key} — /accounts envelope is spec-shaped (mod-97 IBANs)`, () => {
       const env = JSON.parse(fs.readFileSync(path.join(PKG_DIR, rfx.endpoints['/accounts']), 'utf8'));
-      expect(env.Data?.Account?.length).toBe(1);
+      // Phase 2.2 — role bundles can now carry multiple accounts when
+      // the source persona tags multiple products at the same slot
+      // (e.g. CurrentAccount + CreditCard at an SME's everyday-card LFI).
+      // Legacy SME role bundles stay single-account.
+      expect(env.Data?.Account?.length).toBeGreaterThanOrEqual(1);
       expect(env.Links?.Self).toBeDefined();
       expect(env.Meta).toBeDefined();
       expect(env._watermark).toMatch(/SYNTHETIC/);
-      const acc = env.Data.Account[0];
-      const iban = acc.AccountIdentifiers?.[0]?.Identification;
-      expect(typeof iban).toBe('string');
-      expect(iban.length).toBe(23);
-      expect(isValidMod97Iban(iban), `${key} IBAN ${iban} fails mod-97`).toBe(true);
+      for (const acc of env.Data.Account) {
+        const iban = acc.AccountIdentifiers?.[0]?.Identification;
+        expect(typeof iban).toBe('string');
+        expect(iban.length).toBe(23);
+        expect(isValidMod97Iban(iban), `${key} IBAN ${iban} fails mod-97`).toBe(true);
+      }
     });
 
     it(`${key} — IBAN matches the primary bundle's self-to-${rfx.slot} beneficiary IBAN (cross-bundle reference loop)`, () => {

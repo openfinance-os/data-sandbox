@@ -1,0 +1,113 @@
+pool_id: counterparty_insurers_uae_real
+description: |
+  Real UAE counterparty insurers (Phase 2.2). Insurers named in this
+  pool appear as third-party counterparties to a persona's insurance
+  relationships — i.e., the carrier on the OTHER side of an Insurer
+  field in a /motor-insurance-policies, /home-insurance-policies, etc.
+  envelope, or as a candidate set in a persona manifest's
+  `multi_insurer_footprint.slots[].plausible_insurer_candidates`. Naming
+  a real insurer here is descriptive of the persona's relationships,
+  not an operational claim about the named insurer's data quality.
+
+  Per-insurer fields:
+    - `lines` (array) — which insurance lines this insurer writes in the
+      UAE: motor | home | health | life | travel | renters | employment.
+      The generator's per-line draws filter the pool to only insurers
+      offering that line.
+    - `license_type` (Conventional | Takaful) — Sharia-compliant
+      operators carry Takaful; conventional carriers carry Conventional.
+      Phase 2.2+ generator paths use this to align with the persona's
+      religious / cultural preference if declared.
+    - `code` (3-letter synthetic) — embedded in synthetic Insurer
+      Identification fields. NOT the insurer's real licensee code (real
+      codes would imply operational attribution per NG5 / D-14).
+
+  NG5 / D-14 invariant: insurer names appear ONLY in this pool and in
+  the persona-manifest candidate-array allow-site
+  (multi_insurer_footprint.slots[].plausible_insurer_candidates).
+  Forbidden anywhere else, including any populate-rate or
+  line-mix claim.
+
+insurers:
+  # ─── Conventional ───────────────────────────────────────────────────
+  - name: "Sukoon Insurance"
+    license_type: Conventional
+    code: SKN
+    lines: [motor, home, life, travel, health]
+
+  - name: "Orient Insurance"
+    license_type: Conventional
+    code: ORI
+    lines: [motor, home, travel, life]
+
+  - name: "AXA Gulf"
+    license_type: Conventional
+    code: AXG
+    lines: [motor, home, travel, life, health]
+
+  - name: "Abu Dhabi National Insurance Company"
+    license_type: Conventional
+    code: ADN
+    lines: [motor, home, life, health, travel]
+
+  - name: "Dubai Insurance"
+    license_type: Conventional
+    code: DBI
+    lines: [motor, home, life, travel]
+
+  - name: "Emirates Insurance"
+    license_type: Conventional
+    code: EMI
+    lines: [motor, home, life]
+
+  - name: "Al Sagr National Insurance"
+    license_type: Conventional
+    code: SGR
+    lines: [motor, home]
+
+  - name: "Union Insurance"
+    license_type: Conventional
+    code: UNI
+    lines: [motor, home, life]
+
+  - name: "Insurance House"
+    license_type: Conventional
+    code: IHS
+    lines: [motor, home]
+
+  # ─── Health-specialised ─────────────────────────────────────────────
+  - name: "Daman"
+    license_type: Conventional
+    code: DMN
+    lines: [health]
+
+  - name: "Mednet"
+    license_type: Conventional
+    code: MED
+    lines: [health]
+
+  # ─── Takaful (Sharia-compliant) ─────────────────────────────────────
+  - name: "Salama Islamic Arab Insurance"
+    license_type: Takaful
+    code: SLM
+    lines: [motor, home, life, travel, health]
+
+  - name: "Methaq Takaful"
+    license_type: Takaful
+    code: MTQ
+    lines: [motor, home, life]
+
+  - name: "Watania Takaful"
+    license_type: Takaful
+    code: WTN
+    lines: [motor, home, life]
+
+  - name: "Noor Takaful"
+    license_type: Takaful
+    code: NRT
+    lines: [motor, home, life, travel]
+
+  - name: "Orient UNB Takaful"
+    license_type: Takaful
+    code: OUT
+    lines: [motor, home, life]

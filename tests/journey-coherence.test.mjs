@@ -44,13 +44,15 @@ if (!FIXTURES_BUILT) {
   const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
   // Banking-only — /accounts + per-account fan-out is the banking shape.
   // Insurance fixtures (motor policies / quotes) get their own coherence
-  // assertions in tests/spec-validation.insurance.test.mjs.
-  const fixtureEntries = Object.entries(manifest.fixtures).filter(
-    ([, fx]) => (fx.domain ?? 'banking') === 'banking',
-  );
+  // assertions in tests/spec-validation.insurance.test.mjs. Multi-domain
+  // fixtures include banking endpoints too, so they're in scope here.
+  const fixtureEntries = Object.entries(manifest.fixtures).filter(([, fx]) => {
+    const ds = Array.isArray(fx.domains) ? fx.domains : [fx.domain ?? 'banking'];
+    return ds.includes('banking');
+  });
 
-  it('the banking test matrix covers 18 personas × 3 LFIs', () => {
-    expect(fixtureEntries.length).toBe(54);
+  it('the banking test matrix covers 26 personas × 3 LFIs (18 banking + 8 multi-domain)', () => {
+    expect(fixtureEntries.length).toBe(78);
   });
 
   for (const [key, fx] of fixtureEntries) {

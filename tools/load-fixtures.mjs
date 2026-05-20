@@ -37,12 +37,27 @@ export function loadAllPersonas() {
   return out;
 }
 
-// Convenience filter — most banking-pipeline test sites want to skip
-// non-banking personas until the domain dispatcher lands in slice 6b-ii.
+/**
+ * The persona's declared domain(s). Single-domain personas carry a
+ * `domain:` (singular) string; Phase 2.2+ multi-domain personas carry
+ * a `domains:` (plural) array — both shapes are valid. Returns an
+ * array so call sites can `.includes()` regardless of the underlying
+ * shape.
+ */
+export function personaDomains(persona) {
+  if (Array.isArray(persona?.domains) && persona.domains.length > 0) {
+    return persona.domains;
+  }
+  return [persona?.domain ?? 'banking'];
+}
+
+// Convenience filter. Multi-domain personas appear in BOTH the banking
+// and insurance result sets (they declare both domains and the fixture
+// pipeline emits both endpoint families under the same persona path).
 export function loadPersonasByDomain(domain) {
   const out = {};
   for (const [id, m] of Object.entries(loadAllPersonas())) {
-    if (m.domain === domain) out[id] = m;
+    if (personaDomains(m).includes(domain)) out[id] = m;
   }
   return out;
 }

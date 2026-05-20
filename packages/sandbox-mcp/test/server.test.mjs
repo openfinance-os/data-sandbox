@@ -92,32 +92,47 @@ describe('sandbox-mcp server', () => {
     expect(names).toEqual([...EXPECTED_TOOLS].sort());
   });
 
-  it('list_personas returns all 27 personas across both domains by default', async () => {
+  it('list_personas returns all 35 personas across both domains by default', async () => {
     const r = await client.callTool({ name: 'list_personas', arguments: {} });
     const payload = JSON.parse(textOf(r));
-    expect(payload.count).toBe(27);
+    // 18 banking + 9 insurance + 8 multi-domain
+    expect(payload.count).toBe(35);
     const ids = payload.personas.map((p) => p.id);
     expect(ids).toContain('salaried_expat_mid');
     expect(ids).toContain('motor_comprehensive_mid');
+    expect(ids).toContain('retail_multi_banker');
+    expect(ids).toContain('emirati_takaful_multi');
+    expect(ids).toContain('hnw_intl_multi');
+    expect(ids).toContain('tech_pro_multi');
+    expect(ids).toContain('recent_expat_multi');
+    expect(ids).toContain('retired_multi');
+    expect(ids).toContain('healthcare_multi');
+    expect(ids).toContain('gcc_commuter_multi');
     expect(payload.domain).toBe('all');
-    // Every entry surfaces its domain so the LLM can route to the right tools.
+    // Every entry surfaces its domain (single string or 'multi') so the
+    // LLM can route to the right tools.
     for (const p of payload.personas) {
-      expect(['banking', 'insurance']).toContain(p.domain);
+      expect(['banking', 'insurance', 'multi']).toContain(p.domain);
     }
   });
 
   it('list_personas filters by domain', async () => {
+    // Multi-domain personas appear in BOTH banking and insurance filters.
     const banking = JSON.parse(
       textOf(await client.callTool({ name: 'list_personas', arguments: { domain: 'banking' } })),
     );
-    expect(banking.count).toBe(18);
-    expect(banking.personas.every((p) => p.domain === 'banking')).toBe(true);
+    expect(banking.count).toBe(26); // 18 single-banking + 8 multi-domain
+    expect(banking.personas.every(
+      (p) => p.domain === 'banking' || p.domain === 'multi',
+    )).toBe(true);
 
     const insurance = JSON.parse(
       textOf(await client.callTool({ name: 'list_personas', arguments: { domain: 'insurance' } })),
     );
-    expect(insurance.count).toBe(9);
-    expect(insurance.personas.every((p) => p.domain === 'insurance')).toBe(true);
+    expect(insurance.count).toBe(17); // 9 single-insurance + 8 multi-domain
+    expect(insurance.personas.every(
+      (p) => p.domain === 'insurance' || p.domain === 'multi',
+    )).toBe(true);
     expect(insurance.personas.map((p) => p.id)).toEqual(
       expect.arrayContaining([
         'motor_comprehensive_mid',

@@ -1,0 +1,192 @@
+persona_id: tech_pro_multi
+domains: [banking, insurance]
+name: "Tech Pro Multi-Banker — Young Salaried 3-Bank Card-Stacker"
+archetype: retail_tech_pro_card_stacker
+default_seed: 22417
+segment: Retail
+stress_coverage:
+  # A young salaried tech worker who card-stacks across three LFIs
+  # (mainstream + digital + secondary mainstream) to mix-and-match
+  # FX, lounge access, cashback tiers. No mortgage, no auto loan —
+  # the multi-LFI footprint is purely card-spend optimisation.
+  - retail_tech_pro_three_bank_card_stacking
+
+demographics:
+  nationality_pool: expat_indian
+  age_band: 26-34
+  emirate: dubai
+
+income:
+  primary_employer_pool: tech_freezone
+  monthly_amount_aed: 35000
+  pay_day: 25
+  variability: low
+  flag_payroll: true
+
+accounts:
+  # ── Salary primary (mainstream Tier-1) ────────────────────────────
+  - type: CurrentAccount
+    at_slot: salary
+    currency: AED
+    age_months: 48
+  - type: CreditCard
+    at_slot: salary
+    currency: AED
+    age_months: 36
+    credit_limit_aed: 40000
+  # ── Digital sidekick (Wio-class) ──────────────────────────────────
+  - type: CurrentAccount
+    at_slot: digital
+    currency: AED
+    age_months: 18
+  - type: CreditCard
+    at_slot: digital
+    currency: AED
+    age_months: 12
+    credit_limit_aed: 20000
+  # ── Everyday-card secondary (a second mainstream relationship) ────
+  - type: CurrentAccount
+    at_slot: everyday-card
+    currency: AED
+    age_months: 24
+  - type: CreditCard
+    at_slot: everyday-card
+    currency: AED
+    age_months: 18
+    credit_limit_aed: 30000
+
+multi_lfi_footprint:
+  slots:
+    - key: salary
+      role: salary_primary
+      lfi_default: Median
+      plausible_lfi_candidates:
+        - "Mashreq Bank"
+        - "Abu Dhabi Commercial Bank"
+        - "Commercial Bank of Dubai"
+    - key: digital
+      role: digital_sidekick
+      lfi_default: Sparse
+      plausible_lfi_candidates:
+        - "Wio Bank"
+        - "Zand Bank"
+    - key: everyday-card
+      role: secondary_card
+      lfi_default: Median
+      plausible_lfi_candidates:
+        - "Emirates NBD"
+        - "First Abu Dhabi Bank"
+
+multi_insurer_footprint:
+  slots:
+    - line: motor
+      key: motor-third-party
+      insurer_default: Median
+      plausible_insurer_candidates:
+        - "Sukoon Insurance"
+        - "Orient Insurance"
+        - "Union Insurance"
+    - line: health
+      key: health-employer
+      insurer_default: Rich
+      plausible_insurer_candidates:
+        - "Daman"
+        - "Mednet"
+        - "AXA Gulf"
+
+insurance:
+  lines: [motor, health]
+
+# Motor — third-party liability on a modest hatchback (no finance)
+vehicle:
+  make: Honda
+  model: Civic
+  year: 2020
+  body_type: Sedan
+  passenger_capacity: 5
+  valuation_aed: 55000
+  registration_emirate: Dubai
+policy:
+  type: ThirdPartyLiability
+  takaful: false
+  excess_aed: 1000
+  start_date_offset_days: 60
+  channel: OnlineInsideUAE
+finance:
+  has_finance: false
+additional_drivers:
+  count: 0
+claims:
+  history_months: 24
+  claims_in_period: 0
+  approved_claims: 0
+  total_gross_aed: 0
+
+# Health — employer-sponsored individual cover
+health:
+  policy:
+    cover_subjects: Self
+    annual_limit_aed: 1000000
+    policyholder_insured: true
+    excess_aed: 250
+    start_date_offset_days: 90
+    channel: Bank
+    takaful: false
+    product_name: Essential Care Plus
+    cover_type: Comprehensive
+    network_tier: Standard
+  claims:
+    history_months: 24
+    claims_in_period: 2
+    approved_claims: 2
+    total_gross_aed: 3800
+
+fixed_commitments:
+  - kind: standing_order
+    purpose: rent_payment
+    at_slot: salary
+    amount_aed: 8500
+    schedule: monthly_27
+  - kind: direct_debit
+    purpose: credit_card_repayment_card_digital
+    at_slot: digital
+    amount_aed_band: [600, 2200]
+    schedule: monthly_12
+  - kind: direct_debit
+    purpose: credit_card_repayment_card_everyday
+    at_slot: everyday-card
+    amount_aed_band: [1500, 4500]
+    schedule: monthly_10
+  - kind: direct_debit
+    purpose: utilities_dewa
+    at_slot: salary
+    amount_aed_band: [350, 700]
+    schedule: monthly_5
+  - kind: direct_debit
+    purpose: motor_insurance_premium
+    at_slot: salary
+    amount_aed_band: [180, 280]
+    schedule: monthly_22
+
+spend_profile:
+  groceries_aed_per_month_band: [1500, 2500]
+  fuel_aed_per_month_band: [500, 900]
+  dining_per_month_count_band: [12, 24]
+
+fx_activity: false
+cash_deposit_activity: false
+
+distress_signals:
+  nsf_events_per_year_band: [0, 0]
+
+narrative: |
+  A 26–34yo expat tech professional (AED 35k/mo WPS payroll) in
+  Dubai who optimises card spend across three LFIs: a Tier-1
+  mainstream salary primary holds the day-to-day account + a
+  cashback card, a digital sidekick hosts the no-FX-fee online-
+  spend card, and a secondary mainstream relationship provides
+  the lounge-access / airline-co-brand card. No mortgage, no
+  auto loan — the persona's load-bearing stress is purely
+  card-stack visibility across LFIs (the kind of consumer the
+  Connect three-journey J1 single-LFI flow under-serves, because
+  no single bank sees the full spend).

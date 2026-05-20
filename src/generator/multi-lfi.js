@@ -30,14 +30,68 @@
 import { makePrng, rngInt } from '../prng.js';
 import { mod97IbanCheck } from './identity.js';
 
-// Role → short id-suffix code. Kept to 2 chars so the resulting
-// BeneficiaryId stays under the v2.1 spec's 40-char maxLength even on
-// the longest persona slug ("sme-ecommerce-marketplace-acct-01" = 33
-// chars; "-x2" / "-x3" pushes to 36 — comfortable headroom).
-const ROLES = [
-  { role: 'secondary', code: 'x2' },
-  { role: 'tertiary', code: 'x3' },
-];
+// Slot suffix codes derived from slot index. Slots[1] → x2/s2,
+// slots[2] → x3/s3, etc. For SME personas migrated from the legacy
+// {primary, secondary, tertiary} shape, slots[1].key='secondary' →
+// code 'x2'/'s2' and slots[2].key='tertiary' → 'x3'/'s3', preserving
+// byte-identity with pre-Phase-2.2 fixtures.
+//
+// Codes kept to 2 chars so BeneficiaryId stays under v2.1's 40-char
+// maxLength: a 33-char persona-slug + "-acct-01" + "-xN" = 39.
+
+/**
+ * Normalise a persona's `multi_lfi_footprint` to a canonical
+ * `{ slots: [...] }` shape. Accepts either:
+ *
+ *   - Legacy (D-14): `{ primary, secondary?, tertiary? }` where each
+ *     slot is `{ role, lfi_default, plausible_lfi_candidates }`. Walked
+ *     in fixed primary→secondary→tertiary order.
+ *   - Phase 2.2+: `{ slots: [{ key, role, lfi_default,
+ *     plausible_lfi_candidates }, ...] }` — slots[0] is the primary,
+ *     slots[1..] are the role-bundle slots.
+ *
+ * Returns: `{ slots: [...] }` with each slot carrying:
+ *   - `key`     — the URL/identifier segment ('primary' for slots[0] in
+ *                 the legacy shape; persona-declared kebab id in the
+ *                 array shape).
+ *   - `role`, `lfi_default`, `plausible_lfi_candidates` — pass-through.
+ *   - `xCode`   — 'x{i+1}' BeneficiaryId suffix (slot 1 → 'x2', etc.)
+ *   - `txCode`  — 's{i+1}' TransactionId suffix (slot 1 → 's2', etc.)
+ *
+ * Returns null for missing / empty footprints.
+ */
+export function normalizeFootprint(footprint) {
+  if (!footprint) return null;
+  let raw;
+  if (Array.isArray(footprint.slots)) {
+    raw = footprint.slots.filter((s) => s != null);
+  } else {
+    raw = [];
+    for (const k of ['primary', 'secondary', 'tertiary']) {
+      const v = footprint[k];
+      if (v == null) continue;
+      raw.push({ ...v, key: k });
+    }
+  }
+  if (raw.length === 0) return null;
+  const slots = raw.map((s, i) => ({
+    ...s,
+    key: s.key ?? (i === 0 ? 'primary' : `slot-${i + 1}`),
+    xCode: `x${i + 1}`,
+    txCode: `s${i + 1}`,
+  }));
+  return { slots };
+}
+
+/**
+ * Find the slot in a normalised footprint by `key`. Returns the slot
+ * object (with `xCode`/`txCode` attached) or null.
+ */
+export function findSlotByKey(footprint, slotKey) {
+  const fp = normalizeFootprint(footprint);
+  if (!fp) return null;
+  return fp.slots.find((s) => s.key === slotKey) ?? null;
+}
 
 /**
  * Deterministic cross-LFI self-IBAN derivation. Pure function of
@@ -116,11 +170,9 @@ export function purposeToRole(purpose) {
 export function pickFootprintBankForPurpose(persona, purpose, counterpartyBanksPool) {
   const role = purposeToRole(purpose);
   if (!role) return null;
-  const fp = persona.multi_lfi_footprint;
+  const fp = normalizeFootprint(persona.multi_lfi_footprint);
   if (!fp) return null;
-  const slot = ['primary', 'secondary', 'tertiary']
-    .map((s) => fp[s])
-    .find((v) => v?.role === role);
+  const slot = fp.slots.find((s) => s.role === role);
   if (!slot) return null;
   const candidates = (slot.plausible_lfi_candidates ?? [])
     .map((name) => counterpartyBanksPool.banks.find((b) => b.name === name))
@@ -140,7 +192,13 @@ export function pickFootprintBankForPurpose(persona, purpose, counterpartyBanksP
  * candidate matches, returns null and the role is silently skipped —
  * a manifest with malformed candidate names won't crash the build.
  */
-function pickRoleBank(personaId, role, slot, counterpartyBanksPool) {
+// IMPORTANT: the second argument is the SLOT KEY (e.g. 'secondary',
+// 'mortgage-lender', 'salary'), NOT the role enum value (e.g.
+// 'salary_primary', 'mortgage_lender'). Every caller passes slot.key
+// — the PRNG seed must remain the slot identifier so cross-bundle
+// IBAN identity holds (the slot key is the URL segment, the role is
+// the functional category).
+function pickRoleBank(personaId, slotKey, slot, counterpartyBanksPool) {
   const candidates = slot?.plausible_lfi_candidates ?? [];
   if (candidates.length === 0) return null;
   // Filter to candidates that exist in the counterparty-bank pool.
@@ -153,7 +211,7 @@ function pickRoleBank(personaId, role, slot, counterpartyBanksPool) {
     .map((name) => counterpartyBanksPool.banks.find((b) => b.name === name))
     .filter(Boolean);
   if (inPool.length === 0) return null;
-  const rng = makePrng(personaId, 'cross-lfi-role-bank', role);
+  const rng = makePrng(personaId, 'cross-lfi-role-bank', slotKey);
   const idx = rngInt(rng, 0, inPool.length);
   return inPool[idx];
 }
@@ -191,6 +249,16 @@ function pickRoleBank(personaId, role, slot, counterpartyBanksPool) {
  * default (AED) unless the role implies USD (trade_finance).
  */
 export function projectPersonaForRole(persona, slotKey, bank) {
+  // ROLE_TO_ACCOUNT_TYPE is consulted ONLY on the legacy single-account
+  // projection path — i.e. when the persona has no at_slot tags on its
+  // accounts. For Phase 2.2 multi-product personas (every account
+  // tagged), the projected role-bundle accounts come straight from the
+  // persona's `accounts` filtered by `at_slot`, ignoring this table.
+  // `mortgage_lender: CurrentAccount` therefore reflects what to emit
+  // when a persona declares the role WITHOUT at_slot tags — the
+  // realistic "primary deposit account at the mortgage bank", not the
+  // mortgage product itself (the persona would declare a Mortgage in
+  // accounts[] separately to model that).
   const ROLE_TO_ACCOUNT_TYPE = {
     operating: 'CurrentAccount',
     trade_finance: 'CurrentAccount',
@@ -198,8 +266,14 @@ export function projectPersonaForRole(persona, slotKey, bank) {
     islamic_deposit: 'Savings',
     escrow: 'CurrentAccount',
     digital_challenger: 'CurrentAccount',
+    // Phase 2.2 retail roles
+    salary_primary: 'CurrentAccount',
+    secondary_card: 'CurrentAccount',
+    digital_sidekick: 'CurrentAccount',
+    international_branch: 'CurrentAccount',
+    mortgage_lender: 'CurrentAccount',
   };
-  const slot = persona.multi_lfi_footprint?.[slotKey];
+  const slot = findSlotByKey(persona.multi_lfi_footprint, slotKey);
   if (!slot) return null;
   const accountType = ROLE_TO_ACCOUNT_TYPE[slot.role] ?? 'CurrentAccount';
   // Currency: trade_finance slots typically denominate in USD; everything
@@ -209,26 +283,68 @@ export function projectPersonaForRole(persona, slotKey, bank) {
   // matching how buildCrossLfiSelfBeneficiaries derives the primary
   // bundle's self-to-<slotKey> beneficiary IBAN — that's how the cross-
   // bundle reference loop closes.
-  const iban = deriveCrossLfiSelfIban(persona.persona_id, slotKey, bank);
-  return {
-    ...persona,
-    // The projected persona keeps the same persona_id so PartyId etc.
-    // resolve consistently across primary and role bundles. The account
-    // index restarts at 1 so the AccountId fits in the 40-char maxLength.
-    accounts: [
+  const anchorIban = deriveCrossLfiSelfIban(persona.persona_id, slotKey, bank);
+
+  // Phase 2.2 — multi-product per LFI. If the persona has any account
+  // tagged with `at_slot`, project ALL accounts whose at_slot matches
+  // this slotKey (e.g. a CurrentAccount + a CreditCard at the same
+  // secondary LFI). Otherwise fall back to the legacy single-account
+  // heuristic so SME personas still produce byte-identical role bundles.
+  const sourceAccounts = persona.accounts ?? [];
+  const hasAtSlotTags = sourceAccounts.some((a) => a.at_slot != null);
+  let projectedAccounts;
+  if (hasAtSlotTags) {
+    const slotAccounts = sourceAccounts.filter((a) => a.at_slot === slotKey);
+    if (slotAccounts.length > 0) {
+      // First account in the slot — whatever its AccountSubType — gets
+      // the cross-LFI self-IBAN that matches the primary bundle's
+      // self-to-<slotKey> beneficiary. Slots without a CurrentAccount
+      // (e.g. an islamic_deposit slot whose primary product is a
+      // Savings) anchor on whichever account is declared first. Other
+      // products get derived-but-distinct IBANs so each Account record
+      // has a unique identifier.
+      projectedAccounts = slotAccounts.map((acc, i) => ({
+        ...acc,
+        _bankOverride: bank,
+        _ibanOverride: i === 0
+          ? anchorIban
+          : deriveCrossLfiSelfIban(
+              persona.persona_id,
+              `${slotKey}__product_${i}`,
+              bank,
+            ),
+      }));
+    }
+  }
+  if (!projectedAccounts) {
+    // Legacy single-account projection (SME path).
+    projectedAccounts = [
       {
         type: accountType,
         currency,
         age_months: 36,
         _bankOverride: bank,
-        _ibanOverride: iban,
+        _ibanOverride: anchorIban,
       },
-    ],
-    // No fixed commitments / cash-flow at the role bundle — the role-LFI
-    // sees only its slice of the persona's banking life. The primary
-    // bundle remains the source-of-truth for SOs, DDs, full transaction
-    // history.
-    fixed_commitments: [],
+    ];
+  }
+
+  return {
+    ...persona,
+    // The projected persona keeps the same persona_id so PartyId etc.
+    // resolve consistently across primary and role bundles. The account
+    // index restarts at 1 so the AccountId fits in the 40-char maxLength.
+    accounts: projectedAccounts,
+    // Phase 2.2 — when the persona declares at_slot on its
+    // fixed_commitments, pass through only the ones matching THIS
+    // slot so each role bundle hosts its own SOs/DDs (e.g. the
+    // mortgage-lender slot's role bundle shows the mortgage_payment
+    // standing order). Legacy SME personas (no at_slot tags on
+    // commitments) clear fixed_commitments here — preserves the
+    // pre-2.2 "role bundle has no SOs/DDs" behaviour.
+    fixed_commitments: (persona.fixed_commitments ?? []).some((c) => c.at_slot != null)
+      ? (persona.fixed_commitments ?? []).filter((c) => c.at_slot === slotKey)
+      : [],
     cash_flow: undefined,
     // Role bundle has no merchant retail spend either — those land at the
     // operating LFI.
@@ -262,7 +378,7 @@ export function projectPersonaForRole(persona, slotKey, bank) {
  * src/generator/index.js → multi-lfi.js → index.js.
  */
 export async function buildRoleBundle({ persona, slot: slotKey, lfi, seed, pools, now }) {
-  const slot = persona.multi_lfi_footprint?.[slotKey];
+  const slot = findSlotByKey(persona.multi_lfi_footprint, slotKey);
   if (!slot) return null;
   // Resolve the indexed-pools structure to the active counterparty-bank
   // pool. build-fixture-package.mjs passes the full indexedPools object.
@@ -276,6 +392,53 @@ export async function buildRoleBundle({ persona, slot: slotKey, lfi, seed, pools
   if (!projected) return null;
   const { buildBundle } = await import('./index.js');
   return buildBundle({ persona: projected, lfi, seed, pools, now });
+}
+
+/**
+ * List the slot keys for which a persona has declared role bundles
+ * (i.e. all non-primary slots in its footprint). Returns [] for
+ * personas without a footprint. Stable, deterministic order matching
+ * the footprint declaration.
+ */
+export function listRoleSlotKeys(persona) {
+  const fp = normalizeFootprint(persona?.multi_lfi_footprint);
+  if (!fp) return [];
+  return fp.slots.slice(1).map((s) => s.key);
+}
+
+/**
+ * Phase 2.2 — resolve the deterministic bank for a named slot in a
+ * persona's banking footprint. Used by cross-domain code paths (e.g.
+ * a home-insurance generator wanting the persona's mortgage_lender
+ * slot's bank for `Mortgage.BankName`) to keep the linkage consistent
+ * with what the banking pipeline will emit.
+ *
+ * Returns the bank object from `counterpartyBanksPool`, or null if the
+ * slot doesn't exist or its candidates don't resolve in the pool.
+ */
+export function pickFootprintSlotBank(persona, slotKey, counterpartyBanksPool) {
+  const slot = findSlotByKey(persona?.multi_lfi_footprint, slotKey);
+  if (!slot) return null;
+  return pickRoleBank(persona.persona_id, slotKey, slot, counterpartyBanksPool);
+}
+
+/**
+ * Phase 2.2 — find the `cross_domain_link` (a banking slot key) declared
+ * by a persona's `multi_insurer_footprint.slots[]` for a given insurance
+ * line. Returns the slot key string, or null if no link is declared.
+ *
+ *   line: 'home' → looks for the first multi_insurer_footprint.slots[]
+ *                  entry with line==='home' and a cross_domain_link set.
+ */
+export function findInsuranceCrossDomainLink(persona, line) {
+  const slots = persona?.multi_insurer_footprint?.slots;
+  if (!Array.isArray(slots)) return null;
+  for (const s of slots) {
+    if (s?.line === line && typeof s?.cross_domain_link === 'string') {
+      return s.cross_domain_link;
+    }
+  }
+  return null;
 }
 
 /**
@@ -350,12 +513,25 @@ const ROLE_AMOUNT_BANDS_AED = {
 };
 
 export function computeCrossLfiLedger({ persona, primaryAccountId, primaryIban, counterpartyBanksPool, now }) {
-  const out = { primary: [], secondary: [], tertiary: [] };
-  if (!persona.multi_lfi_footprint) return out;
+  // Output is keyed by slot.key. For SME personas (legacy
+  // primary/secondary/tertiary footprints), normalizeFootprint
+  // synthesises keys 'primary'/'secondary'/'tertiary' so existing
+  // callers reading `out.secondary` / `out.tertiary` keep working.
+  const out = { primary: [] };
+  const fp = normalizeFootprint(persona.multi_lfi_footprint);
+  if (!fp) return { primary: [], secondary: [], tertiary: [] };
 
-  for (const slotKey of ['secondary', 'tertiary']) {
-    const slot = persona.multi_lfi_footprint[slotKey];
-    if (!slot) continue;
+  // Pre-populate empty arrays for every slot key so consumers that
+  // index `ledger[slotKey]` without prior knowledge of the slot set
+  // always see an array.
+  for (const slot of fp.slots) {
+    if (slot.key !== 'primary') out[slot.key] = [];
+  }
+
+  // Non-primary slots (slots[0] is the primary by convention).
+  for (let i = 1; i < fp.slots.length; i++) {
+    const slot = fp.slots[i];
+    const slotKey = slot.key;
     const slotBank = pickRoleBank(persona.persona_id, slotKey, slot, counterpartyBanksPool);
     if (!slotBank) continue;
     const roleIban = deriveCrossLfiSelfIban(persona.persona_id, slotKey, slotBank);
@@ -377,7 +553,7 @@ export function computeCrossLfiLedger({ persona, primaryAccountId, primaryIban, 
       monthAnchor.setUTCHours(11, 0, 0, 0);
       const isoNoMs = monthAnchor.toISOString().replace(/\.\d{3}Z$/, 'Z');
       const reference = `XLFI-${slotKey.slice(0, 3).toUpperCase()}-${String(m + 1).padStart(2, '0')}`;
-      const txIdBase = `${persona.persona_id.replace(/_/g, '-')}-xlfi-${slotKey === 'secondary' ? 's2' : 's3'}-${String(m + 1).padStart(2, '0')}`;
+      const txIdBase = `${persona.persona_id.replace(/_/g, '-')}-xlfi-${slot.txCode}-${String(m + 1).padStart(2, '0')}`;
 
       out.primary.push({
         _accountId: primaryAccountId,
@@ -430,25 +606,25 @@ export function computeCrossLfiLedger({ persona, primaryAccountId, primaryIban, 
 }
 
 export function buildCrossLfiSelfBeneficiaries({ persona, accounts, identity, pools }) {
-  const footprint = persona.multi_lfi_footprint;
-  if (!footprint) return [];
+  const fp = normalizeFootprint(persona.multi_lfi_footprint);
+  if (!fp) return [];
   const operating = accounts.find((a) => a._meta?.kind === 'CurrentAccount');
   if (!operating) return [];
 
   const out = [];
-  for (const { role, code } of ROLES) {
-    const slot = footprint[role];
-    if (!slot) continue;
-    const bank = pickRoleBank(persona.persona_id, role, slot, pools.counterpartyBanks);
+  // Non-primary slots only — slots[0] is the persona's own primary.
+  for (let i = 1; i < fp.slots.length; i++) {
+    const slot = fp.slots[i];
+    const bank = pickRoleBank(persona.persona_id, slot.key, slot, pools.counterpartyBanks);
     if (!bank) continue;
-    const iban = deriveCrossLfiSelfIban(persona.persona_id, role, bank);
+    const iban = deriveCrossLfiSelfIban(persona.persona_id, slot.key, bank);
     out.push({
       _accountId: operating.AccountId,
-      _crossLfiRole: role,                  // stripped before envelope finalisation
-      BeneficiaryId: `${operating.AccountId}-${code}`,
+      _crossLfiRole: slot.key,              // stripped before envelope finalisation
+      BeneficiaryId: `${operating.AccountId}-${slot.xCode}`,
       BeneficiaryType: 'Activated',
       AddedViaOF: false,
-      Reference: `self-to-${role}`,
+      Reference: `self-to-${slot.key}`,
       AccountHolderName: identity.fullName,
       CreditorAgent: {
         SchemeName: 'BICFI',

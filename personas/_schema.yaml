@@ -92,12 +92,28 @@ accounts:
     currency: <ISO 4217>
     age_months: <int>
     credit_limit_aed: <int?>   # only on CreditCard
+    at_slot: <slot.key>?       # Phase 2.2 — required only for personas
+                               # that hold accounts at >1 LFI. Anchors
+                               # each account to one of the slots declared
+                               # in multi_lfi_footprint.slots[]. Tagged
+                               # accounts at non-primary slots appear in
+                               # the corresponding role bundle at
+                               # `bundles/<persona>/<slot.key>/<lfi>/`.
+                               # All-or-nothing: enforced by
+                               # lint-persona-spec-conformance.
 fixed_commitments:
   - kind: <standing_order|direct_debit>
     purpose: <string>
     amount_aed: <int?>
     amount_aed_band: <[int, int]?>
     schedule: <monthly_<day>|weekly_<weekday>|annual_<month_<day>>>
+    at_slot: <slot.key>?       # Phase 2.2 — when present, the SO/DD
+                               # originates from that slot's CurrentAccount
+                               # (e.g. mortgage_payment at_slot: mortgage-lender
+                               # → the mortgage-lender slot's CurrentAccount in
+                               # the role bundle, not the salary primary).
+                               # All-or-nothing: enforced by
+                               # lint-persona-spec-conformance.
 spend_profile:
   groceries_aed_per_month_band: <[int, int]?>
   fuel_aed_per_month_band: <[int, int]?>
@@ -116,6 +132,10 @@ enable_refunds: <bool>                         # optional; default false.
 distress_signals:
   nsf_events_per_year_band: <[int, int]>
 multi_lfi_footprint:                           # optional; D-14
+  # TWO ACCEPTED SHAPES — normalizeFootprint() in src/generator/multi-lfi.js
+  # canonicalises both to a slots[] array internally.
+  #
+  # Shape A (legacy D-14): up to three named slots.
   primary:                                     # required if block present
     role: <enum: operating|trade_finance|acquiring|islamic_deposit|escrow|digital_challenger>
     lfi_default: <enum: Rich|Median|Sparse>    # anonymous populate-rate label;
@@ -134,3 +154,36 @@ multi_lfi_footprint:                           # optional; D-14
     lfi_default: <enum: Rich|Median|Sparse>
     plausible_lfi_candidates:
       - <bank_name_string>
+  #
+  # Shape B (Phase 2.2+): N-slot array — preferred for new personas
+  # needing more than 3 banking relationships (e.g. retail multi-banked
+  # customers). slots[0] is the primary (the persona's "main" LFI);
+  # slots[1..] become role bundles at bundles/<persona>/<slot.key>/<lfi>/
+  # seed-<n>/. Order matters for cross-LFI ledger Transaction IDs.
+  slots:
+    - key: <kebab id; URL segment, e.g. "salary", "everyday-card",
+            "digital", "mortgage-lender">
+      role: <enum: operating|trade_finance|acquiring|islamic_deposit|escrow|
+                   digital_challenger|salary_primary|secondary_card|
+                   digital_sidekick|international_branch|mortgage_lender>
+      lfi_default: <enum: Rich|Median|Sparse>
+      plausible_lfi_candidates:
+        - <bank_name_string>
+
+multi_insurer_footprint:                       # optional; Phase 2.2.
+  # Same shape as the banking slots[], but for insurance carriers. Each
+  # slot binds one insurance line (motor/home/health/etc.) to a candidate
+  # set of real UAE insurers. Used by multi-domain retail personas
+  # holding policies across several carriers.
+  slots:
+    - line: <enum: motor|home|health|life|travel|renters|employment>
+      key: <kebab id; e.g. "motor-primary", "home-mortgage">
+      insurer_default: <enum: Rich|Median|Sparse>     # anonymous
+      plausible_insurer_candidates:                   # real UAE insurer
+        - <insurer_name_string>                       # names allowed here
+      cross_domain_link: <multi_lfi_footprint slot.key reference>?
+                                                     # optional — anchors
+                                                     # this insurance slot
+                                                     # to a banking slot
+                                                     # (e.g. home insurance
+                                                     # to mortgage_lender).

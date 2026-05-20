@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import yaml from 'js-yaml';
-import { repoRoot } from '../tools/load-fixtures.mjs';
+import { repoRoot, personaDomains } from '../tools/load-fixtures.mjs';
 
 const MANIFEST_DIR = path.join(repoRoot, 'personas');
 
@@ -59,14 +59,35 @@ describe('persona manifests — EXP-02', () => {
   it.each(manifests)('%s conforms to the schema shape', (file) => {
     const m = yaml.load(fs.readFileSync(path.join(MANIFEST_DIR, file), 'utf8'));
 
-    expect(ALLOWED_DOMAINS.has(m.domain), `${file} has invalid domain ${m.domain}`).toBe(true);
-    let required = REQUIRED_BY_DOMAIN[m.domain];
-    if (m.domain === 'insurance') {
-      const line = m.line ?? 'motor';
-      expect(REQUIRED_BY_INSURANCE_LINE[line], `${file} has unknown insurance line ${line}`).toBeTruthy();
-      required = REQUIRED_BY_INSURANCE_LINE[line];
+    // Phase 2.2+ — accept both single `domain:` and array `domains:[]`.
+    const declaredDomains = personaDomains(m);
+    for (const d of declaredDomains) {
+      expect(ALLOWED_DOMAINS.has(d), `${file} has invalid domain ${d}`).toBe(true);
     }
-    for (const key of required) {
+    // Required-key set is the union of every declared domain's required
+    // keys. For multi-domain insurance personas, the line-specific keys
+    // (motor/home/etc.) are resolved via insurance.lines[] when present;
+    // otherwise the legacy single-line `line:` discriminator applies.
+    const requiredKeys = new Set();
+    if (declaredDomains.includes('banking')) {
+      for (const k of REQUIRED_BY_DOMAIN.banking) requiredKeys.add(k);
+    }
+    if (declaredDomains.includes('insurance')) {
+      const lines = Array.isArray(m.insurance?.lines)
+        ? m.insurance.lines
+        : [m.line ?? 'motor'];
+      for (const line of lines) {
+        expect(REQUIRED_BY_INSURANCE_LINE[line], `${file} has unknown insurance line ${line}`).toBeTruthy();
+        for (const k of REQUIRED_BY_INSURANCE_LINE[line]) requiredKeys.add(k);
+      }
+    }
+    // `domain` is required only for single-domain personas; multi-domain
+    // personas use `domains:[]` (skip the `domain` requirement when the
+    // array form is present).
+    if (Array.isArray(m.domains) && m.domains.length > 0) {
+      requiredKeys.delete('domain');
+    }
+    for (const key of requiredKeys) {
       expect(m, `${file} missing required key ${key}`).toHaveProperty(key);
     }
     expect(m.persona_id).toMatch(/^[a-z][a-z0-9_]*$/);
@@ -77,15 +98,20 @@ describe('persona manifests — EXP-02', () => {
     expect(m.stress_coverage.length).toBeGreaterThan(0);
     expect(typeof m.default_seed).toBe('number');
 
-    if (m.domain === 'banking') {
+    if (declaredDomains.includes('banking')) {
       expect(Array.isArray(m.accounts)).toBe(true);
       expect(m.accounts.length).toBeGreaterThan(0);
       for (const a of m.accounts) {
         expect(a).toHaveProperty('type');
         expect(a).toHaveProperty('currency');
       }
-    } else if (m.domain === 'insurance') {
-      const line = m.line ?? 'motor';
+    }
+    if (declaredDomains.includes('insurance')) {
+      const insLines = Array.isArray(m.insurance?.lines)
+        ? m.insurance.lines
+        : [m.line ?? 'motor'];
+      // Run per-line shape checks for every line the persona claims.
+      for (const line of insLines) {
       if (line === 'motor') {
         expect(m.vehicle).toHaveProperty('make');
         expect(m.vehicle).toHaveProperty('model');
@@ -127,6 +153,7 @@ describe('persona manifests — EXP-02', () => {
         expect(['Private', 'FederalGovernment']).toContain(m.employment.policy.sector);
         expect(typeof m.employment.policy.term_years).toBe('number');
         expect(typeof m.employment.employer.monthly_income_aed).toBe('number');
+      }
       }
     }
   });
