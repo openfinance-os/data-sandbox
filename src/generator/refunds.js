@@ -34,6 +34,7 @@
 
 import { makePrng, rngInt, rngPick } from '../prng.js';
 import { bankishNarrative } from './realism.js';
+import { attachBankTransactionCode } from './banking/transaction-codes.js';
 
 // Probability that any one eligible POS / ECommerce purchase spawns a
 // refund or reversal. Real-world card refund rates run 1-5% depending
@@ -143,7 +144,7 @@ function maybeRefundOne({ tx, account, cap, rate }) {
     .trim();
   const refSuffix = String(rngInt(sideRng, 100000, 999999));
 
-  return {
+  return attachBankTransactionCode({
     _accountId: account.AccountId,
     TransactionId: `${tx.TransactionId}-rfd`,
     TransactionReference: `${tag}${refSuffix}`,
@@ -169,7 +170,7 @@ function maybeRefundOne({ tx, account, cap, rate }) {
     _refundOf: tx.TransactionId,
     _refundKind: subType,
     _mccCategory: tx._mccCategory ?? null,
-  };
+  });
 }
 
 function parseOriginal(tx) {
