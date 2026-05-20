@@ -134,7 +134,15 @@ export function buildInsuranceBundle({ persona, lfi, seed, pools, now = DEFAULT_
   // by the upstream line generator's draw count. Consents come AFTER LFI
   // redaction (each per-line builder applies the redaction itself) — the
   // consent record itself isn't subject to LFI bands.
-  const consentRng = makePrng(persona.persona_id, 'consents', seed);
+  //
+  // Phase 2.2 — the line is included in the consent PRNG seed so that
+  // multi-domain personas (whose buildMultiDomainBundle calls this
+  // function once per declared line, all with the same persona_id +
+  // seed) get a DISTINCT ConsentId per line. Without the line in the
+  // seed, motor/home/travel consents collide on identical IDs and the
+  // /insurance-consents/{ConsentId} detail endpoint overwrites itself
+  // — a TPP asking for the motor consent would get travel data back.
+  const consentRng = makePrng(persona.persona_id, 'consents', line, seed);
   bundle.consents = [generateConsentRecord({ persona, rng: consentRng, now })];
   return bundle;
 }

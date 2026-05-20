@@ -113,6 +113,57 @@ describe('Phase 2.2 — multi-domain bundle dispatch', () => {
   });
 });
 
+describe('Phase 2.2 — multi-line consent uniqueness', () => {
+  // Greptile P1 guard: a real multi-line multi-domain persona must
+  // produce DISTINCT ConsentId values per line. Without the line in
+  // the consent PRNG seed (insurance/index.js), all three lines'
+  // consents collide on the same id and the /insurance-consents/{id}
+  // detail endpoint overwrites itself — a TPP fetching the motor
+  // ConsentId would get travel data back.
+  const persona = loadPersona('retail_multi_banker');
+  const pools = loadAllPools();
+
+  it('emits one consent per declared insurance line', () => {
+    const bundle = buildBundle({
+      persona, lfi: 'rich', seed: persona.default_seed, pools, now: NOW,
+    });
+    const lines = persona.insurance?.lines ?? [];
+    expect(lines.length).toBeGreaterThan(1);
+    expect(Array.isArray(bundle.consents)).toBe(true);
+    expect(bundle.consents.length).toBe(lines.length);
+  });
+
+  it('every consent carries a globally-unique ConsentId', () => {
+    const bundle = buildBundle({
+      persona, lfi: 'rich', seed: persona.default_seed, pools, now: NOW,
+    });
+    const ids = bundle.consents.map((c) => c.ConsentId);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('every consent\'s detail endpoint resolves to the matching record', () => {
+    const bundle = buildBundle({
+      persona, lfi: 'rich', seed: persona.default_seed, pools, now: NOW,
+    });
+    const envelopes = envelopesFromBundle(bundle, {
+      personaId: persona.persona_id,
+      lfi: 'rich',
+      seed: persona.default_seed,
+      specVersion: 'v2.1',
+      specSha: 'test',
+      retrievedAt: NOW.toISOString(),
+    });
+    // Each ConsentId must own its own detail endpoint (no overwrites).
+    for (const consent of bundle.consents) {
+      const detailKey = `/insurance-consents/${consent.ConsentId}`;
+      expect(envelopes[detailKey], `${detailKey} missing`).toBeTruthy();
+      // The detail envelope's Data must be THIS consent's record —
+      // ConsentId must match (sanity check that we didn't overwrite).
+      expect(envelopes[detailKey].Data.ConsentId).toBe(consent.ConsentId);
+    }
+  });
+});
+
 describe('personaDomains helper', () => {
   it('returns [domain] for single-domain personas', () => {
     expect(personaDomains({ domain: 'banking' })).toEqual(['banking']);

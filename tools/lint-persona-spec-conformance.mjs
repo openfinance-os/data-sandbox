@@ -319,6 +319,45 @@ for (const file of listManifests()) {
       }
     }
   }
+
+  // Phase 2.2 — multi_insurer_footprint slot validation. Same shape
+  // as the banking footprint above: `line` ∈ INSURANCE_LINE,
+  // `insurer_default` ∈ {Rich,Median,Sparse}, `plausible_insurer_candidates`
+  // is an array of strings, optional `cross_domain_link` references a
+  // declared banking-slot key.
+  const insurerFootprint = m?.multi_insurer_footprint;
+  if (insurerFootprint && typeof insurerFootprint === 'object') {
+    const insurerSlots = Array.isArray(insurerFootprint.slots)
+      ? insurerFootprint.slots
+      : [];
+    insurerSlots.forEach((s, i) => {
+      if (s == null) return;
+      const label = `multi_insurer_footprint.slots[${i}]`;
+      checkEnum(file, `${label}.line`, s.line, INSURANCE_LINE);
+      checkEnum(file, `${label}.insurer_default`, s.insurer_default, LFI_DEFAULTS);
+      if (s.plausible_insurer_candidates != null
+        && !Array.isArray(s.plausible_insurer_candidates)) {
+        bad(file, `${label}.plausible_insurer_candidates must be an array of strings`);
+      }
+      // cross_domain_link must reference a declared banking-slot key
+      // (mirrors the at_slot validation above).
+      if (s.cross_domain_link != null) {
+        if (typeof s.cross_domain_link !== 'string') {
+          bad(file, `${label}.cross_domain_link must be a string`);
+        } else if (declaredSlotKeys.size === 0) {
+          bad(
+            file,
+            `${label}.cross_domain_link=${JSON.stringify(s.cross_domain_link)} but persona declares no multi_lfi_footprint slots`,
+          );
+        } else if (!declaredSlotKeys.has(s.cross_domain_link)) {
+          bad(
+            file,
+            `${label}.cross_domain_link=${JSON.stringify(s.cross_domain_link)} doesn't match any declared banking-slot key (have: {${[...declaredSlotKeys].join('|')}})`,
+          );
+        }
+      }
+    });
+  }
 }
 
 if (violations > 0) {
