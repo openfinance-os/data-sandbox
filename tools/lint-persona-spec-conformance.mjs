@@ -3,7 +3,8 @@
 // (segment / accounts[].type / accounts[].account_type /
 // organisation.signatories[].account_role /
 // organisation.signatories[].party_type) MUST be drawn from the pinned
-// v2.1-errata1 OpenAPI enum. No hand-authored enum values.
+// OpenAPI enum (banking: v2.1-errata2, insurance: v2.1-errata1). No
+// hand-authored enum values.
 //
 // Banking enums loaded from spec/uae-account-information-openapi.yaml:
 //   - AEBankDataSharing.AEExternalAccountSubTypeCode
@@ -109,7 +110,7 @@ function checkEnum(file, fieldLabel, value, allowed) {
   if (!allowed.has(value)) {
     bad(
       file,
-      `${fieldLabel}=${JSON.stringify(value)} is not in v2.1-errata1 spec enum {${[...allowed].join('|')}}`,
+      `${fieldLabel}=${JSON.stringify(value)} is not in the pinned spec enum {${[...allowed].join('|')}}`,
     );
   }
 }

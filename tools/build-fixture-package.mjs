@@ -15,6 +15,7 @@ import {
   readPackageVersion,
   readNowAnchor,
   readSpecSha,
+  readSpecVersions,
   safeEndpointName as safeName,
 } from './build-shared.mjs';
 
@@ -25,6 +26,10 @@ const PKG_VERSION = readPackageVersion() || '0.0.0';
 const OUT = path.join(repoRoot, 'packages/sandbox-fixtures');
 const NOW_ANCHOR = readNowAnchor();
 const SHA = readSpecSha();
+// Banking and insurance specs are pinned independently — banking on
+// `v2.1-errata2`, insurance on `v2.1-errata1`. Each envelope is stamped
+// with the version that matches its domain.
+const SPEC_VERSIONS = readSpecVersions();
 
 if (fs.existsSync(OUT)) fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(path.join(OUT, 'bundles'), { recursive: true });
@@ -43,7 +48,11 @@ const now = new Date(NOW_ANCHOR);
 const manifest = {
   package: '@openfinance-os/sandbox-fixtures',
   version: PKG_VERSION,
-  specVersion: 'v2.1',
+  // Banking is the primary domain of the npm/PyPI bundle — keep the
+  // back-compat string field on the banking spec. `specVersions` carries
+  // the per-domain breakdown for consumers that need it.
+  specVersion: SPEC_VERSIONS.banking,
+  specVersions: SPEC_VERSIONS,
   specSha: SHA,
   generatedAt: new Date().toISOString(),
   nowAnchor: NOW_ANCHOR,
@@ -99,7 +108,11 @@ async function emitPersona(personaId, persona, domain) {
       personaId,
       lfi,
       seed,
-      specVersion: 'v2.1',
+      // `specVersion` is kept on the banking value for back-compat with
+      // consumers that read a single string; `specVersions` is the
+      // per-domain object that wrapEnvelope / wrapInsurance pick from.
+      specVersion: SPEC_VERSIONS.banking,
+      specVersions: SPEC_VERSIONS,
       specSha: SHA,
       retrievedAt: NOW_ANCHOR,
     };

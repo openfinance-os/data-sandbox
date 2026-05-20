@@ -284,7 +284,7 @@ function wrap(envelope, resourceUri, ctx) {
     _persona: ctx.personaId,
     _lfi: ctx.lfi,
     _seed: ctx.seed,
-    _specVersion: ctx.specVersion ?? null,
+    _specVersion: ctx.specVersions?.banking ?? ctx.specVersion ?? null,
     _specSha: ctx.specSha ?? null,
     _retrievedAt: ctx.retrievedAt,
   };
@@ -300,7 +300,7 @@ function wrapInsurance(envelope, resourceUri, ctx) {
     _lfi: ctx.lfi,
     _seed: ctx.seed,
     _domain: 'insurance',
-    _specVersion: ctx.specVersion ?? null,
+    _specVersion: ctx.specVersions?.insurance ?? ctx.specVersion ?? null,
     _specSha: ctx.specSha ?? null,
     _retrievedAt: ctx.retrievedAt,
   };

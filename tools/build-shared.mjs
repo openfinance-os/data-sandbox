@@ -43,6 +43,33 @@ export function readSpecSha() {
 }
 
 /**
+ * Parsed spec version per domain (from `info.version` in the source YAML).
+ * Reads `dist/SPEC.json` (banking) and `dist/SPEC.insurance.json` (insurance);
+ * both files are produced by `tools/parse-spec.mjs`, which must have run
+ * before this is called. Returns 'unknown' for any missing file so callers
+ * still get a stringable value.
+ *
+ * Banking and insurance are pinned independently — currently banking is on
+ * `v2.1-errata2` while insurance is on `v2.1-errata1` (errata2 didn't
+ * republish the insurance spec).
+ */
+export function readSpecVersions() {
+  const banking = readVersionFromDist('dist/SPEC.json');
+  const insurance = readVersionFromDist('dist/SPEC.insurance.json');
+  return { banking, insurance };
+}
+
+function readVersionFromDist(rel) {
+  const f = path.join(repoRoot, rel);
+  if (!fs.existsSync(f)) return 'unknown';
+  try {
+    return JSON.parse(fs.readFileSync(f, 'utf8')).specVersion ?? 'unknown';
+  } catch {
+    return 'unknown';
+  }
+}
+
+/**
  * Slugify an OpenAPI endpoint path into a filesystem-safe basename.
  * `/accounts/{AccountId}/balances` -> `accounts__AccountId__balances`.
  */
