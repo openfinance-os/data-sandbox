@@ -1,4 +1,4 @@
-export type Domain = 'banking' | 'insurance';
+export type Domain = 'banking' | 'insurance' | 'atm';
 export interface PersonaInfo {
   name: string;
   archetype: string;

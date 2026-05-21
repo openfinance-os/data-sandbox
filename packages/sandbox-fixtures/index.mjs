@@ -10,6 +10,7 @@ const manifest = JSON.parse(readFileSync(path.join(here, 'manifest.json'), 'utf8
 const SPEC_FILE_BY_DOMAIN = {
   banking: 'spec.json',
   insurance: 'spec.insurance.json',
+  atm: 'spec.atm.json',
 };
 
 export function listPersonas(opts = {}) {

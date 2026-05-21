@@ -96,7 +96,7 @@ const INSURANCE_LINE = new Set([
   'employment',
 ]);
 const MOTOR_POLICY_TYPE = enumOfInsurance('AEMotorInsuranceQuoteCoverTypes');
-const VALID_DOMAIN = new Set(['banking', 'insurance']);
+const VALID_DOMAIN = new Set(['banking', 'insurance', 'atm']);
 
 let violations = 0;
 

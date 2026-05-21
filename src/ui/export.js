@@ -30,6 +30,10 @@ const insuranceBaseLinks = (resource) => ({
   Self: `https://example.test/open-finance/insurance/v2.1/${resource}`,
 });
 
+const atmBaseLinks = (resource) => ({
+  Self: `https://example.test/open-finance/atm/v2.1/${resource}`,
+});
+
 /**
  * Build an envelope object per endpoint shape (mirrors the spec-validation
  * test envelopes) so the JSON exports look like real wire payloads.
@@ -57,7 +61,36 @@ export function envelopesFromBundle(bundle, ctx) {
   if (bundle.domain === 'insurance') {
     return insuranceEnvelopesFromBundle(bundle, ctx);
   }
+  if (bundle.domain === 'atm') {
+    return atmEnvelopesFromBundle(bundle, ctx);
+  }
   return bankingEnvelopesFromBundle(bundle, ctx);
+}
+
+/**
+ * ATM domain envelope — Phase 2.3 GA. Single read endpoint `GET /atms`
+ * returning `AEReadAtms1`: { Data: AEReadAtmsData1 (array of ATM
+ * records), Meta: AEReadAtmsMeta1 (LastUpdatedDateTime + TotalRecords) }.
+ * No Links inside the schema's required set — but the sandbox wraps
+ * every envelope with `Links.Self` for consistency with the banking
+ * and insurance shapes (TPPs walking results across the three domains
+ * shouldn't have to special-case ATM).
+ */
+function atmEnvelopesFromBundle(bundle, ctx) {
+  const envelopes = {};
+  const data = (bundle.atms ?? []).map(strip);
+  envelopes['/atms'] = wrapAtm(
+    {
+      Data: data,
+      Meta: {
+        LastUpdatedDateTime: bundle.meta?.LastUpdatedDateTime,
+        TotalRecords: data.length,
+      },
+    },
+    'atms',
+    ctx,
+  );
+  return envelopes;
 }
 
 function bankingEnvelopesFromBundle(bundle, ctx) {
@@ -301,6 +334,27 @@ function wrapInsurance(envelope, resourceUri, ctx) {
     _seed: ctx.seed,
     _domain: 'insurance',
     _specVersion: ctx.specVersions?.insurance ?? ctx.specVersion ?? null,
+    _specSha: ctx.specSha ?? null,
+    _retrievedAt: ctx.retrievedAt,
+  };
+}
+
+// ATM envelope keeps the spec's mandatory `Meta` shape (set by
+// atmEnvelopesFromBundle) and adds only `Links.Self` for cross-domain
+// shape parity. `_specSha` is the ATM-domain pin when available; the
+// fixture-package builder injects it as `ctx.specVersions.atm`.
+function wrapAtm(envelope, resourceUri, ctx) {
+  const { Data, Meta } = envelope;
+  return {
+    Data,
+    Meta,
+    Links: atmBaseLinks(resourceUri),
+    _watermark: watermark(ctx),
+    _persona: ctx.personaId,
+    _lfi: ctx.lfi,
+    _seed: ctx.seed,
+    _domain: 'atm',
+    _specVersion: ctx.specVersions?.atm ?? ctx.specVersion ?? null,
     _specSha: ctx.specSha ?? null,
     _retrievedAt: ctx.retrievedAt,
   };

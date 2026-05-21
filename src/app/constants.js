@@ -78,8 +78,17 @@ export const INSURANCE_JTBD_PRESETS = Object.freeze({
   iloe: { label: 'ILOE', terms: ['iloe_private_category_b'] },
 });
 
+// ATM Locator JTBD presets — Phase 2.3 GA. ATM directory data is
+// infrastructure rather than customer behaviour, so the rail is
+// minimal: a single "Directory" preset surfaces the sentinel persona.
+export const ATM_JTBD_PRESETS = Object.freeze({
+  directory: { label: 'Directory', terms: ['atm_locator_directory_v1_baseline'] },
+});
+
 export function getJtbdPresets(domain) {
-  return domain === 'insurance' ? INSURANCE_JTBD_PRESETS : JTBD_PRESETS;
+  if (domain === 'insurance') return INSURANCE_JTBD_PRESETS;
+  if (domain === 'atm') return ATM_JTBD_PRESETS;
+  return JTBD_PRESETS;
 }
 
 // "Best for" — per-stress-term human one-liner driving the persona-card

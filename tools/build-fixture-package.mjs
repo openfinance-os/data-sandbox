@@ -42,6 +42,7 @@ fs.mkdirSync(path.join(OUT, 'enrichment'), { recursive: true });
 // `domain` so MCP / TPP consumers can filter (or fan out) per domain.
 const bankingPersonas = loadPersonasByDomain('banking');
 const insurancePersonas = loadPersonasByDomain('insurance');
+const atmPersonas = loadPersonasByDomain('atm');
 const pools = loadAllPools();
 const now = new Date(NOW_ANCHOR);
 
@@ -56,7 +57,7 @@ const manifest = {
   specSha: SHA,
   generatedAt: new Date().toISOString(),
   nowAnchor: NOW_ANCHOR,
-  domains: ['banking', 'insurance'],
+  domains: ['banking', 'insurance', 'atm'],
   fixtures: {},
   // Phase D Slice 5: secondary/tertiary role bundles emitted alongside
   // the primary fixture per persona × LFI. Same envelope shape (v2.1
@@ -325,6 +326,15 @@ for (const [personaId, persona] of Object.entries(insurancePersonas)) {
   if (emitted.has(personaId)) continue; // multi-domain already emitted
   await emitPersona(personaId, persona, 'insurance');
 }
+// Phase 2.3 — ATM Locator. Persona-agnostic infrastructure data: the
+// `atm_directory` sentinel persona is the (persona, lfi, seed) anchor
+// for the v2.1 `GET /atms` endpoint. Same fixture-tree layout as
+// banking / insurance so existing TPP consumers (URL fetchers, npm
+// loader, MCP) pick it up without code changes.
+for (const [personaId, persona] of Object.entries(atmPersonas)) {
+  if (emitted.has(personaId)) continue;
+  await emitPersona(personaId, persona, 'atm');
+}
 
 // Write banking + insurance SPEC.json into the package so consumers can
 // introspect status badges without a second download. Banking remains at the
@@ -335,6 +345,7 @@ fs.copyFileSync(
   path.join(repoRoot, 'dist/SPEC.insurance.json'),
   path.join(OUT, 'spec.insurance.json'),
 );
+fs.copyFileSync(path.join(repoRoot, 'dist/SPEC.atm.json'), path.join(OUT, 'spec.atm.json'));
 
 fs.writeFileSync(path.join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 2));
 
@@ -399,6 +410,7 @@ const pkgJson = {
     './manifest.json': './manifest.json',
     './spec.json': './spec.json',
     './spec.insurance.json': './spec.insurance.json',
+    './spec.atm.json': './spec.atm.json',
     './pools.json': './pools.json',
     './bundles/*': './bundles/*',
     './personas/*': './personas/*',
@@ -411,6 +423,7 @@ const pkgJson = {
     'manifest.json',
     'spec.json',
     'spec.insurance.json',
+    'spec.atm.json',
     'pools.json',
     'bundles/',
     'personas/',
@@ -437,6 +450,7 @@ const manifest = JSON.parse(readFileSync(path.join(here, 'manifest.json'), 'utf8
 const SPEC_FILE_BY_DOMAIN = {
   banking: 'spec.json',
   insurance: 'spec.insurance.json',
+  atm: 'spec.atm.json',
 };
 
 export function listPersonas(opts = {}) {
@@ -670,7 +684,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const here = __dirname;
 const manifest = JSON.parse(fs.readFileSync(path.join(here, 'manifest.json'), 'utf8'));
-const SPEC_FILE_BY_DOMAIN = { banking: 'spec.json', insurance: 'spec.insurance.json' };
+const SPEC_FILE_BY_DOMAIN = { banking: 'spec.json', insurance: 'spec.insurance.json', atm: 'spec.atm.json' };
 function listPersonas(opts) {
   const ids = Object.keys(manifest.personas);
   if (!opts || !opts.domain) return ids;
@@ -881,7 +895,7 @@ module.exports = {
 fs.writeFileSync(path.join(OUT, 'index.cjs'), indexCjs);
 
 // Tiny TS types for editor support.
-const indexDts = `export type Domain = 'banking' | 'insurance';
+const indexDts = `export type Domain = 'banking' | 'insurance' | 'atm';
 export interface PersonaInfo {
   name: string;
   archetype: string;

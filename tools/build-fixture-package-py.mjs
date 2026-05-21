@@ -24,7 +24,14 @@ if (!fs.existsSync(SRC)) {
 if (fs.existsSync(DST)) fs.rmSync(DST, { recursive: true, force: true });
 fs.mkdirSync(DST, { recursive: true });
 
-for (const child of ['manifest.json', 'spec.json', 'personas', 'bundles']) {
+for (const child of [
+  'manifest.json',
+  'spec.json',
+  'spec.insurance.json',
+  'spec.atm.json',
+  'personas',
+  'bundles',
+]) {
   const s = path.join(SRC, child);
   const d = path.join(DST, child);
   if (!fs.existsSync(s)) continue;

@@ -26,6 +26,7 @@ packages/sandbox-fixtures/brand-registry.json
 packages/sandbox-fixtures/manifest.json
 packages/sandbox-fixtures/spec.json
 packages/sandbox-fixtures/spec.insurance.json
+packages/sandbox-fixtures/spec.atm.json
 packages/sandbox-fixtures/pools.json
 packages/sandbox-fixtures/lib/
 packages/sandbox-fixtures-py/src/openfinance_os_sandbox_fixtures/data/

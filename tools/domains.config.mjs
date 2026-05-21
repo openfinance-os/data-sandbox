@@ -87,4 +87,25 @@ export const DOMAINS = [
       '/insurance-consents/{ConsentId}',
     ],
   },
+  {
+    id: 'atm',
+    label: 'ATM Locator',
+    // Phase 2.3 GA — single read endpoint (`GET /atms`) covering the
+    // full v2.1 ATM Locator surface. Infrastructure data: a public
+    // directory of an LFI's cash-machine fleet (locations, services,
+    // accessibility, fees). Not bound to any customer / persona; the
+    // sandbox plugs it into the existing (persona, lfi, seed)
+    // pipeline via a sentinel `atm-directory` persona so the URL
+    // contract stays uniform.
+    status: 'ga',
+    specPath: 'spec/uae-atm-openapi.yaml',
+    pinPath: 'spec/SPEC_PIN.atm.sha',
+    retrievedPath: 'spec/SPEC_PIN.atm.retrieved',
+    bandsPath: 'spec/lfi-bands.atm.yaml',
+    outPath: 'dist/SPEC.atm.json',
+    upstreamRepo: 'Nebras-Open-Finance/api-specs',
+    upstreamPath: 'dist/standards/v2.1/uae-atm-openapi.yaml',
+    defaultEndpoint: '/atms',
+    inScopePaths: ['/atms'],
+  },
 ];

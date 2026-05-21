@@ -1,0 +1,44 @@
+# LFI populate-rate bands for ATM Locator — §8.3, EXP-04.
+#
+# ATM data is infrastructure (location + service capabilities of cash
+# machines) rather than customer data. The mandatory spec set —
+# ATMId, LFIId, LFIBrandId, SupportedCurrencies, Location — is never
+# redacted under any profile (EXP-04 / NG). Optional fields below
+# encode the realistic gap between LFIs that publish a rich directory
+# (24h flag, accessibility, fees, languages, branch context) and
+# Sparse-profile LFIs that ship the minimum the spec requires.
+#
+# Bands map to populate probabilities defined in
+# src/generator/atm/lfi-profile.js (mirrors banking/insurance):
+#   Universal=1.0, Common=0.7, Variable=0.4, Rare=0.1, Unknown=0.0.
+
+overrides:
+  # Capability arrays — common at every UAE LFI's published directory.
+  Atm.SupportedLanguages: Universal
+  Atm.Services: Universal
+  Atm.SupportedCurrencies: Universal
+  Atm.IsAccess24Hour: Common
+  # Availability block — status + operating hours. Most LFIs publish
+  # the high-level Status; only Rich-profile directories include the
+  # per-day OperatingHours breakdown.
+  Atm.Availability: Common
+  Atm.Availability.OperatingHours: Variable
+  # Accessibility array — Rich LFIs surface a full WCAG-style readout;
+  # Median publishes a subset; Sparse omits.
+  Atm.Accessibility: Variable
+  # Per-transaction amount limits — published as part of the optional
+  # withdrawal-policy block. Variable because LFIs differ on whether
+  # to expose them on the directory endpoint vs. only at session time.
+  Atm.MinimumPossibleAmount: Variable
+  Atm.MaximumPossibleAmount: Variable
+  # Branch cross-link — present when the ATM is co-located at a
+  # physical branch. Common at conventional banks (most ATMs sit at
+  # branches); rare at remote-unit / retailer-outlet locations.
+  Atm.Branch: Common
+  # Fees block — Rich LFIs publish full cross-bank fee schedules on
+  # the directory; Median publishes withdrawal + balance-inquiry only;
+  # Sparse omits.
+  Atm.ATMFee: Variable
+  # Free-text optional descriptors — Rich-only.
+  Atm.Notes: Rare
+  Atm.Links: Rare
