@@ -27,6 +27,7 @@ import { generateStatements } from './statements.js';
 import { generateProducts } from './product.js';
 import { applyLfiProfile } from './banking/lfi-profile.js';
 import { buildInsuranceBundle } from './insurance/index.js';
+import { buildAtmBundle } from './atm/index.js';
 import { buildEnrichment } from './enrichment.js';
 
 const DEFAULT_NOW = new Date(Date.UTC(2026, 3, 1, 0, 0, 0));
@@ -142,6 +143,7 @@ export function buildBundle(args) {
     const domain = domains[0];
     if (domain === 'banking') return buildBankingBundle(args);
     if (domain === 'insurance') return buildInsuranceBundle(args);
+    if (domain === 'atm') return buildAtmBundle(args);
     throw new Error(`unknown persona domain: ${domain}`);
   }
   return buildMultiDomainBundle({ ...args, domains });

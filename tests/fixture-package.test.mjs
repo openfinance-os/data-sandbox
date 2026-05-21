@@ -37,25 +37,27 @@ if (!FIXTURES_BUILT) {
       expect(pkg.publishConfig.access).toBe('public');
     });
 
-    it('manifest.json indexes 21 banking + 9 insurance + 8 multi-domain personas × 3 LFIs', () => {
+    it('manifest.json indexes 21 banking + 9 insurance + 8 multi-domain + 1 atm personas × 3 LFIs', () => {
       const m = JSON.parse(fs.readFileSync(path.join(PKG_DIR, 'manifest.json'), 'utf8'));
       expect(m.package).toBe('@openfinance-os/sandbox-fixtures');
       expect(m.specVersion).toBe('v2.1-errata2');
       expect(m.specSha.length).toBeGreaterThan(20);
-      expect(m.domains).toEqual(expect.arrayContaining(['banking', 'insurance']));
-      expect(Object.keys(m.personas).length).toBe(38);
-      expect(Object.keys(m.fixtures).length).toBe(114); // 38 × 3
-      const byDomain = { banking: 0, insurance: 0, multi: 0 };
+      expect(m.domains).toEqual(expect.arrayContaining(['banking', 'insurance', 'atm']));
+      // Phase 2.3 — ATM Locator adds the sentinel `atm_directory` persona
+      // (39th persona) so the (persona, lfi, seed) anchor still applies.
+      expect(Object.keys(m.personas).length).toBe(39);
+      expect(Object.keys(m.fixtures).length).toBe(117); // 39 × 3
+      const byDomain = { banking: 0, insurance: 0, multi: 0, atm: 0 };
       for (const info of Object.values(m.personas)) {
         expect(info.domain).toBeDefined();
         byDomain[info.domain] = (byDomain[info.domain] ?? 0) + 1;
       }
-      expect(byDomain).toEqual({ banking: 21, insurance: 9, multi: 8 });
+      expect(byDomain).toEqual({ banking: 21, insurance: 9, multi: 8, atm: 1 });
       for (const [key, fx] of Object.entries(m.fixtures)) {
         expect(key).toMatch(/^[a-z_]+\|(rich|median|sparse)\|\d+$/);
         // Every fixture entry has a non-empty endpoints map.
         expect(Object.keys(fx.endpoints).length).toBeGreaterThan(0);
-        expect(['banking', 'insurance', 'multi']).toContain(fx.domain);
+        expect(['banking', 'insurance', 'multi', 'atm']).toContain(fx.domain);
       }
     });
 
@@ -64,10 +66,12 @@ if (!FIXTURES_BUILT) {
       const personas = m.listPersonas();
       expect(personas).toContain('salaried_expat_mid');
       expect(personas).toContain('motor_comprehensive_mid');
-      expect(personas.length).toBe(38);
+      expect(personas).toContain('atm_directory');
+      expect(personas.length).toBe(39);
       // Multi-domain personas appear in both banking and insurance filters.
       expect(m.listPersonas({ domain: 'banking' }).length).toBe(29); // 21 + 8 multi
       expect(m.listPersonas({ domain: 'insurance' }).length).toBe(17); // 9 + 8 multi
+      expect(m.listPersonas({ domain: 'atm' }).length).toBe(1);
       const sara = m.loadFixture({
         persona: 'salaried_expat_mid',
         lfi: 'median',

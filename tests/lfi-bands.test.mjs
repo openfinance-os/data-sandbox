@@ -15,6 +15,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getOptionalFieldBands as bankingBands } from '../src/generator/banking/lfi-profile.js';
 import { getOptionalFieldBands as insuranceBands } from '../src/generator/insurance/lfi-profile.js';
+import { getOptionalFieldBands as atmBands } from '../src/generator/atm/lfi-profile.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -37,5 +38,9 @@ describe('LFI bands — runtime vs SPEC.json', () => {
 
   it('insurance SPEC.json bandOverrides matches insurance getOptionalFieldBands()', () => {
     expect(bandsFromSpec('dist/SPEC.insurance.json')).toEqual(bandsFromRuntime(insuranceBands));
+  });
+
+  it('atm SPEC.json bandOverrides matches atm getOptionalFieldBands()', () => {
+    expect(bandsFromSpec('dist/SPEC.atm.json')).toEqual(bandsFromRuntime(atmBands));
   });
 });

@@ -1,0 +1,676 @@
+{
+  "specVersion": "v2.1",
+  "openapiVersion": "3.0.0",
+  "pinSha": "ebde95804d9bf2a13d065804ea64334b673223ca",
+  "retrievedAt": "2026-05-20T18:59:03Z",
+  "upstreamRepo": "Nebras-Open-Finance/api-specs",
+  "upstreamPath": "dist/standards/v2.1/uae-atm-openapi.yaml",
+  "inScopePaths": [
+    "/atms"
+  ],
+  "schemaLines": {
+    "get": 16,
+    "AEError400Response": 59,
+    "AEError403Response": 71,
+    "AEError500Response": 83,
+    "AEMessage": 95,
+    "AEError400": 104,
+    "AEError400Code": 126,
+    "AEError403": 151,
+    "AEError403Code": 173,
+    "AEError500": 189,
+    "AEError500Code": 211,
+    "AEReadAtmsData1": 223,
+    "AEReadAtmsMeta1": 578,
+    "AEReadAtms1": 590,
+    "GeoLocation": 601,
+    "AEActiveOrHistoricCurrencyAndAmount_0": 614,
+    "AEActiveCurrencyAndAmount_SimpleType": 626,
+    "ActiveOrHistoricCurrencyCode_0": 632,
+    "AENamespacedPattern": 640,
+    "Authorization": 710,
+    "TPPOAuth2Security": 718
+  },
+  "bandOverrides": {
+    "Atm.SupportedLanguages": "Universal",
+    "Atm.Services": "Universal",
+    "Atm.SupportedCurrencies": "Universal",
+    "Atm.IsAccess24Hour": "Common",
+    "Atm.Availability": "Common",
+    "Atm.Availability.OperatingHours": "Variable",
+    "Atm.Accessibility": "Variable",
+    "Atm.MinimumPossibleAmount": "Variable",
+    "Atm.MaximumPossibleAmount": "Variable",
+    "Atm.Branch": "Common",
+    "Atm.ATMFee": "Variable",
+    "Atm.Notes": "Rare",
+    "Atm.Links": "Rare"
+  },
+  "endpoints": {
+    "/atms": {
+      "method": "GET",
+      "summary": "Retrieve ATM",
+      "operationId": "getAtms",
+      "schemaRef": "#/components/schemas/AEReadAtms1",
+      "fields": [
+        {
+          "path": "Data",
+          "name": "Data",
+          "type": "array",
+          "status": "mandatory",
+          "description": "List of ATMs"
+        },
+        {
+          "path": "Data[]",
+          "name": "Data[]",
+          "type": "object",
+          "status": "optional"
+        },
+        {
+          "path": "Data[].LFIId",
+          "name": "LFIId",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "status": "mandatory",
+          "description": "LFI identification."
+        },
+        {
+          "path": "Data[].LFIBrandId",
+          "name": "LFIBrandId",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "status": "mandatory",
+          "description": "LFI identification for a brand - that an LFI uses to market its products or services to a User"
+        },
+        {
+          "path": "Data[].ATMId",
+          "name": "ATMId",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "status": "mandatory",
+          "description": "ATM terminal device identification for the LFI and the issuer."
+        },
+        {
+          "path": "Data[].SupportedLanguages",
+          "name": "SupportedLanguages",
+          "type": "array",
+          "status": "optional",
+          "description": "Identification of the language name according to the ISO 639-1 codes. The type is validated by the list of values coded with two alphabetic characters, defined in the standard."
+        },
+        {
+          "path": "Data[].SupportedLanguages[]",
+          "name": "SupportedLanguages[]",
+          "type": "string",
+          "pattern": "[a-z]{2}",
+          "status": "optional",
+          "description": "Identification of the language name according to the ISO 639-1 codes. The type is validated by the list of values coded with two alphabetic characters, defined in the standard."
+        },
+        {
+          "path": "Data[].Services",
+          "name": "Services",
+          "type": "array",
+          "status": "optional",
+          "description": "Describes the type of transaction available for a customer on an ATM."
+        },
+        {
+          "path": "Data[].Services[]",
+          "name": "Services[]",
+          "type": "string",
+          "enum": [
+            "Balance",
+            "BillPayments",
+            "CashDeposits",
+            "CharityDonation",
+            "ChequeDeposits",
+            "CashWithdrawal",
+            "EnvelopeDeposit",
+            "FastCash",
+            "MobileBankingRegistration",
+            "MobilePaymentRegistration",
+            "MobilePhoneTopUp",
+            "OrderStatement",
+            "Other",
+            "PINActivation",
+            "PINChange",
+            "PINUnblock",
+            "MiniStatement"
+          ],
+          "status": "optional"
+        },
+        {
+          "path": "Data[].Accessibility",
+          "name": "Accessibility",
+          "type": "array",
+          "status": "optional",
+          "description": "Indicates Types of Accessibility"
+        },
+        {
+          "path": "Data[].Accessibility[]",
+          "name": "Accessibility[]",
+          "type": "string",
+          "enum": [
+            "AudioCashMachine",
+            "AutomaticDoors",
+            "ExternalRamp",
+            "InductionLoop",
+            "InternalRamp",
+            "LevelAccess",
+            "LowerLevelCounter",
+            "Other",
+            "WheelchairAccess"
+          ],
+          "status": "optional",
+          "description": "Indicates Types of Accessibility"
+        },
+        {
+          "path": "Data[].IsAccess24Hour",
+          "name": "IsAccess24Hour",
+          "type": "boolean",
+          "status": "optional",
+          "description": "Indicates that the ATM is available for use by customers 24 hours per day"
+        },
+        {
+          "path": "Data[].Availability",
+          "name": "Availability",
+          "type": "object",
+          "status": "optional",
+          "description": "Indicates the availability status of the ATM"
+        },
+        {
+          "path": "Data[].Availability.Status",
+          "name": "Status",
+          "type": "string",
+          "enum": [
+            "Available",
+            "Unavailable",
+            "UnderMaintenance"
+          ],
+          "status": "optional",
+          "description": "Current operational status of the ATM"
+        },
+        {
+          "path": "Data[].Availability.OperatingHours",
+          "name": "OperatingHours",
+          "type": "array",
+          "status": "optional"
+        },
+        {
+          "path": "Data[].Availability.OperatingHours[]",
+          "name": "OperatingHours[]",
+          "type": "object",
+          "status": "optional"
+        },
+        {
+          "path": "Data[].Availability.OperatingHours[].Days",
+          "name": "Days",
+          "type": "array",
+          "status": "mandatory"
+        },
+        {
+          "path": "Data[].Availability.OperatingHours[].Days[]",
+          "name": "Days[]",
+          "type": "string",
+          "enum": [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday"
+          ],
+          "status": "optional"
+        },
+        {
+          "path": "Data[].Availability.OperatingHours[].OpenTime",
+          "name": "OpenTime",
+          "type": "string",
+          "pattern": "^([0-1][0-9]|2[0-3]):[0-5][0-9]$",
+          "status": "mandatory"
+        },
+        {
+          "path": "Data[].Availability.OperatingHours[].CloseTime",
+          "name": "CloseTime",
+          "type": "string",
+          "pattern": "^([0-1][0-9]|2[0-3]):[0-5][0-9]$",
+          "status": "mandatory"
+        },
+        {
+          "path": "Data[].SupportedCurrencies",
+          "name": "SupportedCurrencies",
+          "type": "array",
+          "status": "mandatory",
+          "description": "All ISO 4217 defined currency supported by the ATM."
+        },
+        {
+          "path": "Data[].SupportedCurrencies[]",
+          "name": "SupportedCurrencies[]",
+          "type": "string",
+          "pattern": "[A-Z]{3}",
+          "status": "optional",
+          "description": "ISO 4217 defined currency"
+        },
+        {
+          "path": "Data[].MinimumPossibleAmount",
+          "name": "MinimumPossibleAmount",
+          "type": "object",
+          "status": "optional",
+          "description": "This is the value of the amount in the currency"
+        },
+        {
+          "path": "Data[].MinimumPossibleAmount.Amount",
+          "name": "Amount",
+          "type": "string",
+          "pattern": "^\\d{1,13}$|^\\d{1,13}\\.\\d{1,5}$",
+          "status": "mandatory",
+          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217."
+        },
+        {
+          "path": "Data[].MinimumPossibleAmount.Currency",
+          "name": "Currency",
+          "type": "string",
+          "pattern": "^[A-Z]{3,3}$",
+          "status": "mandatory",
+          "description": "Identification of the currency in which the account is held. A code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'."
+        },
+        {
+          "path": "Data[].MaximumPossibleAmount",
+          "name": "MaximumPossibleAmount",
+          "type": "object",
+          "status": "optional",
+          "description": "This is the value of the amount in the currency"
+        },
+        {
+          "path": "Data[].MaximumPossibleAmount.Amount",
+          "name": "Amount",
+          "type": "string",
+          "pattern": "^\\d{1,13}$|^\\d{1,13}\\.\\d{1,5}$",
+          "status": "mandatory",
+          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217."
+        },
+        {
+          "path": "Data[].MaximumPossibleAmount.Currency",
+          "name": "Currency",
+          "type": "string",
+          "pattern": "^[A-Z]{3,3}$",
+          "status": "mandatory",
+          "description": "Identification of the currency in which the account is held. A code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'."
+        },
+        {
+          "path": "Data[].Notes",
+          "name": "Notes",
+          "type": "array",
+          "status": "optional",
+          "description": "Summary description of the ATM."
+        },
+        {
+          "path": "Data[].Notes[]",
+          "name": "Notes[]",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000,
+          "status": "optional",
+          "description": "maxLength 2000 text"
+        },
+        {
+          "path": "Data[].Branch",
+          "name": "Branch",
+          "type": "object",
+          "status": "optional",
+          "description": "Information that locates and identifies a specific branch of a LFI."
+        },
+        {
+          "path": "Data[].Branch.SchemeName",
+          "name": "SchemeName",
+          "type": "string",
+          "enum": [
+            "BICFI",
+            "Other"
+          ],
+          "status": "optional",
+          "description": "The scheme name that qualifies the identifier for the branch."
+        },
+        {
+          "path": "Data[].Branch.Identification",
+          "name": "Identification",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "status": "optional",
+          "description": "Unique and unambiguous identification of a branch of a LFI."
+        },
+        {
+          "path": "Data[].Location",
+          "name": "Location",
+          "type": "object",
+          "status": "mandatory",
+          "description": "Location of the ATM."
+        },
+        {
+          "path": "Data[].Location.LocationCategory",
+          "name": "LocationCategory",
+          "type": "array",
+          "status": "optional",
+          "description": "Indicates the environment of the ATM."
+        },
+        {
+          "path": "Data[].Location.LocationCategory[]",
+          "name": "LocationCategory[]",
+          "type": "string",
+          "enum": [
+            "BranchExternal",
+            "BranchInternal",
+            "BranchLobby",
+            "Other",
+            "RetailerOutlet",
+            "RemoteUnit",
+            "DriveThru"
+          ],
+          "status": "optional",
+          "description": "Indicates the environment of the ATM."
+        },
+        {
+          "path": "Data[].Location.Site",
+          "name": "Site",
+          "type": "object",
+          "status": "optional",
+          "description": "Used by the LFI internally to identify the location of an ATM."
+        },
+        {
+          "path": "Data[].Location.Site.Identification",
+          "name": "Identification",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "status": "optional",
+          "description": "ATM site identification for the LFI."
+        },
+        {
+          "path": "Data[].Location.Site.Name",
+          "name": "Name",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "status": "optional",
+          "description": "ATM site name as used by LFI."
+        },
+        {
+          "path": "Data[].Location.PostalAddress",
+          "name": "PostalAddress",
+          "type": "object",
+          "status": "mandatory",
+          "description": "Address properties based on ISO 20022 `PostalAddress27` definition, populated based on information held at the LFIs."
+        },
+        {
+          "path": "Data[].Location.PostalAddress.AddressType",
+          "name": "AddressType",
+          "type": "string",
+          "enum": [
+            "Business",
+            "Other"
+          ],
+          "status": "optional",
+          "description": "The type of address, restricted to `Business` or `Other`. Omitted if type not held."
+        },
+        {
+          "path": "Data[].Location.PostalAddress.AddressLine",
+          "name": "AddressLine",
+          "type": "array",
+          "status": "optional",
+          "description": "Information that locates and identifies a specific address for a transaction entry, that is presented in free format text."
+        },
+        {
+          "path": "Data[].Location.PostalAddress.AddressLine[]",
+          "name": "AddressLine[]",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 70,
+          "status": "optional"
+        },
+        {
+          "path": "Data[].Location.PostalAddress.BuildingNumber",
+          "name": "BuildingNumber",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16,
+          "status": "optional",
+          "description": "The unit, apartment, or villa number within a building or community"
+        },
+        {
+          "path": "Data[].Location.PostalAddress.BuildingName",
+          "name": "BuildingName",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "status": "optional",
+          "description": "Name of the building or house."
+        },
+        {
+          "path": "Data[].Location.PostalAddress.Floor",
+          "name": "Floor",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 70,
+          "status": "optional",
+          "description": "Floor or storey within a building."
+        },
+        {
+          "path": "Data[].Location.PostalAddress.StreetName",
+          "name": "StreetName",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "status": "optional",
+          "description": "The name of the street or road where the property is located."
+        },
+        {
+          "path": "Data[].Location.PostalAddress.DistrictName",
+          "name": "DistrictName",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "status": "optional",
+          "description": "The district, community, or neighbourhood where the property is located."
+        },
+        {
+          "path": "Data[].Location.PostalAddress.PostBox",
+          "name": "PostBox",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16,
+          "status": "optional",
+          "description": "The P.O. Box number assigned to the recipient for mail delivery."
+        },
+        {
+          "path": "Data[].Location.PostalAddress.TownName",
+          "name": "TownName",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "status": "optional",
+          "description": "Name of a built-up area, such as a town or city."
+        },
+        {
+          "path": "Data[].Location.PostalAddress.CountrySubDivision",
+          "name": "CountrySubDivision",
+          "type": "string",
+          "enum": [
+            "AbuDhabi",
+            "Ajman",
+            "Dubai",
+            "Fujairah",
+            "RasAlKhaimah",
+            "Sharjah",
+            "UmmAlQuwain"
+          ],
+          "status": "optional",
+          "description": "Country subdivision, such as state or province. Where the address is in the UAE this is the Emirate where the address is registered."
+        },
+        {
+          "path": "Data[].Location.PostalAddress.Country",
+          "name": "Country",
+          "type": "string",
+          "pattern": "^[A-Z]{2}$",
+          "status": "optional",
+          "description": "The country associated with the address, represented using the ISO 3166-1 alpha-2 country code."
+        },
+        {
+          "path": "Data[].Location.GeoLocation",
+          "name": "GeoLocation",
+          "type": "object",
+          "status": "mandatory",
+          "description": "GPS to identify the whereabouts of the ATM."
+        },
+        {
+          "path": "Data[].Location.GeoLocation.Latitude",
+          "name": "Latitude",
+          "type": "string",
+          "status": "mandatory",
+          "description": "latitude"
+        },
+        {
+          "path": "Data[].Location.GeoLocation.Longitude",
+          "name": "Longitude",
+          "type": "string",
+          "status": "mandatory",
+          "description": "longitude"
+        },
+        {
+          "path": "Data[].Links",
+          "name": "Links",
+          "type": "object",
+          "status": "optional",
+          "description": "Additional links to the ATM details"
+        },
+        {
+          "path": "Data[].Links.FeesUri",
+          "name": "FeesUri",
+          "type": "string",
+          "format": "uri",
+          "status": "optional",
+          "description": "A link to the Fees ATM."
+        },
+        {
+          "path": "Data[].ATMFee",
+          "name": "ATMFee",
+          "type": "array",
+          "status": "optional",
+          "description": "Details of fees applicable when a cardholder uses the ATM\n"
+        },
+        {
+          "path": "Data[].ATMFee[]",
+          "name": "ATMFee[]",
+          "type": "object",
+          "status": "optional"
+        },
+        {
+          "path": "Data[].ATMFee[].Type",
+          "name": "Type",
+          "type": "string",
+          "enum": [
+            "Withdrawal",
+            "BalanceInquiry",
+            "MiniStatement",
+            "PINChange",
+            "CashDeposit",
+            "CardlessWithdrawal",
+            "InternationalWithdrawal",
+            "CrossBankWithdrawal",
+            "OverLimit",
+            "DeclinedTransaction",
+            "EmergencyCashWithdrawal",
+            "ForeignATMUsage",
+            "ServiceDenial",
+            "FastCashWithdrawal",
+            "NetworkSurcharge",
+            "ForeignExchange",
+            "DomesticCrossBank",
+            "InternationalCrossBank",
+            "Other"
+          ],
+          "status": "mandatory",
+          "description": "The type of cross-bank ATM fee."
+        },
+        {
+          "path": "Data[].ATMFee[].Amount",
+          "name": "Amount",
+          "type": "object",
+          "status": "optional",
+          "description": "This is the value of the amount in the currency"
+        },
+        {
+          "path": "Data[].ATMFee[].Amount.Amount",
+          "name": "Amount",
+          "type": "string",
+          "pattern": "^\\d{1,13}$|^\\d{1,13}\\.\\d{1,5}$",
+          "status": "mandatory",
+          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217."
+        },
+        {
+          "path": "Data[].ATMFee[].Amount.Currency",
+          "name": "Currency",
+          "type": "string",
+          "pattern": "^[A-Z]{3,3}$",
+          "status": "mandatory",
+          "description": "Identification of the currency in which the account is held. A code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'."
+        },
+        {
+          "path": "Data[].ATMFee[].Percentage",
+          "name": "Percentage",
+          "type": "number",
+          "status": "optional",
+          "description": "Percentage-based fee applied to the transaction amount (if applicable)."
+        },
+        {
+          "path": "Data[].ATMFee[].ApplicableNetworks",
+          "name": "ApplicableNetworks",
+          "type": "array",
+          "status": "optional",
+          "description": "List of ATM networks where the cross-bank fee applies."
+        },
+        {
+          "path": "Data[].ATMFee[].ApplicableNetworks[]",
+          "name": "ApplicableNetworks[]",
+          "type": "string",
+          "enum": [
+            "Visa",
+            "Mastercard",
+            "AmericanExpress",
+            "Diners",
+            "Other"
+          ],
+          "status": "optional"
+        },
+        {
+          "path": "Data[].ATMFee[].Conditions",
+          "name": "Conditions",
+          "type": "string",
+          "status": "optional",
+          "description": "Conditions under which the fee applies (e.g., number of free transactions allowed, \nwithdrawal limits, special partnerships).\n"
+        },
+        {
+          "path": "Meta",
+          "name": "Meta",
+          "type": "object",
+          "status": "mandatory"
+        },
+        {
+          "path": "Meta.LastUpdatedDateTime",
+          "name": "LastUpdatedDateTime",
+          "type": "string",
+          "format": "date-time",
+          "status": "mandatory"
+        },
+        {
+          "path": "Meta.TotalRecords",
+          "name": "TotalRecords",
+          "type": "integer",
+          "status": "mandatory"
+        }
+      ]
+    }
+  }
+}

@@ -36,6 +36,11 @@ const REQUIRED_BY_DOMAIN = {
   ],
   // Insurance keys are line-aware; resolved per-persona below.
   insurance: COMMON_INSURANCE_KEYS,
+  // ATM Locator is infrastructure data — no income / accounts / line
+  // discriminator. The sentinel `atm_directory` persona is the (persona,
+  // lfi, seed) anchor for the `GET /atms` endpoint; no real personal
+  // attributes are required.
+  atm: ['persona_id', 'domain', 'name', 'archetype', 'default_seed', 'stress_coverage'],
 };
 const REQUIRED_BY_INSURANCE_LINE = {
   motor: [...COMMON_INSURANCE_KEYS, 'vehicle', 'policy'],

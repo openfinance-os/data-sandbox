@@ -56,7 +56,8 @@ export function readSpecSha() {
 export function readSpecVersions() {
   const banking = readVersionFromDist('dist/SPEC.json');
   const insurance = readVersionFromDist('dist/SPEC.insurance.json');
-  return { banking, insurance };
+  const atm = readVersionFromDist('dist/SPEC.atm.json');
+  return { banking, insurance, atm };
 }
 
 function readVersionFromDist(rel) {

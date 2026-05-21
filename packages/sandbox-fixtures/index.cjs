@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const here = __dirname;
 const manifest = JSON.parse(fs.readFileSync(path.join(here, 'manifest.json'), 'utf8'));
-const SPEC_FILE_BY_DOMAIN = { banking: 'spec.json', insurance: 'spec.insurance.json' };
+const SPEC_FILE_BY_DOMAIN = { banking: 'spec.json', insurance: 'spec.insurance.json', atm: 'spec.atm.json' };
 function listPersonas(opts) {
   const ids = Object.keys(manifest.personas);
   if (!opts || !opts.domain) return ids;

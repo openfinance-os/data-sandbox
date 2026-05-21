@@ -67,6 +67,20 @@
         "/insurance-consents",
         "/insurance-consents/{ConsentId}"
       ]
+    },
+    {
+      "id": "atm",
+      "label": "ATM Locator",
+      "status": "ga",
+      "pinSha": "ebde95804d9bf2a13d065804ea64334b673223ca",
+      "retrievedAt": "2026-05-20T18:59:03Z",
+      "specVersion": "v2.1",
+      "openapiVersion": "3.0.0",
+      "parsedJsonUrl": "/dist/SPEC.atm.json",
+      "defaultEndpoint": "/atms",
+      "endpoints": [
+        "/atms"
+      ]
     }
   ]
 }

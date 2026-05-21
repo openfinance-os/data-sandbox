@@ -55,15 +55,15 @@ if (!SITE_STAGED) {
       expect(manifest.specVersion).toBe('v2.1-errata2');
       // 21 banking (18 + restored v1.5 trio: domestic_worker, pep_flagged,
       // returning_expat) + 9 insurance GA + 8 multi-domain (Phase 2.2)
-      // = 38 personas × 3 LFIs = 114 fixtures.
-      expect(Object.keys(manifest.personas).length).toBe(38);
-      expect(Object.keys(manifest.fixtures).length).toBe(114);
-      expect(manifest.domains).toEqual(expect.arrayContaining(['banking', 'insurance']));
-      const byDomain = { banking: 0, insurance: 0, multi: 0 };
+      // + 1 atm sentinel (Phase 2.3 GA) = 39 personas × 3 LFIs = 117 fixtures.
+      expect(Object.keys(manifest.personas).length).toBe(39);
+      expect(Object.keys(manifest.fixtures).length).toBe(117);
+      expect(manifest.domains).toEqual(expect.arrayContaining(['banking', 'insurance', 'atm']));
+      const byDomain = { banking: 0, insurance: 0, multi: 0, atm: 0 };
       for (const info of Object.values(manifest.personas)) {
         byDomain[info.domain] = (byDomain[info.domain] ?? 0) + 1;
       }
-      expect(byDomain).toEqual({ banking: 21, insurance: 9, multi: 8 });
+      expect(byDomain).toEqual({ banking: 21, insurance: 9, multi: 8, atm: 1 });
 
       const index = JSON.parse(fs.readFileSync(need('fixtures/v1/index.json').p, 'utf8'));
       expect(index.lfiProfiles).toEqual(['rich', 'median', 'sparse']);
