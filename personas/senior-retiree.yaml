@@ -3,6 +3,7 @@ domain: banking
 name: "Hassan — Senior / Retiree"
 archetype: senior_retiree
 default_seed: 7134
+segment: Retail
 stress_coverage:
   - low_volume_inference
 

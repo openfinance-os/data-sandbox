@@ -3,6 +3,7 @@ domain: insurance
 name: "Omar — Motor Comprehensive (Mid Tier)"
 archetype: motor_comprehensive_financed
 default_seed: 4729
+segment: Retail
 stress_coverage:
   - motor_comprehensive_financed
 

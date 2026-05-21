@@ -4,6 +4,7 @@ line: health
 name: "Aisha — Health (SelfAndFamily, Comprehensive)"
 archetype: health_employer_sponsored_family
 default_seed: 8431
+segment: Retail
 stress_coverage:
   - employer_sponsored_health_family
 

@@ -3,6 +3,7 @@ domain: banking
 name: "Layla — HNW Multi-Currency Holder"
 archetype: hnw
 default_seed: 2046
+segment: Retail
 stress_coverage:
   - multi_currency_accounts
   - fx_currency_exchange

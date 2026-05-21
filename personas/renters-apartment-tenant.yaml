@@ -4,6 +4,7 @@ line: renters
 name: "Sara — Renters (Apartment, Furnished Lease)"
 archetype: renters_apartment_furnished
 default_seed: 8190
+segment: Retail
 stress_coverage:
   - renters_furnished_apartment_lease
 

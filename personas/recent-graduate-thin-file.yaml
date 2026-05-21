@@ -3,6 +3,7 @@ domain: banking
 name: "Tanvi — Recent Graduate (Thin File)"
 archetype: thin_file
 default_seed: 1117
+segment: Retail
 stress_coverage:
   - thin_file_short_tenure
 

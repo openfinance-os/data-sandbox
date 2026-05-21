@@ -3,6 +3,7 @@ domain: banking
 name: "Sara — Salaried Expat (Mid Tier)"
 archetype: salaried_expat
 default_seed: 4729
+segment: Retail
 stress_coverage:
   - salary_payroll_flag
   - credit_line_block

@@ -3,6 +3,7 @@ domain: atm
 name: "UAE ATM Locator — Public Directory"
 archetype: atm_locator_directory
 default_seed: 47131
+segment: Retail
 stress_coverage:
   # ATM Locator is the only persona in the library that emits
   # infrastructure data (a public directory of LFI-operated cash

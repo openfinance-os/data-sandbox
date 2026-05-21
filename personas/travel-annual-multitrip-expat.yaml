@@ -4,6 +4,7 @@ line: travel
 name: "Priya — Travel (Annual Multi-Trip, Worldwide)"
 archetype: travel_annual_multitrip_business
 default_seed: 6240
+segment: Retail
 stress_coverage:
   - travel_annual_multitrip_business
 

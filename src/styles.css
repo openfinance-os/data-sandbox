@@ -1135,7 +1135,8 @@ input:focus,
    library to personas whose stress_coverage covers a known JTBD area
    (Affordability / AML / Thin-file / FX / Low-volume / Sharia). One tap
    replaces the manual stress-chip filter; chips are toggle-on/toggle-off. */
-.jtbd-rail {
+.jtbd-rail,
+.segment-rail {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
@@ -1143,7 +1144,8 @@ input:focus,
   border-bottom: 1px solid var(--border);
   background: var(--bg-soft);
 }
-.jtbd-rail .jtbd-chip {
+.jtbd-rail .jtbd-chip,
+.segment-rail .jtbd-chip {
   font: inherit;
   font-size: 10px;
   font-weight: 600;
@@ -1157,11 +1159,13 @@ input:focus,
   cursor: pointer;
   white-space: nowrap;
 }
-.jtbd-rail .jtbd-chip:hover {
+.jtbd-rail .jtbd-chip:hover,
+.segment-rail .jtbd-chip:hover {
   color: var(--accent);
   border-color: var(--accent);
 }
-.jtbd-rail .jtbd-chip[aria-pressed='true'] {
+.jtbd-rail .jtbd-chip[aria-pressed='true'],
+.segment-rail .jtbd-chip[aria-pressed='true'] {
   background: var(--accent);
   color: var(--mandatory-fg);
   border-color: var(--accent);

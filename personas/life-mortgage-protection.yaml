@@ -4,6 +4,7 @@ line: life
 name: "Rashid — Life (Decreasing Term, Mortgage Protection)"
 archetype: life_mortgage_protection_term
 default_seed: 5102
+segment: Retail
 stress_coverage:
   - life_mortgage_protection_term
 

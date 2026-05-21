@@ -3,6 +3,7 @@ domain: insurance
 name: "Rohan — Motor High-Claim Multi-Driver"
 archetype: motor_comprehensive_multi_driver
 default_seed: 5614
+segment: Retail
 stress_coverage:
   - high_claim_frequency
   - multi_driver_household

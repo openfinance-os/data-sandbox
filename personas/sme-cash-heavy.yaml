@@ -3,8 +3,16 @@ domain: banking
 name: "Karim — SME Owner (Cash-Heavy Retail)"
 archetype: sme_cash
 default_seed: 6308
+segment: SME
 stress_coverage:
   - cash_dominant_flows
+
+organisation:
+  legal_name_pool: sme_mainland
+  signatories:
+    - signatory_pool: expat_arab
+      account_role: Principal
+      party_type: Sole
 
 demographics:
   nationality_pool: expat_arab

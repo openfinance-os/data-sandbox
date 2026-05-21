@@ -116,6 +116,10 @@ const state = {
   // JTBD_PRESETS. Composes with stressFilter (both must match if both are
   // set, but UI activates only one at a time).
   jtbdFilter: null,
+  // Active business-segment filter on the persona library — null or one of
+  // Retail | SME | Corporate (the v2.1 AccountType / PartyCategory enum).
+  // Single-select toggle; composes with stressFilter and jtbdFilter as AND.
+  segmentFilter: null,
   // EXP-16 Compare-LFIs — when state.compareMode is true, renderPayload
   // builds two bundles (state.lfi vs state.compareWith) and renders them
   // side-by-side with diff highlighting. Decoupled from state.view so
@@ -522,6 +526,7 @@ async function init() {
   pin.textContent = `${versionLabel} @ ${(state.spec.pinSha || '').slice(0, 7)}`;
   pin.title = `Pinned spec SHA ${state.spec.pinSha}\nRetrieved ${state.spec.retrievedAt}\nUpstream: ${state.spec.upstreamRepo}/${state.spec.upstreamPath}`;
 
+  buildSegmentRail();
   buildJtbdRail();
   buildPersonaList();
   renderDomainChip();
@@ -659,6 +664,32 @@ function personaAvatarEl(id, persona, size) {
   return wrap;
 }
 
+const SEGMENT_FILTERS = ['Retail', 'SME', 'Corporate'];
+
+function buildSegmentRail() {
+  const rail = document.getElementById('segment-rail');
+  if (!rail) return;
+  rail.replaceChildren();
+  for (const seg of SEGMENT_FILTERS) {
+    const active = state.segmentFilter === seg;
+    const chip = el('button', {
+      class: 'jtbd-chip',
+      attrs: {
+        type: 'button',
+        'aria-pressed': active ? 'true' : 'false',
+        title: `Show only ${seg} personas`,
+      },
+      text: seg,
+      onClick: () => {
+        state.segmentFilter = state.segmentFilter === seg ? null : seg;
+        buildSegmentRail();
+        buildPersonaList();
+      },
+    });
+    rail.appendChild(chip);
+  }
+}
+
 function buildJtbdRail() {
   const rail = document.getElementById('jtbd-rail');
   if (!rail) return;
@@ -697,6 +728,7 @@ function buildJtbdRail() {
 
 function personaMatchesActiveFilter(persona) {
   const terms = persona.stress_coverage ?? [];
+  if (state.segmentFilter && (persona.segment ?? 'Retail') !== state.segmentFilter) return false;
   if (state.stressFilter && !terms.includes(state.stressFilter)) return false;
   if (state.jtbdFilter) {
     const presets = getJtbdPresets(state.domain);
@@ -1398,6 +1430,8 @@ async function switchDomain(newDomain) {
     pin.textContent = `${versionLabel} @ ${(state.spec.pinSha || '').slice(0, 7)}`;
     pin.title = `Pinned spec SHA ${state.spec.pinSha}\nRetrieved ${state.spec.retrievedAt}\nUpstream: ${state.spec.upstreamRepo}/${state.spec.upstreamPath}`;
   }
+  buildSegmentRail();
+  buildJtbdRail();
   buildPersonaList();
   renderDomainChip();
   rebuildAndRender();

@@ -3,6 +3,7 @@ domain: insurance
 name: "Layla — Motor Takaful Third-Party (Expat)"
 archetype: motor_takaful_third_party_expat
 default_seed: 8113
+segment: Retail
 stress_coverage:
   - sharia_takaful_product
   - third_party_liability_only
