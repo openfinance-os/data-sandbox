@@ -10,7 +10,8 @@
 // same status-badge metadata but counts populated optional leaf fields
 // directly until lfi-bands.insurance.yaml grows beyond the 4-path starter).
 
-import { leafFields, statusBadge } from '../shared/spec-helpers.js';
+import { leafFields } from '../shared/spec-helpers.js';
+import { renderFieldTree } from './field-tree.js';
 import { track } from '../analytics.js';
 
 export function createInsurance(deps) {
@@ -304,65 +305,8 @@ export function createInsurance(deps) {
 
   function insuranceRecordCard(record, fieldsByName) {
     const card = el('div', { class: 'insurance-record' });
-    card.appendChild(insuranceFieldTree(record, fieldsByName));
+    card.appendChild(renderFieldTree(record, fieldsByName, el));
     return card;
-  }
-
-  // Render an arbitrary JSON record as a labelled <dl> tree, attaching a
-  // status badge / format / enum chip to every leaf whose field name matches
-  // a parsed spec record. Field-name matching mirrors the banking renderer's
-  // endpointFieldsByName() — collisions on common names (Amount, Currency)
-  // resolve to the first registered field, which is acceptable for the read
-  // view.
-  function insuranceFieldTree(value, fieldsByName) {
-    if (value == null) {
-      return el('span', { class: 'value-empty', text: '—' });
-    }
-    if (typeof value !== 'object') {
-      return el('span', { class: 'value-leaf', text: String(value) });
-    }
-    if (Array.isArray(value)) {
-      if (value.length === 0) return el('span', { class: 'value-empty', text: '[]' });
-      const ol = el('ol', { class: 'insurance-array' });
-      value.forEach((item, i) => {
-        const li = el('li', { class: 'insurance-array-row' });
-        li.appendChild(el('span', { class: 'array-index', text: `[${i}]` }));
-        li.appendChild(insuranceFieldTree(item, fieldsByName));
-        ol.appendChild(li);
-      });
-      return ol;
-    }
-    const dl = el('dl', { class: 'insurance-field-tree' });
-    for (const [k, v] of Object.entries(value)) {
-      if (k.startsWith('_')) continue; // strip generator-internal markers
-      const meta = fieldsByName.get(k);
-      const dt = el('dt', { class: 'insurance-field-label' });
-      if (meta) {
-        const badge = statusBadge(meta.status);
-        dt.appendChild(
-          el('span', {
-            class: `pill ${badge.shape}`,
-            attrs: {
-              'aria-label': badge.text,
-              title: `${badge.text}${meta.format ? ` · format: ${meta.format}` : ''}`,
-            },
-            text: badge.label,
-          }),
-        );
-      }
-      dt.appendChild(el('span', { class: 'field-name', text: k }));
-      if (meta?.format) {
-        dt.appendChild(el('span', { class: 'field-format', text: meta.format }));
-      }
-      if (meta?.enum && Array.isArray(meta.enum) && meta.enum.length <= 6) {
-        dt.appendChild(el('span', { class: 'field-enum', text: `[${meta.enum.join(' | ')}]` }));
-      }
-      const dd = el('dd', { class: 'insurance-field-value' });
-      dd.appendChild(insuranceFieldTree(v, fieldsByName));
-      dl.appendChild(dt);
-      dl.appendChild(dd);
-    }
-    return dl;
   }
 
   // Coverage for the active insurance endpoint: of the leaf optional fields
