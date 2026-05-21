@@ -3,6 +3,7 @@ domain: banking
 name: "Hadi — NSF / Distressed Borrower"
 archetype: distressed
 default_seed: 4407
+segment: Retail
 stress_coverage:
   - nsf_distress
 

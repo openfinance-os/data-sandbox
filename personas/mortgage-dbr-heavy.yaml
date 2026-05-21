@@ -3,6 +3,7 @@ domain: banking
 name: "Yousef — Mortgage Holder (DBR Heavy)"
 archetype: dbr_stretched
 default_seed: 9203
+segment: Retail
 stress_coverage:
   - high_dbr
   - mortgage_long_dated

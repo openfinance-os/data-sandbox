@@ -4,6 +4,7 @@ line: employment
 name: "Faisal — Employment (ILOE, Private Sector, Category B)"
 archetype: employment_iloe_private_categoryb
 default_seed: 9072
+segment: Retail
 stress_coverage:
   - iloe_private_category_b
 

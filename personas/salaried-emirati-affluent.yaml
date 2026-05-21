@@ -3,6 +3,7 @@ domain: banking
 name: "Khalid — Salaried Emirati (Affluent)"
 archetype: salaried_affluent
 default_seed: 8821
+segment: Retail
 stress_coverage:
   - mortgage_long_dated
   - high_dbr
