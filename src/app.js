@@ -1810,16 +1810,15 @@ function renderPayloadUnsafe() {
   // Non-banking domains share the toolbar (view tabs, expand-fields,
   // pii-only) with banking, but the renderPayload pipeline below is
   // banking-shaped (rowsForActiveEndpoint walks state.bundle.accounts,
-  // which insurance bundles don't have). Mirror the rebuildAndRender
-  // branch and route to the preview-JSON inspector here so any toggle
-  // handler can safely re-render an insurance bundle.
-  if (state.domain && state.domain !== 'banking') {
-    // TODO: latent bug — renderPreviewBundle is not defined anywhere in the codebase.
-    // Insurance bundles hit this branch and will throw a ReferenceError. Likely intended to
-    // be renderInsuranceBundle (src/ui/insurance.js) or a similar helper. Surfaced by the
-    // eslint rollout in the CI/CD pipeline pass; left as-is so the fix lands in its own PR.
-    // eslint-disable-next-line no-undef
-    renderPreviewBundle();
+  // which insurance/ATM bundles don't have). Mirror the rebuildAndRender
+  // domain dispatch so any toggle handler can safely re-render a
+  // non-banking bundle.
+  if (state.domain === 'insurance') {
+    renderInsuranceBundle();
+    return;
+  }
+  if (state.domain === 'atm') {
+    renderAtmBundle();
     return;
   }
 
