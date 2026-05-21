@@ -13,7 +13,7 @@ export const DEFAULTS = {
 };
 
 const VALID_LFI = new Set(['rich', 'median', 'sparse']);
-const VALID_DOMAINS = new Set(['banking', 'insurance']);
+const VALID_DOMAINS = new Set(['banking', 'insurance', 'atm']);
 export const CUSTOM_PERSONA_SLUG = 'custom';
 
 export function encodePermalink({
@@ -112,8 +112,12 @@ export function decodeFromUrl(url) {
   // raw-bundle view as the cold-landing experience (which is what a TPP
   // would see from a real UAE core over Open Finance).
   const enriched = params.get('enriched') === '1';
+  // Phase 2.3 — ATM Locator. The selected ATM's ATMId, round-tripped so
+  // share-links restore the user's drill-down across a refresh / embed.
+  // Domain-scoped — ignored unless `?domain=atm`.
+  const atmId = domain === 'atm' ? params.get('atm') : null;
 
-  return { personaId, lfi, seed, endpoint, height, domain, preview, recipe, enriched };
+  return { personaId, lfi, seed, endpoint, height, domain, preview, recipe, enriched, atmId };
 }
 
 // Update window.location without full reload. Browser-only; safely no-ops in tests.

@@ -92,6 +92,11 @@ const state = {
   personaId: null,
   lfi: 'median',
   seed: 4729,
+  // Phase 2.3 ATM Locator domain state. atmId is the selected ATM's
+  // identifier (`bundle.atms[].ATMId`); atmFilter is the picker rail's
+  // text filter. Both reset on persona/domain switch in switchDomain().
+  atmId: null,
+  atmFilter: '',
   // PR #5 — Underwriting Summary is the default landing for banking
   // bundles. URL-pinned endpoints override this in init() per EXP-17.
   endpoint: UNDERWRITING_PSEUDO,
@@ -290,6 +295,38 @@ const renderInsuranceBundle = (() => {
     ensure().then((fn) => fn());
   };
 })();
+// Phase 2.3 ATM Locator UX revision — same lazy-load pattern as insurance.
+// The ATM module replaces the persona library with an ATM picker rail and
+// renders the selected ATM as a field tree (no compare-mode, no underwriting,
+// no coverage meter — all persona-shaped affordances are suppressed).
+let _atmRestorePersonaChrome = null;
+const renderAtmBundle = (() => {
+  let inner = null;
+  let loading = null;
+  function ensure() {
+    if (inner) return inner;
+    if (!loading) {
+      loading = import('./ui/atm.js').then(({ createAtm, restorePersonaPaneChrome }) => {
+        inner = createAtm({
+          state,
+          el,
+          syncControls,
+          pushPermalink,
+        }).renderAtmBundle;
+        _atmRestorePersonaChrome = restorePersonaPaneChrome;
+        return inner;
+      });
+    }
+    return loading;
+  }
+  return () => {
+    if (inner) {
+      inner();
+      return;
+    }
+    ensure().then((fn) => fn());
+  };
+})();
 const { renderUnderwritingStrip, renderUnderwritingPanel } = createUnderwriting({
   state,
   el,
@@ -439,6 +476,10 @@ async function init() {
   const url = decodeFromUrl(window.location.href);
   state.preview = url.preview;
   state.enriched = Boolean(url.enriched);
+  // Phase 2.3 — ATM selection from URL; only honoured when the resolved
+  // domain ends up as 'atm' (renderAtmBundle re-validates the ATMId
+  // exists in the active fleet and falls back to the first ATM if not).
+  state.atmId = url.atmId ?? null;
 
   // Slice 8: domain manifest drives which SPEC.json to lazy-load. Banking
   // remains the default; unknown domain values fall back to banking.
@@ -739,6 +780,11 @@ function personaMatchesActiveFilter(persona) {
 }
 
 function buildPersonaList() {
+  // ATM domain owns the #persona-list container — its picker rail replaces
+  // the persona library entirely. renderAtmBundle() populates the list and
+  // hangs `.is-atm` on the pane so the stress / JTBD / segment rails are
+  // hidden via CSS.
+  if (state.domain === 'atm') return;
   const list = document.getElementById('persona-list');
   list.replaceChildren();
 
@@ -1233,7 +1279,7 @@ function rebuildAndRender() {
     return;
   }
 
-  if (state.domain !== 'banking') {
+  if (state.domain === 'insurance') {
     // Phase 2.0 motor full-coverage: insurance bundles render through a
     // domain-aware navigator + per-endpoint payload renderer (status badges
     // from the parsed insurance spec), replacing the bundle-wide JSON
@@ -1241,6 +1287,18 @@ function rebuildAndRender() {
     // still banking-only — those are derived views with no insurance analogue.
     renderTopbarPersona();
     renderInsuranceBundle();
+    pushPermalink();
+    setTimeout(() => body?.classList.remove('is-fading'), 30);
+    return;
+  }
+  if (state.domain === 'atm') {
+    // Phase 2.3 — ATM Locator. The persona library is replaced by an ATM
+    // picker rail; the right pane renders the selected ATM as a field tree.
+    // There is no customer behind an ATM directory, so the topbar persona
+    // slot is collapsed.
+    const slot = document.getElementById('topbar-persona');
+    if (slot) slot.classList.add('is-empty');
+    renderAtmBundle();
     pushPermalink();
     setTimeout(() => body?.classList.remove('is-fading'), 30);
     return;
@@ -1415,6 +1473,7 @@ async function switchDomain(newDomain) {
   if (!entry) return;
   const specRes = await fetch(`..${entry.parsedJsonUrl}`);
   state.spec = await specRes.json();
+  const leavingAtm = state.domain === 'atm' && newDomain !== 'atm';
   state.domain = newDomain;
   state.activePersonas = Object.fromEntries(
     Object.entries(state.data.personas).filter(([, p]) => p.domain === newDomain),
@@ -1422,6 +1481,13 @@ async function switchDomain(newDomain) {
   state.personaId = Object.keys(state.activePersonas)[0];
   state.navAccountCollapsed.clear();
   state.endpoint = entry.defaultEndpoint || Object.keys(state.spec.endpoints)[0];
+  // Reset ATM selection when entering or leaving the ATM domain so a
+  // stale ATMId from a prior session doesn't leak across domain switches.
+  state.atmId = null;
+  state.atmFilter = '';
+  if (leavingAtm && typeof _atmRestorePersonaChrome === 'function') {
+    _atmRestorePersonaChrome();
+  }
   // Refresh topbar metadata to reflect the active spec.
   const v = String(state.spec.specVersion || '');
   const versionLabel = v.startsWith('v') ? v : `v${v}`;
@@ -1472,6 +1538,11 @@ function pushPermalink() {
   // Phase R1.5 — enriched view toggle. Emit only when ON so existing
   // shareable raw-view permalinks stay byte-identical.
   if (state.enriched) params.set('enriched', '1');
+  // Phase 2.3 — ATM Locator selection. Only emitted on the ATM domain;
+  // round-trips the drill-down so a share-link reopens at the same ATM.
+  if (state.domain === 'atm' && state.atmId) {
+    params.set('atm', state.atmId);
+  }
   const next = `${window.location.pathname}?${params.toString()}`;
   window.history.replaceState({}, '', next);
 }

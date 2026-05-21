@@ -3456,13 +3456,17 @@ details.nav-account > summary.nav-account-header:focus-visible {
 .insurance-record:last-child {
   margin-bottom: 0;
 }
-.insurance-field-tree {
+/* Shared field-tree renderer — used by both insurance and ATM record views.
+   Selectors renamed from `.insurance-*` to `.field-tree*` so the same
+   layout serves any domain rendering a nested JSON record as a labelled
+   <dl> tree (extracted to src/ui/field-tree.js). */
+.field-tree {
   margin: 0;
   display: grid;
   /* fit-content caps the label column so a wide enum chip (e.g. Status's
      six-value enum on /insurance-consents/{ConsentId}) can't blow out the
      value column. minmax(0, 1fr) lets the value column shrink with available
-     space — without it, word-break: break-word on .insurance-field-value
+     space — without it, word-break: break-word on .field-tree-value
      makes the column's min-content 1 char wide and deeply-nested string
      arrays (Permissions[]) break per character. */
   grid-template-columns: minmax(140px, fit-content(220px)) minmax(0, 1fr);
@@ -3470,12 +3474,12 @@ details.nav-account > summary.nav-account-header:focus-visible {
   row-gap: 4px;
   align-items: baseline;
 }
-.insurance-field-tree .insurance-field-tree {
+.field-tree .field-tree {
   margin-top: 4px;
   padding-left: 12px;
   border-left: 1px dotted var(--border);
 }
-.insurance-field-label {
+.field-tree-label {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -3483,29 +3487,29 @@ details.nav-account > summary.nav-account-header:focus-visible {
   font-weight: 500;
   color: var(--text);
 }
-.insurance-field-label .field-name {
+.field-tree-label .field-name {
   font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   font-size: 11px;
 }
-.insurance-field-label .field-format,
-.insurance-field-label .field-enum {
+.field-tree-label .field-format,
+.field-tree-label .field-enum {
   font-size: 10px;
   color: var(--text-muted);
   font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   font-weight: 400;
 }
-.insurance-field-value {
+.field-tree-value {
   margin: 0;
   font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   font-size: 11px;
   color: var(--text);
   word-break: break-word;
 }
-.insurance-field-value .value-empty {
+.field-tree-value .value-empty {
   color: var(--text-muted);
   font-style: italic;
 }
-.insurance-array {
+.field-tree-array {
   margin: 0;
   padding-left: 0;
   list-style: none;
@@ -3513,16 +3517,188 @@ details.nav-account > summary.nav-account-header:focus-visible {
   flex-direction: column;
   gap: 8px;
 }
-.insurance-array-row {
+.field-tree-array-row {
   display: grid;
   grid-template-columns: max-content 1fr;
   gap: 8px;
   align-items: baseline;
 }
-.insurance-array-row .array-index {
+.field-tree-array-row .array-index {
   font-size: 10px;
   color: var(--text-muted);
   font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+/* Phase 2.3 — ATM Locator picker rail. Replaces the persona library when
+   the ATM domain is active (`.persona-pane.is-atm`). Suppresses the
+   segment / JTBD / stress / footer rails that are persona-shaped, and
+   re-uses the same pane width for a flat scrollable ATM list. */
+.persona-pane.is-atm .segment-rail,
+.persona-pane.is-atm .jtbd-rail,
+.persona-pane.is-atm .stress-filter-bar,
+.persona-pane.is-atm .persona-list-footer {
+  display: none;
+}
+.persona-pane.is-atm .persona-list {
+  /* The persona-list container becomes the ATM picker root. Clear the
+     list-shape padding so the filter bar sits flush with the header. */
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+}
+.atm-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+}
+.atm-filter-input {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+}
+.atm-filter-input:focus-visible {
+  outline: 2px solid var(--accent, currentColor);
+  outline-offset: 1px;
+}
+.atm-filter-count {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+}
+.atm-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  /* The pane scrolls; the picker fills available height. 320px sets a
+     comfortable minimum so the list isn't squished on narrow viewports. */
+  min-height: 320px;
+}
+.atm-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  grid-template-areas:
+    'id status'
+    'where status';
+  gap: 2px 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  color: var(--text);
+}
+.atm-row:hover {
+  background: var(--bg-hover, rgba(0, 0, 0, 0.04));
+}
+.atm-row.is-active {
+  background: var(--bg-selected, rgba(0, 80, 200, 0.08));
+  border-color: var(--border-active, rgba(0, 80, 200, 0.4));
+}
+.atm-row-id {
+  grid-area: id;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.atm-row-where {
+  grid-area: where;
+  font-size: 11px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.atm-row-status {
+  grid-area: status;
+  align-self: center;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+.atm-row-status-available {
+  background: rgba(16, 160, 80, 0.12);
+  border-color: rgba(16, 160, 80, 0.4);
+  color: rgb(16, 130, 70);
+}
+.atm-row-status-undermaintenance {
+  background: rgba(220, 150, 0, 0.12);
+  border-color: rgba(220, 150, 0, 0.4);
+  color: rgb(170, 110, 0);
+}
+.atm-row-status-unavailable {
+  background: rgba(200, 60, 60, 0.12);
+  border-color: rgba(200, 60, 60, 0.4);
+  color: rgb(170, 50, 50);
+}
+.atm-empty {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 12px;
+  font-style: italic;
+}
+.atm-payload {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 12px;
+}
+.atm-overview {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-subtle, rgba(0, 0, 0, 0.02));
+}
+.atm-overview-line {
+  font-size: 12px;
+  color: var(--text);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+}
+.atm-overview-line-muted {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+.atm-overview-hint {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+.atm-record {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-card, var(--bg));
+}
+.atm-record-sample {
+  opacity: 0.85;
+}
+.atm-record-header {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
 }
 
 /* Phase R4 — Logo column. Present only when the enriched-view toggle is
