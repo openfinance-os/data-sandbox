@@ -3696,9 +3696,44 @@ details.nav-account > summary.nav-account-header:focus-visible {
 }
 .atm-record-header {
   font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Phase 2.3 — denser-tree readability tweak for the ATM payload only.
+   The shared .field-tree renderer is also used by the insurance domain,
+   so spacing changes are scoped under .atm-payload to avoid drift there.
+   Goal: each `name  value` pair reads as a clean horizontal line with
+   enough vertical rhythm to scan top-down. */
+.atm-payload .field-tree {
+  grid-template-columns: minmax(180px, fit-content(260px)) minmax(0, 1fr);
+  column-gap: 20px;
+  row-gap: 10px;
+  align-items: first baseline;
+}
+.atm-payload .field-tree-label .field-name {
+  font-size: 12px;
+}
+.atm-payload .field-tree-value {
+  font-size: 12px;
+  line-height: 1.45;
+}
+/* Top-level rows in a record get a hairline divider so the fleet-level
+   fields (ATMId, Location, Availability, Services…) read as separate
+   lines rather than a wall of text. Nested .field-tree (children of
+   complex fields) keep their dotted-left rail without dividers. */
+.atm-record > .field-tree > dt,
+.atm-record > .field-tree > dd {
+  padding-bottom: 10px;
+  border-bottom: 1px dotted var(--border);
+}
+.atm-record > .field-tree > dt:last-of-type,
+.atm-record > .field-tree > dd:last-of-type {
+  border-bottom: 0;
+  padding-bottom: 0;
 }
 
 /* Phase R4 — Logo column. Present only when the enriched-view toggle is
