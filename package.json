@@ -65,7 +65,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^15.2.11",
     "npm-run-all2": "^7.0.2",
-    "posthog-js": "^1.374.3",
+    "posthog-js": "^1.376.0",
     "prettier": "^3.4.2",
     "vitest": "^2.1.8"
   }
