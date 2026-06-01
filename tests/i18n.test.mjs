@@ -91,6 +91,20 @@ describe('string catalog', () => {
     expect(t('find.searches', 'en')).toBe('Searches');
   });
 
+  it('localises the export popover chrome + interpolated templates', () => {
+    expect(t('export.title', 'ar')).toBe('تصدير');
+    expect(t('export.copy', 'ar')).toBe('نسخ');
+    // The copied toast template carries a {label} placeholder, not a literal.
+    expect(t('export.copiedTpl', 'ar')).toContain('{label}');
+    expect(t('export.copiedTpl', 'en').replace('{label}', 'Permalink')).toBe('Permalink copied.');
+    // The tarball note carries all three context placeholders.
+    for (const tok of ['{persona}', '{lfi}', '{seed}']) {
+      expect(t('export.tarballNote', 'ar')).toContain(tok);
+    }
+    // Format proper-nouns are not in the catalog (stay English literals).
+    expect(t('export.tab.json', 'ar')).toBe('export.tab.json');
+  });
+
   it('English and Arabic catalogs have identical key sets', () => {
     for (const locale of LOCALES) expect(STRINGS[locale]).toBeTruthy();
     const en = Object.keys(STRINGS.en).sort();

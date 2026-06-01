@@ -86,6 +86,23 @@ export const STRINGS = {
     'find.noMatches': 'No matches.',
     // Transactions filter.
     'txFilter.clear': 'Clear filters',
+    // Export popover. Format names (JSON/CSV/Tarball/npm/Python/curl/MCP) and
+    // the code snippets themselves stay English by design — only chrome,
+    // actions, and the tarball note are localised.
+    'export.title': 'Export',
+    'export.close': 'Close export popover',
+    'export.closeTitle': 'Close (Esc)',
+    'export.formatLabel': 'Export format',
+    'export.tab.permalink': 'Permalink',
+    'export.tab.embed': 'Embed iframe',
+    'export.downloadTarball': 'Download tarball',
+    'export.tarballNote':
+      'Tarball is a binary artefact — click "Download" below to save a single .tar with every endpoint + CSV for {persona} / {lfi} / seed {seed}.',
+    'export.copy': 'Copy',
+    'export.copyAria': 'Copy snippet to clipboard',
+    'export.copiedTpl': '{label} copied.',
+    'export.downloadJson': 'Download .json',
+    'export.downloadCsv': 'Download .csv',
   },
   ar: {
     'controls.lfi': 'ملف المؤسسة المالية',
@@ -124,6 +141,21 @@ export const STRINGS = {
     'find.noMatches': 'لا توجد نتائج.',
     // Transactions filter.
     'txFilter.clear': 'مسح عوامل التصفية',
+    // Export popover.
+    'export.title': 'تصدير',
+    'export.close': 'إغلاق نافذة التصدير',
+    'export.closeTitle': 'إغلاق (Esc)',
+    'export.formatLabel': 'صيغة التصدير',
+    'export.tab.permalink': 'رابط دائم',
+    'export.tab.embed': 'تضمين iframe',
+    'export.downloadTarball': 'تنزيل الأرشيف',
+    'export.tarballNote':
+      'الأرشيف ملف ثنائي — انقر «تنزيل» أدناه لحفظ ملف ‎.tar‎ واحد يضم كل نقاط النهاية وملف CSV للشخصية {persona} / {lfi} / البذرة {seed}.',
+    'export.copy': 'نسخ',
+    'export.copyAria': 'نسخ المقتطف إلى الحافظة',
+    'export.copiedTpl': 'تم نسخ {label}.',
+    'export.downloadJson': 'تنزيل ‎.json‎',
+    'export.downloadCsv': 'تنزيل ‎.csv‎',
   },
 };
 
