@@ -8,6 +8,7 @@
 
 import { aed } from './motor-policy.js';
 import { isoDate, genUuid } from './identity.js';
+import { MS_PER_DAY } from '../constants.js';
 
 function quoteReference(rng) {
   return `MTRQ-${String(Math.floor(rng() * 1_000_000_000)).padStart(9, '0')}`;
@@ -54,9 +55,9 @@ function serviceRating() {
  */
 export function generateMotorQuote({ persona, rng, now }) {
   const quoteCreatedDays = persona.policy.start_date_offset_days + 5;
-  const creationDateTime = new Date(now.getTime() - quoteCreatedDays * 86400000).toISOString();
+  const creationDateTime = new Date(now.getTime() - quoteCreatedDays * MS_PER_DAY).toISOString();
   const expirationDateTime = new Date(
-    now.getTime() - (quoteCreatedDays - 30) * 86400000,
+    now.getTime() - (quoteCreatedDays - 30) * MS_PER_DAY,
   ).toISOString();
 
   const v = persona.vehicle.valuation_aed;

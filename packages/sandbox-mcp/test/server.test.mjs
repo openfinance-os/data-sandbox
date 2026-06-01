@@ -220,6 +220,36 @@ describe('sandbox-mcp server', () => {
     expect(accounts.Data.Account.length).toBeGreaterThan(0);
   });
 
+  it('Phase 2.2: insurance line-tools resolve per-line on a multi-domain persona', async () => {
+    // retail_multi_banker spans banking + motor/home/travel insurance.
+    // Regression: insurance line-tools previously rejected the 'multi'
+    // domain outright, and policy resolution read the mixed policyIds array.
+    await client.callTool({
+      name: 'set_session',
+      arguments: { persona: 'retail_multi_banker', lfi: 'median' },
+    });
+    const parse = (r) => {
+      const t = textOf(r);
+      return JSON.parse(t.slice(t.indexOf('{')));
+    };
+    for (const line of ['motor', 'home', 'travel']) {
+      const list = parse(await client.callTool({ name: `get_${line}_policies`, arguments: {} }));
+      expect(list.Data, `${line} policies Data`).toBeDefined();
+      // get_<line>_policy resolves THIS line's policy (not a different line's
+      // id from the mixed array) and returns a spec-shaped, watermarked detail.
+      const detailRes = await client.callTool({ name: `get_${line}_policy`, arguments: {} });
+      expect(detailRes.isError ?? false, `${line} policy isError`).toBe(false);
+      const detail = parse(detailRes);
+      expect(detail._watermark).toMatch(/SYNTHETIC/);
+      const quoteRes = await client.callTool({ name: `get_${line}_quote`, arguments: {} });
+      expect(quoteRes.isError ?? false, `${line} quote isError`).toBe(false);
+    }
+    // A line the persona does NOT carry errors with a clear message.
+    const health = await client.callTool({ name: 'get_health_policies', arguments: {} });
+    expect(health.isError).toBe(true);
+    expect(textOf(health)).toMatch(/no "health" insurance line|requires an insurance session/);
+  });
+
   it('set_session pins a persona and get_session echoes it', async () => {
     await client.callTool({
       name: 'set_session',
@@ -400,7 +430,7 @@ describe('sandbox-mcp server', () => {
     });
     const wrongInsurance = await client.callTool({ name: 'get_motor_policies', arguments: {} });
     expect(wrongInsurance.isError).toBe(true);
-    expect(textOf(wrongInsurance)).toMatch(/requires a insurance session/);
+    expect(textOf(wrongInsurance)).toMatch(/requires an insurance session/);
 
     // Insurance session → banking tool.
     await client.callTool({

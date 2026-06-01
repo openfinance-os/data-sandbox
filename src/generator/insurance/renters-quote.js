@@ -5,6 +5,7 @@
 
 import { aed } from './motor-policy.js';
 import { genUuid } from './identity.js';
+import { MS_PER_DAY } from '../constants.js';
 
 function quoteReference(rng) {
   return `RNTQ-${String(Math.floor(rng() * 1_000_000_000)).padStart(9, '0')}`;
@@ -36,9 +37,9 @@ function serviceRating() {
 export function generateRentersQuote({ persona, rng, now }) {
   const r = persona.renters;
   const quoteCreatedDays = r.policy.start_date_offset_days + 5;
-  const creationDateTime = new Date(now.getTime() - quoteCreatedDays * 86400000).toISOString();
+  const creationDateTime = new Date(now.getTime() - quoteCreatedDays * MS_PER_DAY).toISOString();
   const expirationDateTime = new Date(
-    now.getTime() - (quoteCreatedDays - 30) * 86400000,
+    now.getTime() - (quoteCreatedDays - 30) * MS_PER_DAY,
   ).toISOString();
 
   const base = Math.round(r.contents.declared_value_aed * 0.005);

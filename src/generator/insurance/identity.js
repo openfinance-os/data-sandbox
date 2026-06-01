@@ -6,6 +6,7 @@
 // Emirates ID dashed pattern, Visa digits-only).
 
 import { drawName } from '../identity.js';
+import { MS_PER_DAY } from '../constants.js';
 
 // nationality_pool → ISO 3166-1 alpha-3 country code for Nationality field.
 // Picks a single representative country per pool (the spec only takes one).
@@ -16,7 +17,7 @@ const NATIONALITY_BY_POOL = {
 };
 
 export function isoDate(now, offsetDays) {
-  const d = new Date(now.getTime() + offsetDays * 86400000);
+  const d = new Date(now.getTime() + offsetDays * MS_PER_DAY);
   return d.toISOString().slice(0, 10);
 }
 

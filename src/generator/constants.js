@@ -12,3 +12,6 @@
 // Bumped from 12 → 24 in Phase R1 so a TPP can pull a comparable two-year
 // history across transactions, statements, and the cross-LFI ledger.
 export const HISTORY_MONTHS = 24;
+
+// Milliseconds in one day — for date arithmetic on epoch timestamps.
+export const MS_PER_DAY = 86400000;
