@@ -10,11 +10,11 @@ import {
   coverageByBand,
   coverageForEndpoint,
   leafFields,
-  statusBadge,
   specCitationUrl,
   realLfisGuidance,
   bandForFieldName,
 } from './shared/spec-helpers.js';
+import { statusPill, syncViewTabs } from './shared/dom.js';
 import { decodeFromUrl, encodeEmbed, encodeFixtureUrl, CUSTOM_PERSONA_SLUG } from './url.js';
 import { expandRecipe } from './persona-builder/expand.js';
 import { decodeRecipe, encodeRecipe, RECIPE_DEFAULTS } from './persona-builder/recipe.js';
@@ -1848,10 +1848,7 @@ function renderPayloadUnsafe() {
   const allRows = rowsForActiveEndpoint();
   const fieldsByName = endpointFieldsByName();
 
-  document.getElementById('view-rendered').classList.toggle('active', state.view === 'rendered');
-  document.getElementById('view-raw').classList.toggle('active', state.view === 'raw');
-  document.getElementById('view-rendered').setAttribute('aria-selected', state.view === 'rendered');
-  document.getElementById('view-raw').setAttribute('aria-selected', state.view === 'raw');
+  syncViewTabs(state.view);
 
   // Compare-LFIs is a parallel rendering mode driven by state.compareMode
   // (orthogonal to state.view: representation × cardinality). Either
@@ -2005,14 +2002,7 @@ function renderPayloadUnsafe() {
       th.addEventListener('click', () => toggleSort(k));
     }
     if (f) {
-      const badge = statusBadge(f.status);
-      th.appendChild(
-        el('span', {
-          class: `pill ${badge.shape}`,
-          text: badge.label,
-          attrs: { 'aria-label': badge.text },
-        }),
-      );
+      th.appendChild(statusPill(f.status));
     }
     const fieldBtn = el('button', {
       class: 'field-name',

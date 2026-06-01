@@ -5,7 +5,8 @@
 // underscore-prefix stripper as deps so it can live outside src/app.js.
 
 import { buildBundle } from '../generator/index.js';
-import { leafFields, statusBadge } from '../shared/spec-helpers.js';
+import { leafFields } from '../shared/spec-helpers.js';
+import { statusPill } from '../shared/dom.js';
 
 export function createCompareView(deps) {
   const { state, el, stripInternal, personaAvatarEl } = deps;
@@ -180,14 +181,7 @@ export function createCompareView(deps) {
       const f = fieldsByName.get(k);
       if (f) th.dataset.status = f.status;
       if (f) {
-        const badge = statusBadge(f.status);
-        th.appendChild(
-          el('span', {
-            class: `pill ${badge.shape}`,
-            text: badge.label,
-            attrs: { 'aria-label': badge.text },
-          }),
-        );
+        th.appendChild(statusPill(f.status));
       }
       th.appendChild(el('span', { class: 'field-name', text: k }));
       headRow.appendChild(th);

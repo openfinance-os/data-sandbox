@@ -28,6 +28,8 @@
 // is also rendered in a collapsible so the reader can verify nothing
 // was fabricated.
 
+import { trapFocus } from './shared/dom.js';
+
 // Three populate-rate profiles per PRD §8.3 / EXP-04. Anonymous-by-design
 // (NG5 / D-14) — these are never tied to a named real bank.
 const LFI_PROFILES = [
@@ -2973,6 +2975,9 @@ function renderJ2ConsentConfirmed(body, persona) {
 // state.consentRecords; the J2 dashboard empties out when no Active J2
 // consents remain.
 
+// Focus-trap teardown for the open Consent Manager modal (WCAG 2.4.3 / 2.1.2).
+let consentManagerReleaseTrap = null;
+
 function openConsentManager() {
   const modal = document.getElementById('consent-manager-modal');
   if (!modal) return;
@@ -2980,6 +2985,7 @@ function openConsentManager() {
   modal.hidden = false;
   // Stash the previously focused element so we can restore on close.
   modal.dataset.previousFocus = (document.activeElement && document.activeElement.id) || '';
+  consentManagerReleaseTrap = trapFocus(modal);
   const close = document.getElementById('consent-manager-close');
   if (close) close.focus();
 }
@@ -2987,6 +2993,8 @@ function openConsentManager() {
 function closeConsentManager() {
   const modal = document.getElementById('consent-manager-modal');
   if (!modal) return;
+  consentManagerReleaseTrap?.();
+  consentManagerReleaseTrap = null;
   modal.hidden = true;
   // Trigger a refresh so any consents-dependent UI (J2 dashboard empty state)
   // picks up revocations made inside the modal.

@@ -3,32 +3,10 @@
 // Each function here is a pure transform; importers never need to construct
 // or close over a state object.
 
-/**
- * Tiny DOM builder. `el('div', { class: 'foo', text: 'hi', attrs: { id: 'x' },
- * dataset: { kind: 'a' }, onClick: fn }, ...children)` — children may be
- * strings (auto-text-nodes) or HTMLElements. Returns the new HTMLElement.
- */
-export function el(tag, opts = {}, ...children) {
-  const node = document.createElement(tag);
-  if (opts.class) node.className = opts.class;
-  if (opts.text != null) node.textContent = String(opts.text);
-  if (opts.attrs) {
-    for (const [k, v] of Object.entries(opts.attrs)) {
-      if (v == null) continue;
-      node.setAttribute(k, String(v));
-    }
-  }
-  if (opts.dataset) {
-    for (const [k, v] of Object.entries(opts.dataset)) node.dataset[k] = String(v);
-  }
-  if (opts.onClick) node.addEventListener('click', opts.onClick);
-  for (const c of children) {
-    if (c == null) continue;
-    if (typeof c === 'string') node.appendChild(document.createTextNode(c));
-    else node.appendChild(c);
-  }
-  return node;
-}
+// `el` now lives in shared/dom.js (single canonical builder). Re-exported
+// here so the many `import { el } from '.../app/utils.js'` call sites keep
+// working unchanged.
+export { el } from '../shared/dom.js';
 
 /**
  * Parse a build-time SVG string and return the live <svg> element. The

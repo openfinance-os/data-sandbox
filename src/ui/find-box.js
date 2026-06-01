@@ -3,6 +3,8 @@
 // state and helpers as deps so it can live outside src/app.js
 // without a circular import.
 
+import { trapFocus } from '../shared/dom.js';
+
 export function createFindBox(deps) {
   const {
     state,
@@ -15,7 +17,12 @@ export function createFindBox(deps) {
     openFieldCard,
   } = deps;
 
+  // Active focus-trap teardown for the open overlay (WCAG 2.4.3 / 2.1.2).
+  let releaseTrap = null;
+
   function closeFind() {
+    releaseTrap?.();
+    releaseTrap = null;
     document.getElementById('find-overlay')?.remove();
   }
 
@@ -200,6 +207,7 @@ export function createFindBox(deps) {
       }
     });
     document.body.appendChild(overlay);
+    releaseTrap = trapFocus(overlay);
     setTimeout(() => input.focus(), 0);
     refresh();
   }

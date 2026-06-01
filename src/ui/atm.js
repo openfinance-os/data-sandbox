@@ -21,6 +21,7 @@
 // `.is-atm` class hung on .persona-pane while the ATM domain is active.
 
 import { leafFields } from '../shared/spec-helpers.js';
+import { syncViewTabs } from '../shared/dom.js';
 import { renderFieldTree } from './field-tree.js';
 import { track } from '../analytics.js';
 // `track` is imported for the endpoint_nav event below (already in
@@ -206,12 +207,7 @@ export function createAtm(deps) {
     body.replaceChildren();
     if (epLabel) epLabel.textContent = state.endpoint ?? '';
 
-    document.getElementById('view-rendered')?.classList.toggle('active', state.view === 'rendered');
-    document.getElementById('view-raw')?.classList.toggle('active', state.view === 'raw');
-    document
-      .getElementById('view-rendered')
-      ?.setAttribute('aria-selected', state.view === 'rendered');
-    document.getElementById('view-raw')?.setAttribute('aria-selected', state.view === 'raw');
+    syncViewTabs(state.view);
 
     const atms = state.bundle?.atms ?? [];
     const meta = state.bundle?.meta ?? {};

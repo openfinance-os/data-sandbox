@@ -11,6 +11,7 @@
 // directly until lfi-bands.insurance.yaml grows beyond the 4-path starter).
 
 import { leafFields } from '../shared/spec-helpers.js';
+import { syncViewTabs } from '../shared/dom.js';
 import { renderFieldTree } from './field-tree.js';
 import { track } from '../analytics.js';
 
@@ -243,12 +244,7 @@ export function createInsurance(deps) {
 
     // Sync the rendered/raw toggle aria state so a switch from the banking flow
     // (where the toggle was already wired) stays consistent.
-    document.getElementById('view-rendered')?.classList.toggle('active', state.view === 'rendered');
-    document.getElementById('view-raw')?.classList.toggle('active', state.view === 'raw');
-    document
-      .getElementById('view-rendered')
-      ?.setAttribute('aria-selected', state.view === 'rendered');
-    document.getElementById('view-raw')?.setAttribute('aria-selected', state.view === 'raw');
+    syncViewTabs(state.view);
 
     // PR #9 — insurance early-calibration banner.
     body.appendChild(renderInsuranceCalibrationBanner());
