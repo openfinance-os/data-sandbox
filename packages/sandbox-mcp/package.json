@@ -45,7 +45,7 @@
     "zod": "^3.25.0"
   },
   "devDependencies": {
-    "vitest": "^4.1.7"
+    "vitest": "^4.1.8"
   },
   "publishConfig": {
     "access": "public"
