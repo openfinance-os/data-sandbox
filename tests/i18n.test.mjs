@@ -82,6 +82,15 @@ describe('string catalog', () => {
     expect(t('status.conditional', 'ar')).toBe('شرطي');
   });
 
+  it('localises the find-box + tx-filter module chrome', () => {
+    expect(t('find.searches', 'ar')).toBe('نطاق البحث');
+    expect(t('find.noMatches', 'ar')).toBe('لا توجد نتائج.');
+    expect(t('find.corpus.personas', 'ar')).toBe('الشخصيات');
+    expect(t('txFilter.clear', 'ar')).toBe('مسح عوامل التصفية');
+    // English values are unchanged so first paint stays identical.
+    expect(t('find.searches', 'en')).toBe('Searches');
+  });
+
   it('English and Arabic catalogs have identical key sets', () => {
     for (const locale of LOCALES) expect(STRINGS[locale]).toBeTruthy();
     const en = Object.keys(STRINGS.en).sort();

@@ -4,6 +4,8 @@
 // takes state, the DOM helper, the renderPayload trigger, and the
 // emptyTxFilter factory as deps so it can live outside src/app.js.
 
+import { t } from '../shared/i18n.js';
+
 export function createTxFilter(deps) {
   const { state, el, renderPayload, emptyTxFilter, updateUrl } = deps;
 
@@ -89,7 +91,7 @@ export function createTxFilter(deps) {
 
     const clear = el('button', {
       class: 'filter-clear',
-      text: 'Clear filters',
+      text: t('txFilter.clear', state.lang),
       onClick: () => {
         state.txFilter = emptyTxFilter();
         renderPayload();
