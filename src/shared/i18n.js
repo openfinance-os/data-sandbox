@@ -103,6 +103,29 @@ export const STRINGS = {
     'export.copiedTpl': '{label} copied.',
     'export.downloadJson': 'Download .json',
     'export.downloadCsv': 'Download .csv',
+    // EXP-13/14/26 field-card facet labels + authored value prose. The facet
+    // VALUES that flow from the spec/field-knowledge helpers (Real-LFI
+    // guidance, concrete conditional-rule prose) stay as their source text —
+    // only the left-column labels and the strings authored in this module are
+    // localised.
+    'fc.name': 'Name',
+    'fc.path': 'Path',
+    'fc.status': 'Status',
+    'fc.type': 'Type',
+    'fc.format': 'Format',
+    'fc.enum': 'Enum',
+    'fc.example': 'Example',
+    'fc.conditional': 'Conditional',
+    'fc.realLfis': 'Real LFIs',
+    'fc.pii': 'PII',
+    'fc.spec': 'Spec',
+    'fc.feedback': 'Feedback',
+    'fc.specLink': 'View on Nebras GitHub at pinned SHA →',
+    'fc.reportLink': 'Report an issue with this field →',
+    'fc.piiYes': 'Yes — under PDPL this field requires explicit data-handling controls.',
+    'fc.piiNo': 'No (per the v1 PII allowlist).',
+    'fc.conditionalFallback':
+      'Triggered by a parent-field value — see the spec link for the exact rule.',
   },
   ar: {
     'controls.lfi': 'ملف المؤسسة المالية',
@@ -156,6 +179,25 @@ export const STRINGS = {
     'export.copiedTpl': 'تم نسخ {label}.',
     'export.downloadJson': 'تنزيل ‎.json‎',
     'export.downloadCsv': 'تنزيل ‎.csv‎',
+    // Field-card facet labels + authored value prose.
+    'fc.name': 'الاسم',
+    'fc.path': 'المسار',
+    'fc.status': 'الحالة',
+    'fc.type': 'النوع',
+    'fc.format': 'الصيغة',
+    'fc.enum': 'التعداد',
+    'fc.example': 'مثال',
+    'fc.conditional': 'الشرط',
+    'fc.realLfis': 'المؤسسات المالية الفعلية',
+    'fc.pii': 'بيانات شخصية',
+    'fc.spec': 'المواصفة',
+    'fc.feedback': 'ملاحظات',
+    'fc.specLink': 'العرض على Nebras GitHub عند الـ SHA المثبّت ←',
+    'fc.reportLink': 'الإبلاغ عن مشكلة في هذا الحقل ←',
+    'fc.piiYes':
+      'نعم — بموجب قانون حماية البيانات (PDPL) يتطلب هذا الحقل ضوابط صريحة لمعالجة البيانات.',
+    'fc.piiNo': 'لا (وفقًا لقائمة PII المسموح بها في الإصدار الأول).',
+    'fc.conditionalFallback': 'يُفعَّل بقيمة حقل أصلي — راجع رابط المواصفة للقاعدة الدقيقة.',
   },
 };
 

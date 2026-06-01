@@ -105,6 +105,16 @@ describe('string catalog', () => {
     expect(t('export.tab.json', 'ar')).toBe('export.tab.json');
   });
 
+  it('localises the field-card facet labels + authored value prose', () => {
+    expect(t('fc.name', 'ar')).toBe('الاسم');
+    expect(t('fc.feedback', 'ar')).toBe('ملاحظات');
+    expect(t('fc.reportLink', 'ar')).toContain('←');
+    expect(t('fc.piiNo', 'ar')).toContain('PII');
+    // English values are unchanged so first paint stays identical.
+    expect(t('fc.name', 'en')).toBe('Name');
+    expect(t('fc.reportLink', 'en')).toBe('Report an issue with this field →');
+  });
+
   it('English and Arabic catalogs have identical key sets', () => {
     for (const locale of LOCALES) expect(STRINGS[locale]).toBeTruthy();
     const en = Object.keys(STRINGS.en).sort();

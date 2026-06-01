@@ -28,6 +28,23 @@ const STATUS_TEXT_KEY = {
   conditional: 'status.conditional',
 };
 
+// D-10 — facet logic-key → display-label catalog key. The English keys in
+// `rowsToRender` still drive the special-case rendering (Status/Spec); this
+// map localises only the left-column label text.
+const FACET_LABEL_KEY = {
+  Name: 'fc.name',
+  Path: 'fc.path',
+  Status: 'fc.status',
+  Type: 'fc.type',
+  Format: 'fc.format',
+  Enum: 'fc.enum',
+  Example: 'fc.example',
+  Conditional: 'fc.conditional',
+  'Real LFIs': 'fc.realLfis',
+  PII: 'fc.pii',
+  Spec: 'fc.spec',
+};
+
 export function createFieldCard(deps) {
   const { state, el, endpointFieldsByName, rowsForActiveEndpoint, setPaneCollapsed } = deps;
 
@@ -49,9 +66,10 @@ export function createFieldCard(deps) {
     // Concrete conditional-rule prose for fields in the curated lookup;
     // falls back to a generic stub for unmapped fields.
     const ruleProse = conditionalRule(name, f.path);
+    const lang = state.lang;
     const conditionalLine =
       f.status === 'conditional'
-        ? (ruleProse ?? 'Triggered by a parent-field value — see the spec link for the exact rule.')
+        ? (ruleProse ?? t('fc.conditionalFallback', lang))
         : (ruleProse ?? '—');
 
     content.replaceChildren();
@@ -66,17 +84,13 @@ export function createFieldCard(deps) {
       ['Example', formatExample(example)],
       ['Conditional', conditionalLine],
       ['Real LFIs', guidance],
-      [
-        'PII',
-        isPii(name)
-          ? 'Yes — under PDPL this field requires explicit data-handling controls.'
-          : 'No (per the v1 PII allowlist).',
-      ],
+      ['PII', isPii(name) ? t('fc.piiYes', lang) : t('fc.piiNo', lang)],
       ['Spec', null], // rendered specially as a link
     ];
     for (const [k, v] of rowsToRender) {
       const row = el('div', { class: 'fc-row' });
-      row.appendChild(el('span', { class: 'k', text: k }));
+      const labelKey = FACET_LABEL_KEY[k];
+      row.appendChild(el('span', { class: 'k', text: labelKey ? t(labelKey, lang) : k }));
       if (k === 'Status') {
         const badge = statusBadge(f.status);
         const ve = el('span', { class: 'v' });
@@ -89,7 +103,7 @@ export function createFieldCard(deps) {
         if (citation) {
           ve.appendChild(
             el('a', {
-              text: 'View on Nebras GitHub at pinned SHA →',
+              text: t('fc.specLink', lang),
               attrs: { href: citation, target: '_blank', rel: 'noopener noreferrer' },
             }),
           );
@@ -108,12 +122,12 @@ export function createFieldCard(deps) {
     // issue tracker; the placeholder repo URL is replaced at Commons publication
     // time per the implementation plan.
     const reportRow = el('div', { class: 'fc-row fc-report' });
-    reportRow.appendChild(el('span', { class: 'k', text: 'Feedback' }));
+    reportRow.appendChild(el('span', { class: 'k', text: t('fc.feedback', lang) }));
     const reportV = el('span', { class: 'v' });
     reportV.appendChild(
       el('a', {
         class: 'fc-report-link',
-        text: 'Report an issue with this field →',
+        text: t('fc.reportLink', lang),
         attrs: { href: buildIssueUrl(name, f), target: '_blank', rel: 'noopener noreferrer' },
       }),
     );
