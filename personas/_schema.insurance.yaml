@@ -21,6 +21,8 @@ persona_id: <slug>
 domain: insurance
 line: <enum: motor|home|health|life|travel|renters|employment>  # optional — defaults to 'motor' if absent
 name: <string>
+name_ar: <string?>                 # optional — D-10 Arabic display name
+narrative_ar: <string?>            # optional — D-10 Arabic narrative
 archetype: <string>                # e.g. motor_comprehensive_financed
 default_seed: <int>
 stress_coverage:

@@ -1,6 +1,9 @@
 persona_id: salaried_expat_mid
 domain: banking
 name: "Sara — Salaried Expat (Mid Tier)"
+# D-10 — optional Arabic display name (parallel-text UI). Shown when the UI
+# language is Arabic; the English `name` is the fallback otherwise.
+name_ar: "سارة — موظفة وافدة (الفئة المتوسطة)"
 archetype: salaried_expat
 default_seed: 4729
 segment: Retail
@@ -61,3 +64,13 @@ narrative: |
   salary; utilities and telco are predictable mid-month direct debits. No FX, no
   cash deposits — a classic "baseline affordability case" persona that exercises
   the spec-clean Flags=Payroll salary marker and the optional CreditLine block.
+# D-10 — optional Arabic narrative (parallel-text UI). Shown when the UI
+# language is Arabic; the English `narrative` is the fallback otherwise.
+narrative_ar: |
+  سارة أخصائية تقنية معلومات في دبي، تتقاضى راتبًا قدره ٢٥ ألف درهم شهريًا من
+  جهة عمل في منطقة حرة بقطاع التقنية. لديها حساب جارٍ تحتفظ به منذ عامين وبطاقة
+  ائتمان واحدة. يُخصم إيجارها مباشرةً بعد يومين من راتبها الذي يصلها في الخامس
+  والعشرين من الشهر؛ والمرافق والاتصالات خصوم مباشرة منتظمة في منتصف الشهر. لا
+  توجد عمليات صرف عملات أجنبية ولا إيداعات نقدية — شخصية «حالة جدارة ائتمانية
+  أساسية» نموذجية تُبرز علامة الراتب Flags=Payroll المتوافقة مع المواصفة وكتلة
+  CreditLine الاختيارية.

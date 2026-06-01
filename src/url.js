@@ -10,10 +10,14 @@ export const DEFAULTS = {
   lfi: 'median',
   seed: 1,
   domain: 'banking',
+  // D-10 — UI language. English is the default and stays implicit in URLs
+  // so every existing permalink round-trips byte-identically.
+  lang: 'en',
 };
 
 const VALID_LFI = new Set(['rich', 'median', 'sparse']);
 const VALID_DOMAINS = new Set(['banking', 'insurance', 'atm']);
+const VALID_LANGS = new Set(['en', 'ar']);
 export const CUSTOM_PERSONA_SLUG = 'custom';
 
 export function encodePermalink({
@@ -24,6 +28,7 @@ export function encodePermalink({
   domain,
   preview,
   recipe,
+  lang,
 }) {
   if (!personaId) throw new Error('personaId required');
   const params = new URLSearchParams();
@@ -32,6 +37,10 @@ export function encodePermalink({
   // domain only emitted when it differs from default (keeps banking permalinks unchanged).
   if (VALID_DOMAINS.has(domain) && domain !== DEFAULTS.domain) {
     params.set('domain', domain);
+  }
+  // lang only emitted when non-default (English stays implicit — D-10).
+  if (VALID_LANGS.has(lang) && lang !== DEFAULTS.lang) {
+    params.set('lang', lang);
   }
   if (preview) params.set('preview', '1');
   if (personaId === CUSTOM_PERSONA_SLUG && recipe) params.set('recipe', recipe);
@@ -106,6 +115,9 @@ export function decodeFromUrl(url) {
 
   const domainRaw = params.get('domain');
   const domain = VALID_DOMAINS.has(domainRaw) ? domainRaw : DEFAULTS.domain;
+  // D-10 — UI language. Invalid / missing → English.
+  const langRaw = params.get('lang');
+  const lang = VALID_LANGS.has(langRaw) ? langRaw : DEFAULTS.lang;
   const preview = params.get('preview') === '1';
   const recipe = personaId === CUSTOM_PERSONA_SLUG ? params.get('recipe') : null;
   // Phase R1.5 — enriched-view toggle. Default OFF; URL opt-in keeps the
@@ -117,7 +129,7 @@ export function decodeFromUrl(url) {
   // Domain-scoped — ignored unless `?domain=atm`.
   const atmId = domain === 'atm' ? params.get('atm') : null;
 
-  return { personaId, lfi, seed, endpoint, height, domain, preview, recipe, enriched, atmId };
+  return { personaId, lfi, seed, endpoint, height, domain, preview, recipe, enriched, atmId, lang };
 }
 
 // Update window.location without full reload. Browser-only; safely no-ops in tests.
