@@ -6,6 +6,7 @@
 // without a circular import.
 
 import { trapFocus } from '../shared/dom.js';
+import { t } from '../shared/i18n.js';
 
 export function createTour(deps) {
   const {
@@ -28,15 +29,18 @@ export function createTour(deps) {
     if (e.key === 'Escape') closeTour();
   }
 
+  // D-10 — step copy (title + body) lives in the i18n catalog under tour.sN.*;
+  // each step keeps its setup() to drive the live demo. Render reads the
+  // active locale at paint time.
   const TOUR_STEPS = [
     {
-      title: 'Meet Sara',
-      body: 'Sara is a salaried expat in Dubai. She has two accounts: a current account where her AED 25k salary lands on the 25th, and a credit card. The persona library on the left lets you swap her for eleven other UAE archetypes — gig worker, SME, HNW multi-currency, joint family, corporate treasury, and more.',
+      titleKey: 'tour.s1.title',
+      bodyKey: 'tour.s1.body',
       setup: () => setPersona('salaried_expat_mid', 'median'),
     },
     {
-      title: 'Watch the salary marker',
-      body: "Open the transactions endpoint on Sara's current account. Notice the monthly salary credit — it carries Flags=Payroll. That's the v2.1 spec-clean way to identify income; everything else (fallbacks, recurrence-clustering) is a workaround for LFIs that don't populate it.",
+      titleKey: 'tour.s2.title',
+      bodyKey: 'tour.s2.body',
       setup: () => {
         state.endpoint = '/accounts/{AccountId}/transactions';
         state.selectedAccountId = state.bundle.accounts[0]?.AccountId ?? null;
@@ -45,8 +49,8 @@ export function createTour(deps) {
       },
     },
     {
-      title: 'See the rent commitment',
-      body: 'Switch to /standing-orders for the same account. Sara has a rent standing order that hits the 27th of every month — two days after her salary. Click that row and the sandbox jumps to the matching transactions in /transactions, with the cross-link banner offering you a way back.',
+      titleKey: 'tour.s3.title',
+      bodyKey: 'tour.s3.body',
       setup: () => {
         state.endpoint = '/accounts/{AccountId}/standing-orders';
         state.selectedAccountId = state.bundle.accounts[0]?.AccountId ?? null;
@@ -56,15 +60,15 @@ export function createTour(deps) {
       },
     },
     {
-      title: 'Read the field card',
-      body: "Click any field name in the rendered table to open the field card. Every field carries: a status badge (Mandatory / Optional / Conditional, derived live from the OpenAPI spec — never hand-authored), type and format, enum values, an example from the persona, a 'Real LFIs' guidance note, and a deep link to the field on the upstream Nebras GitHub at the pinned SHA.",
+      titleKey: 'tour.s4.title',
+      bodyKey: 'tour.s4.body',
       setup: () => {
         // No state change — just nudge the user.
       },
     },
     {
-      title: 'Sparse vs Median',
-      body: "Switch the LFI profile (top bar) to Sparse. Watch the coverage meter drop and watch optional fields like MerchantDetails / Flags / ValueDateTime / Nickname disappear. That's the Phase-1 minimum your downstream UI and decisioning logic needs to handle. Switch back to Median, then to Rich, and pick a different persona to finish — the URL updates as you go, so you can paste it into a slide deck.",
+      titleKey: 'tour.s5.title',
+      bodyKey: 'tour.s5.body',
       setup: () => {},
     },
   ];
@@ -104,22 +108,27 @@ export function createTour(deps) {
         'aria-labelledby': 'tour-title',
       },
     });
+    const lang = state.lang;
     const card = el('div', { class: 'tour-card' });
     card.appendChild(
       el('div', {
         class: 'tour-step-num',
-        text: `Step ${state.tourStep + 1} of ${TOUR_STEPS.length}`,
+        text: t('tour.stepOf', lang)
+          .replace('{n}', String(state.tourStep + 1))
+          .replace('{total}', String(TOUR_STEPS.length)),
       }),
     );
-    card.appendChild(el('h3', { text: step.title, attrs: { id: 'tour-title' } }));
-    card.appendChild(el('p', { text: step.body }));
+    card.appendChild(el('h3', { text: t(step.titleKey, lang), attrs: { id: 'tour-title' } }));
+    card.appendChild(el('p', { text: t(step.bodyKey, lang) }));
     const actions = el('div', { class: 'tour-actions' });
-    actions.appendChild(el('button', { class: 'tour-skip', text: 'Skip', onClick: closeTour }));
+    actions.appendChild(
+      el('button', { class: 'tour-skip', text: t('tour.skip', lang), onClick: closeTour }),
+    );
     const right = el('div', { attrs: { style: 'display:flex;gap:6px' } });
     if (state.tourStep > 0) {
       right.appendChild(
         el('button', {
-          text: 'Back',
+          text: t('tour.back', lang),
           onClick: () => {
             state.tourStep--;
             renderTourStep();
@@ -131,7 +140,7 @@ export function createTour(deps) {
     right.appendChild(
       el('button', {
         class: 'tour-primary',
-        text: isLast ? 'Finish' : 'Next →',
+        text: isLast ? t('tour.finish', lang) : t('tour.next', lang),
         onClick: () => {
           if (isLast) closeTour();
           else {

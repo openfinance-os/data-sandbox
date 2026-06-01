@@ -115,6 +115,20 @@ describe('string catalog', () => {
     expect(t('fc.reportLink', 'en')).toBe('Report an issue with this field →');
   });
 
+  it('localises the guided-tour chrome, titles, and bodies', () => {
+    expect(t('tour.skip', 'ar')).toBe('تخطّي');
+    expect(t('tour.next', 'ar')).toContain('←'); // RTL arrow flipped
+    expect(t('tour.s1.title', 'ar')).toBe('تعرّف على سارة');
+    // Step-counter template carries both placeholders.
+    expect(t('tour.stepOf', 'ar')).toContain('{n}');
+    expect(t('tour.stepOf', 'en').replace('{n}', '2').replace('{total}', '5')).toBe('Step 2 of 5');
+    // Technical tokens survive inside the translated body prose.
+    expect(t('tour.s2.body', 'ar')).toContain('Flags=Payroll');
+    expect(t('tour.s5.body', 'ar')).toContain('MerchantDetails');
+    // English unchanged so first paint stays identical.
+    expect(t('tour.s1.title', 'en')).toBe('Meet Sara');
+  });
+
   it('English and Arabic catalogs have identical key sets', () => {
     for (const locale of LOCALES) expect(STRINGS[locale]).toBeTruthy();
     const en = Object.keys(STRINGS.en).sort();
