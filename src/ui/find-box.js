@@ -4,6 +4,16 @@
 // without a circular import.
 
 import { trapFocus } from '../shared/dom.js';
+import { t } from '../shared/i18n.js';
+
+// Find-box corpus tags, in render order, paired with their catalog keys.
+const CORPUS_TAGS = [
+  'find.corpus.fieldNames',
+  'find.corpus.fieldPaths',
+  'find.corpus.enumValues',
+  'find.corpus.personas',
+  'find.corpus.stressCoverage',
+];
 
 export function createFindBox(deps) {
   const {
@@ -111,31 +121,26 @@ export function createFindBox(deps) {
       attrs: { id: 'find-overlay', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Find' },
     });
     const card = el('div', { class: 'find-card' });
+    const lang = state.lang;
     const input = el('input', {
       class: 'find-input',
       attrs: {
         type: 'search',
-        placeholder: 'Search fields, paths, enums, persona names, narratives, stress coverage…',
+        placeholder: t('find.placeholder', lang),
         'aria-label': 'Find input',
         autocomplete: 'off',
       },
     });
     const corpus = el('div', { class: 'find-corpus' });
-    corpus.appendChild(el('span', { class: 'find-corpus-label', text: 'Searches' }));
-    for (const tag of [
-      'Field names',
-      'Field paths',
-      'Enum values',
-      'Personas',
-      'Stress coverage',
-    ]) {
-      corpus.appendChild(el('span', { class: 'find-corpus-tag', text: tag }));
+    corpus.appendChild(el('span', { class: 'find-corpus-label', text: t('find.searches', lang) }));
+    for (const tagKey of CORPUS_TAGS) {
+      corpus.appendChild(el('span', { class: 'find-corpus-tag', text: t(tagKey, lang) }));
     }
     const ul = el('ul', { class: 'find-results', attrs: { role: 'listbox' } });
     const hint = el('div', { class: 'find-hint' });
-    const left = el('span', { text: 'Click any result to jump' });
+    const left = el('span', { text: t('find.clickToJump', lang) });
     const right = el('span');
-    right.appendChild(document.createTextNode('Open with '));
+    right.appendChild(document.createTextNode(t('find.openWith', lang)));
     right.appendChild(el('kbd', { text: '⌘K' }));
     right.appendChild(document.createTextNode(' · close with '));
     right.appendChild(el('kbd', { text: 'Esc' }));
@@ -165,7 +170,7 @@ export function createFindBox(deps) {
           text:
             input.value.trim().length === 0
               ? 'Try: TransactionType · Payroll · MerchantCategoryCode · Sara · multi_currency · expat'
-              : 'No matches.',
+              : t('find.noMatches', lang),
         });
         ul.appendChild(empty);
         return;

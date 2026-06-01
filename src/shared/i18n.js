@@ -73,6 +73,19 @@ export const STRINGS = {
     'status.mandatory': 'Mandatory',
     'status.optional': 'Optional',
     'status.conditional': 'Conditional',
+    // Find box (⌘K) chrome.
+    'find.placeholder': 'Search fields, paths, enums, persona names, narratives, stress coverage…',
+    'find.searches': 'Searches',
+    'find.corpus.fieldNames': 'Field names',
+    'find.corpus.fieldPaths': 'Field paths',
+    'find.corpus.enumValues': 'Enum values',
+    'find.corpus.personas': 'Personas',
+    'find.corpus.stressCoverage': 'Stress coverage',
+    'find.clickToJump': 'Click any result to jump',
+    'find.openWith': 'Open with ',
+    'find.noMatches': 'No matches.',
+    // Transactions filter.
+    'txFilter.clear': 'Clear filters',
   },
   ar: {
     'controls.lfi': 'ملف المؤسسة المالية',
@@ -98,6 +111,19 @@ export const STRINGS = {
     'status.mandatory': 'إلزامي',
     'status.optional': 'اختياري',
     'status.conditional': 'شرطي',
+    // Find box (⌘K) chrome.
+    'find.placeholder': 'ابحث في الحقول والمسارات والقيم وأسماء الشخصيات والسرد وتغطية الضغط…',
+    'find.searches': 'نطاق البحث',
+    'find.corpus.fieldNames': 'أسماء الحقول',
+    'find.corpus.fieldPaths': 'مسارات الحقول',
+    'find.corpus.enumValues': 'قيم التعداد',
+    'find.corpus.personas': 'الشخصيات',
+    'find.corpus.stressCoverage': 'تغطية الضغط',
+    'find.clickToJump': 'انقر أي نتيجة للانتقال',
+    'find.openWith': 'افتح بـ ',
+    'find.noMatches': 'لا توجد نتائج.',
+    // Transactions filter.
+    'txFilter.clear': 'مسح عوامل التصفية',
   },
 };
 
