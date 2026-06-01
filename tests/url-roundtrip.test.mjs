@@ -48,6 +48,24 @@ describe('URL shapes — §6.8', () => {
     expect(state.seed).toBe(5);
   });
 
+  // D-10 — UI language round-trips through the permalink.
+  it('default English language stays implicit in the permalink', () => {
+    const url = encodePermalink({ personaId: 'sara', lfi: 'median', seed: 1, lang: 'en' });
+    expect(url).not.toContain('lang=');
+    expect(decodeFromUrl(url).lang).toBe('en');
+  });
+
+  it('Arabic language is emitted and round-trips', () => {
+    const url = encodePermalink({ personaId: 'sara', lfi: 'median', seed: 1, lang: 'ar' });
+    expect(url).toContain('lang=ar');
+    expect(decodeFromUrl(url).lang).toBe('ar');
+  });
+
+  it('decode falls back to English for missing/invalid lang', () => {
+    expect(decodeFromUrl('/commons/sandbox/p/sara').lang).toBe(DEFAULTS.lang);
+    expect(decodeFromUrl('/commons/sandbox/p/sara?lang=fr').lang).toBe('en');
+  });
+
   it('decode handles embed-shape URLs', () => {
     const state = decodeFromUrl(
       '/embed?persona=sara&lfi=rich&seed=12&endpoint=/parties&height=400',

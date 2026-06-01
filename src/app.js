@@ -15,6 +15,7 @@ import {
   bandForFieldName,
 } from './shared/spec-helpers.js';
 import { statusPill, syncViewTabs } from './shared/dom.js';
+import { setDocumentLocale, normalizeLocale } from './shared/i18n.js';
 import { decodeFromUrl, encodeEmbed, encodeFixtureUrl, CUSTOM_PERSONA_SLUG } from './url.js';
 import { expandRecipe } from './persona-builder/expand.js';
 import { decodeRecipe, encodeRecipe, RECIPE_DEFAULTS } from './persona-builder/recipe.js';
@@ -92,6 +93,12 @@ const state = {
   personaId: null,
   lfi: 'median',
   seed: 4729,
+  // D-10 — UI language ('en' | 'ar') and numeral system ('latn' | 'arab').
+  // English + Western digits are the defaults; both stay implicit in the URL.
+  // `lang` flips <html lang/dir> and swaps the app-shell chrome; `numerals`
+  // switches display digits independently (formatAmount routes through it).
+  lang: 'en',
+  numerals: 'latn',
   // Phase 2.3 ATM Locator domain state. atmId is the selected ATM's
   // identifier (`bundle.atms[].ATMId`); atmFilter is the picker rail's
   // text filter. Both reset on persona/domain switch in switchDomain().
@@ -476,6 +483,18 @@ async function init() {
   const url = decodeFromUrl(window.location.href);
   state.preview = url.preview;
   state.enriched = Boolean(url.enriched);
+  // D-10 — resolve UI language from the URL and apply the document locale
+  // before first paint. Numerals default to follow the language (Arabic UI →
+  // Arabic-Indic digits) but remain an independent toggle. `skipChromeWhenDefault`
+  // leaves the literal English HTML untouched for the default locale so the
+  // LTR visual baselines never drift; Arabic re-translates the chrome here.
+  state.lang = normalizeLocale(url.lang);
+  state.numerals = state.lang === 'ar' ? 'arab' : 'latn';
+  setDocumentLocale(document, {
+    lang: state.lang,
+    numerals: state.numerals,
+    skipChromeWhenDefault: true,
+  });
   // Phase 2.3 — ATM selection from URL; only honoured when the resolved
   // domain ends up as 'atm' (renderAtmBundle re-validates the ATMId
   // exists in the active fleet and falls back to the first ATM if not).
@@ -815,7 +834,7 @@ function buildPersonaList() {
       el(
         'div',
         { class: 'persona-name' },
-        document.createTextNode(p.name),
+        document.createTextNode(localizedName(p)),
         isCustom ? el('span', { class: 'custom-badge', text: 'Custom (not curated)' }) : null,
       ),
       el('div', { class: 'persona-archetype', text: humanArchetype(p.archetype) }),
@@ -871,7 +890,9 @@ function buildPersonaList() {
       details.appendChild(summary);
       if (bestFor) details.appendChild(el('div', { class: 'persona-best', text: bestFor }));
       if (p.narrative)
-        details.appendChild(el('div', { class: 'persona-narrative', text: p.narrative.trim() }));
+        details.appendChild(
+          el('div', { class: 'persona-narrative', text: localizedNarrative(p).trim() }),
+        );
       if (Array.isArray(p.stress_coverage) && p.stress_coverage.length > 0) {
         const chips = el('div', {
           class: 'persona-stress',
@@ -976,6 +997,12 @@ function syncControls() {
   const caption = document.getElementById('lfi-caption');
   if (caption) caption.textContent = LFI_CAPTIONS[state.lfi] ?? '';
   document.getElementById('seed-input').value = String(state.seed);
+  for (const btn of document.querySelectorAll('#lang-seg button[data-lang]')) {
+    btn.setAttribute('aria-checked', btn.dataset.lang === state.lang ? 'true' : 'false');
+  }
+  for (const btn of document.querySelectorAll('#numeral-seg button[data-numerals]')) {
+    btn.setAttribute('aria-checked', btn.dataset.numerals === state.numerals ? 'true' : 'false');
+  }
   const expand = document.getElementById('toggle-expand-all');
   if (expand) expand.checked = !!state.expandFields;
   const piiOnly = document.getElementById('toggle-pii-only');
@@ -983,6 +1010,14 @@ function syncControls() {
   for (const card of document.querySelectorAll('.persona-card')) {
     card.classList.toggle('active', card.dataset.personaId === state.personaId);
   }
+}
+
+// D-10 — re-apply the active locale to the document (sets <html lang/dir>,
+// numeral mode, and swaps the [data-i18n] chrome). aria-checked on the
+// language / numeral toggles is reconciled by syncControls() on the
+// subsequent render.
+function applyLocale() {
+  setDocumentLocale(document, { lang: state.lang, numerals: state.numerals });
 }
 
 // Side-pane collapse — frees screen real estate for the navigator. State
@@ -1127,6 +1162,33 @@ function attachEventHandlers() {
     state.seed = Number.isFinite(def) ? def : 1;
     rebuildAndRender();
   });
+  // D-10 — language toggle. Flips <html lang/dir>, re-translates the chrome,
+  // and (since the persona showcase + amounts are re-derived) rebuilds the
+  // active view. Numerals follow the language by default but the user can
+  // override them via the numeral toggle afterwards.
+  for (const btn of document.querySelectorAll('#lang-seg button[data-lang]')) {
+    btn.addEventListener('click', () => {
+      const from = state.lang;
+      const to = normalizeLocale(btn.dataset.lang);
+      if (from === to) return;
+      state.lang = to;
+      state.numerals = to === 'ar' ? 'arab' : 'latn';
+      applyLocale();
+      rebuildAndRender();
+      // No analytics event: the EXP-21 allowlist is a governed contract;
+      // adding `lang_switch` is deferred to a deliberate allowlist update.
+    });
+  }
+  // D-10 — numeral-system toggle (independent of language per the spec).
+  for (const btn of document.querySelectorAll('#numeral-seg button[data-numerals]')) {
+    btn.addEventListener('click', () => {
+      const to = btn.dataset.numerals === 'arab' ? 'arab' : 'latn';
+      if (state.numerals === to) return;
+      state.numerals = to;
+      applyLocale();
+      rebuildAndRender();
+    });
+  }
   document.getElementById('view-rendered')?.addEventListener('click', () => {
     if (state.view === 'rendered') return;
     state.view = 'rendered';
@@ -1326,8 +1388,22 @@ function rebuildAndRender() {
 // canonical scenario filter surface post-PR #3. State changes (persona
 // switch, custom-persona expand, domain switch) all flow through
 // renderTopbarPersona() via rebuildAndRender / renderInsuranceBundle.
+// D-10 — pick the Arabic display name / narrative when the UI is in Arabic
+// and the persona manifest carries one (name_ar / narrative_ar); otherwise
+// fall back to the English text. Bulk persona translation is a follow-up
+// slice, so most personas resolve to English regardless of locale.
+function localizedName(persona) {
+  if (!persona) return '';
+  if (state.lang === 'ar' && persona.name_ar) return persona.name_ar;
+  return persona.name ?? '';
+}
+function localizedNarrative(persona) {
+  if (!persona) return '';
+  if (state.lang === 'ar' && persona.narrative_ar) return persona.narrative_ar;
+  return persona.narrative ?? '';
+}
 function deriveTagline(persona, maxLen = 140) {
-  const narrative = (persona?.narrative ?? '').trim();
+  const narrative = localizedNarrative(persona).trim();
   if (!narrative) return '';
   // First sentence — break on ". " then strip trailing period. Falls back
   // to the full narrative truncated when there's no sentence boundary.
@@ -1362,8 +1438,9 @@ function renderTopbarPersona() {
   avatarSlot.replaceChildren(personaAvatarEl(state.personaId, persona, 'sm'));
 
   const nameEl = document.getElementById('topbar-persona-name');
-  nameEl.textContent = persona.name ?? state.personaId;
-  nameEl.setAttribute('title', persona.name ?? state.personaId);
+  const displayName = localizedName(persona) || state.personaId;
+  nameEl.textContent = displayName;
+  nameEl.setAttribute('title', displayName);
 
   const tag = deriveTagline(persona);
   const tagEl = document.getElementById('topbar-persona-tagline');
@@ -1515,6 +1592,9 @@ function pushPermalink() {
   // Slice 8: domain + preview round-trip. Banking is the default and stays
   // implicit so existing permalinks remain unchanged.
   if (state.domain && state.domain !== 'banking') params.set('domain', state.domain);
+  // D-10 — emit language only when non-default (English stays implicit so
+  // existing permalinks round-trip unchanged).
+  if (state.lang && state.lang !== 'en') params.set('lang', state.lang);
   if (state.preview) params.set('preview', '1');
   // EXP-17: encode the active endpoint so Share copies "where the user
   // currently is", not the cold-landing default. Account scope is implicit —
@@ -2305,12 +2385,14 @@ function renderPersonaOverview(body) {
       'div',
       { class: 'po-header-text' },
       el('div', { class: 'po-archetype', text: humanArchetype(persona.archetype) }),
-      el('h2', { text: persona.name }),
+      el('h2', { text: localizedName(persona) }),
     ),
   );
   wrap.appendChild(header);
   if (persona.narrative) {
-    wrap.appendChild(el('div', { class: 'po-narrative', text: persona.narrative.trim() }));
+    wrap.appendChild(
+      el('div', { class: 'po-narrative', text: localizedNarrative(persona).trim() }),
+    );
   }
 
   const grid = el('div', { class: 'po-grid' });

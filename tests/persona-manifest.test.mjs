@@ -94,6 +94,19 @@ describe('persona manifests — EXP-02', () => {
     for (const key of requiredKeys) {
       expect(m, `${file} missing required key ${key}`).toHaveProperty(key);
     }
+    // D-10 — optional Arabic parallel-text fields. When present they must be
+    // non-empty strings; absence is fine (translation is incremental).
+    if ('name_ar' in m) {
+      expect(typeof m.name_ar, `${file} name_ar must be a string`).toBe('string');
+      expect(m.name_ar.trim().length, `${file} name_ar must be non-empty`).toBeGreaterThan(0);
+    }
+    if ('narrative_ar' in m) {
+      expect(typeof m.narrative_ar, `${file} narrative_ar must be a string`).toBe('string');
+      expect(
+        m.narrative_ar.trim().length,
+        `${file} narrative_ar must be non-empty`,
+      ).toBeGreaterThan(0);
+    }
     expect(m.persona_id).toMatch(/^[a-z][a-z0-9_]*$/);
     // file name must match persona_id (with _ → -).
     const expectedFile = `${m.persona_id.replace(/_/g, '-')}.yaml`;
