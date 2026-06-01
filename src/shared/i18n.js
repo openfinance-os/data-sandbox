@@ -69,6 +69,10 @@ export const STRINGS = {
     'pane.personaLibrary': 'Persona library',
     'pane.navigator': 'Accounts & endpoints',
     'pane.fieldDetail': 'Field detail',
+    // EXP-13 field-status badge values + legend.
+    'status.mandatory': 'Mandatory',
+    'status.optional': 'Optional',
+    'status.conditional': 'Conditional',
   },
   ar: {
     'controls.lfi': 'ملف المؤسسة المالية',
@@ -90,6 +94,10 @@ export const STRINGS = {
     'pane.personaLibrary': 'مكتبة الشخصيات',
     'pane.navigator': 'الحسابات ونقاط النهاية',
     'pane.fieldDetail': 'تفاصيل الحقل',
+    // EXP-13 field-status badge values + legend.
+    'status.mandatory': 'إلزامي',
+    'status.optional': 'اختياري',
+    'status.conditional': 'شرطي',
   },
 };
 

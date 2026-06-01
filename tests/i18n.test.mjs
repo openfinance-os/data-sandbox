@@ -75,6 +75,13 @@ describe('string catalog', () => {
     expect(t('does.not.exist', 'ar')).toBe('does.not.exist');
   });
 
+  it('localises the EXP-13 field-status values', () => {
+    expect(t('status.mandatory', 'en')).toBe('Mandatory');
+    expect(t('status.mandatory', 'ar')).toBe('إلزامي');
+    expect(t('status.optional', 'ar')).toBe('اختياري');
+    expect(t('status.conditional', 'ar')).toBe('شرطي');
+  });
+
   it('English and Arabic catalogs have identical key sets', () => {
     for (const locale of LOCALES) expect(STRINGS[locale]).toBeTruthy();
     const en = Object.keys(STRINGS.en).sort();
