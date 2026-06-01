@@ -7,6 +7,10 @@
 // here so the many `import { el } from '.../app/utils.js'` call sites keep
 // working unchanged.
 export { el } from '../shared/dom.js';
+// Route display-number formatting through the active numeral mode (D-10).
+// Default mode is 'latn', so this is an identity transform until the user
+// opts into Arabic-Indic numerals.
+import { localizeDigits } from '../shared/i18n.js';
 
 /**
  * Parse a build-time SVG string and return the live <svg> element. The
@@ -84,5 +88,5 @@ export function humanStressTerm(t) {
  */
 export function formatAmount(n) {
   if (!Number.isFinite(n)) return '—';
-  return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
+  return localizeDigits(n.toLocaleString(undefined, { maximumFractionDigits: 0 }));
 }

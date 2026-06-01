@@ -7,6 +7,12 @@
 #                       (banking | insurance). Phase 2.0 step 3: banking only;
 #                       insurance personas land in a later slice.
 #   name                human-readable display name
+#   name_ar             optional Arabic display name (D-10 parallel-text UI).
+#                       Shown when the UI language is Arabic; the English
+#                       `name` is the fallback. Optional — personas not yet
+#                       translated simply omit it.
+#   narrative_ar        optional Arabic narrative (D-10). Same fallback rule
+#                       against the English `narrative`.
 #   archetype           short typology tag for filter/search
 #   stress_coverage     array of terms drawn from PRD Appendix F controlled vocabulary
 #   segment             v2.1-errata1 AccountType/PartyCategory enum value:
@@ -54,6 +60,8 @@
 persona_id: <slug>
 domain: <enum: banking|insurance>
 name: <string>
+name_ar: <string?>            # optional — D-10 Arabic display name
+narrative_ar: <string?>       # optional — D-10 Arabic narrative
 archetype: <string>
 default_seed: <int>
 segment: <enum: Retail|SME|Corporate>          # optional; default Retail

@@ -62,13 +62,13 @@
         </div>
       </div>
       <div class="control-group lfi-control">
-        <span class="control-label">LFI profile</span>
+        <span class="control-label" data-i18n="controls.lfi">LFI profile</span>
         <button type="button" class="info-trigger" popovertarget="lfi-help" aria-expanded="false" aria-label="What is an LFI profile?">ⓘ</button>
         <div class="lfi-seg" id="lfi-seg" role="radiogroup" aria-label="LFI populate-rate profile">
-          <button type="button" role="radio" data-lfi="rich"   aria-checked="false" title="Best case. Every populate-band optional field set. Probe what mature LFIs make available.">Rich</button>
-          <button type="button" role="radio" data-lfi="median" aria-checked="true"  title="v1 calibration — Universal=1.0, Common=0.7, Variable=0.4, Rare=0.1. The Commons-curated ecosystem-wide assumption.">Median</button>
-          <button type="button" role="radio" data-lfi="sparse" aria-checked="false" title="Worst case. Mandatory + Universal-band only — every other optional field dropped. Stress-test downstream UI and decisioning logic.">Sparse</button>
-          <button type="button" id="compare-toggle" class="lfi-compare" aria-pressed="false" title="Compare two LFI profiles side-by-side (EXP-16). Click to add a comparison partner.">+ Compare</button>
+          <button type="button" role="radio" data-lfi="rich"   aria-checked="false" data-i18n="lfi.rich" title="Best case. Every populate-band optional field set. Probe what mature LFIs make available.">Rich</button>
+          <button type="button" role="radio" data-lfi="median" aria-checked="true"  data-i18n="lfi.median" title="v1 calibration — Universal=1.0, Common=0.7, Variable=0.4, Rare=0.1. The Commons-curated ecosystem-wide assumption.">Median</button>
+          <button type="button" role="radio" data-lfi="sparse" aria-checked="false" data-i18n="lfi.sparse" title="Worst case. Mandatory + Universal-band only — every other optional field dropped. Stress-test downstream UI and decisioning logic.">Sparse</button>
+          <button type="button" id="compare-toggle" class="lfi-compare" aria-pressed="false" data-i18n="lfi.compare" title="Compare two LFI profiles side-by-side (EXP-16). Click to add a comparison partner.">+ Compare</button>
         </div>
         <span class="lfi-caption" id="lfi-caption"></span>
         <select id="lfi-select" aria-label="LFI profile (legacy)" hidden>
@@ -77,11 +77,11 @@
           <option value="sparse">Sparse</option>
         </select>
         <div class="lfi-compare-row" id="lfi-compare-row" hidden>
-          <span class="control-label">Compare with</span>
+          <span class="control-label" data-i18n="controls.compareWith">Compare with</span>
           <div class="lfi-seg lfi-seg-compare" id="lfi-seg-compare" role="radiogroup" aria-label="Compare partner LFI profile">
-            <button type="button" role="radio" data-cmp-lfi="rich"   aria-checked="false">Rich</button>
-            <button type="button" role="radio" data-cmp-lfi="median" aria-checked="false">Median</button>
-            <button type="button" role="radio" data-cmp-lfi="sparse" aria-checked="true">Sparse</button>
+            <button type="button" role="radio" data-cmp-lfi="rich"   aria-checked="false" data-i18n="lfi.rich">Rich</button>
+            <button type="button" role="radio" data-cmp-lfi="median" aria-checked="false" data-i18n="lfi.median">Median</button>
+            <button type="button" role="radio" data-cmp-lfi="sparse" aria-checked="true" data-i18n="lfi.sparse">Sparse</button>
           </div>
           <button type="button" id="compare-swap" class="lfi-compare-swap" aria-label="Swap left and right LFIs" title="Swap left and right LFIs">↔</button>
           <button type="button" id="compare-close" class="lfi-compare-close" aria-label="Close compare mode" title="Close compare">×</button>
@@ -92,11 +92,27 @@
            first-class feature; the lever sits inline next to LFI.
            PR-15 — info popover from main (PR #51) preserved alongside. -->
       <label class="control-group control-seed">
-        <span class="control-label">Seed</span>
+        <span class="control-label" data-i18n="controls.seed">Seed</span>
         <input id="seed-input" type="number" value="4729" min="0" step="1" aria-label="Seed (reshuffles deterministic RNG; structure stays, details re-roll)" title="Seed reshuffles the deterministic RNG. Same (persona, lfi, seed) → byte-identical bundle (EXP-05)." />
         <button type="button" class="info-trigger" popovertarget="seed-help" aria-expanded="false" aria-label="What does Seed do?">ⓘ</button>
-        <button type="button" id="seed-reset" class="seed-reset" aria-label="Reset seed to persona default" title="Reset to the persona's default seed.">Reset</button>
+        <button type="button" id="seed-reset" class="seed-reset" aria-label="Reset seed to persona default" title="Reset to the persona's default seed." data-i18n="controls.seedReset">Reset</button>
       </label>
+      <!-- D-10 — Arabic / RTL i18n. Language flips <html lang/dir> + swaps the
+           app-shell chrome; the numeral toggle switches Western 0-9 ↔
+           Arabic-Indic ٠-٩ independently of language. English + Western
+           numerals are the defaults, kept implicit in the URL. -->
+      <div class="control-group control-lang">
+        <span class="control-label" data-i18n="controls.language">Language</span>
+        <div class="lfi-seg" id="lang-seg" role="radiogroup" aria-label="UI language">
+          <button type="button" role="radio" data-lang="en" aria-checked="true" lang="en" title="English (left-to-right).">EN</button>
+          <button type="button" role="radio" data-lang="ar" aria-checked="false" lang="ar" title="العربية (من اليمين إلى اليسار).">ع</button>
+        </div>
+        <span class="control-label" data-i18n="controls.numerals">Numerals</span>
+        <div class="lfi-seg" id="numeral-seg" role="radiogroup" aria-label="Numeral system">
+          <button type="button" role="radio" data-numerals="latn" aria-checked="true" title="Western digits (0-9).">123</button>
+          <button type="button" role="radio" data-numerals="arab" aria-checked="false" lang="ar" title="Arabic-Indic digits (٠-٩).">٠١٢</button>
+        </div>
+      </div>
       <div id="seed-help" popover="auto" class="info-popover" role="note">
         <h3 class="info-popover-title">Seed</h3>
         <p>The third lever in the deterministic <code>(persona, LFI, seed)</code> tuple. Reshuffles random details — merchant names, transaction amounts, optional-field choices — while keeping the persona's structure intact (account count, balance bands, mandatory fields).</p>
@@ -107,17 +123,17 @@
       <select class="domain-chip" id="domain-chip" hidden aria-label="Open Finance domain"></select>
       <span class="version-pin" id="version-pin" title="Pinned spec SHA — hover for retrieval date"></span>
       <button type="button" class="info-trigger" popovertarget="spec-help" aria-expanded="false" aria-label="What is the pinned spec SHA?">ⓘ</button>
-      <button class="topbar-btn" id="find-btn" title="Search fields, enums, and persona narratives (⌘K)" aria-label="Open find box">Find</button>
-      <button class="topbar-btn" id="tour-btn" title="Walk through Sara's bundle in 5 steps" aria-label="Start guided tour">Tour</button>
+      <button class="topbar-btn" id="find-btn" title="Search fields, enums, and persona narratives (⌘K)" aria-label="Open find box" data-i18n="topbar.find">Find</button>
+      <button class="topbar-btn" id="tour-btn" title="Walk through Sara's bundle in 5 steps" aria-label="Start guided tour" data-i18n="topbar.tour">Tour</button>
       <button class="banner-chip" id="banner-chip" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="banner-popover" title="Show full synthetic-data disclaimer">
-        <span class="banner-chip-label">SYNTHETIC</span>
+        <span class="banner-chip-label" data-i18n="banner.synthetic">SYNTHETIC</span>
         <span class="banner-chip-icon" aria-hidden="true">ⓘ</span>
       </button>
       <details class="topbar-menu" id="topbar-more">
-        <summary class="topbar-btn" aria-label="More" title="More — Integrate, About">More</summary>
+        <summary class="topbar-btn" aria-label="More" title="More — Integrate, About" data-i18n="menu.more">More</summary>
         <div class="topbar-menu-content" role="menu">
-          <a role="menuitem" href="integrate.html" title="Integrate sandbox personas into a TPP demo journey — iframe / npm / pip / curl">Integrate</a>
-          <a role="menuitem" href="about.html" title="Methodology, citation guidance, stewardship">About</a>
+          <a role="menuitem" href="integrate.html" title="Integrate sandbox personas into a TPP demo journey — iframe / npm / pip / curl" data-i18n="menu.integrate">Integrate</a>
+          <a role="menuitem" href="about.html" title="Methodology, citation guidance, stewardship" data-i18n="menu.about">About</a>
         </div>
       </details>
     </div>
@@ -148,7 +164,7 @@
 <main class="three-pane" id="three-pane">
   <section class="pane persona-pane" aria-label="Persona library">
     <div class="pane-header">
-      <span class="pane-header-text">Persona library</span>
+      <span class="pane-header-text" data-i18n="pane.personaLibrary">Persona library</span>
       <button class="pane-collapse" type="button" data-target="persona-pane" aria-label="Collapse persona library" aria-expanded="true" title="Collapse persona library">‹</button>
     </div>
     <button class="pane-rail" type="button" data-target="persona-pane" aria-label="Expand persona library" title="Expand persona library">
@@ -178,7 +194,7 @@
 
   <section class="pane navigator" aria-label="Account and endpoint navigator">
     <div class="pane-header pane-header-with-coverage" id="nav-title">
-      <span class="pane-header-title">Accounts &amp; endpoints</span>
+      <span class="pane-header-title" data-i18n="pane.navigator">Accounts &amp; endpoints</span>
       <div class="coverage" id="coverage" aria-label="Coverage of optional fields by populate-rate band">
         <span class="coverage-label" title="Populate-rate bands per §7.3 — Universal: every LFI populates · Common: ~70% · Variable: ~40% · Rare: ~10%. Hover any dot for the populated/total count.">Coverage</span>
         <div class="coverage-bands" id="coverage-bands"></div>
@@ -217,7 +233,7 @@
   <aside class="pane field-detail" id="field-detail" aria-label="Field detail">
     <div class="pane-header">
       <button class="pane-collapse pane-collapse-right" type="button" data-target="field-detail" aria-label="Collapse field detail" aria-expanded="true" title="Collapse field detail">›</button>
-      <span class="pane-header-text">Field detail</span>
+      <span class="pane-header-text" data-i18n="pane.fieldDetail">Field detail</span>
       <span class="status-legend" aria-label="Status badge legend">
         <span class="legend-pill pill pill-solid" title="Mandatory — every LFI populates per spec.">M</span>
         <span class="legend-pill pill pill-dashed" title="Optional — populate-rate varies; see Real-LFIs guidance and the populate-band coverage in the Accounts &amp; endpoints header.">O</span>

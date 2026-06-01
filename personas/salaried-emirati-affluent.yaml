@@ -1,6 +1,9 @@
 persona_id: salaried_emirati_affluent
 domain: banking
 name: "Khalid — Salaried Emirati (Affluent)"
+# D-10 — optional Arabic display name (parallel-text UI). Shown when the UI
+# language is Arabic; the English `name` is the fallback otherwise.
+name_ar: "خالد — موظف إماراتي (ميسور الحال)"
 archetype: salaried_affluent
 default_seed: 8821
 segment: Retail
@@ -72,3 +75,11 @@ narrative: |
   Tests multi-account stress, high-DBR commitments, and a Sharia-compliant
   mortgage product. Salary lands on the 27th, mortgage principal hits the
   next day.
+# D-10 — optional Arabic narrative (parallel-text UI). Shown when the UI
+# language is Arabic; the English `narrative` is the fallback otherwise.
+narrative_ar: |
+  خالد مواطن إماراتي يبلغ من العمر ٤٥ عامًا في أبوظبي، يتقاضى راتبًا قدره ٦٠
+  ألف درهم شهريًا، ولديه رهن عقاري وحساب توفير وبطاقة ائتمان بحد مرتفع وعدة
+  التزامات شهرية (رسوم مدرسية، وعضوية نادٍ، ومرافق). يختبر ضغط تعدد الحسابات
+  والتزامات نسبة عبء الدين المرتفعة ومنتج رهن عقاري متوافق مع الشريعة. يصل
+  الراتب في السابع والعشرين، ويُخصم أصل الرهن في اليوم التالي.

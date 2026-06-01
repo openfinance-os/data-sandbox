@@ -154,7 +154,7 @@ input:focus,
   display: none;
 }
 .banner-popover strong {
-  margin-right: 4px;
+  margin-inline-end: 4px;
 }
 
 /* PR-10 — Persona slot inside the topbar. Replaces the prior standalone
@@ -171,14 +171,14 @@ input:focus,
   gap: 10px;
   min-width: 0;
   flex: 0 1 280px;
-  padding-right: 10px;
-  border-right: 1px solid var(--border);
+  padding-inline-end: 10px;
+  border-inline-end: 1px solid var(--border);
 }
 @media (max-width: 760px) {
   .topbar-persona {
     flex: 1 1 100%;
-    padding-right: 0;
-    border-right: 0;
+    padding-inline-end: 0;
+    border-inline-end: 0;
     border-bottom: 1px solid var(--border);
     padding-bottom: 6px;
   }
@@ -278,7 +278,7 @@ input:focus,
   align-items: center;
   flex-wrap: wrap;
   gap: 6px;
-  margin-left: auto;
+  margin-inline-start: auto;
 }
 
 /* Group the persona/LFI/seed scenario selector controls together, then
@@ -348,13 +348,13 @@ input:focus,
   padding: 4px 10px;
   background: transparent;
   border: none;
-  border-right: 1px solid var(--border);
+  border-inline-end: 1px solid var(--border);
   color: var(--text);
   cursor: pointer;
   min-width: 56px;
 }
 .lfi-seg button:last-child {
-  border-right: none;
+  border-inline-end: none;
 }
 .lfi-seg button[aria-checked='true'],
 .lfi-seg button[aria-pressed='true'] {
@@ -365,7 +365,7 @@ input:focus,
   background: var(--accent-soft);
 }
 .lfi-seg .lfi-compare {
-  border-left: 1px solid var(--border-strong);
+  border-inline-start: 1px solid var(--border-strong);
   font-weight: 500;
   color: var(--text-muted);
   white-space: nowrap;
@@ -945,7 +945,7 @@ input:focus,
   font-variant-numeric: tabular-nums;
   font-size: 13px;
   min-width: 36px;
-  text-align: right;
+  text-align: end;
 }
 
 .three-pane {
@@ -1021,7 +1021,7 @@ input:focus,
   appearance: none;
   background: var(--bg-soft);
   border: none;
-  border-right: 1px solid var(--border);
+  border-inline-end: 1px solid var(--border);
   cursor: pointer;
   color: var(--text-muted);
   font-size: 11px;
@@ -1039,8 +1039,8 @@ input:focus,
   z-index: 2;
 }
 .field-detail .pane-rail-right {
-  border-right: none;
-  border-left: 1px solid var(--border);
+  border-inline-end: none;
+  border-inline-start: 1px solid var(--border);
 }
 .pane-rail:hover,
 .pane-rail:focus-visible {
@@ -1082,7 +1082,7 @@ input:focus,
 }
 
 .pane {
-  border-right: 1px solid var(--border);
+  border-inline-end: 1px solid var(--border);
   background: var(--bg-card);
   display: flex;
   flex-direction: column;
@@ -1091,7 +1091,7 @@ input:focus,
 }
 
 .pane:last-of-type {
-  border-right: none;
+  border-inline-end: none;
 }
 
 .pane-header {
@@ -1246,7 +1246,7 @@ input:focus,
 .tx-monthly summary::before {
   content: '▸';
   font-size: 10px;
-  margin-right: 4px;
+  margin-inline-end: 4px;
   color: var(--text-muted);
 }
 .tx-monthly[open] summary::before {
@@ -1266,7 +1266,7 @@ input:focus,
 .tx-monthly th,
 .tx-monthly td {
   padding: 4px 12px;
-  text-align: right;
+  text-align: end;
   border-top: 1px solid var(--border);
   font-variant-numeric: tabular-nums;
 }
@@ -1277,7 +1277,7 @@ input:focus,
 }
 .tx-monthly td:first-child,
 .tx-monthly th:first-child {
-  text-align: left;
+  text-align: start;
 }
 .tx-monthly tr.has-nsf td {
   background: #fdf3ef;
@@ -1445,7 +1445,7 @@ input:focus,
   content: '▸ ';
   display: inline-block;
   transition: transform 120ms ease;
-  margin-right: 2px;
+  margin-inline-end: 2px;
 }
 .persona-more[open] > summary.persona-more-summary::before {
   content: '▾ ';
@@ -1508,7 +1508,7 @@ input:focus,
 
 .nav-tree {
   padding: 8px 12px;
-  border-right: 1px solid var(--border);
+  border-inline-end: 1px solid var(--border);
   border-bottom: none;
   font-size: 13px;
   overflow-y: auto;
@@ -1547,11 +1547,11 @@ input:focus,
   cursor: pointer;
   border: none;
   background: transparent;
-  text-align: left;
+  text-align: start;
   width: 100%;
   font-family: inherit;
   /* Reserve room for the left accent bar so the active row doesn't shift. */
-  border-left: 3px solid transparent;
+  border-inline-start: 3px solid transparent;
 }
 .nav-endpoint:hover {
   color: var(--accent);
@@ -1560,7 +1560,7 @@ input:focus,
 .nav-endpoint.active {
   color: var(--accent);
   font-weight: 700;
-  border-left-color: var(--accent);
+  border-inline-start-color: var(--accent);
   background: var(--accent-soft);
 }
 .nav-endpoint:focus-visible {
@@ -1594,7 +1594,7 @@ details.nav-account > summary.nav-account-header::before {
   content: '▸';
   display: inline-block;
   font-size: 9px;
-  margin-right: 4px;
+  margin-inline-end: 4px;
   color: var(--text-muted);
   transition: transform 120ms ease;
 }
@@ -1645,7 +1645,7 @@ details.nav-account > summary.nav-account-header:focus-visible {
   font-size: 10px;
   color: var(--text-muted);
   min-width: 30px;
-  text-align: right;
+  text-align: end;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1718,7 +1718,7 @@ details.nav-account > summary.nav-account-header:focus-visible {
 }
 
 .tx-filter-bar .filter-clear {
-  margin-left: auto;
+  margin-inline-start: auto;
   padding: 3px 8px;
   background: var(--bg-card);
   border: 1px solid var(--border-strong);
@@ -1755,7 +1755,7 @@ details.nav-account > summary.nav-account-header:focus-visible {
   background: var(--accent-soft);
 }
 .payload-rendered tr.tx-highlight td:first-child {
-  border-left: 3px solid var(--accent);
+  border-inline-start: 3px solid var(--accent);
 }
 
 /* NSF / rejected-debit rows — Aisha's anchor scan signal. */
@@ -1763,7 +1763,7 @@ details.nav-account > summary.nav-account-header:focus-visible {
   background: #fbeae5;
 }
 .payload-rendered tr.tx-rejected td:first-child {
-  border-left: 3px solid #b3431a;
+  border-inline-start: 3px solid #b3431a;
 }
 .payload-rendered tr.tx-rejected td {
   color: #6b2912;
@@ -1804,7 +1804,7 @@ details.nav-account > summary.nav-account-header:focus-visible {
   display: inline-block;
   font-size: 9px;
   padding: 1px 4px;
-  margin-left: 4px;
+  margin-inline-start: 4px;
   border: 1px solid #b07a3e;
   color: #6b4a1f;
   background: #fbf2e1;
@@ -1887,7 +1887,7 @@ details.nav-account > summary.nav-account-header:focus-visible {
 }
 .toggle:last-child {
   border-radius: 0 4px 4px 0;
-  border-left: none;
+  border-inline-start: none;
 }
 .toggle.active {
   background: var(--accent);
@@ -1923,7 +1923,7 @@ details.nav-account > summary.nav-account-header:focus-visible {
 }
 .payload-rendered th,
 .payload-rendered td {
-  text-align: left;
+  text-align: start;
   border-bottom: 1px solid var(--border);
   padding: 6px 8px;
   vertical-align: top;
@@ -1981,7 +1981,7 @@ details.nav-account > summary.nav-account-header:focus-visible {
   border: none;
   padding: 0;
   cursor: pointer;
-  text-align: left;
+  text-align: start;
 }
 .payload-rendered .field-name:hover {
   text-decoration: underline;
@@ -1991,7 +1991,7 @@ details.nav-account > summary.nav-account-header:focus-visible {
 .payload-rendered th .pill {
   font-size: 9px;
   padding: 1px 4px;
-  margin-right: 4px;
+  margin-inline-end: 4px;
   min-width: 12px;
 }
 
@@ -2113,7 +2113,7 @@ details.nav-account > summary.nav-account-header:focus-visible {
 }
 .uw-card-contrib ul {
   margin: 6px 0 0;
-  padding-left: 14px;
+  padding-inline-start: 14px;
   max-height: 220px;
   overflow-y: auto;
 }
@@ -2181,7 +2181,7 @@ details.nav-account > summary.nav-account-header:focus-visible {
   font-size: 12px;
 }
 .compare-bar .swap {
-  margin-left: auto;
+  margin-inline-start: auto;
   padding: 3px 10px;
   border: 1px solid var(--border-strong);
   border-radius: 3px;
@@ -2230,12 +2230,12 @@ details.nav-account > summary.nav-account-header:focus-visible {
 .compare-half {
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--border);
+  border-inline-end: 1px solid var(--border);
   min-width: 0;
   min-height: 0;
 }
 .compare-half:last-child {
-  border-right: none;
+  border-inline-end: none;
 }
 .compare-half .compare-half-header {
   padding: 6px 12px;
@@ -2276,7 +2276,7 @@ details.nav-account > summary.nav-account-header:focus-visible {
 .compare-na-banner {
   margin: 0 0 12px;
   padding: 8px 12px;
-  border-left: 3px solid var(--conditional-fg, #b67c00);
+  border-inline-start: 3px solid var(--conditional-fg, #b67c00);
   background: #fff5d6;
   color: var(--text);
   font-size: 12px;
@@ -2289,7 +2289,7 @@ details.nav-account > summary.nav-account-header:focus-visible {
 .insurance-empty-banner {
   margin: 0 0 12px;
   padding: 10px 14px;
-  border-left: 3px solid var(--accent);
+  border-inline-start: 3px solid var(--accent);
   background: var(--accent-soft);
   color: var(--text);
   font-size: 12.5px;
@@ -2297,11 +2297,11 @@ details.nav-account > summary.nav-account-header:focus-visible {
   border-radius: 2px;
 }
 .insurance-empty-banner strong {
-  margin-right: 6px;
+  margin-inline-end: 6px;
 }
 .insurance-empty-link {
   display: inline-block;
-  margin-left: 6px;
+  margin-inline-start: 6px;
   font-weight: 600;
   color: var(--accent);
   text-decoration: underline;
@@ -2333,7 +2333,7 @@ details.nav-account > summary.nav-account-header:focus-visible {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  margin-right: 6px;
+  margin-inline-end: 6px;
   min-width: 18px;
   border: 1.5px solid transparent;
 }
@@ -2358,7 +2358,7 @@ details.nav-account > summary.nav-account-header:focus-visible {
   color: var(--conditional-fg);
   border: 1.5px dotted var(--conditional-fg);
   border-radius: 999px;
-  padding-right: 10px;
+  padding-inline-end: 10px;
   position: relative;
 }
 .pill-conditional::after {
@@ -2455,7 +2455,7 @@ details.nav-account > summary.nav-account-header:focus-visible {
   font-size: 14px;
   line-height: 1.55;
   background: var(--bg-soft);
-  border-left: 3px solid var(--accent);
+  border-inline-start: 3px solid var(--accent);
   padding: 10px 14px;
   border-radius: 0 4px 4px 0;
 }
@@ -2486,7 +2486,7 @@ details.nav-account > summary.nav-account-header:focus-visible {
 }
 .persona-overview .po-card ul {
   margin: 4px 0 0;
-  padding-left: 16px;
+  padding-inline-start: 16px;
   font-size: 12px;
   color: var(--text);
 }
@@ -2751,13 +2751,23 @@ details.nav-account > summary.nav-account-header:focus-visible {
     bottom: 0;
     width: 320px;
     max-width: 80vw;
-    border-left: 1px solid var(--border);
+    border-inline-start: 1px solid var(--border);
     transform: translateX(100%);
     transition: transform 220ms ease;
     z-index: 100;
     box-shadow: -8px 0 16px rgba(0, 0, 0, 0.08);
   }
   .field-detail.open {
+    transform: translateX(0);
+  }
+  /* D-10 — in RTL the field-detail overlay slides in from the left edge. */
+  [dir='rtl'] .field-detail {
+    right: auto;
+    left: 0;
+    transform: translateX(-100%);
+    box-shadow: 8px 0 16px rgba(0, 0, 0, 0.08);
+  }
+  [dir='rtl'] .field-detail.open {
     transform: translateX(0);
   }
   /* Right-pane collapse is a no-op when the pane is a fixed overlay; keep
@@ -2827,8 +2837,8 @@ details.nav-account > summary.nav-account-header:focus-visible {
 .payload-rendered .th-linked,
 .payload-rendered .td-linked {
   background: var(--bg-soft);
-  border-left: 1px solid var(--border-strong);
-  text-align: right;
+  border-inline-start: 1px solid var(--border-strong);
+  text-align: end;
   white-space: nowrap;
   width: 1%;
 }
@@ -2873,9 +2883,9 @@ details.nav-account > summary.nav-account-header:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  margin-left: 8px;
+  margin-inline-start: 8px;
   padding: 2px 8px;
-  border-left: 1px dashed var(--border);
+  border-inline-start: 1px dashed var(--border);
   font-size: 10px;
   color: var(--text-muted);
   float: none;
@@ -2892,20 +2902,20 @@ details.nav-account > summary.nav-account-header:focus-visible {
    headers where it carries semantic weight. */
 .toolbar-legend .pill-conditional,
 .status-legend .pill-conditional {
-  padding-right: 4px;
+  padding-inline-end: 4px;
 }
 .toolbar-legend .pill-conditional::after,
 .status-legend .pill-conditional::after {
   content: none;
 }
 .toolbar-legend .legend-text {
-  margin-right: 6px;
-  margin-left: 2px;
+  margin-inline-end: 6px;
+  margin-inline-start: 2px;
   font-size: 10px;
   letter-spacing: 0.02em;
 }
 .toolbar-legend .legend-text:last-child {
-  margin-right: 0;
+  margin-inline-end: 0;
 }
 
 /* Advanced disclosure for the seed input — most users never touch this;
@@ -2936,7 +2946,7 @@ details.nav-account > summary.nav-account-header:focus-visible {
   border-color: var(--accent);
 }
 .control-advanced .control-seed {
-  margin-left: 6px;
+  margin-inline-start: 6px;
 }
 .control-advanced .seed-reset {
   font: inherit;
@@ -3002,7 +3012,7 @@ details.nav-account > summary.nav-account-header:focus-visible {
 }
 .info-popover-list {
   margin: 0 0 6px 0;
-  padding-left: 16px;
+  padding-inline-start: 16px;
 }
 .info-popover-list li {
   margin-bottom: 4px;
@@ -3144,7 +3154,7 @@ details.nav-account > summary.nav-account-header:focus-visible {
   border-radius: 999px;
 }
 .uw-strip-jump {
-  margin-left: auto;
+  margin-inline-start: auto;
   font: inherit;
   font-size: 11px;
   font-weight: 600;
@@ -3227,7 +3237,7 @@ details.nav-account > summary.nav-account-header:focus-visible {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--text-muted);
-  margin-right: 4px;
+  margin-inline-end: 4px;
   font-weight: 600;
 }
 .find-corpus-tag {
@@ -3271,7 +3281,7 @@ details.nav-account > summary.nav-account-header:focus-visible {
 }
 .custom-badge {
   display: inline-block;
-  margin-left: 6px;
+  margin-inline-start: 6px;
   padding: 1px 6px;
   font-size: 10px;
   font-weight: 600;
@@ -3429,8 +3439,8 @@ details.nav-account > summary.nav-account-header:focus-visible {
    table. Status badges, formats, and enum chips reuse the banking
    look-and-feel. */
 .nav-endpoint-meter {
-  margin-left: auto;
-  padding-left: 8px;
+  margin-inline-start: auto;
+  padding-inline-start: 8px;
   font-size: 10px;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
@@ -3476,8 +3486,8 @@ details.nav-account > summary.nav-account-header:focus-visible {
 }
 .field-tree .field-tree {
   margin-top: 4px;
-  padding-left: 12px;
-  border-left: 1px dotted var(--border);
+  padding-inline-start: 12px;
+  border-inline-start: 1px dotted var(--border);
 }
 .field-tree-label {
   display: inline-flex;
@@ -3511,7 +3521,7 @@ details.nav-account > summary.nav-account-header:focus-visible {
 }
 .field-tree-array {
   margin: 0;
-  padding-left: 0;
+  padding-inline-start: 0;
   list-style: none;
   display: flex;
   flex-direction: column;
@@ -3594,7 +3604,7 @@ details.nav-account > summary.nav-account-header:focus-visible {
   border: 1px solid transparent;
   background: transparent;
   cursor: pointer;
-  text-align: left;
+  text-align: start;
   color: var(--text);
 }
 .atm-row:hover {
@@ -3748,4 +3758,43 @@ details.nav-account > summary.nav-account-header:focus-visible {
 .tx-logo-cell img {
   display: block;
   border-radius: 4px;
+}
+
+/* ---------------------------------------------------------------------------
+   D-10 — Arabic / RTL overrides.
+
+   Most of the layout mirrors automatically once <html dir="rtl"> is set: the
+   box model uses logical properties (margin / padding / border-inline-*),
+   text-align uses start / end, and CSS grid + flexbox follow the inline
+   direction. The rules below cover the handful of remaining physical offsets
+   and the one float that have no in-use logical equivalent. LTR rendering is
+   untouched — every rule is gated on [dir="rtl"].
+   ------------------------------------------------------------------------- */
+[dir='rtl'] .banner-close {
+  right: auto;
+  left: 8px;
+}
+[dir='rtl'] .banner-popover {
+  right: auto;
+  left: 16px;
+}
+[dir='rtl'] .topbar-menu-content {
+  right: auto;
+  left: 0;
+}
+[dir='rtl'] .payload-rendered.has-sticky-col th:first-child,
+[dir='rtl'] .payload-rendered.has-sticky-col td:first-child {
+  left: auto;
+  right: 0;
+}
+[dir='rtl'] .pill-conditional::after {
+  right: auto;
+  left: 3px;
+}
+[dir='rtl'] .status-legend {
+  float: left;
+}
+[dir='rtl'] .builder-close {
+  right: auto;
+  left: 12px;
 }
