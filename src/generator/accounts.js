@@ -128,8 +128,8 @@ function nicknameFor(kind) {
 
 function monthsAgoIso(rng, months, now) {
   const d = new Date(now.getTime());
-  d.setMonth(d.getMonth() - months);
-  d.setDate(rngInt(rng, 1, 28));
-  d.setHours(0, 0, 0, 0);
+  d.setUTCMonth(d.getUTCMonth() - months);
+  d.setUTCDate(rngInt(rng, 1, 28));
+  d.setUTCHours(0, 0, 0, 0);
   return d.toISOString().replace(/\.\d{3}Z$/, 'Z');
 }

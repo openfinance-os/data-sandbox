@@ -46,8 +46,8 @@ export function generateScheduledPayments({ persona, accounts, rng, pools, now }
 
 function futureDate(now, days) {
   const d = new Date(now.getTime());
-  d.setDate(d.getDate() + days);
-  d.setHours(11, 0, 0, 0);
+  d.setUTCDate(d.getUTCDate() + days);
+  d.setUTCHours(11, 0, 0, 0);
   return d;
 }
 

@@ -4,11 +4,11 @@
 // OpeningBalance, ClosingBalance, Summary.
 
 import { rngInt } from '../prng.js';
+import { HISTORY_MONTHS as STATEMENT_HISTORY_MONTHS } from './constants.js';
 
-// Statement window — kept in lock-step with HISTORY_MONTHS in transactions.js.
-// Bumped from 12 → 24 in Phase R1 so a TPP can pull a comparable two-year
-// statement history alongside the deeper transaction stream.
-const STATEMENT_HISTORY_MONTHS = 24;
+// Statement window — imported from ./constants.js so it stays in lock-step
+// with the transaction + cross-LFI ledger windows by construction (a TPP can
+// pull a comparable two-year statement history alongside the tx stream).
 
 export function generateStatements({ accounts, transactions, rng, now }) {
   const out = [];
@@ -19,13 +19,15 @@ export function generateStatements({ accounts, transactions, rng, now }) {
     // statement per month.
     for (let m = STATEMENT_HISTORY_MONTHS - 1; m >= 0; m--) {
       const monthStart = new Date(now.getTime());
-      monthStart.setMonth(monthStart.getMonth() - m);
-      monthStart.setDate(1);
-      monthStart.setHours(0, 0, 0, 0);
+      // setDate(1) BEFORE setMonth so a month-end `now` can't overflow into
+      // the wrong month (e.g. Mar 31 → Feb 31 → Mar 3).
+      monthStart.setUTCDate(1);
+      monthStart.setUTCMonth(monthStart.getUTCMonth() - m);
+      monthStart.setUTCHours(0, 0, 0, 0);
       const monthEnd = new Date(monthStart);
-      monthEnd.setMonth(monthEnd.getMonth() + 1);
-      monthEnd.setDate(0);
-      monthEnd.setHours(23, 59, 59, 0);
+      monthEnd.setUTCMonth(monthEnd.getUTCMonth() + 1);
+      monthEnd.setUTCDate(0);
+      monthEnd.setUTCHours(23, 59, 59, 0);
 
       const monthTx = accTx.filter((t) => {
         const d = new Date(t.BookingDateTime);
@@ -63,7 +65,7 @@ export function generateStatements({ accounts, transactions, rng, now }) {
       }
       out.push({
         _accountId: acc.AccountId,
-        StatementId: `${acc.AccountId}-stmt-${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, '0')}`,
+        StatementId: `${acc.AccountId}-stmt-${monthStart.getUTCFullYear()}-${String(monthStart.getUTCMonth() + 1).padStart(2, '0')}`,
         StatementReference: `STMT-${rngInt(rng, 1000, 9999)}`,
         StatementDate: dateOf(monthEnd),
         OpeningDate: dateOf(monthStart),

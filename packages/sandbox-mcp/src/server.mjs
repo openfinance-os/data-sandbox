@@ -109,12 +109,16 @@ function resolveAccountId(session, requested) {
  */
 function requireDomain(session, expected, toolName) {
   const got = session.domain ?? 'banking';
-  if (got !== expected) {
-    throw new Error(
-      `${toolName} requires a ${expected} session; this session is ${got} (persona ${session.persona}). ` +
-        `Call list_personas({ domain: '${expected}' }) → set_session to switch.`,
-    );
-  }
+  // A multi-domain persona (domain:'multi') carries the full banking endpoint
+  // family alongside its insurance lines, so banking get_* tools — including
+  // multi-LFI role bundles, which are banking-only — work against it. (Insurance
+  // line-tools on a multi persona need multi-line resolution and remain strict.)
+  if (got === expected) return;
+  if (got === 'multi' && expected === 'banking') return;
+  throw new Error(
+    `${toolName} requires a ${expected} session; this session is ${got} (persona ${session.persona}). ` +
+      `Call list_personas({ domain: '${expected}' }) → set_session to switch.`,
+  );
 }
 
 function resolvePolicyId(session, requested) {
@@ -552,9 +556,16 @@ export function createServer() {
         // LOADABLE via set_session({lfi_role}). Some declared slots
         // resolve to candidates that aren't in the counterparty pool
         // (e.g. acquirer-only slots) and silently drop.
+        // Role bundles are a banking concept; surface them for banking-only
+        // AND multi-domain personas (domains:[banking, ...]) — the latter
+        // carry domain:'multi', so a bare `domain === 'banking'` check would
+        // hide the flagship retail_multi_banker's N-slot role bundles.
+        const personaDomains = Array.isArray(info?.domains)
+          ? info.domains
+          : [info?.domain ?? 'banking'];
         const availableRoles = [
           'primary',
-          ...(info?.domain === 'banking' ? listRoleBundles(id) : []),
+          ...(personaDomains.includes('banking') ? listRoleBundles(id) : []),
         ];
         return {
           id,
@@ -619,10 +630,10 @@ export function createServer() {
           .describe('LFI populate-rate profile. Default: median.'),
         seed: z.number().int().optional().describe('RNG seed. Default: persona.default_seed.'),
         lfi_role: z
-          .enum(['primary', 'secondary', 'tertiary'])
+          .string()
           .optional()
           .describe(
-            "Which slot of the persona's multi_lfi_footprint to load. Default: primary (the historical bundle). secondary/tertiary load the role-keyed bundle emitted in Phase D Slice 5.",
+            "Which slot of the persona's multi_lfi_footprint to load. Default: primary (the historical bundle). Legacy personas use 'secondary'/'tertiary'; Phase 2.2 N-slot personas use their own slot keys (e.g. 'everyday-card', 'mortgage-lender'). See list_personas → available_lfi_roles for the loadable set.",
           ),
       },
     },

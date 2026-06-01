@@ -54,6 +54,7 @@ import {
   pickRandomBankName,
 } from './_shared.js';
 import { findInsuranceCrossDomainLink, pickFootprintSlotBank } from '../multi-lfi.js';
+import { mod97IbanCheck } from '../identity.js';
 
 const DEFAULT_NOW = new Date(Date.UTC(2026, 3, 1, 0, 0, 0));
 
@@ -81,12 +82,14 @@ function resolvePools(persona, indexedPools) {
 
 // UAE IBAN: "AE" + 2 check digits + 19 BBAN digits (23 chars total). Used for
 // the per-line payment-details payload (Account.Identification with IBAN
-// SchemeName).
+// SchemeName). Check digits are ISO-13616 mod-97 computed over the BBAN so the
+// emitted IBAN is spec-valid (parity with the banking generator). The two rng
+// draws are preserved to keep the rest of the bundle byte-identical.
 function genUaeIban(rng) {
-  const checkDigits = String(2 + Math.floor(rng() * 98)).padStart(2, '0');
   const bban1 = String(Math.floor(rng() * 1e9)).padStart(9, '0');
   const bban2 = String(Math.floor(rng() * 1e10)).padStart(10, '0');
-  return `AE${checkDigits}${bban1}${bban2}`;
+  const bban = `${bban1}${bban2}`;
+  return `AE${mod97IbanCheck('AE', bban)}${bban}`;
 }
 
 // Per-line builder registry. New lines drop in here without touching

@@ -22,6 +22,9 @@ import {
 } from '@openfinance-os/sandbox-fixtures';
 
 const LFI_PROFILES = new Set(['rich', 'median', 'sparse']);
+// 'primary' is always valid; any non-primary role must have an emitted role
+// bundle (discovered per-persona via listRoleBundles, which covers both the
+// legacy secondary/tertiary triad and Phase 2.2 N-slot keys).
 const LFI_ROLES = new Set(['primary', 'secondary', 'tertiary']);
 
 export function createSessionStore() {
@@ -33,23 +36,17 @@ export function createSessionStore() {
     if (!LFI_PROFILES.has(lfi)) {
       throw new Error(`unknown lfi profile: ${lfi} (use rich | median | sparse)`);
     }
-    if (!LFI_ROLES.has(lfi_role)) {
-      throw new Error(`unknown lfi_role: ${lfi_role} (use primary | secondary | tertiary)`);
-    }
     if (lfi_role !== 'primary') {
-      // Validate the persona declares this role and that a role bundle
-      // was emitted for it (some slots resolve to candidates that aren't
-      // in the counterparty pool — pickRoleBank silently drops those).
+      // A non-primary role is valid iff a role bundle was emitted for it.
+      // listRoleBundles returns the actually-emitted slot keys (legacy
+      // secondary/tertiary AND Phase 2.2 N-slot keys); some declared slots
+      // resolve to candidates outside the counterparty pool and silently
+      // drop, so this is the authoritative loadable set.
       const slots = listRoleBundles(persona);
       if (!slots.includes(lfi_role)) {
-        const declared = info.multi_lfi_footprint?.[lfi_role];
-        if (!declared) {
-          throw new Error(
-            `persona "${persona}" does not declare an lfi_role="${lfi_role}" footprint slot; declared slots: ${Object.keys(info.multi_lfi_footprint ?? {}).join(', ') || 'none'}`,
-          );
-        }
+        const available = ['primary', ...slots].join(' | ');
         throw new Error(
-          `persona "${persona}" declares an lfi_role="${lfi_role}" slot but no role bundle was emitted (its plausible_lfi_candidates may not match the counterparty pool)`,
+          `persona "${persona}" has no role bundle for lfi_role="${lfi_role}" (available: ${available})`,
         );
       }
     }

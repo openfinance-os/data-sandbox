@@ -3657,7 +3657,7 @@ function wireControls() {
     });
   });
 
-  document.getElementById('btn-next').addEventListener('click', () => {
+  document.getElementById('btn-next')?.addEventListener('click', () => {
     if (state.step < 3) {
       state.step += 1;
       refresh();
@@ -3704,7 +3704,7 @@ function wireControls() {
       refresh();
     }
   });
-  document.getElementById('btn-back').addEventListener('click', () => {
+  document.getElementById('btn-back')?.addEventListener('click', () => {
     if (state.step === 3) {
       const order = ['discovery', 'sca', 'consent', 'token'];
       const i = order.indexOf(state.subStep);
@@ -3724,7 +3724,7 @@ function wireControls() {
       refresh();
     }
   });
-  document.getElementById('btn-restart').addEventListener('click', () => {
+  document.getElementById('btn-restart')?.addEventListener('click', () => {
     state.step = 1;
     state.subStep = 'discovery';
     state.selectedPersonaId = null;

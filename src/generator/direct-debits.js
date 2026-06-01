@@ -42,8 +42,8 @@ function prettyPurpose(p) {
 
 function prevPaymentIso(now) {
   const d = new Date(now.getTime());
-  d.setMonth(d.getMonth() - 1);
-  d.setDate(5);
-  d.setHours(11, 0, 0, 0);
+  d.setUTCDate(5);
+  d.setUTCMonth(d.getUTCMonth() - 1);
+  d.setUTCHours(11, 0, 0, 0);
   return d.toISOString().replace(/\.\d{3}Z$/, 'Z');
 }

@@ -1114,7 +1114,7 @@ function attachEventHandlers() {
       track('lfi_switch', { from, to });
     });
   }
-  document.getElementById('seed-input').addEventListener('change', (e) => {
+  document.getElementById('seed-input')?.addEventListener('change', (e) => {
     const n = Number(e.target.value);
     if (Number.isFinite(n)) {
       state.seed = n;
@@ -1127,13 +1127,13 @@ function attachEventHandlers() {
     state.seed = Number.isFinite(def) ? def : 1;
     rebuildAndRender();
   });
-  document.getElementById('view-rendered').addEventListener('click', () => {
+  document.getElementById('view-rendered')?.addEventListener('click', () => {
     if (state.view === 'rendered') return;
     state.view = 'rendered';
     renderPayload();
     track('raw_json_toggle', { mode: 'rendered' });
   });
-  document.getElementById('view-raw').addEventListener('click', () => {
+  document.getElementById('view-raw')?.addEventListener('click', () => {
     if (state.view === 'raw') return;
     state.view = 'raw';
     renderPayload();
@@ -1152,8 +1152,8 @@ function attachEventHandlers() {
   document.getElementById('export-toggle')?.addEventListener('click', () => {
     exportPopover.open();
   });
-  document.getElementById('tour-btn').addEventListener('click', () => startTour());
-  document.getElementById('find-btn').addEventListener('click', openFind);
+  document.getElementById('tour-btn')?.addEventListener('click', () => startTour());
+  document.getElementById('find-btn')?.addEventListener('click', openFind);
   // ⌘K / Ctrl+K opens the find box; ⌘E / Ctrl+E opens the Export popover.
   window.addEventListener('keydown', (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
