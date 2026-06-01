@@ -8,7 +8,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { buildBundle } from '../src/generator/index.js';
-import { loadPersona, loadAllPools } from '../tools/load-fixtures.mjs';
+import { loadPersona, loadAllPersonas, loadAllPools } from '../tools/load-fixtures.mjs';
 
 describe('replay determinism — EXP-05', () => {
   const persona = loadPersona('salaried_expat_mid');
@@ -43,6 +43,29 @@ describe('replay determinism — EXP-05', () => {
     const s = buildBundle({ persona, lfi: 'sparse', seed: 4729, pools });
     expect(JSON.stringify(r)).not.toBe(JSON.stringify(s));
   });
+});
+
+// EXP-05 across the WHOLE library, not just two representative personas.
+// In-process byte-identity for every persona × LFI guards against any
+// non-seeded source of nondeterminism (wall-clock, Math.random, iteration
+// order) creeping into any generator path — banking, insurance, ATM, or
+// multi-domain. (Cross-process byte-identity is covered separately by the
+// MCP determinism suite.)
+describe('replay determinism — every persona × LFI (EXP-05)', () => {
+  const pools = loadAllPools();
+  const personas = loadAllPersonas();
+  const lfis = ['rich', 'median', 'sparse'];
+  const SEED = 4729;
+
+  for (const [id, persona] of Object.entries(personas)) {
+    for (const lfi of lfis) {
+      it(`${id} × ${lfi} × seed=${SEED} is byte-identical across two builds`, () => {
+        const a = buildBundle({ persona, lfi, seed: SEED, pools });
+        const b = buildBundle({ persona, lfi, seed: SEED, pools });
+        expect(JSON.stringify(a)).toBe(JSON.stringify(b));
+      });
+    }
+  }
 });
 
 describe('replay determinism — Insurance domain (motor MVP)', () => {

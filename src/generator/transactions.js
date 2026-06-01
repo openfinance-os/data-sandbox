@@ -29,13 +29,11 @@ import { EXTENDED_SPEND_CATEGORIES, defaultCountBand } from './banking/spend-pro
 import { maybeMisrouteMcc } from './mcc-noise.js';
 import { buildRefunds } from './refunds.js';
 import { attachBankTransactionCode } from './banking/transaction-codes.js';
+import { HISTORY_MONTHS } from './constants.js';
 
-// Trailing history window for transaction generation. Phase R1 of the
-// enrichment-realism plan bumped this from 12 → 24 months so downstream
-// analytics (year-on-year category mix, multi-cycle credit-card behaviour,
-// seasonal patterns) have data to chew on. Statements + multi-LFI ledger
-// follow the same window.
-const HISTORY_MONTHS = 24;
+// Trailing history window for transaction generation — single source of
+// truth in ./constants.js. Statements + the multi-LFI ledger import the
+// same constant so the three windows can never drift.
 
 // Per-category knobs for the merchant-spend loop. The PRNG draw order across
 // categories is load-bearing for EXP-05 (deterministic-replay), so this list
@@ -96,12 +94,12 @@ export function generateTransactions({
 }) {
   const out = [];
   const today = new Date(now.getTime());
-  today.setHours(0, 0, 0, 0);
+  today.setUTCHours(0, 0, 0, 0);
 
   for (let m = HISTORY_MONTHS - 1; m >= 0; m--) {
     const monthStart = new Date(today);
-    monthStart.setDate(1);
-    monthStart.setMonth(monthStart.getMonth() - m);
+    monthStart.setUTCDate(1);
+    monthStart.setUTCMonth(monthStart.getUTCMonth() - m);
 
     if (persona.income && persona.income.flag_payroll && account._meta.kind === 'CurrentAccount') {
       const salaryDate = weekdayBias(dateForDay(monthStart, persona.income.pay_day), rng);
@@ -521,7 +519,13 @@ export function generateTransactions({
     }
   }
 
-  out.sort((a, b) => a.BookingDateTime.localeCompare(b.BookingDateTime));
+  // TransactionId is the stable tiebreaker so same-timestamp transactions
+  // keep a deterministic order independent of generation-loop ordering.
+  out.sort(
+    (a, b) =>
+      a.BookingDateTime.localeCompare(b.BookingDateTime) ||
+      a.TransactionId.localeCompare(b.TransactionId),
+  );
   return out;
 }
 
@@ -667,8 +671,8 @@ function parseScheduleDay(schedule) {
 
 function dateForDay(monthStart, day) {
   const d = new Date(monthStart);
-  d.setDate(Math.min(day, 28));
-  d.setHours(11, 0, 0, 0);
+  d.setUTCDate(Math.min(day, 28));
+  d.setUTCHours(11, 0, 0, 0);
   return d;
 }
 

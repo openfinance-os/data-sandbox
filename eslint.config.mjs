@@ -45,6 +45,15 @@ const e2eTests = {
   },
 };
 
+// Vitest suites that opt into the jsdom environment (`// @vitest-environment
+// jsdom`) exercise real DOM nodes, so `document` / `window` are legal there.
+const jsdomTests = {
+  files: ['tests/dom-helpers.test.mjs', 'tests/ui-module-graph.test.mjs'],
+  languageOptions: {
+    globals: { ...globals.node, ...globals.browser },
+  },
+};
+
 const sharedRules = {
   rules: {
     'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
@@ -88,5 +97,6 @@ export default [
   dualEnvSrc,
   nodeFiles,
   e2eTests,
+  jsdomTests,
   sharedRules,
 ];

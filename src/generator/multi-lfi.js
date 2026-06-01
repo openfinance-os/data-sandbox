@@ -29,6 +29,7 @@
 
 import { makePrng, rngInt } from '../prng.js';
 import { mod97IbanCheck } from './identity.js';
+import { HISTORY_MONTHS as CROSS_LFI_HISTORY_MONTHS } from './constants.js';
 import { attachBankTransactionCode } from './banking/transaction-codes.js';
 
 // Slot suffix codes derived from slot index. Slots[1] → x2/s2,
@@ -499,9 +500,8 @@ export function derivePrimaryAccountIban(personaId, accountIndex) {
  * Pure function — no rng dependency on bundle seed; same persona +
  * footprint → byte-identical ledger. EXP-05 across bundles is preserved.
  */
-// Cross-LFI ledger history depth — kept in lock-step with HISTORY_MONTHS
-// in transactions.js. Bumped from 12 → 24 in Phase R1.
-const CROSS_LFI_HISTORY_MONTHS = 24;
+// Cross-LFI ledger history depth — imported from ./constants.js so it stays
+// in lock-step with the transaction + statement windows by construction.
 
 const ROLE_AMOUNT_BANDS_AED = {
   operating: [3000, 8000], // unused for primary→primary; here for completeness

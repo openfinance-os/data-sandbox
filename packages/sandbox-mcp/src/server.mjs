@@ -109,17 +109,38 @@ function resolveAccountId(session, requested) {
  */
 function requireDomain(session, expected, toolName) {
   const got = session.domain ?? 'banking';
-  if (got !== expected) {
-    throw new Error(
-      `${toolName} requires a ${expected} session; this session is ${got} (persona ${session.persona}). ` +
-        `Call list_personas({ domain: '${expected}' }) → set_session to switch.`,
-    );
-  }
+  // A multi-domain persona (domain:'multi') carries the full banking endpoint
+  // family alongside its insurance lines, so banking get_* tools — including
+  // multi-LFI role bundles, which are banking-only — work against it. (Insurance
+  // line-tools on a multi persona need multi-line resolution and remain strict.)
+  if (got === expected) return;
+  if (got === 'multi' && expected === 'banking') return;
+  throw new Error(
+    `${toolName} requires a ${expected} session; this session is ${got} (persona ${session.persona}). ` +
+      `Call list_personas({ domain: '${expected}' }) → set_session to switch.`,
+  );
 }
 
-function resolvePolicyId(session, requested) {
+// Policy ids for a given insurance line, derived from the fixture's endpoint
+// map. A single-line persona's `policyIds` array already equals this; a
+// multi-domain persona's `policyIds` MIXES every line, so for those we must
+// scope to the line's own '/<line>-insurance-policies/<id>' endpoints (and
+// skip the templated '{InsurancePolicyId}' alias + nested payment-details).
+function linePolicyIds(fx, line) {
+  const prefix = `/${line}-insurance-policies/`;
+  const ids = [];
+  for (const ep of Object.keys(fx?.endpoints ?? {})) {
+    if (!ep.startsWith(prefix)) continue;
+    const rest = ep.slice(prefix.length);
+    if (rest.includes('/') || rest.includes('{')) continue;
+    if (!ids.includes(rest)) ids.push(rest);
+  }
+  return ids;
+}
+
+function resolvePolicyId(session, requested, line) {
   const fx = fixtureEntry(session);
-  const ids = fx?.policyIds ?? [];
+  const ids = line ? linePolicyIds(fx, line) : (fx?.policyIds ?? []);
   if (!requested) return ids[0] ?? null;
   if (!ids.includes(requested)) {
     throw new Error(
@@ -135,20 +156,34 @@ function resolvePolicyId(session, requested) {
 // "no fixture for endpoint" miss when, say, `get_home_policies` is
 // called against a `motor` persona.
 function requireLine(session, expectedLine, toolName) {
-  requireDomain(session, 'insurance', toolName);
+  const dom = session.domain ?? 'banking';
   const fx = fixtureEntry(session);
-  const got = fx?.line ?? null;
-  if (got !== expectedLine) {
+  // A single-line insurance persona carries `line`; a multi-domain persona
+  // (domain:'multi') carries several lines, recognised by the presence of the
+  // line's policy-list endpoint. Banking-only sessions match neither.
+  const has =
+    dom === 'insurance'
+      ? fx?.line === expectedLine
+      : dom === 'multi'
+        ? Boolean(fx?.endpoints?.[`/${expectedLine}-insurance-policies`])
+        : false;
+  if (!has) {
+    const where =
+      dom === 'multi'
+        ? `persona ${session.persona} is multi-domain but carries no "${expectedLine}" insurance line`
+        : `this session is ${dom === 'insurance' ? `line="${fx?.line ?? 'unknown'}"` : `domain="${dom}"`} (persona ${session.persona})`;
     throw new Error(
-      `${toolName} requires an insurance session on the "${expectedLine}" line; this session is line="${got ?? 'unknown'}" (persona ${session.persona}). ` +
+      `${toolName} requires an insurance session on the "${expectedLine}" line; ${where}. ` +
         `Call list_personas({ domain: 'insurance' }) to find a ${expectedLine}-line persona, then set_session to switch.`,
     );
   }
 }
 
-function resolveQuoteId(session, requested) {
+function resolveQuoteId(session, requested, line) {
   const fx = fixtureEntry(session);
-  const onlyId = fx?.quoteId ?? null;
+  // Multi-domain personas carry per-line quote ids (motorQuoteId, …); a
+  // single-line persona just has `quoteId`. Prefer the line-specific id.
+  const onlyId = (line ? fx?.[`${line}QuoteId`] : null) ?? fx?.quoteId ?? null;
   if (!requested) return onlyId;
   if (requested !== onlyId) {
     throw new Error(
@@ -552,9 +587,16 @@ export function createServer() {
         // LOADABLE via set_session({lfi_role}). Some declared slots
         // resolve to candidates that aren't in the counterparty pool
         // (e.g. acquirer-only slots) and silently drop.
+        // Role bundles are a banking concept; surface them for banking-only
+        // AND multi-domain personas (domains:[banking, ...]) — the latter
+        // carry domain:'multi', so a bare `domain === 'banking'` check would
+        // hide the flagship retail_multi_banker's N-slot role bundles.
+        const personaDomains = Array.isArray(info?.domains)
+          ? info.domains
+          : [info?.domain ?? 'banking'];
         const availableRoles = [
           'primary',
-          ...(info?.domain === 'banking' ? listRoleBundles(id) : []),
+          ...(personaDomains.includes('banking') ? listRoleBundles(id) : []),
         ];
         return {
           id,
@@ -619,10 +661,10 @@ export function createServer() {
           .describe('LFI populate-rate profile. Default: median.'),
         seed: z.number().int().optional().describe('RNG seed. Default: persona.default_seed.'),
         lfi_role: z
-          .enum(['primary', 'secondary', 'tertiary'])
+          .string()
           .optional()
           .describe(
-            "Which slot of the persona's multi_lfi_footprint to load. Default: primary (the historical bundle). secondary/tertiary load the role-keyed bundle emitted in Phase D Slice 5.",
+            "Which slot of the persona's multi_lfi_footprint to load. Default: primary (the historical bundle). Legacy personas use 'secondary'/'tertiary'; Phase 2.2 N-slot personas use their own slot keys (e.g. 'everyday-card', 'mortgage-lender'). See list_personas → available_lfi_roles for the loadable set.",
           ),
       },
     },
@@ -1151,7 +1193,7 @@ export function createServer() {
     async ({ policyId }) => {
       const s = session.get();
       requireLine(s, 'motor', 'get_motor_policy');
-      const id = resolvePolicyId(s, policyId);
+      const id = resolvePolicyId(s, policyId, 'motor');
       if (!id) throw new Error('no motor policy in this session');
       const env = getEndpointEnvelope(s, `/motor-insurance-policies/${id}`);
       return envelope(s.persona, s.lfi, s.seed, `/motor-insurance-policies/${id}`, env);
@@ -1169,7 +1211,7 @@ export function createServer() {
     async ({ policyId }) => {
       const s = session.get();
       requireLine(s, 'motor', 'get_motor_payment_details');
-      const id = resolvePolicyId(s, policyId);
+      const id = resolvePolicyId(s, policyId, 'motor');
       if (!id) throw new Error('no motor policy in this session');
       const env = getEndpointEnvelope(s, `/motor-insurance-policies/${id}/payment-details`);
       return envelope(
@@ -1195,7 +1237,7 @@ export function createServer() {
     async ({ quoteId }) => {
       const s = session.get();
       requireLine(s, 'motor', 'get_motor_quote');
-      const id = resolveQuoteId(s, quoteId);
+      const id = resolveQuoteId(s, quoteId, 'motor');
       if (!id) throw new Error('no motor quote in this session');
       const env = getEndpointEnvelope(s, `/motor-insurance-quotes/${id}`);
       return envelope(s.persona, s.lfi, s.seed, `/motor-insurance-quotes/${id}`, env);
@@ -1282,7 +1324,7 @@ export function createServer() {
       async ({ policyId }) => {
         const s = session.get();
         requireLine(s, line, `get_${line}_policy`);
-        const id = resolvePolicyId(s, policyId);
+        const id = resolvePolicyId(s, policyId, line);
         if (!id) throw new Error(`no ${line} policy in this session`);
         const env = getEndpointEnvelope(s, `${basePath}/${id}`);
         return envelope(s.persona, s.lfi, s.seed, `${basePath}/${id}`, env);
@@ -1299,7 +1341,7 @@ export function createServer() {
       async ({ policyId }) => {
         const s = session.get();
         requireLine(s, line, `get_${line}_payment_details`);
-        const id = resolvePolicyId(s, policyId);
+        const id = resolvePolicyId(s, policyId, line);
         if (!id) throw new Error(`no ${line} policy in this session`);
         const env = getEndpointEnvelope(s, `${basePath}/${id}/payment-details`);
         return envelope(s.persona, s.lfi, s.seed, `${basePath}/${id}/payment-details`, env);

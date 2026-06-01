@@ -14,6 +14,7 @@ import {
   CASH_FLOW_BANDS,
   STRESS_TAGS,
 } from '../persona-builder/dimensions.js';
+import { el } from '../shared/dom.js';
 
 const SEGMENTS = ['Retail', 'SME', 'Corporate'];
 const ACCOUNT_KINDS = ['CurrentAccount', 'Savings', 'CreditCard', 'Mortgage', 'Finance'];
@@ -27,28 +28,6 @@ const ACCOUNT_ROLES = [
   'Beneficiary',
   'CustodianForMinor',
 ];
-
-function el(tag, opts = {}, ...children) {
-  const node = document.createElement(tag);
-  if (opts.class) node.className = opts.class;
-  if (opts.text != null) node.textContent = String(opts.text);
-  if (opts.attrs) {
-    for (const [k, v] of Object.entries(opts.attrs)) {
-      if (v == null || v === false) continue;
-      node.setAttribute(k, v === true ? '' : String(v));
-    }
-  }
-  if (opts.dataset) for (const [k, v] of Object.entries(opts.dataset)) node.dataset[k] = String(v);
-  if (opts.onClick) node.addEventListener('click', opts.onClick);
-  if (opts.onChange) node.addEventListener('change', opts.onChange);
-  if (opts.onInput) node.addEventListener('input', opts.onInput);
-  for (const c of children) {
-    if (c == null) continue;
-    if (typeof c === 'string') node.appendChild(document.createTextNode(c));
-    else node.appendChild(c);
-  }
-  return node;
-}
 
 function row(label, control, help) {
   return el(

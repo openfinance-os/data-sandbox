@@ -194,7 +194,60 @@ describe('sandbox-mcp server', () => {
       arguments: { persona: 'senior_retiree', lfi_role: 'secondary' },
     });
     expect(r.isError).toBe(true);
-    expect(textOf(r)).toMatch(/does not declare an lfi_role|secondary/);
+    expect(textOf(r)).toMatch(/has no role bundle|secondary/);
+  });
+
+  it('Phase 2.2: N-slot lfi_role keys are selectable via set_session', async () => {
+    // retail_multi_banker uses arbitrary slot keys (salary / everyday-card /
+    // digital / mortgage-lender), not the legacy secondary/tertiary triad.
+    // Regression: the MCP server previously hard-validated lfi_role against
+    // {primary,secondary,tertiary}, making these slots unreachable.
+    const all = JSON.parse(textOf(await client.callTool({ name: 'list_personas', arguments: {} })));
+    const rmb = all.personas.find((p) => p.id === 'retail_multi_banker');
+    expect(rmb, 'retail_multi_banker must be in the persona library').toBeDefined();
+    const nonPrimary = (rmb.available_lfi_roles ?? []).filter((r) => r !== 'primary');
+    expect(nonPrimary.length, 'expected at least one N-slot role bundle').toBeGreaterThan(0);
+    const slot = nonPrimary.find((r) => r !== 'secondary' && r !== 'tertiary') ?? nonPrimary[0];
+    const sessRes = await client.callTool({
+      name: 'set_session',
+      arguments: { persona: 'retail_multi_banker', lfi: 'median', lfi_role: slot },
+    });
+    expect(sessRes.isError ?? false).toBe(false);
+    const sess = JSON.parse(textOf(await client.callTool({ name: 'get_session', arguments: {} })));
+    expect(sess.lfi_role).toBe(slot);
+    const raw = textOf(await client.callTool({ name: 'get_accounts', arguments: {} }));
+    const accounts = JSON.parse(raw.slice(raw.indexOf('{')));
+    expect(accounts.Data.Account.length).toBeGreaterThan(0);
+  });
+
+  it('Phase 2.2: insurance line-tools resolve per-line on a multi-domain persona', async () => {
+    // retail_multi_banker spans banking + motor/home/travel insurance.
+    // Regression: insurance line-tools previously rejected the 'multi'
+    // domain outright, and policy resolution read the mixed policyIds array.
+    await client.callTool({
+      name: 'set_session',
+      arguments: { persona: 'retail_multi_banker', lfi: 'median' },
+    });
+    const parse = (r) => {
+      const t = textOf(r);
+      return JSON.parse(t.slice(t.indexOf('{')));
+    };
+    for (const line of ['motor', 'home', 'travel']) {
+      const list = parse(await client.callTool({ name: `get_${line}_policies`, arguments: {} }));
+      expect(list.Data, `${line} policies Data`).toBeDefined();
+      // get_<line>_policy resolves THIS line's policy (not a different line's
+      // id from the mixed array) and returns a spec-shaped, watermarked detail.
+      const detailRes = await client.callTool({ name: `get_${line}_policy`, arguments: {} });
+      expect(detailRes.isError ?? false, `${line} policy isError`).toBe(false);
+      const detail = parse(detailRes);
+      expect(detail._watermark).toMatch(/SYNTHETIC/);
+      const quoteRes = await client.callTool({ name: `get_${line}_quote`, arguments: {} });
+      expect(quoteRes.isError ?? false, `${line} quote isError`).toBe(false);
+    }
+    // A line the persona does NOT carry errors with a clear message.
+    const health = await client.callTool({ name: 'get_health_policies', arguments: {} });
+    expect(health.isError).toBe(true);
+    expect(textOf(health)).toMatch(/no "health" insurance line|requires an insurance session/);
   });
 
   it('set_session pins a persona and get_session echoes it', async () => {
@@ -377,7 +430,7 @@ describe('sandbox-mcp server', () => {
     });
     const wrongInsurance = await client.callTool({ name: 'get_motor_policies', arguments: {} });
     expect(wrongInsurance.isError).toBe(true);
-    expect(textOf(wrongInsurance)).toMatch(/requires a insurance session/);
+    expect(textOf(wrongInsurance)).toMatch(/requires an insurance session/);
 
     // Insurance session → banking tool.
     await client.callTool({

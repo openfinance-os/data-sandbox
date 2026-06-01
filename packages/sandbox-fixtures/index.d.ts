@@ -50,12 +50,18 @@ export function loadFixture(opts: {
   lfi?: 'rich' | 'median' | 'sparse';
   seed?: number;
   endpoint: string;
-  /** D-14 / Phase D Slice 5: 'secondary' or 'tertiary' to read the
+  /** D-14 / Phase D Slice 5: a non-primary role-slot key to read the
    * persona's multi-LFI footprint role bundle instead of the primary
-   * fixture. Omit (or pass 'primary') for the historical primary path. */
-  lfi_role?: 'primary' | 'secondary' | 'tertiary';
+   * fixture. Legacy personas use 'secondary' / 'tertiary'; Phase 2.2
+   * N-slot personas use arbitrary keys (e.g. 'salary', 'mortgage-lender')
+   * — see listRoleBundles for the emitted set. Omit (or pass 'primary')
+   * for the historical primary path. */
+  lfi_role?: string;
 }): unknown;
-export function listRoleBundles(personaId: string): Array<'secondary' | 'tertiary'>;
+/** Returns the role-slot keys that have an emitted role bundle for this
+ * persona. Legacy personas return a subset of ['secondary','tertiary'];
+ * Phase 2.2 N-slot personas return their declared slot keys. */
+export function listRoleBundles(personaId: string): string[];
 
 // Pagination — Open Finance v2.1 Links/Meta envelope. `loadFixturePage`
 // loads the full fixture for the requested endpoint and returns a paginated
@@ -103,7 +109,7 @@ export function loadFixturePage(
     endpoint: string;
     lfi?: 'rich' | 'median' | 'sparse';
     seed?: number;
-    lfi_role?: 'primary' | 'secondary' | 'tertiary';
+    lfi_role?: string;
   } & PaginationOptions
 ): PaginatedEnvelope;
 
@@ -126,8 +132,9 @@ export function loadJourney(opts: {
   seed?: number;
   /** D-14 / Slice 8: load the persona's role-keyed bundle instead of the
    * primary. Only valid for personas with multi_lfi_footprint declaring
-   * the slot AND a role bundle emitted (see listRoleBundles). */
-  lfi_role?: 'primary' | 'secondary' | 'tertiary';
+   * the slot AND a role bundle emitted (see listRoleBundles). Legacy
+   * 'secondary'/'tertiary' or a Phase 2.2 N-slot key. */
+  lfi_role?: string;
 }): Journey;
 export function loadSpec(opts?: { domain?: Domain }): unknown;
 export function loadPersonaManifest(personaId: string): unknown;

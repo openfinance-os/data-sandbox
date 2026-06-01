@@ -13,6 +13,7 @@ import {
   statusBadge,
 } from '../shared/spec-helpers.js';
 import { conditionalRule, isPii } from '../shared/field-knowledge.js';
+import { statusPill } from '../shared/dom.js';
 import { track } from '../analytics.js';
 
 const ISSUE_REPO = 'openfinance-os/data-sandbox';
@@ -69,13 +70,7 @@ export function createFieldCard(deps) {
       if (k === 'Status') {
         const badge = statusBadge(f.status);
         const ve = el('span', { class: 'v' });
-        ve.appendChild(
-          el('span', {
-            class: `pill ${badge.shape}`,
-            text: badge.label,
-            attrs: { 'aria-label': badge.text },
-          }),
-        );
+        ve.appendChild(statusPill(f.status));
         ve.appendChild(document.createTextNode(badge.text));
         row.appendChild(ve);
       } else if (k === 'Spec') {

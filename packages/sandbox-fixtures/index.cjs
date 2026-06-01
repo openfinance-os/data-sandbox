@@ -47,18 +47,17 @@ function loadFixture(opts) {
   return JSON.parse(fs.readFileSync(path.join(here, rel), 'utf8'));
 }
 function listRoleBundles(personaId) {
+  // Derive emitted role-slot keys from the manifest (supports Phase 2.2
+  // N-slot personas, not just the legacy secondary/tertiary triad).
   const out = [];
   const rf = manifest.roleFixtures || {};
-  const info = manifest.personas[personaId];
-  if (!info) return out;
-  const slots = ['secondary', 'tertiary'];
-  const lfis = ['rich', 'median', 'sparse'];
-  for (let i = 0; i < slots.length; i++) {
-    for (let j = 0; j < lfis.length; j++) {
-      if (rf[personaId + '|' + slots[i] + '|' + lfis[j] + '|' + info.default_seed]) {
-        if (out.indexOf(slots[i]) < 0) out.push(slots[i]);
-      }
-    }
+  if (!manifest.personas[personaId]) return out;
+  const prefix = personaId + '|';
+  const keys = Object.keys(rf);
+  for (let i = 0; i < keys.length; i++) {
+    if (keys[i].indexOf(prefix) !== 0) continue;
+    const slot = keys[i].slice(prefix.length).split('|')[0];
+    if (out.indexOf(slot) < 0) out.push(slot);
   }
   return out;
 }

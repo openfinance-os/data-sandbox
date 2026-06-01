@@ -20,8 +20,22 @@ permissions:
   id-token: write
 
 jobs:
+  # Gate: never publish a broken or spec-invalid build to npm / PyPI.
+  # Runs the full CI (verify-spec-shape → build → lints → vitest → MCP tests)
+  # before either publish job can start.
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npm run ci
+
   publish-npm:
     runs-on: ubuntu-latest
+    needs: validate
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -38,7 +52,7 @@ jobs:
 
   publish-pypi:
     runs-on: ubuntu-latest
-    needs: publish-npm
+    needs: [validate, publish-npm]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

@@ -95,3 +95,46 @@ if (!FIXTURES_BUILT) {
       });
     }
   });
+
+if (!FIXTURES_BUILT) {
+  describe.skip("Slice 3 — every insurance payment-details IBAN is mod-97 valid (run 'npm run build:fixtures')", () => {
+    it.skip('fixture package not built', () => {});
+  });
+} else
+  describe('Slice 3 — every insurance payment-details IBAN is mod-97 valid', () => {
+    const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
+    const insuranceFixtures = Object.entries(manifest.fixtures).filter(
+      ([, fx]) => fx.domain === 'insurance',
+    );
+
+    // Insurance IBANs live in the per-line payment-details envelope at
+    // Account.Identification (SchemeName 'IBAN'). Walk every envelope
+    // recursively so the test is robust to endpoint naming / shape changes.
+    function* ibansIn(node) {
+      if (Array.isArray(node)) {
+        for (const v of node) yield* ibansIn(v);
+      } else if (node && typeof node === 'object') {
+        if (node.SchemeName === 'IBAN' && typeof node.Identification === 'string') {
+          yield node.Identification;
+        }
+        for (const v of Object.values(node)) yield* ibansIn(v);
+      }
+    }
+
+    for (const [key, fx] of insuranceFixtures) {
+      it(`${key} — every IBAN in the rendered bundle passes mod-97`, () => {
+        let checked = 0;
+        for (const rel of Object.values(fx.endpoints)) {
+          const env = JSON.parse(fs.readFileSync(path.join(PKG_DIR, rel), 'utf8'));
+          for (const iban of ibansIn(env)) {
+            expect(iban.length).toBe(23);
+            expect(iban.slice(0, 2)).toBe('AE');
+            expect(isValidMod97Iban(iban), `${key} IBAN ${iban} fails mod-97`).toBe(true);
+            checked += 1;
+          }
+        }
+        // Every insurance persona emits at least one payment-details IBAN.
+        expect(checked).toBeGreaterThan(0);
+      });
+    }
+  });

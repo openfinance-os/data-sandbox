@@ -6,6 +6,7 @@
 // re-renders can't stack timers on it.
 
 import { bandForFieldName, statusBadge, realLfisGuidance } from '../shared/spec-helpers.js';
+import { statusPill } from '../shared/dom.js';
 
 export function createHoverPreview(deps) {
   const { state, el, endpointFieldsByName } = deps;
@@ -42,13 +43,7 @@ export function createHoverPreview(deps) {
     card.replaceChildren();
     card.appendChild(el('div', { class: 'hc-title', text: fieldName }));
     const status = el('div', { class: 'hc-status' });
-    status.appendChild(
-      el('span', {
-        class: `pill ${badge.shape}`,
-        text: badge.label,
-        attrs: { 'aria-label': badge.text },
-      }),
-    );
+    status.appendChild(statusPill(f.status));
     status.appendChild(document.createTextNode(badge.text));
     if (band)
       status.appendChild(

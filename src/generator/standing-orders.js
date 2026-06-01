@@ -84,16 +84,17 @@ function parseScheduleDay(schedule) {
 }
 function monthsAgoAtDay(now, months, day) {
   const d = new Date(now.getTime());
-  d.setMonth(d.getMonth() - months);
-  d.setDate(Math.min(day, 28));
-  d.setHours(11, 0, 0, 0);
+  // setUTCDate before setUTCMonth so a month-end `now` can't overflow.
+  d.setUTCDate(Math.min(day, 28));
+  d.setUTCMonth(d.getUTCMonth() - months);
+  d.setUTCHours(11, 0, 0, 0);
   return d;
 }
 function nextOccurrence(now, day) {
   const d = new Date(now.getTime());
-  d.setMonth(d.getMonth() + 1);
-  d.setDate(Math.min(day, 28));
-  d.setHours(11, 0, 0, 0);
+  d.setUTCDate(Math.min(day, 28));
+  d.setUTCMonth(d.getUTCMonth() + 1);
+  d.setUTCHours(11, 0, 0, 0);
   return d;
 }
 function isoOf(date) {

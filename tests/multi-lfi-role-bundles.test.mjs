@@ -131,4 +131,37 @@ if (!FIXTURES_BUILT) {
       // Personas without multi_lfi_footprint return [].
       expect(m.listRoleBundles('senior_retiree')).toEqual([]);
     });
+
+    // Phase 2.2 regression — N-slot personas use arbitrary slot keys, not the
+    // legacy secondary/tertiary triad. listRoleBundles must surface those keys
+    // (it previously hard-coded ['secondary','tertiary'], leaving the flagship
+    // retail_multi_banker's role bundles emitted-but-unreachable), and every
+    // surfaced slot must load a spec-shaped envelope.
+    it('npm loader API: N-slot persona role bundles are discoverable and loadable', async () => {
+      const m = await import(path.join(PKG_DIR, 'index.mjs'));
+      const expected = [
+        ...new Set(
+          Object.keys(roleFixtures)
+            .filter((k) => k.startsWith('retail_multi_banker|'))
+            .map((k) => k.split('|')[1]),
+        ),
+      ];
+      // The flagship N-slot persona must emit at least one custom-key role
+      // bundle, otherwise this regression can't catch anything.
+      expect(expected.length).toBeGreaterThan(0);
+      const slots = m.listRoleBundles('retail_multi_banker');
+      expect(slots.sort()).toEqual(expected.sort());
+      // None of these are the legacy keys — proves the hard-coded list is gone.
+      expect(slots.some((s) => s !== 'secondary' && s !== 'tertiary')).toBe(true);
+      for (const slot of slots) {
+        const env = m.loadFixture({
+          persona: 'retail_multi_banker',
+          lfi: 'median',
+          lfi_role: slot,
+          endpoint: '/accounts',
+        });
+        expect(env.Data?.Account?.length, `slot ${slot} /accounts`).toBeGreaterThan(0);
+        expect(env._watermark).toMatch(/SYNTHETIC/);
+      }
+    });
   });

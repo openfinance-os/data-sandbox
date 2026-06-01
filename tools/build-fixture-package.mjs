@@ -31,6 +31,23 @@ const SHA = readSpecSha();
 // with the version that matches its domain.
 const SPEC_VERSIONS = readSpecVersions();
 
+// Fail the build BEFORE writing a malformed envelope, rather than deferring
+// the only structural check to rendered-fixture-spec-validation.test.mjs
+// (which the publish workflow could skip). Mirrors the v2.1-shape contract
+// asserted by tests/fixture-package.test.mjs: every emitted envelope must
+// carry Data, Links.Self, Meta, and a SYNTHETIC watermark.
+function assertEnvelope(env, endpoint, personaId) {
+  const ctx = `${personaId} ${endpoint}`;
+  if (!env || typeof env !== 'object') throw new Error(`emit ${ctx}: envelope is not an object`);
+  if (env.Data === undefined) throw new Error(`emit ${ctx}: missing Data`);
+  if (!env.Links || env.Links.Self === undefined)
+    throw new Error(`emit ${ctx}: missing Links.Self`);
+  if (env.Meta === undefined) throw new Error(`emit ${ctx}: missing Meta`);
+  if (typeof env._watermark !== 'string' || !env._watermark.includes('SYNTHETIC')) {
+    throw new Error(`emit ${ctx}: missing/invalid _watermark`);
+  }
+}
+
 if (fs.existsSync(OUT)) fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(path.join(OUT, 'bundles'), { recursive: true });
 fs.mkdirSync(path.join(OUT, 'personas'), { recursive: true });
@@ -162,6 +179,7 @@ async function emitPersona(personaId, persona, domain) {
 
     const endpointFiles = {};
     for (const [endpoint, env] of Object.entries(envelopes)) {
+      assertEnvelope(env, endpoint, personaId);
       const fname = `${safeName(endpoint)}.json`;
       const fp = path.join(dir, fname);
       const text = JSON.stringify(env, null, 2);
@@ -273,6 +291,7 @@ async function emitPersona(personaId, persona, domain) {
         fs.mkdirSync(roleDir, { recursive: true });
         const roleFiles = {};
         for (const [endpoint, env] of Object.entries(roleEnvelopes)) {
+          assertEnvelope(env, endpoint, `${personaId}|${slotKey}`);
           const fname = `${safeName(endpoint)}.json`;
           const fp = path.join(roleDir, fname);
           const text = JSON.stringify(env, null, 2);
@@ -524,16 +543,18 @@ export function loadFixture({ persona, lfi = 'median', seed, endpoint, lfi_role 
   return JSON.parse(readFileSync(path.join(here, rel), 'utf8'));
 }
 export function listRoleBundles(personaId) {
+  // Derive the emitted role-slot keys from the role-fixture manifest rather
+  // than a hard-coded list, so Phase 2.2 N-slot personas (arbitrary slot keys
+  // like 'salary' / 'mortgage-lender') are discoverable, not just the legacy
+  // secondary/tertiary triad. Keys are \`\${persona}|\${slot}|\${lfi}|\${seed}\`.
   const out = [];
   const rf = manifest.roleFixtures ?? {};
-  const info = manifest.personas[personaId];
-  if (!info) return out;
-  for (const slot of ['secondary', 'tertiary']) {
-    for (const lfi of ['rich', 'median', 'sparse']) {
-      if (rf[\`\${personaId}|\${slot}|\${lfi}|\${info.default_seed}\`]) {
-        if (!out.includes(slot)) out.push(slot);
-      }
-    }
+  if (!manifest.personas[personaId]) return out;
+  const prefix = \`\${personaId}|\`;
+  for (const key of Object.keys(rf)) {
+    if (!key.startsWith(prefix)) continue;
+    const slot = key.slice(prefix.length).split('|')[0];
+    if (!out.includes(slot)) out.push(slot);
   }
   return out;
 }
@@ -728,18 +749,17 @@ function loadFixture(opts) {
   return JSON.parse(fs.readFileSync(path.join(here, rel), 'utf8'));
 }
 function listRoleBundles(personaId) {
+  // Derive emitted role-slot keys from the manifest (supports Phase 2.2
+  // N-slot personas, not just the legacy secondary/tertiary triad).
   const out = [];
   const rf = manifest.roleFixtures || {};
-  const info = manifest.personas[personaId];
-  if (!info) return out;
-  const slots = ['secondary', 'tertiary'];
-  const lfis = ['rich', 'median', 'sparse'];
-  for (let i = 0; i < slots.length; i++) {
-    for (let j = 0; j < lfis.length; j++) {
-      if (rf[personaId + '|' + slots[i] + '|' + lfis[j] + '|' + info.default_seed]) {
-        if (out.indexOf(slots[i]) < 0) out.push(slots[i]);
-      }
-    }
+  if (!manifest.personas[personaId]) return out;
+  const prefix = personaId + '|';
+  const keys = Object.keys(rf);
+  for (let i = 0; i < keys.length; i++) {
+    if (keys[i].indexOf(prefix) !== 0) continue;
+    const slot = keys[i].slice(prefix.length).split('|')[0];
+    if (out.indexOf(slot) < 0) out.push(slot);
   }
   return out;
 }
@@ -947,12 +967,18 @@ export function loadFixture(opts: {
   lfi?: 'rich' | 'median' | 'sparse';
   seed?: number;
   endpoint: string;
-  /** D-14 / Phase D Slice 5: 'secondary' or 'tertiary' to read the
+  /** D-14 / Phase D Slice 5: a non-primary role-slot key to read the
    * persona's multi-LFI footprint role bundle instead of the primary
-   * fixture. Omit (or pass 'primary') for the historical primary path. */
-  lfi_role?: 'primary' | 'secondary' | 'tertiary';
+   * fixture. Legacy personas use 'secondary' / 'tertiary'; Phase 2.2
+   * N-slot personas use arbitrary keys (e.g. 'salary', 'mortgage-lender')
+   * — see listRoleBundles for the emitted set. Omit (or pass 'primary')
+   * for the historical primary path. */
+  lfi_role?: string;
 }): unknown;
-export function listRoleBundles(personaId: string): Array<'secondary' | 'tertiary'>;
+/** Returns the role-slot keys that have an emitted role bundle for this
+ * persona. Legacy personas return a subset of ['secondary','tertiary'];
+ * Phase 2.2 N-slot personas return their declared slot keys. */
+export function listRoleBundles(personaId: string): string[];
 
 // Pagination — Open Finance v2.1 Links/Meta envelope. \`loadFixturePage\`
 // loads the full fixture for the requested endpoint and returns a paginated
@@ -1000,7 +1026,7 @@ export function loadFixturePage(
     endpoint: string;
     lfi?: 'rich' | 'median' | 'sparse';
     seed?: number;
-    lfi_role?: 'primary' | 'secondary' | 'tertiary';
+    lfi_role?: string;
   } & PaginationOptions
 ): PaginatedEnvelope;
 
@@ -1023,8 +1049,9 @@ export function loadJourney(opts: {
   seed?: number;
   /** D-14 / Slice 8: load the persona's role-keyed bundle instead of the
    * primary. Only valid for personas with multi_lfi_footprint declaring
-   * the slot AND a role bundle emitted (see listRoleBundles). */
-  lfi_role?: 'primary' | 'secondary' | 'tertiary';
+   * the slot AND a role bundle emitted (see listRoleBundles). Legacy
+   * 'secondary'/'tertiary' or a Phase 2.2 N-slot key. */
+  lfi_role?: string;
 }): Journey;
 export function loadSpec(opts?: { domain?: Domain }): unknown;
 export function loadPersonaManifest(personaId: string): unknown;

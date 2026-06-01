@@ -18,6 +18,11 @@
 import { makePrng } from '../../prng.js';
 import { applyAtmLfiProfile } from './lfi-profile.js';
 
+// Bundle time anchor. MUST match the banking/insurance DEFAULT_NOW so a
+// caller that omits `now` still gets byte-identical output across machines
+// (EXP-05) — never fall back to wall-clock.
+const DEFAULT_NOW = new Date(Date.UTC(2026, 3, 1, 0, 0, 0));
+
 // Fleet sizes per LFI profile. The number of ATMs an LFI exposes on its
 // directory is a function of its branch network depth — Tier-1 retail
 // banks (Rich) publish hundreds of locations across all seven emirates;
@@ -306,7 +311,7 @@ function buildAtm({ idx, rng, lfiIdentity }) {
  * emitted for every persona we wire to the ATM domain. Determinism
  * comes from `(persona_id, 'atm-generator', seed)`.
  */
-export function buildAtmBundle({ persona, lfi, seed, now }) {
+export function buildAtmBundle({ persona, lfi, seed, now = DEFAULT_NOW }) {
   const rng = makePrng(persona.persona_id, 'atm-generator', seed);
   const lfiIdentity = LFI_IDENTITY_BY_PROFILE[lfi] ?? LFI_IDENTITY_BY_PROFILE.median;
   const fleetSize = fleetSizeFor(lfi, rng);
@@ -314,7 +319,7 @@ export function buildAtmBundle({ persona, lfi, seed, now }) {
   for (let i = 1; i <= fleetSize; i++) {
     atms.push(buildAtm({ idx: i, rng, lfiIdentity }));
   }
-  const lastUpdated = (now ?? new Date()).toISOString().replace(/\.\d{3}Z$/, 'Z');
+  const lastUpdated = now.toISOString().replace(/\.\d{3}Z$/, 'Z');
 
   const bundle = {
     persona: persona.persona_id,

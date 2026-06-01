@@ -84,16 +84,18 @@ export function loadFixture({ persona, lfi = 'median', seed, endpoint, lfi_role 
   return JSON.parse(readFileSync(path.join(here, rel), 'utf8'));
 }
 export function listRoleBundles(personaId) {
+  // Derive the emitted role-slot keys from the role-fixture manifest rather
+  // than a hard-coded list, so Phase 2.2 N-slot personas (arbitrary slot keys
+  // like 'salary' / 'mortgage-lender') are discoverable, not just the legacy
+  // secondary/tertiary triad. Keys are `${persona}|${slot}|${lfi}|${seed}`.
   const out = [];
   const rf = manifest.roleFixtures ?? {};
-  const info = manifest.personas[personaId];
-  if (!info) return out;
-  for (const slot of ['secondary', 'tertiary']) {
-    for (const lfi of ['rich', 'median', 'sparse']) {
-      if (rf[`${personaId}|${slot}|${lfi}|${info.default_seed}`]) {
-        if (!out.includes(slot)) out.push(slot);
-      }
-    }
+  if (!manifest.personas[personaId]) return out;
+  const prefix = `${personaId}|`;
+  for (const key of Object.keys(rf)) {
+    if (!key.startsWith(prefix)) continue;
+    const slot = key.slice(prefix.length).split('|')[0];
+    if (!out.includes(slot)) out.push(slot);
   }
   return out;
 }

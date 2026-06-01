@@ -5,6 +5,7 @@
 
 import { aed } from './motor-policy.js';
 import { genUuid } from './identity.js';
+import { MS_PER_DAY } from '../constants.js';
 
 function quoteReference(rng) {
   return `EMPQ-${String(Math.floor(rng() * 1_000_000_000)).padStart(9, '0')}`;
@@ -36,9 +37,9 @@ function serviceRating() {
 export function generateEmploymentQuote({ persona, rng, now }) {
   const e = persona.employment;
   const quoteCreatedDays = e.policy.start_date_offset_days + 5;
-  const creationDateTime = new Date(now.getTime() - quoteCreatedDays * 86400000).toISOString();
+  const creationDateTime = new Date(now.getTime() - quoteCreatedDays * MS_PER_DAY).toISOString();
   const expirationDateTime = new Date(
-    now.getTime() - (quoteCreatedDays - 30) * 86400000,
+    now.getTime() - (quoteCreatedDays - 30) * MS_PER_DAY,
   ).toISOString();
 
   // ILOE pricing — see employment-policy.js generateEmploymentPremium.

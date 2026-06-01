@@ -18,6 +18,8 @@
 // role="tabpanel" + aria-labelledby on the body. State is JS-only per
 // EXP-22. No analytics events beyond the 'export' / 'share' allowlist.
 
+import { trapFocus } from '../shared/dom.js';
+
 export function createExportPopover(deps) {
   const {
     state,
@@ -38,6 +40,8 @@ export function createExportPopover(deps) {
   // PR-13 (Greptile P2) — capture the trigger element when the popover
   // opens so focus can return to it on close (EXP-23 keyboard a11y).
   let triggerElement = null;
+  // Focus-trap teardown while the popover is open (WCAG 2.4.3 / 2.1.2).
+  let releaseTrap = null;
 
   function snippetForTab(key) {
     const ctx = {
@@ -213,12 +217,15 @@ export function createExportPopover(deps) {
     });
 
     document.body.appendChild(overlay);
+    releaseTrap = trapFocus(overlay);
     renderActiveTab();
     // Move focus into the popover for keyboard users — the active tab btn.
     overlay.querySelector('.export-tab.is-active')?.focus();
   }
 
   function closeOverlay() {
+    releaseTrap?.();
+    releaseTrap = null;
     overlay?.remove();
     overlay = null;
     // PR-13 (Greptile P2) — return focus to the trigger so Tab resumes

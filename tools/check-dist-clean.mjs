@@ -15,9 +15,20 @@ const ROOTS = ['dist/', 'packages/sandbox-fixtures/'];
 
 let changed;
 try {
-  changed = execFileSync('git', ['diff', '--name-only', '--', ...ROOTS], {
+  // Modified tracked artifacts...
+  const modified = execFileSync('git', ['diff', '--name-only', '--', ...ROOTS], {
     encoding: 'utf8',
   }).trim();
+  // ...AND newly-emitted files at tracked paths. `git diff` ignores untracked
+  // files, so a build that writes a NEW tracked-path file would slip through.
+  // --exclude-standard keeps the gitignored bundles/ + lib/ + personas/ trees
+  // out, leaving only untracked files that ought to be committed.
+  const untracked = execFileSync(
+    'git',
+    ['ls-files', '--others', '--exclude-standard', '--', ...ROOTS],
+    { encoding: 'utf8' },
+  ).trim();
+  changed = [modified, untracked].filter(Boolean).join('\n');
 } catch (err) {
   console.error('check-dist-clean: failed to invoke git:', err.message);
   process.exit(2);

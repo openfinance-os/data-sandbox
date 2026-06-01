@@ -5,6 +5,8 @@
 // state and helpers as deps so it can live outside src/app.js
 // without a circular import.
 
+import { trapFocus } from '../shared/dom.js';
+
 export function createTour(deps) {
   const {
     state,
@@ -16,6 +18,15 @@ export function createTour(deps) {
     renderCoverage,
     onClose,
   } = deps;
+
+  // Dialog a11y state (WCAG 2.4.3 / 2.1.2): the focus-trap teardown for the
+  // current step's overlay, the element to restore focus to on close, and the
+  // Escape handler (the app-level Escape router doesn't cover the tour).
+  let releaseTrap = null;
+  let priorFocus = null;
+  function onEscape(e) {
+    if (e.key === 'Escape') closeTour();
+  }
 
   const TOUR_STEPS = [
     {
@@ -59,6 +70,8 @@ export function createTour(deps) {
   ];
 
   function startTour() {
+    priorFocus = document.activeElement;
+    document.addEventListener('keydown', onEscape);
     state.tourStep = 0;
     renderTourStep();
   }
@@ -76,7 +89,10 @@ export function createTour(deps) {
     renderPayload();
     renderCoverage();
 
-    // Remove any existing overlay before mounting a fresh one.
+    // Remove any existing overlay before mounting a fresh one — release the
+    // prior step's focus trap first so listeners don't accumulate.
+    releaseTrap?.();
+    releaseTrap = null;
     document.getElementById('tour-overlay')?.remove();
 
     const overlay = el('div', {
@@ -133,14 +149,21 @@ export function createTour(deps) {
       if (e.target === overlay) closeTour();
     });
     document.body.appendChild(overlay);
+    releaseTrap = trapFocus(overlay);
     // Move focus into the card for keyboard users.
     card.querySelector('button.tour-primary')?.focus();
   }
 
   function closeTour() {
     state.tourStep = null;
+    releaseTrap?.();
+    releaseTrap = null;
+    document.removeEventListener('keydown', onEscape);
     document.getElementById('tour-overlay')?.remove();
     state.tourSeen = true;
+    // Restore focus to whatever launched the tour (WCAG 2.4.3).
+    if (priorFocus && typeof priorFocus.focus === 'function') priorFocus.focus();
+    priorFocus = null;
     if (typeof onClose === 'function') onClose();
   }
 
