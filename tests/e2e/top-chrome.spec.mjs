@@ -104,6 +104,45 @@ test.describe('top chrome compression (PR-10)', () => {
     expect(cookies).toEqual([]);
   });
 
+  test('top menu stays locked to the viewport — the document never scrolls it off (iPad Safari guard)', async ({
+    page,
+  }) => {
+    // iPad-landscape-ish viewport, deliberately short so the chrome + panes
+    // would overflow a naive 100vh shell. The app shell is sized to the
+    // visible viewport (svh / -webkit-fill-available, with 100vh fallback)
+    // and locked with overflow:hidden, so the document itself must not gain
+    // a vertical scroll that could push the top menu off-screen — the
+    // failure mode reported on iPadOS Safari, where 100vh resolves to the
+    // larger toolbar-retracted viewport.
+    await page.setViewportSize({ width: 1024, height: 690 });
+    await loadPersona(page);
+
+    const topbar = page.locator('.topbar');
+    await expect(topbar).toBeVisible();
+    // The top menu sits flush against the top edge of the viewport.
+    const top = await topbar.evaluate((el) => el.getBoundingClientRect().top);
+    expect(top).toBe(0);
+
+    // The page (document) carries no vertical scroll — the locked chrome
+    // fits within the visible area, so there is nothing to scroll.
+    const overflow = await page.evaluate(() => {
+      const el = document.scrollingElement || document.documentElement;
+      return {
+        scroll: el.scrollHeight - el.clientHeight,
+        bodyOverflowY: getComputedStyle(document.body).overflowY,
+      };
+    });
+    expect(overflow.scroll).toBeLessThanOrEqual(1);
+    expect(overflow.bodyOverflowY).toBe('hidden');
+
+    // Even if a scroll is forced, the chrome cannot be dragged away.
+    await page.evaluate(() => window.scrollTo(0, 600));
+    const topAfter = await topbar.evaluate((el) => el.getBoundingClientRect().top);
+    expect(topAfter).toBe(0);
+    const scrollY = await page.evaluate(() => window.scrollY);
+    expect(scrollY).toBe(0);
+  });
+
   test('attribution wordmark is in the topbar, not duplicated as a 2-line block', async ({
     page,
   }) => {
