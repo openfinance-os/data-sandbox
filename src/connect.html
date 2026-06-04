@@ -8,7 +8,12 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Crect width=%2716%27 height=%2716%27 rx=%273%27 fill=%27%236E548F%27/%3E%3Ctext x=%278%27 y=%2712%27 font-family=%27system-ui,sans-serif%27 font-size=%2710%27 font-weight=%27700%27 text-anchor=%27middle%27 fill=%27%23fff%27%3E%C2%A4%3C/text%3E%3C/svg%3E" />
 <link rel="stylesheet" href="styles.css" />
 <style>
-  html, body { height: auto; overflow: auto; }
+  /* Unlock the app-shell viewport lock from styles.css for this long-form
+     page. Use `overflow: visible` (the default), NOT `auto`: a non-visible
+     overflow on the root <html> makes it an auto-height scroll box that
+     sizes to its content and stops propagating scroll to the viewport, so
+     Chrome on macOS shows no scrollbar. `visible` restores document scroll. */
+  html, body { height: auto; overflow: visible; overscroll-behavior: auto; }
   body { display: block; background: var(--bg); }
   .connect-shell {
     max-width: 920px;

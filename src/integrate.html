@@ -8,8 +8,15 @@
 <link rel="stylesheet" href="styles.css" />
 <style>
   /* Override the app-shell viewport lock from styles.css — this page is a
-     long-form document and needs normal page scrolling. */
-  html, body { height: auto; overflow: auto; }
+     long-form document and needs normal page scrolling.
+
+     Use `overflow: visible` (the initial value), NOT `auto`: setting a
+     non-visible overflow on the root <html> stops it propagating overflow
+     to the viewport and instead turns <html> into an auto-height scroll box
+     sized to its own content, leaving nothing for the viewport to scroll —
+     Chrome on macOS then shows no scrollbar at all. `visible` restores the
+     normal document scroll the chrome lock had suppressed. */
+  html, body { height: auto; overflow: visible; overscroll-behavior: auto; }
   body { display: block; background: var(--bg); }
   .integrate-shell {
     max-width: 760px;
