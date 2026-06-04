@@ -1,0 +1,47 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run ci *)",
+      "Bash(npm test *)",
+      "Bash(npm run build:site *)",
+      "Bash(npm run lint *)",
+      "Bash(npm run build:fixtures *)",
+      "Bash(npm run test:perf *)",
+      "Bash(npm run build:data *)",
+      "Bash(npm run build:avatars *)",
+      "Bash(npm run build:spec *)",
+      "Bash(npm run test:mcp *)",
+      "Bash(npm run check:dist-clean *)",
+      "Bash(npm run lint:no-institution-leak *)",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__take_screenshot",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__take_snapshot",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__lighthouse_audit",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__list_pages",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__wait_for"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-protected-paths.mjs\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/format-edited-file.mjs\""
+          }
+        ]
+      }
+    ]
+  }
+}
