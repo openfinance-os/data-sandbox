@@ -74,3 +74,56 @@ test.describe('responsive panel collapse (PR #1)', () => {
     await expect(root).toHaveClass(/right-collapsed/);
   });
 });
+
+// Phone layout — the locked-chrome model (body: 100svh + overflow:hidden)
+// works on desktop/tablet because the topbar is a short strip. On a phone the
+// wrapped persona / LFI / seed / language controls stack taller than the
+// viewport, and with the body locked there was no way to scroll down to the
+// persona library or payload: the site was unnavigable (iPhone Safari report).
+// At phone breakpoints the body unlocks to normal document scrolling.
+test.describe('phone layout — document scrolls so chrome cannot trap the panes', () => {
+  test('iPhone portrait: body scrolls and the payload table is reachable', async ({ page }) => {
+    // iPhone 14 portrait. Land directly on a table-rendering endpoint
+    // (/accounts) — the wrapped topbar is ~360px tall here, so the table sits
+    // well below the fold and is only reachable if the document scrolls.
+    await page.setViewportSize({ width: 390, height: 664 });
+    await loadPersona(page, { persona: 'salaried_expat_mid', endpoint: '/accounts' });
+
+    // Locked-chrome is off on phones — the body is a normal scroll container.
+    const bodyOverflowY = await page.evaluate(() => getComputedStyle(document.body).overflowY);
+    expect(bodyOverflowY).toBe('visible');
+
+    // The tall wrapped topbar pushes the payload below the fold; it must be
+    // reachable by scrolling the document (the failure mode this guards).
+    const table = page.locator('.payload-rendered table').first();
+    await table.scrollIntoViewIfNeeded();
+    await expect(table).toBeInViewport();
+
+    // The persona library is also reachable.
+    await expect(page.locator('.persona-card').first()).toBeVisible();
+  });
+
+  test('iPhone landscape: short viewport also unlocks document scroll', async ({ page }) => {
+    // iPhone 14 landscape — wider than 760px but short, so the
+    // short-landscape arm of the media query must still apply.
+    await page.setViewportSize({ width: 844, height: 390 });
+    await loadPersona(page, { persona: 'salaried_expat_mid', endpoint: '/accounts' });
+
+    const bodyOverflowY = await page.evaluate(() => getComputedStyle(document.body).overflowY);
+    expect(bodyOverflowY).toBe('visible');
+
+    const table = page.locator('.payload-rendered table').first();
+    await table.scrollIntoViewIfNeeded();
+    await expect(table).toBeInViewport();
+  });
+
+  test('tablet/iPad landscape (1024×690) keeps the locked-chrome model', async ({ page }) => {
+    // Regression boundary: the iPad guard viewport must NOT fall into the
+    // phone window — its topbar fits, so the chrome stays pinned and the
+    // document does not scroll (mirrors top-chrome.spec.mjs).
+    await page.setViewportSize({ width: 1024, height: 690 });
+    await loadPersona(page, { persona: 'salaried_expat_mid' });
+    const bodyOverflowY = await page.evaluate(() => getComputedStyle(document.body).overflowY);
+    expect(bodyOverflowY).toBe('hidden');
+  });
+});

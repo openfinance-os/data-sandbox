@@ -48,7 +48,13 @@ body {
        2. -webkit-fill-available   — older WebKit (iOS < 15.4): visible height.
        3. 100svh                   — modern engines: small viewport height,
                                       never taller than the visible area, so
-                                      the shell always fits and nothing scrolls. */
+                                      the shell always fits and nothing scrolls.
+
+     This locked model assumes the topbar is short. On phones the wrapped
+     controls can grow taller than the viewport and trap the panes off-screen,
+     so the phone media query at the bottom of this file (`max-width: 760px`,
+     plus the short-landscape case) unlocks the body back to normal document
+     scrolling. */
   height: 100vh;
   height: -webkit-fill-available;
   height: 100svh;
@@ -2812,13 +2818,67 @@ details.nav-account > summary.nav-account-header:focus-visible {
   }
 }
 
-@media (max-width: 760px) {
+/* --- Phone layout: abandon the locked-chrome model. ----------------------
+   The desktop/tablet shell pins the topbar + footer and scrolls the panes
+   internally (body: 100svh + overflow:hidden, see the body rule near the top
+   of this file). That model assumes the topbar fits in a short strip. On a
+   phone the wrapped persona / LFI / Compare / Seed / Language / Numerals
+   controls stack several rows tall — frequently TALLER than the visible
+   viewport. Because the body is `overflow:hidden` there is then no way to
+   scroll down to the panes: the persona library and payload are pushed below
+   the fold with nothing to scroll, and the site becomes unnavigable. This is
+   the iPhone Safari failure mode.
+
+   Both the narrow-portrait case (≤760px wide) and the short-landscape case
+   (≤600px tall on a phone-class width) hit it, so the query covers both. The
+   1024×690 iPad-landscape guard in top-chrome.spec.mjs deliberately sits
+   outside this window and keeps the locked-chrome model.
+
+   The fix: on phones, let the document scroll normally and let the chrome and
+   panes flow in source order. */
+@media (max-width: 760px), (max-height: 600px) and (max-width: 950px) {
+  body {
+    height: auto;
+    min-height: 100svh;
+    overflow: visible;
+    /* Locked-chrome killed overscroll to stop the pinned bars rubber-banding
+       away; with a normally-scrolling document that guard is no longer needed
+       and would suppress momentum / pull-to-refresh. */
+    overscroll-behavior: auto;
+  }
   .three-pane {
     grid-template-columns: 1fr;
+    overflow: visible;
   }
+  .persona-pane,
+  .navigator,
+  .payload-area {
+    overflow: visible;
+  }
+  /* The persona library stays a bounded, internally-scrolling block so the
+     long card list doesn't bury the navigator + payload beneath it. */
   .persona-pane {
-    max-height: 200px;
+    max-height: 240px;
   }
+  /* Stack the navigator's tree above the payload. The desktop side-by-side
+     split (minmax(220px,260px) tree + 1fr payload) leaves ~140px for the
+     payload on a phone, which can't hold the 520px-min payload table. */
+  .navigator {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'header'
+      'tree'
+      'payload';
+  }
+  .nav-tree {
+    border-inline-end: none;
+    border-bottom: 1px solid var(--border);
+    max-height: 240px;
+  }
+  /* The payload now flows into the page scroll; the table keeps its own
+     horizontal scroll (payload-body overflow:auto, table min-width:520px) so a
+     wide table never widens the whole document. */
+
   /* Single-column stacked layout — collapsing the persona-pane to a vertical
      rail wouldn't free horizontal space and just buries the list, so disable
      the feature here. Also force-restore the expanded layout in case the user
