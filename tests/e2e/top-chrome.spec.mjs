@@ -119,9 +119,16 @@ test.describe('top chrome compression (PR-10)', () => {
 
     const topbar = page.locator('.topbar');
     await expect(topbar).toBeVisible();
-    // The top menu sits flush against the top edge of the viewport.
+    // The locked chrome sits flush against the top edge of the viewport.
+    // The slim 4px .banner-stripe is the first element in the flex column,
+    // so it — not the top menu — is what hugs y=0; the top menu sits
+    // immediately beneath it. Capture the menu's resting offset so we can
+    // assert it never moves, regardless of the stripe's height.
+    const stripeTop = await page
+      .locator('.banner-stripe')
+      .evaluate((el) => el.getBoundingClientRect().top);
+    expect(stripeTop).toBe(0);
     const top = await topbar.evaluate((el) => el.getBoundingClientRect().top);
-    expect(top).toBe(0);
 
     // The page (document) carries no vertical scroll — the locked chrome
     // fits within the visible area, so there is nothing to scroll.
@@ -135,10 +142,11 @@ test.describe('top chrome compression (PR-10)', () => {
     expect(overflow.scroll).toBeLessThanOrEqual(1);
     expect(overflow.bodyOverflowY).toBe('hidden');
 
-    // Even if a scroll is forced, the chrome cannot be dragged away.
+    // Even if a scroll is forced, the chrome cannot be dragged away — the
+    // top menu stays exactly where it was, locked to the viewport.
     await page.evaluate(() => window.scrollTo(0, 600));
     const topAfter = await topbar.evaluate((el) => el.getBoundingClientRect().top);
-    expect(topAfter).toBe(0);
+    expect(topAfter).toBe(top);
     const scrollY = await page.evaluate(() => window.scrollY);
     expect(scrollY).toBe(0);
   });
