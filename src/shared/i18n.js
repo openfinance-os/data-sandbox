@@ -103,6 +103,52 @@ export const STRINGS = {
     'export.copiedTpl': '{label} copied.',
     'export.downloadJson': 'Download .json',
     'export.downloadCsv': 'Download .csv',
+    // EXP-13/14/26 field-card facet labels + authored value prose. The facet
+    // VALUES that flow from the spec/field-knowledge helpers (Real-LFI
+    // guidance, concrete conditional-rule prose) stay as their source text —
+    // only the left-column labels and the strings authored in this module are
+    // localised.
+    'fc.name': 'Name',
+    'fc.path': 'Path',
+    'fc.status': 'Status',
+    'fc.type': 'Type',
+    'fc.format': 'Format',
+    'fc.enum': 'Enum',
+    'fc.example': 'Example',
+    'fc.conditional': 'Conditional',
+    'fc.realLfis': 'Real LFIs',
+    'fc.pii': 'PII',
+    'fc.spec': 'Spec',
+    'fc.feedback': 'Feedback',
+    'fc.specLink': 'View on Nebras GitHub at pinned SHA →',
+    'fc.reportLink': 'Report an issue with this field →',
+    'fc.piiYes': 'Yes — under PDPL this field requires explicit data-handling controls.',
+    'fc.piiNo': 'No (per the v1 PII allowlist).',
+    'fc.conditionalFallback':
+      'Triggered by a parent-field value — see the spec link for the exact rule.',
+    // PRD §5.4 guided tour — chrome, step titles, and step bodies. Technical
+    // tokens (Flags=Payroll, endpoint paths, field names) stay Latin inside
+    // the prose; LFI band names reuse the lfi.* terms.
+    'tour.stepOf': 'Step {n} of {total}',
+    'tour.skip': 'Skip',
+    'tour.back': 'Back',
+    'tour.next': 'Next →',
+    'tour.finish': 'Finish',
+    'tour.s1.title': 'Meet Sara',
+    'tour.s1.body':
+      'Sara is a salaried expat in Dubai. She has two accounts: a current account where her AED 25k salary lands on the 25th, and a credit card. The persona library lets you swap her for eleven other UAE archetypes — gig worker, SME, HNW multi-currency, joint family, corporate treasury, and more.',
+    'tour.s2.title': 'Watch the salary marker',
+    'tour.s2.body':
+      "Open the transactions endpoint on Sara's current account. Notice the monthly salary credit — it carries Flags=Payroll. That's the v2.1 spec-clean way to identify income; everything else (fallbacks, recurrence-clustering) is a workaround for LFIs that don't populate it.",
+    'tour.s3.title': 'See the rent commitment',
+    'tour.s3.body':
+      'Switch to /standing-orders for the same account. Sara has a rent standing order that hits the 27th of every month — two days after her salary. Click that row and the sandbox jumps to the matching transactions in /transactions, with the cross-link banner offering you a way back.',
+    'tour.s4.title': 'Read the field card',
+    'tour.s4.body':
+      "Click any field name in the rendered table to open the field card. Every field carries: a status badge (Mandatory / Optional / Conditional, derived live from the OpenAPI spec — never hand-authored), type and format, enum values, an example from the persona, a 'Real LFIs' guidance note, and a deep link to the field on the upstream Nebras GitHub at the pinned SHA.",
+    'tour.s5.title': 'Sparse vs Median',
+    'tour.s5.body':
+      "Switch the LFI profile (top bar) to Sparse. Watch the coverage meter drop and watch optional fields like MerchantDetails / Flags / ValueDateTime / Nickname disappear. That's the Phase-1 minimum your downstream UI and decisioning logic needs to handle. Switch back to Median, then to Rich, and pick a different persona to finish — the URL updates as you go, so you can paste it into a slide deck.",
   },
   ar: {
     'controls.lfi': 'ملف المؤسسة المالية',
@@ -156,6 +202,46 @@ export const STRINGS = {
     'export.copiedTpl': 'تم نسخ {label}.',
     'export.downloadJson': 'تنزيل ‎.json‎',
     'export.downloadCsv': 'تنزيل ‎.csv‎',
+    // Field-card facet labels + authored value prose.
+    'fc.name': 'الاسم',
+    'fc.path': 'المسار',
+    'fc.status': 'الحالة',
+    'fc.type': 'النوع',
+    'fc.format': 'الصيغة',
+    'fc.enum': 'التعداد',
+    'fc.example': 'مثال',
+    'fc.conditional': 'الشرط',
+    'fc.realLfis': 'المؤسسات المالية الفعلية',
+    'fc.pii': 'بيانات شخصية',
+    'fc.spec': 'المواصفة',
+    'fc.feedback': 'ملاحظات',
+    'fc.specLink': 'العرض على Nebras GitHub عند الـ SHA المثبّت ←',
+    'fc.reportLink': 'الإبلاغ عن مشكلة في هذا الحقل ←',
+    'fc.piiYes':
+      'نعم — بموجب قانون حماية البيانات (PDPL) يتطلب هذا الحقل ضوابط صريحة لمعالجة البيانات.',
+    'fc.piiNo': 'لا (وفقًا لقائمة PII المسموح بها في الإصدار الأول).',
+    'fc.conditionalFallback': 'يُفعَّل بقيمة حقل أصلي — راجع رابط المواصفة للقاعدة الدقيقة.',
+    // Guided tour.
+    'tour.stepOf': 'الخطوة {n} من {total}',
+    'tour.skip': 'تخطّي',
+    'tour.back': 'رجوع',
+    'tour.next': 'التالي ←',
+    'tour.finish': 'إنهاء',
+    'tour.s1.title': 'تعرّف على سارة',
+    'tour.s1.body':
+      'سارة وافدة تتقاضى راتبًا في دبي. لديها حسابان: حساب جارٍ يُودَع فيه راتبها البالغ 25 ألف درهم في اليوم الخامس والعشرين، وبطاقة ائتمان. تتيح لك مكتبة الشخصيات استبدالها بأحد عشر نموذجًا إماراتيًا آخر — عامل بالقطعة، منشأة صغيرة ومتوسطة، عميل ثري متعدد العملات، أسرة بحساب مشترك، خزينة شركة، وغير ذلك.',
+    'tour.s2.title': 'راقب علامة الراتب',
+    'tour.s2.body':
+      'افتح نقطة نهاية المعاملات على حساب سارة الجاري. لاحظ القيد الدائن للراتب الشهري — يحمل Flags=Payroll. هذه هي الطريقة المتوافقة مع مواصفة v2.1 لتحديد الدخل؛ وكل ما عداها (الحلول البديلة، تجميع التكرار) هو التفاف على المؤسسات المالية التي لا تملؤه.',
+    'tour.s3.title': 'اطّلع على التزام الإيجار',
+    'tour.s3.body':
+      'انتقل إلى /standing-orders للحساب نفسه. لدى سارة أمر دائم لدفع الإيجار يُنفَّذ في اليوم السابع والعشرين من كل شهر — بعد يومين من راتبها. انقر ذلك الصف لينتقل الصندوق إلى المعاملات المطابقة في /transactions، مع لافتة الربط البيني التي تتيح لك العودة.',
+    'tour.s4.title': 'اقرأ بطاقة الحقل',
+    'tour.s4.body':
+      'انقر اسم أي حقل في الجدول المعروض لفتح بطاقة الحقل. يحمل كل حقل: شارة حالة (إلزامي / اختياري / شرطي، مشتقة مباشرةً من مواصفة OpenAPI — وليست مكتوبة يدويًا)، النوع والصيغة، قيم التعداد، مثالًا من الشخصية، ملاحظة إرشادية بعنوان «المؤسسات المالية الفعلية»، ورابطًا مباشرًا إلى الحقل على Nebras GitHub المصدري عند الـ SHA المثبّت.',
+    'tour.s5.title': 'ضئيل مقابل متوسط',
+    'tour.s5.body':
+      'بدّل ملف المؤسسة المالية (الشريط العلوي) إلى «ضئيل». راقب انخفاض مقياس التغطية واختفاء الحقول الاختيارية مثل MerchantDetails / Flags / ValueDateTime / Nickname. هذا هو الحد الأدنى للمرحلة الأولى الذي يجب أن تتعامل معه واجهتك وأنظمة اتخاذ القرار لديك. ارجع إلى «متوسط»، ثم إلى «وفير»، واختر شخصية مختلفة للإنهاء — يتحدّث الرابط أثناء تنقّلك، فيمكنك لصقه في عرض تقديمي.',
   },
 };
 
