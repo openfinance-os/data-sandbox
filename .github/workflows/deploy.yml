@@ -1,8 +1,13 @@
 name: Deploy
 
+# Production deploys are gated on a green CI run: this workflow fires only
+# after the `CI` workflow completes, and the build job below additionally
+# requires conclusion == success on a push to main. workflow_dispatch stays
+# available for manual (re)deploys regardless of CI state.
 on:
-  push:
-    branches: [main]
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -19,12 +24,28 @@ concurrency:
 
 jobs:
   build:
+    # Only deploy a commit that CI actually passed. For workflow_dispatch
+    # (manual) the workflow_run context is empty, so the guard short-circuits
+    # to true and we deploy the dispatched ref.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.event == 'push')
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      # Check out the trusted default branch. We deliberately do NOT check out
+      # github.event.workflow_run.head_sha: this is a privileged job (Pages
+      # write + id-token + POSTHOG_KEY) and checking out the event's head SHA
+      # is the "pwn-request" pattern CodeQL flags. The `if` guard already
+      # restricts this workflow to push-to-main, and a default checkout
+      # resolves to that same trusted main tip (worst case it deploys a
+      # slightly newer main commit, which self-corrects on its own run).
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
       - run: npm ci
       - run: npm run verify:spec-shape
@@ -47,12 +68,13 @@ jobs:
           # platform's own dashboard. tools/stage-site.mjs has the full
           # rundown of where to add it per platform.
           POSTHOG_KEY: ${{ secrets.POSTHOG_KEY }}
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

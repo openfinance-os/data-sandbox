@@ -11,19 +11,28 @@ name: Deploy sandbox-mcp to Fly
 #   Stored on the `fly.io` environment (see `environment:` below) so deploys
 #   gated on environment protection rules stay possible later.
 
+#
+# Deploys are gated on a green CI run: this workflow fires after `CI`
+# completes (workflow_run), the `changes` job below requires conclusion ==
+# success on a push to main, and — because workflow_run can't express path
+# filters — re-derives the original `paths` filter with a git diff so Fly is
+# only redeployed when MCP-relevant files actually changed. workflow_dispatch
+# forces a deploy regardless of CI state or changed paths.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'fly.toml'
-      - 'packages/sandbox-mcp/**'
-      - 'packages/sandbox-fixtures/**'
-      - '.dockerignore'
-      - '.github/workflows/deploy-mcp.yml'
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
   workflow_dispatch:
 
+# Least-privilege: the deploy job only needs to read the repo; the Fly
+# deploy authenticates with FLY_API_TOKEN, not the GitHub token.
+permissions:
+  contents: read
+
+# Scope per ref so a manual workflow_dispatch on a branch doesn't serialise
+# against the main-branch production deploy.
 concurrency:
-  group: deploy-mcp
+  group: deploy-mcp-${{ github.ref }}
   cancel-in-progress: false
 
 env:
@@ -32,27 +41,71 @@ env:
   MCP_PUBLIC_URL: https://data-sandbox.fly.dev
 
 jobs:
-  deploy:
+  # Gate: only proceed for a manual dispatch, or a CI run that passed on a
+  # push to main. For the CI case, re-derive the path filter the old `push`
+  # trigger used so an unrelated main commit doesn't redeploy Fly.
+  changes:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.event == 'push')
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      deploy: ${{ steps.filter.outputs.deploy }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # Default (trusted) checkout — main tip for workflow_run, the
+          # dispatched ref for workflow_dispatch. We avoid checking out the
+          # event's head_sha in this gated workflow (privileged-context
+          # hardening, same as deploy.yml). fetch-depth 2 gives us the parent
+          # to diff against for the path filter below.
+          fetch-depth: 2
+      - id: filter
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Same path set as the previous push-trigger `paths:` filter.
+          if git diff --name-only HEAD~1 HEAD \
+            | grep -qE '^(fly\.toml|packages/sandbox-mcp/|packages/sandbox-fixtures/|\.dockerignore|\.github/workflows/deploy-mcp\.yml)'; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy:
+    needs: changes
+    if: needs.changes.outputs.deploy == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     environment: fly.io
     steps:
-      - uses: actions/checkout@v4
-      - uses: superfly/flyctl-actions/setup-flyctl@master
+      # Trusted default checkout (see the `changes` job note) — never the
+      # event head_sha, since this job holds FLY_API_TOKEN.
+      - uses: actions/checkout@v6
+      - uses: superfly/flyctl-actions/setup-flyctl@v1
       - run: flyctl deploy --remote-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
   smoke:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: deploy
     # Catches the "Fly says deployed but container is crash-looping" case:
     # asserts /health returns ok:true and that an MCP initialize +
     # tools/list roundtrip returns the documented 16 tools.
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
       - run: npm ci
       - name: Smoke-test the deployed endpoint

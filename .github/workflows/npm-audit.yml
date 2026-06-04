@@ -1,0 +1,28 @@
+name: npm audit
+
+# Weekly dependency vulnerability scan, split out of the per-PR CI path so
+# advisory noise stays off pull requests. Unlike the old inline advisory
+# step this job FAILS on a high/critical CVE — a real, actionable signal in
+# the maintainer's inbox once a week (and on demand via workflow_dispatch).
+on:
+  schedule:
+    - cron: '23 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      # Production deps only — dev-only advisories don't ship to consumers
+      # of @openfinance-os/sandbox-fixtures / sandbox-mcp.
+      - run: npm audit --omit=dev --audit-level=high
