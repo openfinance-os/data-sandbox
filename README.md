@@ -1,7 +1,8 @@
 # Open Finance Data Sandbox
 
-> Interactive, client-side static explorer for UAE Open Finance Bank Data
-> Sharing payloads. Synthetic data, narratively realistic personas,
+> Interactive, client-side static explorer for UAE Open Finance payloads —
+> Bank Data Sharing, Insurance Data Sharing (7 lines, GA), and the ATM
+> Locator directory. Synthetic data, narratively realistic personas,
 > spec-driven mandatory/optional/conditional badges. Contributed to the
 > [OpenFinance-OS Commons](https://openfinance-os.org/commons/).
 
@@ -19,9 +20,10 @@ developers — faces the same first-day problem: **the spec tells you the
 schema, but not what the data actually looks like in practice.**
 
 This sandbox is the show-don't-tell answer: load a synthetic UAE persona and
-read every UAE Open Finance v2.1 Bank Data Sharing payload they would
-receive — accounts, balances, transactions, standing orders, direct debits,
-beneficiaries, scheduled payments, product, parties, statements — with
+read every UAE Open Finance v2.1 payload they would receive — Bank Data
+Sharing (accounts, balances, transactions, standing orders, direct debits,
+beneficiaries, scheduled payments, product, parties, statements), Insurance
+Data Sharing across all 7 lines, and the ATM Locator directory — with
 mandatory / optional / conditional treatment derived live from the published
 OpenAPI spec. Toggle an LFI population profile (Rich / Median / Sparse) to
 stress-test downstream design decisions against worst-case and best-case
@@ -44,10 +46,15 @@ field shapes.
   `multi_lfi_footprint` so role bundles can be fetched independently and
   reconciled by IBAN; the flagship multi-domain `retail-multi-banker` adds
   N-slot multi-LFI (4 banks × multiple products) + multi-insurer coverage.
-- **All 12 v2.1 Account Information endpoints** for banking + the 4-endpoint
-  motor-MVP for insurance — all generated and validated against the v2.1
-  OpenAPI schema (1500+ spec-validation tests across persona × LFI × endpoint
-  after `npm run build:site`).
+  A 39th manifest (`atm-directory`) is the infrastructure anchor for the ATM
+  Locator domain — it emits a public directory of LFI-operated cash machines
+  rather than customer data.
+- **All 12 v2.1 Account Information endpoints** for banking + **30 Insurance
+  Data Sharing endpoints** (GA — motor / home / health / life / travel /
+  renters / employment, 4 endpoints each, plus 2 Insurance Consents
+  endpoints) + the **ATM Locator** `GET /atms` directory — all generated and
+  validated against the v2.1 OpenAPI schema (1500+ spec-validation tests
+  across persona × LFI × endpoint after `npm run build:site`).
 - **Three LFI populate-rate profiles** — Rich (every populate-band field
   populated) · Median (Commons-curated v1 calibration: Universal=1.0,
   Common=0.7, Variable=0.4, Rare=0.1) · Sparse (Universal-only worst case).
@@ -65,9 +72,11 @@ field shapes.
 - **Embed mode** — chrome-less variant for iframe consumption (slide decks,
   blog posts, LMS modules).
 
-The full set of v1 EXP-NN PRD requirements is implemented; Phase 2.x adds
-multi-LFI footprints, role-keyed bundles, mod-97-valid IBANs, and an MCP
-server (`packages/sandbox-mcp/`).
+The full set of v1 EXP-NN PRD requirements is implemented. Phase 2.0 added
+SME multi-LFI footprints, role-keyed bundles, mod-97-valid IBANs, and an MCP
+server (`packages/sandbox-mcp/`); Phase 2.1 took Insurance Data Sharing to GA
+across all 7 lines; Phase 2.2 added N-slot multi-LFI and multi-domain
+personas; Phase 2.3 added the ATM Locator domain.
 
 ## Architecture
 
@@ -108,15 +117,19 @@ npm run serve            # http://localhost:8000/index.html
 ## CI
 
 ```bash
-npm test            # 413 unit tests (Vitest) — replay determinism, spec
-                    # validation across 10 × 3 × 12, LFI mechanics,
-                    # underwriting calculator, exports, identity posture
-npm run lint        # 4 invariant lints — no-handauthored-fields (EXP-01),
+npm test            # full Vitest suite (~1668 tests after build:site) —
+                    # replay determinism, spec validation across the full
+                    # persona × LFI × endpoint matrix (banking + insurance),
+                    # LFI mechanics, underwriting calculator, exports,
+                    # identity posture
+npm run lint        # 7 invariant lints — no-handauthored-fields (EXP-01),
                     # no-institution-leak (NG5), pii-leak (EXP-07/22),
-                    # no-glyph-only (EXP-23)
-npm run test:e2e    # 15 Playwright e2e tests + axe-core a11y (EXP-23)
+                    # no-glyph-only (EXP-23), persona-spec-conformance,
+                    # stress-coverage-uniqueness (EXP-25),
+                    # brand-registry-coverage — plus eslint + prettier
+npm run test:e2e    # Playwright e2e + axe-core a11y (EXP-23)
 npm run test:perf   # Lighthouse-CI mobile profile (EXP-24)
-npm run ci          # full suite
+npm run ci          # full suite (verify → build → lint → test → MCP tests)
 ```
 
 ## TPP integration
@@ -127,6 +140,21 @@ the [integration guide](./src/integrate.html) walks through four plug
 points (iframe, npm `loadJourney()`, PyPI `load_journey()`, raw HTTPS
 fixtures at `/fixtures/v1/`). A worked example lives in
 [`examples/tpp-budgeting-demo/`](./examples/tpp-budgeting-demo/).
+
+## MCP server
+
+[`@openfinance-os/sandbox-mcp`](./packages/sandbox-mcp/) exposes the whole
+corpus as MCP tools, resources, and prompts so an AI agent (Claude or any
+MCP client) can act as a dynamic PFM over a synthetic customer — pick a
+curated persona with `set_session` (or compose one with `build_persona`)
+and answer balance / spend / obligation / coverage questions over
+deterministic v2.1 JSON. It backs the bank-direct (J1) connection journey.
+
+- **Hosted (no install):** add the live endpoint
+  `https://data-sandbox.fly.dev/mcp` as a custom connector in
+  **Claude.ai → Settings → Connectors**. Anonymous — no auth, no API key.
+- **Local:** `npx -y @openfinance-os/sandbox-mcp` (stdio transport for
+  Claude Desktop / Claude Code).
 
 ## Docs
 
