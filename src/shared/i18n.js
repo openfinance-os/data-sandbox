@@ -69,6 +69,40 @@ export const STRINGS = {
     'pane.personaLibrary': 'Persona library',
     'pane.navigator': 'Accounts & endpoints',
     'pane.fieldDetail': 'Field detail',
+    // EXP-13 field-status badge values + legend.
+    'status.mandatory': 'Mandatory',
+    'status.optional': 'Optional',
+    'status.conditional': 'Conditional',
+    // Find box (⌘K) chrome.
+    'find.placeholder': 'Search fields, paths, enums, persona names, narratives, stress coverage…',
+    'find.searches': 'Searches',
+    'find.corpus.fieldNames': 'Field names',
+    'find.corpus.fieldPaths': 'Field paths',
+    'find.corpus.enumValues': 'Enum values',
+    'find.corpus.personas': 'Personas',
+    'find.corpus.stressCoverage': 'Stress coverage',
+    'find.clickToJump': 'Click any result to jump',
+    'find.openWith': 'Open with ',
+    'find.noMatches': 'No matches.',
+    // Transactions filter.
+    'txFilter.clear': 'Clear filters',
+    // Export popover. Format names (JSON/CSV/Tarball/npm/Python/curl/MCP) and
+    // the code snippets themselves stay English by design — only chrome,
+    // actions, and the tarball note are localised.
+    'export.title': 'Export',
+    'export.close': 'Close export popover',
+    'export.closeTitle': 'Close (Esc)',
+    'export.formatLabel': 'Export format',
+    'export.tab.permalink': 'Permalink',
+    'export.tab.embed': 'Embed iframe',
+    'export.downloadTarball': 'Download tarball',
+    'export.tarballNote':
+      'Tarball is a binary artefact — click "Download" below to save a single .tar with every endpoint + CSV for {persona} / {lfi} / seed {seed}.',
+    'export.copy': 'Copy',
+    'export.copyAria': 'Copy snippet to clipboard',
+    'export.copiedTpl': '{label} copied.',
+    'export.downloadJson': 'Download .json',
+    'export.downloadCsv': 'Download .csv',
   },
   ar: {
     'controls.lfi': 'ملف المؤسسة المالية',
@@ -90,6 +124,38 @@ export const STRINGS = {
     'pane.personaLibrary': 'مكتبة الشخصيات',
     'pane.navigator': 'الحسابات ونقاط النهاية',
     'pane.fieldDetail': 'تفاصيل الحقل',
+    // EXP-13 field-status badge values + legend.
+    'status.mandatory': 'إلزامي',
+    'status.optional': 'اختياري',
+    'status.conditional': 'شرطي',
+    // Find box (⌘K) chrome.
+    'find.placeholder': 'ابحث في الحقول والمسارات والقيم وأسماء الشخصيات والسرد وتغطية الضغط…',
+    'find.searches': 'نطاق البحث',
+    'find.corpus.fieldNames': 'أسماء الحقول',
+    'find.corpus.fieldPaths': 'مسارات الحقول',
+    'find.corpus.enumValues': 'قيم التعداد',
+    'find.corpus.personas': 'الشخصيات',
+    'find.corpus.stressCoverage': 'تغطية الضغط',
+    'find.clickToJump': 'انقر أي نتيجة للانتقال',
+    'find.openWith': 'افتح بـ ',
+    'find.noMatches': 'لا توجد نتائج.',
+    // Transactions filter.
+    'txFilter.clear': 'مسح عوامل التصفية',
+    // Export popover.
+    'export.title': 'تصدير',
+    'export.close': 'إغلاق نافذة التصدير',
+    'export.closeTitle': 'إغلاق (Esc)',
+    'export.formatLabel': 'صيغة التصدير',
+    'export.tab.permalink': 'رابط دائم',
+    'export.tab.embed': 'تضمين iframe',
+    'export.downloadTarball': 'تنزيل الأرشيف',
+    'export.tarballNote':
+      'الأرشيف ملف ثنائي — انقر «تنزيل» أدناه لحفظ ملف ‎.tar‎ واحد يضم كل نقاط النهاية وملف CSV للشخصية {persona} / {lfi} / البذرة {seed}.',
+    'export.copy': 'نسخ',
+    'export.copyAria': 'نسخ المقتطف إلى الحافظة',
+    'export.copiedTpl': 'تم نسخ {label}.',
+    'export.downloadJson': 'تنزيل ‎.json‎',
+    'export.downloadCsv': 'تنزيل ‎.csv‎',
   },
 };
 

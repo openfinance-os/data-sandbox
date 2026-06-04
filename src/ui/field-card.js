@@ -14,9 +14,19 @@ import {
 } from '../shared/spec-helpers.js';
 import { conditionalRule, isPii } from '../shared/field-knowledge.js';
 import { statusPill } from '../shared/dom.js';
+import { t } from '../shared/i18n.js';
 import { track } from '../analytics.js';
 
 const ISSUE_REPO = 'openfinance-os/data-sandbox';
+
+// EXP-13 / D-10 — status value → catalog key. The lowercase `status` field
+// still drives all logic; only the human-readable value rendered next to the
+// pill is localised.
+const STATUS_TEXT_KEY = {
+  mandatory: 'status.mandatory',
+  optional: 'status.optional',
+  conditional: 'status.conditional',
+};
 
 export function createFieldCard(deps) {
   const { state, el, endpointFieldsByName, rowsForActiveEndpoint, setPaneCollapsed } = deps;
@@ -71,7 +81,8 @@ export function createFieldCard(deps) {
         const badge = statusBadge(f.status);
         const ve = el('span', { class: 'v' });
         ve.appendChild(statusPill(f.status));
-        ve.appendChild(document.createTextNode(badge.text));
+        const statusKey = STATUS_TEXT_KEY[f.status];
+        ve.appendChild(document.createTextNode(statusKey ? t(statusKey, state.lang) : badge.text));
         row.appendChild(ve);
       } else if (k === 'Spec') {
         const ve = el('span', { class: 'v' });

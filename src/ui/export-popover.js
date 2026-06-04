@@ -19,6 +19,8 @@
 // EXP-22. No analytics events beyond the 'export' / 'share' allowlist.
 
 import { trapFocus } from '../shared/dom.js';
+// Aliased to `tr` because `t` is used as a tab loop variable below.
+import { t as tr } from '../shared/i18n.js';
 
 export function createExportPopover(deps) {
   const {
@@ -62,9 +64,10 @@ export function createExportPopover(deps) {
       case 'tarball':
         return {
           lang: 'note',
-          text:
-            'Tarball is a binary artefact — click "Download" below to save a single .tar with every endpoint + CSV ' +
-            `for ${ctx.personaId} / ${ctx.lfi} / seed ${ctx.seed}.`,
+          text: tr('export.tarballNote', state.lang)
+            .replace('{persona}', ctx.personaId)
+            .replace('{lfi}', ctx.lfi)
+            .replace('{seed}', String(ctx.seed)),
           isDownload: true,
         };
       case 'npm':
@@ -114,9 +117,11 @@ export function createExportPopover(deps) {
     }
   }
 
+  // Format names (JSON/CSV/Tarball/npm/Python/curl/MCP) are proper nouns and
+  // stay English; only the two descriptive tabs carry an i18n key.
   const TABS = [
-    { key: 'permalink', label: 'Permalink' },
-    { key: 'embed', label: 'Embed iframe' },
+    { key: 'permalink', label: 'Permalink', i18nKey: 'export.tab.permalink' },
+    { key: 'embed', label: 'Embed iframe', i18nKey: 'export.tab.embed' },
     { key: 'json', label: 'JSON' },
     { key: 'csv', label: 'CSV' },
     { key: 'tarball', label: 'Tarball' },
@@ -125,6 +130,10 @@ export function createExportPopover(deps) {
     { key: 'curl', label: 'curl' },
     { key: 'mcp', label: 'MCP' },
   ];
+
+  // Resolve a tab's display label for the active locale — translated where a
+  // key exists, otherwise the English proper-noun label.
+  const tabLabel = (tab) => (tab.i18nKey ? tr(tab.i18nKey, state.lang) : tab.label);
 
   function open() {
     if (overlay) {
@@ -143,12 +152,20 @@ export function createExportPopover(deps) {
 
     const head = el('div', { class: 'export-head' });
     head.appendChild(
-      el('h3', { class: 'export-title', text: 'Export', attrs: { id: 'export-title' } }),
+      el('h3', {
+        class: 'export-title',
+        text: tr('export.title', state.lang),
+        attrs: { id: 'export-title' },
+      }),
     );
     const closeBtn = el('button', {
       class: 'export-close',
       text: '×',
-      attrs: { type: 'button', 'aria-label': 'Close export popover', title: 'Close (Esc)' },
+      attrs: {
+        type: 'button',
+        'aria-label': tr('export.close', state.lang),
+        title: tr('export.closeTitle', state.lang),
+      },
     });
     closeBtn.addEventListener('click', closeOverlay);
     head.appendChild(closeBtn);
@@ -156,7 +173,7 @@ export function createExportPopover(deps) {
 
     const tabStrip = el('div', {
       class: 'export-tabs',
-      attrs: { role: 'tablist', 'aria-label': 'Export format' },
+      attrs: { role: 'tablist', 'aria-label': tr('export.formatLabel', state.lang) },
     });
     for (const t of TABS) {
       // PR-13 (Greptile P2) — ARIA tab pattern: each tab has a stable
@@ -165,7 +182,7 @@ export function createExportPopover(deps) {
       const tabId = `export-tab-${t.key}`;
       const btn = el('button', {
         class: `export-tab${activeTabKey === t.key ? ' is-active' : ''}`,
-        text: t.label,
+        text: tabLabel(t),
         attrs: {
           type: 'button',
           role: 'tab',
@@ -255,7 +272,7 @@ export function createExportPopover(deps) {
       body.appendChild(el('p', { class: 'export-note', text: snip.text }));
       const dl = el('button', {
         class: 'export-copy-btn',
-        text: 'Download tarball',
+        text: tr('export.downloadTarball', state.lang),
         attrs: { type: 'button' },
       });
       dl.addEventListener('click', () => {
@@ -272,14 +289,13 @@ export function createExportPopover(deps) {
     const copyRow = el('div', { class: 'export-copy-row' });
     const copyBtn = el('button', {
       class: 'export-copy-btn',
-      text: 'Copy',
-      attrs: { type: 'button', 'aria-label': 'Copy snippet to clipboard' },
+      text: tr('export.copy', state.lang),
+      attrs: { type: 'button', 'aria-label': tr('export.copyAria', state.lang) },
     });
     copyBtn.addEventListener('click', () => {
-      copyToClipboard(
-        snip.text,
-        `${TABS.find((t) => t.key === activeTabKey)?.label ?? 'Snippet'} copied.`,
-      );
+      const activeTab = TABS.find((t) => t.key === activeTabKey);
+      const label = activeTab ? tabLabel(activeTab) : 'Snippet';
+      copyToClipboard(snip.text, tr('export.copiedTpl', state.lang).replace('{label}', label));
       // Map tab key → existing analytics format allowlist where possible.
       // Permalink + Embed reuse the 'share' event; the rest fall under 'export'.
       if (activeTabKey === 'permalink') track('share', { kind: 'permalink' });
@@ -291,7 +307,7 @@ export function createExportPopover(deps) {
     if (activeTabKey === 'json') {
       const dl = el('button', {
         class: 'export-copy-btn export-copy-btn-secondary',
-        text: 'Download .json',
+        text: tr('export.downloadJson', state.lang),
         attrs: { type: 'button' },
       });
       dl.addEventListener('click', () => {
@@ -302,7 +318,7 @@ export function createExportPopover(deps) {
     } else if (activeTabKey === 'csv') {
       const dl = el('button', {
         class: 'export-copy-btn export-copy-btn-secondary',
-        text: 'Download .csv',
+        text: tr('export.downloadCsv', state.lang),
         attrs: { type: 'button' },
       });
       dl.addEventListener('click', () => {
