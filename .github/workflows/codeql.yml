@@ -15,22 +15,33 @@ concurrency:
 
 jobs:
   analyze:
-    name: Analyze (javascript-typescript)
+    name: Analyze (${{ matrix.language }})
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       actions: read
       contents: read
       security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # OWASP-aligned security + quality suite for the app/library code.
+          - language: javascript-typescript
+            queries: security-and-quality
+          # Scan the workflow files themselves for injection / token-leak
+          # patterns. Uses CodeQL's default suite — the quality pack isn't
+          # published for the `actions` language.
+          - language: actions
+            queries: ''
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: javascript-typescript
-          # Use the default security + quality query suite. Keeps noise low
-          # while still surfacing the OWASP-aligned high-confidence findings.
-          queries: security-and-quality
+          languages: ${{ matrix.language }}
+          queries: ${{ matrix.queries }}
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
-          category: '/language:javascript-typescript'
+          category: '/language:${{ matrix.language }}'

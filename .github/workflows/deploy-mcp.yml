@@ -22,8 +22,15 @@ on:
       - '.github/workflows/deploy-mcp.yml'
   workflow_dispatch:
 
+# Least-privilege: the deploy job only needs to read the repo; the Fly
+# deploy authenticates with FLY_API_TOKEN, not the GitHub token.
+permissions:
+  contents: read
+
+# Scope per ref so a manual workflow_dispatch on a branch doesn't serialise
+# against the main-branch production deploy.
 concurrency:
-  group: deploy-mcp
+  group: deploy-mcp-${{ github.ref }}
   cancel-in-progress: false
 
 env:
@@ -34,9 +41,10 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     environment: fly.io
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - run: flyctl deploy --remote-only
         env:
@@ -44,15 +52,16 @@ jobs:
 
   smoke:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: deploy
     # Catches the "Fly says deployed but container is crash-looping" case:
     # asserts /health returns ok:true and that an MCP initialize +
     # tools/list roundtrip returns the documented 16 tools.
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
       - run: npm ci
       - name: Smoke-test the deployed endpoint
