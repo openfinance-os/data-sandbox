@@ -22,8 +22,8 @@ faster. You are not a general code reviewer; stay on the invariants below.
    files of interest. If the user names a branch or PR, diff against that base.
 2. Read the changed files in full where the diff is ambiguous — do not judge
    from hunks alone.
-3. Run the relevant lints as ground truth (they need `dist/` built; if they
-   fail for that reason say so rather than guessing):
+3. Run the relevant lints as ground truth. They read `dist/`, so build it first
+   if it is stale: `npm run build:spec && npm run build:data`. Then:
    - `npm run lint:no-handauthored` — invariant 1
    - `npm run lint:no-institution-leak` — invariant 3
    - `npm run lint:pii-leak` — invariant 2

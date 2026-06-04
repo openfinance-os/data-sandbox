@@ -4,7 +4,8 @@ description: >-
   Draft a CHANGELOG.md entry for the current branch's work in this repo's
   established Keep-a-Changelog voice, derived from the diff and commit messages.
   Use after finishing a slice and before opening a PR, e.g. "/update-changelog".
-disable-model-invocation: true
+  May be proposed proactively once a slice is complete; always show the draft
+  and let the user confirm wording before they commit.
 ---
 
 # Update changelog

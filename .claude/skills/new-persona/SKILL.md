@@ -35,20 +35,29 @@ describes narrative parameters; the generator synthesises the actual bundle.
    for health insurance, `personas/retail-multi-banker.yaml` for multi-domain).
 
 3. **Pick unique stress coverage (EXP-25)** — this is the load-bearing reason a
-   persona is allowed to exist. The `stress_coverage` SET must not duplicate any
-   other persona's. List what's already claimed before choosing:
-   `grep -rh 'stress_coverage' -A6 personas/ | grep '  - '` (then dedupe), or
-   read a few neighbours. Choose terms from the PRD Appendix-F controlled
-   vocabulary that no existing persona already owns as a set.
+   persona is allowed to exist. The ONLY enforced rule (`lint-stress-coverage-
+   uniqueness`) is that the persona must own at least one term no other persona
+   covers — it does not check terms against a fixed list. Appendix-F is the
+   naming convention, not a machine-checked vocabulary. List what's already
+   claimed before choosing: `grep -rh 'stress_coverage' -A6 personas/ |
+   grep '  - '` (then dedupe), or read a few neighbours, and make sure your set
+   contributes at least one genuinely new term.
 
-4. **Resolve every pool reference to a real file** before writing it. Each
-   `*_pool` value must point at an existing file:
-   - `demographics.nationality_pool` → `synthetic-identity-pool/names/<id>.yaml`
-   - `income.primary_employer_pool` → `synthetic-identity-pool/employers/<id>.yaml`
-   - `organisation.legal_name_pool` → `synthetic-identity-pool/organisations/<id>.yaml`
-   - `organisation.signatories[].signatory_pool` → `synthetic-identity-pool/names/<id>.yaml`
-   - `cash_flow.*.counterparty_pool` → `synthetic-identity-pool/counterparties/<id>.yaml`
-   - insurance `finance.bank_pool` / `mortgage.bank_pool` → `synthetic-identity-pool/banks/<id>.yaml`
+4. **Resolve every pool reference to a real file** before writing it. The pool
+   directories under `synthetic-identity-pool/` are the ground truth — `ls` them
+   first (don't trust the schema comments, some name stale paths). As of writing
+   they are: `names/`, `employers/`, `organisations/`, `counterparties/`,
+   `counterparty-banks/`, `counterparty-insurers/`, `merchants/`,
+   `family-groups/`, `ibans/`. Each `*_pool` value is a `<pool_id>` resolving to
+   `<dir>/<id>.yaml`, e.g.:
+   - `demographics.nationality_pool` → `names/<id>.yaml`
+   - `income.primary_employer_pool` → `employers/<id>.yaml`
+   - `organisation.legal_name_pool` → `organisations/<id>.yaml`
+   - `organisation.signatories[].signatory_pool` → `names/<id>.yaml`
+   - `cash_flow.*.counterparty_pool` → `counterparties/<id>.yaml`
+   - insurance `finance.bank_pool` / `mortgage.bank_pool` →
+     `counterparty-banks/<id>.yaml` (existing personas use
+     `bank_pool: counterparty_banks_uae_real`).
    `ls` the relevant pool directory; if no suitable pool exists, add the pool
    file first (synthetic values only — invariant NG4/EXP-07) or reuse the
    closest existing one.

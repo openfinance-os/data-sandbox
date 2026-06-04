@@ -5,6 +5,11 @@
 //     re-vendor + re-pin, never edit in place.
 //   • dist/**                 — build output; regenerate via npm run build:*.
 // Exit 2 + stderr = block the tool call (Claude sees the message and adapts).
+//
+// Scope: this only intercepts Claude Code tool calls — it is a Claude guardrail,
+// NOT repo-level protection. A human (or CI) editing these files is unaffected;
+// the team-level equivalent for the vendored spec would be CODEOWNERS or a CI
+// diff check.
 let raw = '';
 process.stdin.on('data', (d) => (raw += d));
 process.stdin.on('end', () => {

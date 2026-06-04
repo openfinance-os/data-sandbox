@@ -32,11 +32,14 @@ in the working tree: `git -C "$CLAUDE_PROJECT_DIR" status --porcelain personas/`
    `lint-persona-spec-conformance` accept. `organisation` is present iff
    `segment != Retail`. For insurance, the block matching `line` is present
    (motor → `vehicle`/`policy`, home → `home`, health → `health`, etc.).
-2. **Pool references resolve**: every `*_pool` reference points at a real file —
-   `nationality_pool` → `synthetic-identity-pool/names/<id>.yaml`,
-   `primary_employer_pool` → `synthetic-identity-pool/employers/<id>.yaml`,
-   `legal_name_pool` → `organisations/`, `counterparty_pool` → `counterparties/`,
-   `bank_pool` → `banks/`. Glob/Read to confirm each exists; flag any miss.
+2. **Pool references resolve**: every `*_pool` reference points at a real file
+   under `synthetic-identity-pool/`. Glob/Read to confirm each exists — the dir
+   names are the ground truth, not the schema comments (e.g. the schema says
+   `bank_pool` → `banks/`, but the real dir is `counterparty-banks/` and
+   personas use `bank_pool: counterparty_banks_uae_real`). Typical mappings:
+   `nationality_pool`/`signatory_pool` → `names/`, `primary_employer_pool` →
+   `employers/`, `legal_name_pool` → `organisations/`, `counterparty_pool` →
+   `counterparties/`, `bank_pool` → `counterparty-banks/`. Flag any miss.
 3. **Footprint sanity** (if `multi_lfi_footprint` / `multi_insurer_footprint`
    present): `lfi_default`/`insurer_default` are `Rich|Median|Sparse` only;
    real bank/insurer names appear ONLY in `plausible_lfi_candidates` /
@@ -44,12 +47,13 @@ in the working tree: `git -C "$CLAUDE_PROJECT_DIR" status --porcelain personas/`
    every `at_slot` on an account or fixed_commitment matches a declared
    `slots[].key` (all-or-nothing per the schema note); `cross_domain_link`
    references a real banking slot key.
-4. **EXP-25 unique stress coverage**: `stress_coverage` terms come from the
-   Appendix-F controlled vocabulary, and the SET this persona adds is not a
-   duplicate of another persona's. Spot-check by grepping the terms across
-   `personas/`; the authoritative check is the lint in step 5.
-5. **Run the lints** (ground truth; they need `dist/` built — if they fail for
-   that reason, say so):
+4. **EXP-25 unique stress coverage**: the enforced rule is uniqueness — the
+   persona must own at least one `stress_coverage` term no other persona covers
+   (Appendix-F is the naming convention, not a checked vocabulary). Spot-check by
+   grepping the terms across `personas/`; the authoritative check is the lint in
+   step 5.
+5. **Run the lints** (ground truth). They read `dist/`, so build it first if it
+   is stale: `npm run build:spec && npm run build:data`. Then:
    - `npm run lint:persona-spec-conformance`
    - `npm run lint:stress-coverage-uniqueness`
    - `npx vitest run tests/persona-manifest.test.mjs`

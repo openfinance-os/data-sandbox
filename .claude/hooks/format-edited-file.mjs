@@ -1,9 +1,16 @@
 #!/usr/bin/env node
 // PostToolUse(Edit|Write|MultiEdit) formatter.
-// Runs prettier --write + eslint --fix on the single file just edited, so diffs
-// stay clean mid-session (husky only does this at commit time via lint-staged).
-// Best-effort and silent: never fails the tool call.
+// Runs prettier --write on the single file just edited, so diffs stay clean
+// mid-session (husky lint-staged only formats at commit time).
+//
+// Deliberately prettier-ONLY (no `eslint --fix`): eslint's autofixes can change
+// code, not just whitespace, which risks fighting Claude's next edit. Formatting
+// alone keeps the file's content stable. We invoke the local prettier binary
+// directly (not `npx`) to avoid per-edit resolution latency. Best-effort and
+// silent: never fails the tool call.
 import { execFileSync } from 'node:child_process';
+import path from 'node:path';
+import { existsSync } from 'node:fs';
 
 let raw = '';
 process.stdin.on('data', (d) => (raw += d));
@@ -16,15 +23,12 @@ process.stdin.on('end', () => {
   }
   if (!/\.(mjs|cjs|js)$/.test(file)) process.exit(0);
   const cwd = process.env.CLAUDE_PROJECT_DIR || process.cwd();
-  for (const args of [
-    ['prettier', '--write', file],
-    ['eslint', '--fix', file],
-  ]) {
-    try {
-      execFileSync('npx', args, { cwd, stdio: 'ignore' });
-    } catch {
-      /* formatting is advisory — ignore failures (e.g. eslint rule errors) */
-    }
+  const bin = path.join(cwd, 'node_modules', '.bin', 'prettier');
+  if (!existsSync(bin)) process.exit(0);
+  try {
+    execFileSync(bin, ['--write', file], { cwd, stdio: 'ignore' });
+  } catch {
+    /* formatting is advisory — ignore failures (e.g. unparseable file) */
   }
   process.exit(0);
 });
