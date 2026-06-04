@@ -350,6 +350,13 @@ input:focus,
 .lfi-control {
   gap: 2px;
 }
+/* Keep the "LFI profile" label and its ⓘ info-trigger on a single row,
+   even though the parent control-group stacks its children in a column. */
+.control-label-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
 .lfi-seg {
   display: inline-flex;
   align-items: stretch;

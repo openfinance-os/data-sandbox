@@ -62,8 +62,10 @@
         </div>
       </div>
       <div class="control-group lfi-control">
-        <span class="control-label" data-i18n="controls.lfi">LFI profile</span>
-        <button type="button" class="info-trigger" popovertarget="lfi-help" aria-expanded="false" aria-label="What is an LFI profile?">ⓘ</button>
+        <span class="control-label-row">
+          <span class="control-label" data-i18n="controls.lfi">LFI profile</span>
+          <button type="button" class="info-trigger" popovertarget="lfi-help" aria-expanded="false" aria-label="What is an LFI profile?">ⓘ</button>
+        </span>
         <div class="lfi-seg" id="lfi-seg" role="radiogroup" aria-label="LFI populate-rate profile">
           <button type="button" role="radio" data-lfi="rich"   aria-checked="false" data-i18n="lfi.rich" title="Best case. Every populate-band optional field set. Probe what mature LFIs make available.">Rich</button>
           <button type="button" role="radio" data-lfi="median" aria-checked="true"  data-i18n="lfi.median" title="v1 calibration — Universal=1.0, Common=0.7, Variable=0.4, Rare=0.1. The Commons-curated ecosystem-wide assumption.">Median</button>
