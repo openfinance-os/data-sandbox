@@ -5,6 +5,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follo
 
 ## [Unreleased]
 
+### Fixed — iPhone Safari: phone viewports were unnavigable (locked-chrome trap)
+
+- **Phone breakpoints unlock the body back to normal document scrolling.** The
+  app shell pins the topbar/footer and scrolls the panes internally
+  (`body: 100svh + overflow:hidden`), which assumes the topbar is a short strip.
+  On a phone the wrapped persona / LFI / Compare / Seed / Language / Numerals
+  controls stack ~360 px tall on a 664 px iPhone-portrait viewport (~270 px on a
+  390 px landscape one) — taller than the visible area. With the body locked to
+  `overflow:hidden` there was no way to scroll down to the persona library or
+  payload: both sat below the fold with nothing to scroll, so the site was
+  unnavigable on iPhone Safari. At `≤760 px` wide (plus the short-landscape case
+  `≤600 px` tall on a phone-class width) the body reverts to document scrolling,
+  the chrome and panes flow in source order, and the navigator's tree stacks
+  above the payload so the 520 px-min table isn't crammed into ~140 px. The
+  desktop/tablet locked-chrome model is untouched — the 1024×690 iPad guard
+  (`top-chrome.spec.mjs`) sits outside the phone window. New e2e coverage in
+  `responsive.spec.mjs` asserts phone portrait + landscape scroll to and reach
+  the payload table, and that 1024×690 keeps the locked model.
+
 ### Added — Phase 2.2: retail multi-LFI + multi-domain flagship persona (`retail_multi_banker`)
 
 The "Connect-journeys hero" persona — a salaried UAE expat customer whose
