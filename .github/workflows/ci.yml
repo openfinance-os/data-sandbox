@@ -50,11 +50,6 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - run: npm ci
-      # Non-blocking advisory: surface high/critical CVEs in the job log
-      # without failing the build. The maintainer can decide when to bump.
-      - name: npm audit (advisory)
-        run: npm audit --omit=dev --audit-level=high
-        continue-on-error: true
       - run: npm run verify:spec-shape
       - run: npm run build:spec
       - run: npm run build:data
