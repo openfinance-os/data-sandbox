@@ -35,11 +35,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      # Check out the exact commit CI validated (head_sha), not just the
-      # branch tip, so the deploy can't race ahead of the gated commit.
+      # Check out the trusted default branch. We deliberately do NOT check out
+      # github.event.workflow_run.head_sha: this is a privileged job (Pages
+      # write + id-token + POSTHOG_KEY) and checking out the event's head SHA
+      # is the "pwn-request" pattern CodeQL flags. The `if` guard already
+      # restricts this workflow to push-to-main, and a default checkout
+      # resolves to that same trusted main tip (worst case it deploys a
+      # slightly newer main commit, which self-corrects on its own run).
       - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
       - uses: actions/setup-node@v6
         with:
           node-version: '22'

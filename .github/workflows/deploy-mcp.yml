@@ -57,9 +57,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          # Need the commit's parent to diff against. workflow_dispatch has
-          # no workflow_run context, so fall back to the dispatched ref.
-          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
+          # Default (trusted) checkout — main tip for workflow_run, the
+          # dispatched ref for workflow_dispatch. We avoid checking out the
+          # event's head_sha in this gated workflow (privileged-context
+          # hardening, same as deploy.yml). fetch-depth 2 gives us the parent
+          # to diff against for the path filter below.
           fetch-depth: 2
       - id: filter
         env:
@@ -84,9 +86,9 @@ jobs:
     timeout-minutes: 15
     environment: fly.io
     steps:
+      # Trusted default checkout (see the `changes` job note) — never the
+      # event head_sha, since this job holds FLY_API_TOKEN.
       - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
       - uses: superfly/flyctl-actions/setup-flyctl@v1
       - run: flyctl deploy --remote-only
         env:
