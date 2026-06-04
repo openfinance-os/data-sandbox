@@ -25,6 +25,7 @@ const nodeFiles = {
     'tools/**/*.{js,mjs,cjs}',
     'tests/**/*.{js,mjs,cjs}',
     'packages/**/*.{js,mjs,cjs}',
+    '.claude/hooks/**/*.{js,mjs,cjs}',
     '*.config.{js,mjs,cjs}',
     'playwright.config.mjs',
     'vitest.config.mjs',
