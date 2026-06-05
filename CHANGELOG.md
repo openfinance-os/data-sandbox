@@ -5,6 +5,31 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follo
 
 ## [Unreleased]
 
+### Added — D-10: Arabic persona names + narratives (parallel-text content)
+
+Completes the persona-content half of the Arabic / RTL track. The i18n
+foundation (URL-driven locale, `lang` / numeral toggles, `localizedName` /
+`localizedNarrative` in `src/app.js`, the optional `name_ar` / `narrative_ar`
+manifest fields) had already shipped; only two personas carried Arabic text, so
+every other persona fell back to English when the UI language was Arabic. This
+fills that gap.
+
+- **`name_ar` across all 37 remaining personas** (39/39 now carry one) and
+  **`narrative_ar` across the 27 remaining personas** that have an English
+  `narrative` (29/29). Names transliterate the personal/brand name and translate
+  the descriptor in MSA; narratives are MSA prose with Arabic-Indic numerals,
+  matching the convention set by `salaried-emirati-affluent` /
+  `salaried-expat-mid`.
+- **Spec identifiers stay Latin by design** — literal API/requirement tokens
+  (`PartyType=Joint`, `AccountRole=CustodianForMinor`, `CurrencyExchange`,
+  `Flags=Payroll`, `EXP-18`, `v2.1`, `B2B`, `cross_domain_link` …) are left
+  untranslated inside the Arabic prose so they remain greppable and accurate.
+- Fields are optional with English fallback, so no generator or schema shape
+  changed and all existing fixtures stay byte-identical; `dist/data.json`
+  regenerated so the frontend serves the new fields. `tools/persona-manifest`,
+  `lint-no-institution-leak`, and `lint-pii-leak` all pass; full suite green
+  (3357 vitest tests, 0 skipped).
+
 ### Fixed — iPhone Safari: phone viewports were unnavigable (locked-chrome trap)
 
 - **Phone breakpoints unlock the body back to normal document scrolling.** The
@@ -42,7 +67,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follo
   observed `~0.62-0.64` noise floor. If it red-lights at `0.60`, the build has
   genuinely regressed beyond simulate-mode noise. Comment in `lighthouserc.json`
   updated with the observed distribution.
-
 ### Added — Phase 2.2: retail multi-LFI + multi-domain flagship persona (`retail_multi_banker`)
 
 The "Connect-journeys hero" persona — a salaried UAE expat customer whose
