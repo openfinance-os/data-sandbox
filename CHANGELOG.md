@@ -25,10 +25,18 @@ fills that gap.
   `Flags=Payroll`, `EXP-18`, `v2.1`, `B2B`, `cross_domain_link` …) are left
   untranslated inside the Arabic prose so they remain greppable and accurate.
 - Fields are optional with English fallback, so no generator or schema shape
-  changed and all existing fixtures stay byte-identical; `dist/data.json`
-  regenerated so the frontend serves the new fields. `tools/persona-manifest`,
+  changed and all existing fixtures stay byte-identical. `tools/persona-manifest`,
   `lint-no-institution-leak`, and `lint-pii-leak` all pass; full suite green
   (3357 vitest tests, 0 skipped).
+- **Lazy-loaded off the critical path (perf).** `dist/data.json` is preloaded
+  and drives first paint, so the opt-in Arabic content is split into a new
+  `dist/data.i18n.json` (emitted by `tools/build-data.mjs`) and fetched + merged
+  on demand by `ensureLocaleData` (`src/app.js`) only when the UI resolves to a
+  non-default locale — at boot for an initial `?lang=ar`, or on the runtime
+  language toggle. The default English path never fetches it; `data.json` drops
+  to 28.4 KB gzipped (below its pre-Arabic 29.4 KB). New `tests/e2e/rtl.spec.mjs`
+  adds first RTL e2e coverage (`dir`/`lang` flip, chrome translation, lazy
+  `name_ar` render, numeral toggle).
 
 ### Fixed — iPhone Safari: phone viewports were unnavigable (locked-chrome trap)
 
