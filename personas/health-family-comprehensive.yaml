@@ -2,6 +2,8 @@ persona_id: health_family_comprehensive
 domain: insurance
 line: health
 name: "Aisha — Health (SelfAndFamily, Comprehensive)"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "عائشة — صحي (للنفس والعائلة، شامل)"
 archetype: health_employer_sponsored_family
 default_seed: 8431
 segment: Retail

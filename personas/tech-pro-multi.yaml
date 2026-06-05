@@ -1,6 +1,8 @@
 persona_id: tech_pro_multi
 domains: [banking, insurance]
 name: "Tech Pro Multi-Banker — Young Salaried 3-Bank Card-Stacker"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "مهني تقني متعدد المصارف — موظف شاب يكدّس البطاقات في ثلاثة مصارف"
 archetype: retail_tech_pro_card_stacker
 default_seed: 22417
 segment: Retail
@@ -190,3 +192,7 @@ narrative: |
   card-stack visibility across LFIs (the kind of consumer the
   Connect three-journey J1 single-LFI flow under-serves, because
   no single bank sees the full spend).
+
+# D-10 — Arabic narrative (parallel-text UI; English `narrative` is the fallback).
+narrative_ar: |
+  مهني تقني وافد (٢٦–٣٤ عامًا، راتب ٣٥ ألف درهم شهريًا عبر نظام حماية الأجور) في دبي يُحسّن إنفاق البطاقات عبر ثلاث مؤسسات مالية: راتب أساسي رئيسي من الفئة الأولى يحوي الحساب اليومي + بطاقة استرداد نقدي، ومصرف رقمي مساعد يستضيف بطاقة الإنفاق الإلكتروني بلا رسوم صرف، وعلاقة رئيسية ثانوية توفّر بطاقة دخول الصالات / العلامة المشتركة مع شركة طيران. لا رهن ولا قرض سيارة — الضغط الجوهري لهذه الشخصية هو محض رؤية تكديس البطاقات عبر المؤسسات المالية (نوع المستهلك الذي يقصّر في خدمته مسار Connect الثلاثي J1 ذو المؤسسة المالية الواحدة، لأن لا مصرف منفرد يرى الإنفاق الكامل).

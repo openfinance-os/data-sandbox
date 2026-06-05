@@ -2,6 +2,8 @@ persona_id: home_mortgage_villa
 domain: insurance
 line: home
 name: "Khalid — Home (Villa, Mortgaged)"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "خالد — منزل (فيلا مرهونة)"
 archetype: home_owner_mortgaged_villa
 default_seed: 7321
 segment: Retail

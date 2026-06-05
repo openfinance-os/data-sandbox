@@ -1,6 +1,8 @@
 persona_id: gig_variable_income
 domain: banking
 name: "Priya — Gig / Variable Income"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "بريا — عمل حر / دخل متغيّر"
 archetype: gig_worker
 default_seed: 5523
 segment: Retail
@@ -52,3 +54,7 @@ narrative: |
   (trailing-12-month average of Payroll-flagged credits) returns nothing
   for her; the Phase 1.5 Underwriting panel must fall back to Fallback B
   (clustered counterparty inflow) to produce a usable income signal.
+
+# D-10 — Arabic narrative (parallel-text UI; English `narrative` is the fallback).
+narrative_ar: |
+  تعمل بريا بنظام الساعات الحرة عبر منصات التوصيل ومشاركة الركوب. يصل دخلها في دفعات غير منتظمة من أطراف متعددة — ولا يوجد ائتمان واحد بعلامة Flags=Payroll يميّز راتبها. صيغة الدخل الأساسي في EXP-18 (متوسط اثني عشر شهرًا للائتمانات المعلّمة Payroll) لا تُرجع لها شيئًا؛ ويجب أن ترجع لوحة الاكتتاب في المرحلة ١٫٥ إلى البديل ب (تدفق الأطراف المُجمَّع) لإنتاج إشارة دخل قابلة للاستخدام.

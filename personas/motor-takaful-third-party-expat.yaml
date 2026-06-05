@@ -1,6 +1,8 @@
 persona_id: motor_takaful_third_party_expat
 domain: insurance
 name: "Layla — Motor Takaful Third-Party (Expat)"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "ليلى — تكافل مركبات ضد الغير (وافدة)"
 archetype: motor_takaful_third_party_expat
 default_seed: 8113
 segment: Retail

@@ -1,6 +1,8 @@
 persona_id: healthcare_multi
 domains: [banking, insurance]
 name: "Healthcare Pro Multi-Banker — Family Health + Mortgage"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "مهني رعاية صحية متعدد المصارف — تأمين صحي عائلي + رهن عقاري"
 archetype: retail_healthcare_pro_family
 default_seed: 53842
 segment: Retail
@@ -242,3 +244,7 @@ narrative: |
   (sum_assured matches outstanding mortgage). Underwriter view: the
   household's DBR + savings rate is legible only by aggregating
   across all three LFIs.
+
+# D-10 — Arabic narrative (parallel-text UI; English `narrative` is the fallback).
+narrative_ar: |
+  مهني رعاية صحية هندي وافد (٣٨–٤٦ عامًا) في دبي (راتب ٥٥ ألف درهم شهريًا عبر نظام حماية الأجور إضافة إلى علاوة مناوبة متغيّرة)، يعيل أسرة من أربعة أفراد. بصمة من ثلاث مؤسسات مالية: راتب أساسي رئيسي من الفئة الأولى (حساب جارٍ يومي + بطاقة استهلاكية متميزة)؛ مصرف رقمي مساعد بحساب جارٍ + ادخار (مقصورة ميزانية المنزل)؛ خانة مُقرض عقاري في فرع دولي تحوي الحساب الجاري والرهن لشقة الأسرة في دبي. التأمين: مركبات شامل، ومنزل (cross_domain_link → المُقرض العقاري)، وتأمين حياة مشترك تناقصي لحماية الرهن (المبلغ المؤمَّن يطابق الرهن القائم). رؤية المُكتتب: نسبة عبء الدين ومعدّل الادخار للأسرة لا يتّضحان إلا بالتجميع عبر المؤسسات الثلاث جميعها.

@@ -2,6 +2,8 @@ persona_id: travel_annual_multitrip_expat
 domain: insurance
 line: travel
 name: "Priya — Travel (Annual Multi-Trip, Worldwide)"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "بريا — سفر (سنوي متعدد الرحلات، عالمي)"
 archetype: travel_annual_multitrip_business
 default_seed: 6240
 segment: Retail

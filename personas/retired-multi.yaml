@@ -1,6 +1,8 @@
 persona_id: retired_multi
 domains: [banking, insurance]
 name: "Retired Emirati Multi-Banker — Consolidated 4-Bank Savings"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "متقاعد إماراتي متعدد المصارف — مدخرات موحّدة في أربعة مصارف"
 archetype: retired_emirati_savings_consolidator
 default_seed: 60284
 segment: Retail
@@ -200,3 +202,7 @@ narrative: |
   health for self + spouse, whole-life family-protection. The
   estate-planning underwriting view — total liquid + locked savings
   across four LFIs — is only legible via Open Finance aggregation.
+
+# D-10 — Arabic narrative (parallel-text UI; English `narrative` is the fallback).
+narrative_ar: |
+  مواطن إماراتي متقاعد في أبوظبي (معاش ٢٢ ألف درهم شهريًا يصل في الأول من الشهر). تعكس البصمة متعددة المؤسسات المالية عقودًا من العلاقات المتراكمة لا تكديس بطاقات نشطًا: معاش أساسي في مصرف تقليدي من الفئة الأولى بحساب جارٍ طويل المدة + ادخار؛ وديعة ادخار متوافقة مع الشريعة في مصرف إسلامي تتلقى دفعات شهرية؛ علاقة بطاقة يومية في مصرف رئيسي ثانٍ (تُستخدم للمرافق وخصومات البقالة المباشرة)؛ وخانة فرع دولي قديمة لا تزال تستضيف حسابًا جاريًا بالجنيه + ادخارًا بالدولار من سنوات العمل النشطة في الصرف. لا رهن (سُدّد قبل سنوات)، ولا قرض سيارة. التأمين: تأمين صحي شامل للمسنّين له ولزوجته، وتأمين حياة كامل عائلي. رؤية اكتتاب تخطيط التركة — إجمالي المدخرات السائلة والمقيدة عبر أربع مؤسسات مالية — لا تتّضح إلا عبر تجميع التمويل المفتوح.

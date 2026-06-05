@@ -1,6 +1,8 @@
 persona_id: mortgage_dbr_heavy
 domain: banking
 name: "Yousef — Mortgage Holder (DBR Heavy)"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "يوسف — صاحب رهن عقاري (نسبة عبء دين مرتفعة)"
 archetype: dbr_stretched
 default_seed: 9203
 segment: Retail
@@ -74,3 +76,7 @@ narrative: |
   panel will compute Total Fixed Commitments by summing standing-order
   NextPaymentAmount + direct-debit PreviousPaymentAmount, normalised to
   monthly via Frequency. This persona is the DBR stress case.
+
+# D-10 — Arabic narrative (parallel-text UI; English `narrative` is the fallback).
+narrative_ar: |
+  يوسف موظف براتب ٣٢ ألف درهم مع رهن طويل الأجل. مجموع التزاماته الثابتة — أصل الرهن والرسوم المدرسية والمرافق وتمويل السيارة — يدفع نسبة عبء الدين الضمنية لديه إلى ما يفوق ٦٠٪ بمريح. ستحسب لوحة الاكتتاب في المرحلة ١٫٥ إجمالي الالتزامات الثابتة بجمع NextPaymentAmount للأمر الدائم + PreviousPaymentAmount للخصم المباشر، مُطبَّعة شهريًا عبر Frequency. هذه الشخصية هي حالة اختبار ضغط نسبة عبء الدين.

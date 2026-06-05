@@ -2,6 +2,8 @@ persona_id: employment_iloe_private
 domain: insurance
 line: employment
 name: "Faisal — Employment (ILOE, Private Sector, Category B)"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "فيصل — التوظيف (تأمين ضد التعطل ILOE، القطاع الخاص، الفئة ب)"
 archetype: employment_iloe_private_categoryb
 default_seed: 9072
 segment: Retail

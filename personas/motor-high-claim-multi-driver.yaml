@@ -1,6 +1,8 @@
 persona_id: motor_high_claim_multi_driver
 domain: insurance
 name: "Rohan — Motor High-Claim Multi-Driver"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "روهان — تأمين مركبات كثير المطالبات متعدد السائقين"
 archetype: motor_comprehensive_multi_driver
 default_seed: 5614
 segment: Retail

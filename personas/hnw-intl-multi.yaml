@@ -1,6 +1,8 @@
 persona_id: hnw_intl_multi
 domains: [banking, insurance]
 name: "HNW International Multi-Banker — USD/AED + Offshore"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "ثري دولي متعدد المصارف — دولار/درهم + حسابات خارجية"
 archetype: hnw_international_multi_bank
 default_seed: 33108
 segment: Retail
@@ -293,3 +295,7 @@ narrative: |
   USD savings + AED operating + mortgage + insurance into one
   underwriting view; only Open Finance aggregation across all four
   LFIs surfaces the full picture.
+
+# D-10 — Arabic narrative (parallel-text UI; English `narrative` is the fallback).
+narrative_ar: |
+  مهني عربي وافد ثري في دبي (راتب ١٤٠ ألف درهم شهريًا عبر نظام حماية الأجور إضافة إلى تدفقات خارجية بالدولار) يدير بصمة من أربع مؤسسات مالية. الراتب الأساسي في مصرف رئيسي من الفئة الأولى يحوي الحساب الجاري اليومي بالدرهم + بطاقة استهلاكية من الفئة المتميزة. الخانة الخارجية في مصرف فرع أجنبي تحمل الحساب الجاري بالدولار وادخارًا بالدولار — سيولة الجولة الأولى / احتياطيات المكتب العائلي. مصرف رقمي مساعد للإنفاق المدرك للصرف. رهن في فرع دولي على فيلا في دبي، مع تغطية منزل مجمَّعة في تلك الخانة عبر cross_domain_link. تغطي بصمة التأمين أربعة فروع (مركبات / منزل / حياة / سفر) — والحياة تأمين عائلي مشترك محدد المدة مُقاس على ثروة الأسرة. الضغط الجوهري هو توحيد الادخار الخارجي بالدولار + التشغيل بالدرهم + الرهن + التأمين في رؤية اكتتاب واحدة؛ ولا يُظهر الصورة الكاملة إلا تجميع التمويل المفتوح عبر المؤسسات الأربع جميعها.

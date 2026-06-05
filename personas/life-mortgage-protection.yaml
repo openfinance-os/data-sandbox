@@ -2,6 +2,8 @@ persona_id: life_mortgage_protection
 domain: insurance
 line: life
 name: "Rashid — Life (Decreasing Term, Mortgage Protection)"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "راشد — تأمين على الحياة (تناقصي، حماية الرهن العقاري)"
 archetype: life_mortgage_protection_term
 default_seed: 5102
 segment: Retail

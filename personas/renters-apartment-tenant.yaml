@@ -2,6 +2,8 @@ persona_id: renters_apartment_tenant
 domain: insurance
 line: renters
 name: "Sara — Renters (Apartment, Furnished Lease)"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "سارة — تأمين مستأجرين (شقة، إيجار مفروش)"
 archetype: renters_apartment_furnished
 default_seed: 8190
 segment: Retail

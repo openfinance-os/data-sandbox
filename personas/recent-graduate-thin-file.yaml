@@ -1,6 +1,8 @@
 persona_id: recent_graduate_thin_file
 domain: banking
 name: "Tanvi — Recent Graduate (Thin File)"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "تانفي — خريجة حديثة (سجل ائتماني ضعيف)"
 archetype: thin_file
 default_seed: 1117
 segment: Retail
@@ -50,3 +52,7 @@ narrative: |
   little fixed-commitment surface. EXP-18 low-volume guard may engage at the
   margin (8 months × ~30 tx/month ≈ 240 — above the 50-tx floor but distinct
   months below the 12 expected).
+
+# D-10 — Arabic narrative (parallel-text UI; English `narrative` is the fallback).
+narrative_ar: |
+  تانفي محللة تقنية مبتدئة، براتب ٨٫٥ ألف درهم، بحساب وحيد فُتح قبل ٨ أشهر. تتقاسم الإيجار مع زميلات سكن عبر أمر دائم مشترك. تختبر اكتتاب السجل الضعيف: حساب قصير المدة، ومعاملات منخفضة القيمة، وسطح التزامات ثابتة ضئيل. قد يتفعّل حارس انخفاض الحجم في EXP-18 عند الحد (٨ أشهر × نحو ٣٠ معاملة شهريًا ≈ ٢٤٠ — فوق أرضية ٥٠ معاملة لكن بأشهر متمايزة دون الاثني عشر المتوقعة).

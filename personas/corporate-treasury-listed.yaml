@@ -1,6 +1,8 @@
 persona_id: corporate_treasury_listed
 domain: banking
 name: "Polaris Industrial Holdings PJSC — Corporate Treasury"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "بولاريس الصناعية القابضة ش.م.ع — خزينة الشركة"
 archetype: corporate_treasury
 default_seed: 7142
 segment: Corporate
@@ -98,3 +100,7 @@ narrative: |
   identity-assurance fields (PartyCategory=Corporate plus the verified-
   claims block on the Party records) that retail and SME personas don't
   reach.
+
+# D-10 — Arabic narrative (parallel-text UI; English `narrative` is the fallback).
+narrative_ar: |
+  بولاريس الصناعية القابضة ش.م.ع مجموعة شركات قابضة مدرجة في الإمارات، تملك حسابات تشغيلية متعددة العملات وتسهيلًا تمويليًا مؤسسيًا طويل الأجل. يمارس ثلاثة مفوّضين بالتوقيع كامل مفردات PartyType / AccountRole في المواصفة: مسؤول إداري رفيع وحاملُ وكالة قانونية يشغّلان الحسابات بصورة مشتركة (تفويض «أي اثنين» مُجسَّد بصيغة PartyType=Joint)، مع إداري بصلاحية Delegate للعمليات اليومية. التدفقات الواردة من العملاء تُفوتر شهريًا من أطراف B2B، والصادرة للموردين عابرة للحدود بالدولار/اليورو. تختبر هذه الشخصية حقول «اعرف عميلك» وتوكيد الهوية بمستوى الشركات (PartyCategory=Corporate إضافة إلى كتلة verified-claims على سجلات الطرف) التي لا تبلغها شخصيات الأفراد والمنشآت الصغيرة.

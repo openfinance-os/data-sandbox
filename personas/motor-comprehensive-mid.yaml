@@ -1,6 +1,8 @@
 persona_id: motor_comprehensive_mid
 domain: insurance
 name: "Omar — Motor Comprehensive (Mid Tier)"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "عمر — تأمين مركبات شامل (الفئة المتوسطة)"
 archetype: motor_comprehensive_financed
 default_seed: 4729
 segment: Retail

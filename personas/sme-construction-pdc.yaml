@@ -1,6 +1,8 @@
 persona_id: sme_construction_pdc
 domain: banking
 name: "Meridian Build Works LLC — Construction Sub-Contractor"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "ميريديان لأعمال البناء ذ.م.م — مقاول بناء من الباطن"
 archetype: sme_construction
 default_seed: 6431
 segment: SME
@@ -113,3 +115,7 @@ narrative: |
   of milestone-billed civil-works SMEs. Stress: PDC handling, retention
   release matching, large-batch WPS payroll — none of which the existing
   SME personas exercise.
+
+# D-10 — Arabic narrative (parallel-text UI; English `narrative` is the fallback).
+narrative_ar: |
+  ميريديان لأعمال البناء مقاول من الباطن للأعمال المدنية في بر الشارقة الرئيسي — مستحقات قائمة على شهادات الدفع من مجموعة صغيرة من المقاولين الرئيسيين، تُفوتر بالمراحل وغير منتظمة. تصل التدفقات الواردة بعد ٣٠–٦٠ يومًا من المصادقة، غالبًا صافيًا من احتجاز ٥–١٠٪؛ وبعضها شيكات مؤجلة الدفع. مفوّضان بالتوقيع: المالك الأساسي (منفرد) وحامل وكالة قانونية مفوَّض لإيداع الشيكات وذمم موردي الساحة. نحو ٨٠ عاملًا في دفعة شهرية واحدة لنظام حماية الأجور هي التدفق الصادر المهيمن. يصل تحرير المحتجز كائتمانات دفعة كبيرة عرضية غير مُجمَّعة بعد أشهر من المصادقة الأصلية. الحساب التشغيلي مصرف تقليدي من الفئة الأولى؛ والثانوي في مصرف إسلامي لوديعة لأجل من مدخرات المالك الخاصة. تقع أحداث الرصيد غير الكافي ١–٤ مرات سنويًا — معتاد لضغط رأس المال العامل لمنشآت الأعمال المدنية المُفوترة بالمراحل. الضغط: التعامل مع الشيكات المؤجلة، ومطابقة تحرير المحتجز، ودفعة رواتب نظام حماية الأجور الكبيرة — لا تختبر أيًّا منها شخصيات المنشآت الصغيرة القائمة.

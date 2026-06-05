@@ -1,6 +1,8 @@
 persona_id: domestic_worker
 domain: banking
 name: "Maria — Domestic Worker (Employer-Sponsored, Low Income)"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "ماريا — عاملة منزلية (بكفالة صاحب العمل، دخل منخفض)"
 archetype: domestic_worker_sponsored
 default_seed: 18327
 segment: Retail
@@ -68,3 +70,7 @@ narrative: |
   histogram, the absent fuel pattern, and the salary-equals-
   remittance shape that any "average monthly savings" computation
   would otherwise show as exactly zero.
+
+# D-10 — Arabic narrative (parallel-text UI; English `narrative` is the fallback).
+narrative_ar: |
+  ماريا عاملة منزلية تتراوح بين ٢٨ و٤٥ عامًا في دبي بكفالة صاحب العمل (راتب ٣٬٠٠٠ درهم شهريًا عبر نظام حماية الأجور، يُدفع بانتظام في الثامن والعشرين). حساب جارٍ أساسي واحد فتحه صاحب العمل الكفيل؛ بلا بطاقة ائتمان ولا قرض ولا وعاء ادخار. يغادر الراتب بأكمله تقريبًا في الثلاثين كحوالة إلى الوطن؛ يتبقى نحو ٢٥٠ درهمًا للبقالة وتعبئة رصيد الاتصالات. الضغط الجوهري لهذه الشخصية هو ما يفعله المُكتتب مع عميل فائضه الصافي صفر فعليًا — يجب ألا تفشل أو تضلّل عروض الإدارة المالية الشخصية وتوقّع التدفق النقدي إزاء غياب مدرّج إنفاق بطاقة الائتمان، وغياب نمط الوقود، وشكل «الراتب يساوي الحوالة» الذي قد يُظهره أي احتساب لـ«متوسط الادخار الشهري» على أنه صفر تمامًا.

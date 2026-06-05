@@ -1,6 +1,8 @@
 persona_id: pep_flagged
 domain: banking
 name: "Sheikh Khalifa — PEP-Flagged Retail (EDD Required)"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "الشيخ خليفة — عميل أفراد معرّض سياسيًا (تتطلب عناية واجبة معزّزة)"
 archetype: pep_retail_eddu_high_balance
 default_seed: 28419
 segment: Retail
@@ -80,3 +82,7 @@ narrative: |
   itself is metadata external to the v2.1 spec — captured here in
   the persona narrative + stress tag so a downstream TPP that wants
   to wire an enhanced-screening UX has a synthetic test target.
+
+# D-10 — Arabic narrative (parallel-text UI; English `narrative` is the fallback).
+narrative_ar: |
+  مواطن إماراتي رفيع (٥٠–٦٥، راتب ١٢٠ ألف درهم شهريًا من منصب طويل الخدمة تُطلق طبيعتُه فحص الأشخاص المعرّضين سياسيًا لدى كل مؤسسة مالية إماراتية). بصمة بمؤسسة مالية واحدة لغرض اختبار هذه الشخصية: حساب جارٍ طويل الخدمة، وحساب ادخار، وبطاقة ائتمان بحد مرتفع كلها في المصرف نفسه. الضغط الجوهري هو ما يفعله مسار الاكتتاب / التصنيف لدى TPP حين يصل راتب العميل شهريًا بلا بيانات معاملات لصاحب العمل، وحين يحجب أمرٌ دائم ضخم متكرر لـ«إعالة الأسرة» الإنفاقَ التقديري الحقيقي، وحين يُنشئ أمر دائم لتوزيع الزكاة تدفقًا خيريًا شهريًا متميزًا عن الخصومات المباشرة المعتادة. علامة الشخص المعرّض سياسيًا نفسها بيانات وصفية خارجة عن مواصفة v2.1 — مُلتقطة هنا في سرد الشخصية + وسم الضغط كي يجد أي TPP يرغب في توصيل تجربة فحص معزّز هدفًا اصطناعيًا للاختبار.
