@@ -15,7 +15,7 @@ import {
   bandForFieldName,
 } from './shared/spec-helpers.js';
 import { statusPill, syncViewTabs } from './shared/dom.js';
-import { setDocumentLocale, normalizeLocale } from './shared/i18n.js';
+import { setDocumentLocale, normalizeLocale, DEFAULT_LOCALE } from './shared/i18n.js';
 import { decodeFromUrl, encodeEmbed, encodeFixtureUrl, CUSTOM_PERSONA_SLUG } from './url.js';
 import { expandRecipe } from './persona-builder/expand.js';
 import { decodeRecipe, encodeRecipe, RECIPE_DEFAULTS } from './persona-builder/recipe.js';
@@ -513,6 +513,10 @@ async function init() {
   ]);
   const domainsManifest = await domainsRes.json();
   state.data = await dataRes.json();
+  // D-10 — on a non-default initial locale, merge the lazy Arabic content
+  // before first paint so persona names render localized. The default English
+  // path skips the extra fetch entirely (the overlay is opt-in, not preloaded).
+  if (state.lang !== DEFAULT_LOCALE) await ensureLocaleData(state.lang);
   state.avatars = {};
   if (avatarsRes && avatarsRes.ok) {
     try {
@@ -1167,13 +1171,17 @@ function attachEventHandlers() {
   // active view. Numerals follow the language by default but the user can
   // override them via the numeral toggle afterwards.
   for (const btn of document.querySelectorAll('#lang-seg button[data-lang]')) {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const from = state.lang;
       const to = normalizeLocale(btn.dataset.lang);
       if (from === to) return;
       state.lang = to;
       state.numerals = to === 'ar' ? 'arab' : 'latn';
+      // Flip <html dir>/chrome immediately for a responsive feel, then merge
+      // the lazy locale content (cached after the first switch) before the
+      // persona re-render so localized names/narratives are available.
       applyLocale();
+      await ensureLocaleData(to);
       rebuildAndRender();
       // No analytics event: the EXP-21 allowlist is a governed contract;
       // adding `lang_switch` is deferred to a deliberate allowlist update.
@@ -1388,10 +1396,34 @@ function rebuildAndRender() {
 // canonical scenario filter surface post-PR #3. State changes (persona
 // switch, custom-persona expand, domain switch) all flow through
 // renderTopbarPersona() via rebuildAndRender / renderInsuranceBundle.
+// D-10 — locale content overlay. Arabic display names + narratives are split
+// out of the eagerly-preloaded data.json (tools/build-data.mjs) to keep the
+// default English critical path lean; they're fetched once and merged into the
+// loaded personas the first time the UI resolves to a non-default locale. The
+// merge is idempotent (cached in `_localesMerged`) and a failed/absent fetch
+// degrades silently to the English fallback in localizedName/localizedNarrative.
+const _localesMerged = new Set();
+let _localeOverlayPromise = null;
+async function ensureLocaleData(lang) {
+  if (lang === DEFAULT_LOCALE || _localesMerged.has(lang) || !state.data?.personas) return;
+  if (!_localeOverlayPromise) {
+    _localeOverlayPromise = fetch('../dist/data.i18n.json')
+      .then((r) => (r.ok ? r.json() : {}))
+      .catch(() => ({}));
+  }
+  const table = (await _localeOverlayPromise)?.[lang];
+  if (table) {
+    for (const [personaId, fields] of Object.entries(table)) {
+      const persona = state.data.personas[personaId];
+      if (persona) Object.assign(persona, fields);
+    }
+  }
+  _localesMerged.add(lang);
+}
+
 // D-10 — pick the Arabic display name / narrative when the UI is in Arabic
-// and the persona manifest carries one (name_ar / narrative_ar); otherwise
-// fall back to the English text. Bulk persona translation is a follow-up
-// slice, so most personas resolve to English regardless of locale.
+// and the persona carries one (name_ar / narrative_ar, merged on demand by
+// ensureLocaleData); otherwise fall back to the English text.
 function localizedName(persona) {
   if (!persona) return '';
   if (state.lang === 'ar' && persona.name_ar) return persona.name_ar;
