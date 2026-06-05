@@ -293,7 +293,7 @@ function buildBankingBundle({ persona, lfi, seed, pools, now = DEFAULT_NOW }) {
   // half (CreditDebitIndicator='Debit'), role bundles get the inflow
   // half ('Credit'). Each pair shares TransactionDateTime + Amount +
   // Reference + counterparty IBAN, so a TPP-side accounting integration
-  // (Naqood-grade) can reconcile by IBAN identity.
+  // can reconcile by IBAN identity.
   const sourcePersona = persona._sourcePersona ?? persona;
   if (sourcePersona.multi_lfi_footprint) {
     const isProjection = persona._projectedRoleSlot != null;
