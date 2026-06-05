@@ -1,6 +1,8 @@
 persona_id: sme_cash_heavy
 domain: banking
 name: "Karim — SME Owner (Cash-Heavy Retail)"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "كريم — صاحب منشأة صغيرة (تجزئة كثيفة النقد)"
 archetype: sme_cash
 default_seed: 6308
 segment: SME
@@ -67,3 +69,7 @@ narrative: |
   the way it can POS transactions. A shop-rent standing order and a POS-
   terminal-lease direct debit are the only fixed commitments. AML stress
   case: behavioural-monitoring rules need to handle cash-dominant accounts.
+
+# D-10 — Arabic narrative (parallel-text UI; English `narrative` is the fallback).
+narrative_ar: |
+  يدير كريم متجر تجزئة في الشارقة. معظم الإيرادات نقدية تُودَع في الحساب الجاري في دفعات (٤–١٤ إيداعًا شهريًا، ٨٠٠–٨٬٠٠٠ درهم لكلٍّ). تفاصيل تاجر ضئيلة لأن المصرف لا يستطيع تصنيف إيداعات الصرّاف كما يصنّف معاملات نقاط البيع. أمر دائم لإيجار المتجر وخصم مباشر لإيجار جهاز نقاط البيع هما الالتزامان الثابتان الوحيدان. حالة ضغط مكافحة غسل الأموال: تحتاج قواعد الرصد السلوكي إلى التعامل مع الحسابات المهيمن عليها النقد.

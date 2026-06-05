@@ -1,6 +1,8 @@
 persona_id: atm_directory
 domain: atm
 name: "UAE ATM Locator — Public Directory"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "دليل أجهزة الصراف الآلي في الإمارات — دليل عام"
 archetype: atm_locator_directory
 default_seed: 47131
 segment: Retail

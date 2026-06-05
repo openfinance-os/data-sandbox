@@ -1,6 +1,8 @@
 persona_id: joint_account_family
 domain: banking
 name: "Maria & Rohan — Joint Account / Family"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "ماريا وروهان — حساب مشترك / عائلة"
 archetype: joint_family
 default_seed: 6612
 segment: Retail
@@ -78,3 +80,7 @@ narrative: |
   v2.1 multi-party shapes: PartyType=Joint, AccountRole=CustodianForMinor.
   Bundle exercises /accounts/{AccountId}/parties heavily (multiple Party
   records per account).
+
+# D-10 — Arabic narrative (parallel-text UI; English `narrative` is the fallback).
+narrative_ar: |
+  ماريا وروهان زوجان وافدان لهما حساب جارٍ مشترك وحساب ادخار بصفة وصيّ على قاصر لطفليهما. تختبر أشكال تعدد الأطراف في v2.1: PartyType=Joint وAccountRole=CustodianForMinor. تستخدم الحزمة /accounts/{AccountId}/parties بكثافة (سجلات طرف متعددة لكل حساب).

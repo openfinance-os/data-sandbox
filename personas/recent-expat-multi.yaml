@@ -1,6 +1,8 @@
 persona_id: recent_expat_multi
 domains: [banking, insurance]
 name: "Recent Arrival Multi-Banker — Onboarding-Year 3-Bank Expat"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "وافد حديث الوصول متعدد المصارف — ثلاثة مصارف في سنة التأسيس"
 archetype: retail_recent_arrival_expat
 default_seed: 41039
 segment: Retail
@@ -236,3 +238,7 @@ narrative: |
   Underwriter view: each LFI sees ≤12 months of tenure; only Open
   Finance aggregation shows the full picture (which still totals
   ≤12 months — the thin-file-yet-multi-banker stress vector).
+
+# D-10 — Arabic narrative (parallel-text UI; English `narrative` is the fallback).
+narrative_ar: |
+  مهني عربي وافد مضى على انتدابه في دبي ١١ شهرًا (راتب ٤٥ ألف درهم شهريًا عبر نظام حماية الأجور). انضمّ عبر ثلاث مؤسسات مالية بتعاقب سريع: حساب جارٍ في فرع دولي فُتح قبل الوصول لاستلام مبلغ الانتقال + رصيد دولاري أولي؛ راتب أساسي رئيسي فُتح بمجرد صدور تصريح العمل (يستضيف راتب نظام حماية الأجور + قرض السيارة)؛ حساب جارٍ + بطاقة رقمي بالكامل فُتح في أسبوع الانضمام للإنفاق الفوري قبل وصول بطاقة الراتب الأساسي. سفر متكرر إلى الوطن للعائلة. رؤية المُكتتب: ترى كل مؤسسة مالية مدة لا تتجاوز ١٢ شهرًا؛ ولا يُظهر الصورة الكاملة إلا تجميع التمويل المفتوح (الذي يظل مجموعه ≤ ١٢ شهرًا — متجه ضغط «السجل الضعيف رغم تعدد المصارف»).

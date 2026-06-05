@@ -1,6 +1,8 @@
 persona_id: sme_trading_business
 domain: banking
 name: "Aurora Trading LLC — SME Trading Business"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "أورورا للتجارة ذ.م.م — منشأة تجارية صغيرة"
 archetype: sme_business
 default_seed: 4821
 segment: SME
@@ -86,3 +88,7 @@ narrative: |
   Bank Data Sharing transaction set. AccountType=SME, PartyCategory=SME,
   PartyType=Delegate exercise the v2.1-errata1 business-account spec
   surface that retail personas don't reach.
+
+# D-10 — Arabic narrative (parallel-text UI; English `narrative` is the fallback).
+narrative_ar: |
+  أورورا للتجارة ذ.م.م منشأة صغيرة في بر دبي الرئيسي تستورد السلع التامة من موردين دوليين وتعيد بيعها لعملاء الجملة في الإمارات. مفوّضان بالتوقيع على حسابات الأعمال: المالك الأساسي (منفرد) وحامل وكالة قانونية مفوَّض لتشغيل الحساب نيابةً عن الأصيل. تصل التدفقات الواردة من العملاء بوتيرة نصف شهرية من أطراف B2B محلية؛ والصادرة للموردين عابرة للحدود بالدولار/اليورو، مختبِرةً حافة الصرف النشطة في مجموعة معاملات مشاركة البيانات المصرفية v2.1. تختبر AccountType=SME وPartyCategory=SME وPartyType=Delegate سطحَ مواصفة حسابات الأعمال في v2.1-errata1 الذي لا تبلغه شخصيات الأفراد.

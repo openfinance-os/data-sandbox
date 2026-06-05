@@ -1,6 +1,8 @@
 persona_id: emirati_takaful_multi
 domains: [banking, insurance]
 name: "Emirati Takaful Multi-Banker — Four-Bank Sharia-First"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "إماراتي متعدد المصارف بالتكافل — أربعة مصارف بأولوية الشريعة"
 archetype: emirati_takaful_multi_bank
 default_seed: 77115
 segment: Retail
@@ -266,3 +268,7 @@ narrative: |
   role's distinct savings vehicle AND match the mortgage-protection
   life cover's decreasing-balance sum-assured to the actual mortgage
   outstanding.
+
+# D-10 — Arabic narrative (parallel-text UI; English `narrative` is the fallback).
+narrative_ar: |
+  مهني إماراتي رفيع في أبوظبي (راتب ٨٥ ألف درهم شهريًا عبر نظام حماية الأجور) تتسم بصمتاه المصرفية والتأمينية بأولوية الشريعة. تمتد العلاقات المصرفية عبر أربع مؤسسات مالية: الراتب الأساسي في مصرف تقليدي من الفئة الأولى، وعلاقة وديعة إسلامية / بطاقة تكافل في مصرف إسلامي من الفئة الأولى، وعلاقة رئيسية ثانوية لبطاقة يومية، ورهن إسلامي في خانة المُقرض العقاري لمصرف إسلامي منفصل. التأمين تكافلي بالكامل عبر المركبات والمنزل والحياة — وتغطية الحياة تأمين تناقصي لحماية الرهن مُقاس على رصيد الرهن الإسلامي. يُبقي الرابط بين تغطية المنزل وخانة المُقرض العقاري اسمَ المصرف (BankName) متوائمًا بوضوح مع مصرف الرهن الإسلامي. الضغط الجوهري هو التجميع متعدد المصارف بأولوية الشريعة: يجب أن تحترم رؤية الاكتتاب لدى TPP وعاءَ الادخار المتميّز لدور islamic_deposit، وأن تطابق المبلغ المؤمَّن المتناقص لتغطية حماية الرهن مع الرصيد الفعلي القائم للرهن.

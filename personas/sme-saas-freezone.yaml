@@ -1,6 +1,8 @@
 persona_id: sme_saas_freezone
 domain: banking
 name: "Talisman Software FZ-LLC — Free-Zone SaaS Startup"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "طلسمان سوفتوير (منطقة حرة) ذ.م.م — شركة برمجيات ناشئة (SaaS) في منطقة حرة"
 archetype: sme_saas
 default_seed: 3957
 segment: SME
@@ -122,3 +124,7 @@ narrative: |
   account transfers. Trade-finance secondary at a foreign-branch bank
   for the international wire corridor; digital-challenger tertiary for
   founder card / expense reimbursement.
+
+# D-10 — Arabic narrative (parallel-text UI; English `narrative` is the fallback).
+narrative_ar: |
+  طلسمان سوفتوير شركة برمجيات خدمية (SaaS) في الجولة الأولى مرخّصة في منطقة حرة بدبي (بنكهة شبيهة بمركز دبي المالي العالمي DIFC) بفريق صغير موزّع. التدفقات الواردة من العملاء إيرادات اشتراك شهرية بالدولار من عملاء دوليين، تُسوَّى في الحساب التشغيلي بالدولار. الصادرة للموردين رسوم بنية تحتية سحابية بالدولار (حوسبة، رصد، خدمات هوية). الحساب التشغيلي بالدرهم يحوي دفعة رواتب نظام حماية الأجور وإيجار المكتب المُقوَّم بالدرهم + هيئة كهرباء ومياه دبي. حساب ادخار بالدولار يحوي مدرّج الجولة الأولى. مؤسِّسان شريكان مفوّضان مشتركان بالتوقيع على الحساب التشغيلي بالدرهم؛ ويُضاف مدير عمليات بصلاحية للتسوية. تُختبر حافة الصرف النشطة في مواصفة v2.1 بواقع التشغيل المزدوج العملة دولار-درهم وتحويلات حاملة لسعر الصرف بين الحسابات. تمويل تجارة ثانوي في مصرف فرع أجنبي لممر التحويلات الدولية؛ ومصرف رقمي مُنافس ثالثي لبطاقة المؤسسين / استرداد المصروفات.

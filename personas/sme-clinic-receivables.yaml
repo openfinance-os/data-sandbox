@@ -1,6 +1,8 @@
 persona_id: sme_clinic_receivables
 domain: banking
 name: "Crestline Wellness Clinic LLC — Healthcare Clinic"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "عيادة كريستلاين للعافية ذ.م.م — عيادة رعاية صحية"
 archetype: sme_clinic
 default_seed: 2864
 segment: SME
@@ -120,3 +122,7 @@ narrative: |
   flow on one operating account — bridges banking-domain personas with
   the insurance-domain motor personas without crossing into Open
   Insurance scope.
+
+# D-10 — Arabic narrative (parallel-text UI; English `narrative` is the fallback).
+narrative_ar: |
+  عيادة كريستلاين للعافية عيادة بر رئيسي بموقع واحد مرخّصة من هيئة دبي للصحة يملكها الطبيب الممارس (مفوّض توقيع منفرد) مع إضافة مدير عيادة بصلاحية Administrator / Delegate للذمم الدائنة وتسوية بوابة شركات التأمين. ضغط التدفق النقدي هو تقادم مستحقات التأمين: تأخّر ٣٠–٦٠ يومًا من تقديم المطالبة مرورًا بخصم رسوم منصة المطالبات الإلكترونية وصولًا إلى السداد الصافي بعد المشاركة من مجموعة صغيرة من شركات التأمين الدافعة المهيمنة. إيرادات بطاقات المراجعين والإيداعات النقدية الصغيرة تصل يوميًا؛ ومدفوعات شركات التأمين تصل بشكل غير منتظم في دفعات أكبر. الحساب التشغيلي في مصرف تقليدي من الفئة الأولى؛ ووديعة إسلامية ثانوية لمدخرات سحب الشريك؛ ومصرف رقمي مُنافس ثالث لاختبار تسهيل رأس المال العامل الذي تسعّره بعض شركات التقنية المالية بقوة مقابل مستحقات التأمين. الضغط: تدفق وارد موسوم بالدافع، وتأخّر تدفق ٣٠–٦٠ يومًا متميّز عن سائر الشخصيات، ومزيج تدفق بطاقات أفراد وائتمان B2B على حساب تشغيلي واحد — يجسر بين شخصيات النطاق المصرفي وشخصيات المركبات في النطاق التأميني دون تجاوز نطاق التأمين المفتوح.

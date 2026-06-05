@@ -1,6 +1,8 @@
 persona_id: sme_rak_trading_emirati
 domain: banking
 name: "Falcon Pearl General Trading LLC — RAK Free-Zone Trading SME"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "فالكون بيرل للتجارة العامة ذ.م.م — منشأة تجارية صغيرة في منطقة رأس الخيمة الحرة"
 archetype: sme_trading_emirati
 default_seed: 4106
 segment: SME
@@ -124,3 +126,7 @@ narrative: |
   Tier-2 conventional primary slot, first Emirati-owned SME, first
   Northern-Emirates persona — exercises the demographic + bank-tier
   dimensions the Dubai/Sharjah-skewed SME set doesn't reach.
+
+# D-10 — Arabic narrative (parallel-text UI; English `narrative` is the fallback).
+narrative_ar: |
+  فالكون بيرل للتجارة العامة شركة تجارية مرخّصة في منطقة رأس الخيمة الاقتصادية الحرة (RAKEZ) يملكها أصيل إماراتي مع أخيه مالكًا ثانويًا مشتركًا؛ ويحمل مدير العمليات (مهني مالية عربي وافد) وكالة قانونية على الحساب التشغيلي. يعيش الأصيل بين رأس الخيمة والشارقة؛ ويقع المستودع والمكتب الخلفي داخل منطقة رأس الخيمة الحرة. التدفقات الواردة فواتير B2B شهرية لعملاء البر الرئيسي الإماراتي؛ والصادرة للموردين عابرة للحدود بالدولار/اليورو للسلع التامة. بنك أساسي تقليدي من الفئة الثانية واقعيٌّ لمنشآت الإمارات الشمالية الصغيرة التي تفضّل العلاقات الإقليمية على علامات الفئة الأولى في أبوظبي/دبي؛ وديعة إسلامية ثانوية تحوي وديعة الأصيل لأجل وأمر توزيع الزكاة الدائم؛ وفرع أجنبي لتمويل التجارة ثالثيًا يدير ممر التحويلات الدولية. الضغط: أول شخصية ترتكز على خانة بنك أساسي تقليدي من الفئة الثانية، وأول منشأة صغيرة مملوكة لإماراتي، وأول شخصية من الإمارات الشمالية — تختبر بُعدي الديموغرافيا وفئة البنك اللذين لا تبلغهما مجموعة المنشآت الصغيرة المنحازة لدبي/الشارقة.

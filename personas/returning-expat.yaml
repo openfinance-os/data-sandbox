@@ -1,6 +1,8 @@
 persona_id: returning_expat
 domain: banking
 name: "Anjali — Returning Expat (Dormancy Gap, Restarted Salary)"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "أنجالي — وافدة عائدة (فجوة خمول، راتب مُستأنف)"
 archetype: returning_expat_dormant_then_active
 default_seed: 35691
 segment: Retail
@@ -86,3 +88,7 @@ narrative: |
   months" and infers eight years of continuous salary will overstate
   affordability. Only a transaction-level read across the dormancy
   window catches the gap.
+
+# D-10 — Arabic narrative (parallel-text UI; English `narrative` is the fallback).
+narrative_ar: |
+  أنجالي مهنية هندية وافدة (٣٦–٤٥ عامًا) في دبي غادرت الإمارات في ٢٠٢٠ (نحو ٣٦ شهرًا في الخارج)، وأبقت حسابها الجاري + الادخار + بطاقة الائتمان عمرها ٨ سنوات مفتوحة طوال الفجوة، وهي الآن في نحو الشهر العاشر من انتداب عودة لدى صاحب عمل تقني في منطقة حرة (راتب ٣٨ ألف درهم شهريًا عبر نظام حماية الأجور). مدة الحسابات طويلة (٩٦ / ٨٤ / ٧٢ شهرًا) لكن شكل المعاملات «خامل ثم نشط»: نحو ٣٦ شهرًا في وسط السجل بلا تدفق راتب، وخصومات مرافق متفرقة، وبلا إنفاق بطاقة ائتمان؛ والأشهر العشرة الأخيرة عودة كاملة إلى راتب نظام حماية الأجور + أمر دائم للإيجار + رسوم مدرسية للأطفال + حوالات. الضغط الجوهري هو انحياز «المدة دليل استقرار» — مسار اكتتاب لدى TPP يقرأ «حساب فُتح ٢٠١٧، العمر ٩٦ شهرًا» ويستنتج ثماني سنوات راتب متصل سيبالغ في تقدير القدرة على التحمل. ولا تلتقط الفجوةَ إلا قراءة على مستوى المعاملات عبر نافذة الخمول.

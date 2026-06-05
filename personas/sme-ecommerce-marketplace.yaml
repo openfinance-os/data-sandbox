@@ -1,6 +1,8 @@
 persona_id: sme_ecommerce_marketplace
 domain: banking
 name: "Indigo Storefront FZ-LLC — E-commerce Marketplace Seller"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "إنديغو ستورفرنت (منطقة حرة) ذ.م.م — بائع عبر منصات التجارة الإلكترونية"
 archetype: sme_ecommerce
 default_seed: 8294
 segment: SME
@@ -124,3 +126,7 @@ narrative: |
   for OF-fed bank feeds in lieu of monthly PSP-portal CSVs. SME-digital-
   challenger primary banker, conventional Tier-1 secondary, foreign-
   branch trade-finance tertiary for the supplier-wire corridor.
+
+# D-10 — Arabic narrative (parallel-text UI; English `narrative` is the fallback).
+narrative_ar: |
+  تبيع إنديغو ستورفرنت الإلكترونيات الاستهلاكية والسلع المنزلية عبر قنوات إنترنت متعددة: حضور على منصة تجميع، ومتجر مملوك للعلامة بأسلوب Shopify، وطلبات مباشرة للمستهلك عبر إنستغرام. التدفقات الواردة مدفوعات منصات نصف شهرية صافية من العمولة، ومدفوعات بوابة دفع البطاقات اليومية (مُصفّاة بشكل منفصل من رسوم المعالجة)، وحوالات الدفع عند الاستلام غير المنتظمة من شركات الشحن. حساب تشغيلي بالدرهم للتدفقات المحلية؛ وحساب تشغيلي بالدولار لتحويلات الموردين الدوليين (نشط في الصرف). يجعل مزوّدا خدمة دفع متمايزان بنيويًا ومنصةٌ دافعة واحدة عبر ثلاث وتائر تسوية مطابقةَ الإجمالي إلى الصافي ألمَ المحاسبة الجوهري — والحجة الأقوى لتغذيات المصرف عبر التمويل المفتوح بدلًا من ملفات CSV الشهرية من بوابات مزوّدي الدفع. مصرف رقمي مُنافس للمنشآت الصغيرة بنكًا أساسيًا، وتقليدي من الفئة الأولى ثانويًا، وفرع أجنبي لتمويل التجارة ثالثيًا لممر تحويلات الموردين.

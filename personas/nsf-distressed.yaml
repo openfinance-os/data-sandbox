@@ -1,6 +1,8 @@
 persona_id: nsf_distressed
 domain: banking
 name: "Hadi — NSF / Distressed Borrower"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "هادي — رصيد غير كافٍ / مقترض متعثّر"
 archetype: distressed
 default_seed: 4407
 segment: Retail
@@ -66,3 +68,7 @@ narrative: |
   in the trailing window. EXP-18's NSF / distress event count exercises
   this persona heavily; behavioural-distress monitoring rules can use this
   shape as a positive case.
+
+# D-10 — Arabic narrative (parallel-text UI; English `narrative` is the fallback).
+narrative_ar: |
+  هادي موظف براتب ١١٫٥ ألف درهم مع إيجار + مرافق + اتصالات + سداد قرض شخصي تترك مجتمعةً هامشًا ضئيلًا. رفض الخصم المباشر أواخر الشهر أمر معتاد — Status="Rejected" في نحو نصف أشهر النافذة الزمنية الأخيرة. يستخدم عدّ أحداث الرصيد غير الكافي / التعثّر في EXP-18 هذه الشخصية بكثافة؛ ويمكن لقواعد رصد التعثّر السلوكي استخدام هذا الشكل كحالة إيجابية.

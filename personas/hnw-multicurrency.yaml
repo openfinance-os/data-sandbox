@@ -1,6 +1,8 @@
 persona_id: hnw_multicurrency
 domain: banking
 name: "Layla — HNW Multi-Currency Holder"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "ليلى — ثرية بحسابات متعددة العملات"
 archetype: hnw
 default_seed: 2046
 segment: Retail
@@ -64,3 +66,7 @@ narrative: |
   Premium-product LFI configurations populate optional fields aggressively
   on her bundle; sparse-LFI mode shows how thin the international-transfer
   shape can become when those optionals drop out.
+
+# D-10 — Arabic narrative (parallel-text UI; English `narrative` is the fallback).
+narrative_ar: |
+  تملك ليلى حسابًا جاريًا بالدرهم + حسابات ادخار بالدولار/اليورو/الجنيه. تحويلات صرف منتظمة (٢–٦ شهريًا، بالدولار/اليورو/الجنيه) تُفعّل كتلة CurrencyExchange في النسخة v2.1: SourceCurrency وTargetCurrency وExchangeRate وInstructedAmount. تُعبّئ تهيئات المؤسسات المالية للمنتجات المتميزة الحقولَ الاختيارية بسخاء في حزمتها؛ ويُظهر وضع المؤسسة الضئيلة كم يصبح شكل التحويل الدولي نحيلًا حين تتساقط تلك الاختيارية.

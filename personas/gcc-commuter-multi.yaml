@@ -1,6 +1,8 @@
 persona_id: gcc_commuter_multi
 domains: [banking, insurance]
 name: "GCC Commuter Multi-Banker — FX-Active 4-Bank Cross-Border"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "متنقّل خليجي متعدد المصارف — أربعة مصارف نشطة في الصرف عبر الحدود"
 archetype: retail_gcc_cross_border_consultant
 default_seed: 71956
 segment: Retail
@@ -269,3 +271,7 @@ narrative: |
   bearing stress is FX-active cross-border consulting visibility:
   USD inflows + AED outflows + corporate spend are all distributed
   across LFIs; only Open Finance aggregation surfaces the net.
+
+# D-10 — Arabic narrative (parallel-text UI; English `narrative` is the fallback).
+narrative_ar: |
+  استشاري مستقل عربي وافد (٣٥–٤٥ عامًا) في دبي (أتعاب ٧٠ ألف درهم شهريًا + فوترة متغيّرة) يوزّع وقته بين مواقع عملاء في الإمارات والسعودية وعُمان. بصمة من أربع مؤسسات مالية مُحسَّنة لسير العمل العابر للحدود: راتب أساسي رئيسي (درهم يومي + بطاقة أعمال متميزة)؛ خانة خارجية في فرع أجنبي تحوي حسابًا جاريًا بالدولار + ادخارًا بالدولار (تسوية فواتير عابرة للحدود + أرباح محتجزة)؛ مصرف رقمي مساعد لبطاقة الإنفاق المؤسسي داخل الإمارات؛ علاقة رئيسية ثانية تستضيف بطاقة مُصدِرها خليجي بقبول قوي عبر الحدود. التأمين: مركبات شامل على سيارة مموَّلة (cross_domain_link → الراتب)، وسفر سنوي متعدد الرحلات للتنقل الإقليمي المتكرر، وتأمين حياة عائلي محدد المدة. الضغط الجوهري هو رؤية الاستشارات العابرة للحدود النشطة في الصرف: تتوزّع التدفقات الواردة بالدولار والصادرة بالدرهم والإنفاق المؤسسي عبر المؤسسات المالية كافة؛ ولا يُظهر الصافيَ إلا تجميع التمويل المفتوح.

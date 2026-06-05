@@ -1,6 +1,8 @@
 persona_id: sme_fnb_multi_outlet
 domain: banking
 name: "Saffron Plate Group LLC — F&B Multi-Outlet Operator"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "مجموعة سافرون بليت ذ.م.م — مشغّل مطاعم متعدد الفروع"
 archetype: sme_fnb
 default_seed: 5172
 segment: SME
@@ -122,3 +124,7 @@ narrative: |
   the gap between gross orders, aggregator commission, refunds, and
   daily settlement timing — a TPP-side accounting integration over OF
   collapses three EOD CSVs into one journal.
+
+# D-10 — Arabic narrative (parallel-text UI; English `narrative` is the fallback).
+narrative_ar: |
+  تدير مجموعة سافرون بليت سلسلة مقاهٍ ومطاعم غير رسمية من ٣ فروع عبر مرسى دبي وشاطئ جميرا (JBR). المالك الأساسي هو المفوّض الوحيد بالتوقيع على الحساب التشغيلي؛ ويُضاف مدير فرع بصلاحية Administrator / Delegate للتسوية اليومية. التدفقات الواردة مدفوعات أسبوعية من منصات التجميع صافية من عمولة المنصة (مُقيَّدة مقابل خصم عمولة المنصة)، إضافة إلى تسويات نقاط بيع يومية تنساب إلى الحساب التشغيلي من علاقة الاستحواذ — وهي مؤسسة مالية منفصلة بنيويًا عن المصرف التشغيلي. إيجارا فرعين والمرافق وإيجار جهاز نقاط البيع هي الالتزامات الثابتة؛ والرواتب دفعة واحدة نحو ٨٦ ألف درهم شهريًا عبر نظام حماية الأجور. ضغط التسوية هو الفجوة بين إجمالي الطلبات وعمولة المنصة والمرتجعات وتوقيت التسوية اليومية — تكامل محاسبي من جانب TPP عبر التمويل المفتوح يطوي ثلاثة ملفات CSV لنهاية اليوم في قيد واحد.

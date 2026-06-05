@@ -1,6 +1,8 @@
 persona_id: senior_retiree
 domain: banking
 name: "Hassan — Senior / Retiree"
+# D-10 — Arabic display name (parallel-text UI; English `name` is the fallback).
+name_ar: "حسن — مسنّ / متقاعد"
 archetype: senior_retiree
 default_seed: 7134
 segment: Retail
@@ -62,3 +64,7 @@ narrative: |
   Underwriting panel suppresses DBR with a tooltip explaining why. The
   Senior persona is the case study for "off-the-shelf affordability
   formulas don't generalise to low-volume segments."
+
+# D-10 — Arabic narrative (parallel-text UI; English `narrative` is the fallback).
+narrative_ar: |
+  حسن في الثامنة والستين، متقاعد، يتلقى معاشًا خليجيًا في الأول من كل شهر. حجم معاملات منخفض بحكم التصميم — عادةً أقل من ١٠ معاملات شهريًا. يُفعّل حارس انخفاض الحجم في EXP-18 تحت ملفات المؤسسات المالية الثلاثة جميعها: عدّ الاثني عشر شهرًا الأخيرة دون أرضية ٥٠ معاملة، فتُخمد لوحة الاكتتاب نسبة عبء الدين مع تلميح يوضّح السبب. شخصية المسنّ هي دراسة الحالة لـ«صيغ القدرة على التحمل الجاهزة لا تُعمَّم على الشرائح منخفضة الحجم».
