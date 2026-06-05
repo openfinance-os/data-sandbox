@@ -1,4 +1,4 @@
-// Naqood-style multi-bank reconciliation demo (D-14 / Phase D Slice 5).
+// Multi-bank reconciliation demo (D-14 / Phase D Slice 5).
 //
 // What a TPP-side accounting system would do over the Open Finance Data
 // Sandbox to demonstrate the multi-bank reality of UAE SMEs:

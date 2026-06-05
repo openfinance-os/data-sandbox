@@ -1,7 +1,7 @@
-# Naqood-style multi-bank reconciliation demo
+# Multi-bank reconciliation demo
 
 A worked TPP-side example showing how an accounting-system integration
-(e.g. Naqood ↔ Woven ↔ ADCB) consumes UAE Open Finance bank feeds across
+(e.g. a UAE accounting system ↔ Woven ↔ ADCB) consumes UAE Open Finance bank feeds across
 **multiple banks for the same SME** and reconciles them into a single
 ledger by IBAN identity.
 
@@ -56,14 +56,14 @@ Local dev:
 npm run build:site                       # emits _site/fixtures/v1/...
 cd _site && python3 -m http.server 8080  # serve the staged site
 # in another terminal:
-cd examples/naqood-multi-bank-demo && python3 -m http.server 8081
+cd examples/accounting-multi-bank-demo && python3 -m http.server 8081
 # open http://localhost:8081/?origin=http://localhost:8080
 ```
 
 Pointing at production:
 
 ```sh
-cd examples/naqood-multi-bank-demo && python3 -m http.server 8081
+cd examples/accounting-multi-bank-demo && python3 -m http.server 8081
 # open http://localhost:8081/?origin=https://openfinance-os.org/commons/data-sandbox
 ```
 
@@ -75,11 +75,10 @@ cd examples/naqood-multi-bank-demo && python3 -m http.server 8081
   by IBAN, renders the three tables.
 - `README.md` — this file.
 
-## Why "Naqood-style"?
+## Why multi-bank?
 
-[Naqood](https://www.naqood.com/) is a UAE accounting platform that
-integrates with banking partners over Open Finance. The hard problem
-their platform — and any equivalent platform — solves is matching the
+UAE accounting platforms integrate with banking partners over Open
+Finance. The hard problem such a platform solves is matching the
 same economic event across multiple LFI feeds: a supplier paid from
 the operating bank → the same supplier reflected at a digital
 challenger's PSP relationship → reconciled into one journal entry. The
