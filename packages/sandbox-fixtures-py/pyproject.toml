@@ -1,6 +1,6 @@
 [project]
 name = "openfinance-os-sandbox-fixtures"
-version = "1.0.0"
+version = "0.0.1"
 description = "Deterministic, v2.1-shaped UAE Open Finance synthetic fixtures from the Open Finance Data Sandbox. Python wrapper around @openfinance-os/sandbox-fixtures (npm)."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -8,7 +8,7 @@ license = { text = "MIT" }
 authors = [{ name = "OpenFinance-OS Commons" }]
 keywords = ["open-finance", "uae", "synthetic-data", "fixtures", "v2-1", "tpp", "commons"]
 classifiers = [
-  "Development Status :: 5 - Production/Stable",
+  "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
   "Intended Audience :: Financial and Insurance Industry",
   "License :: OSI Approved :: MIT License",

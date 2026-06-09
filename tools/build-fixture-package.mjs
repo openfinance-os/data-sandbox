@@ -403,7 +403,7 @@ const pkgJson = {
   name: '@openfinance-os/sandbox-fixtures',
   version: PKG_VERSION,
   description:
-    'Deterministic, v2.1-shaped UAE Open Finance synthetic fixtures from the Open Finance Data Sandbox. 38 personas (21 banking + 9 insurance + 8 multi-domain) × 3 LFI profiles × every in-scope endpoint. CC0 data, MIT loader code.',
+    'Deterministic, v2.1-shaped UAE Open Finance synthetic fixtures from the Open Finance Data Sandbox. 39 personas (21 banking + 9 insurance + 8 multi-domain + 1 ATM directory) × 3 LFI profiles × every in-scope endpoint. CC0 data, MIT loader code.',
   keywords: [
     'open-finance',
     'uae',
