@@ -117,7 +117,7 @@ npm run serve            # http://localhost:8000/index.html
 ## CI
 
 ```bash
-npm test            # full Vitest suite (~1668 tests after build:site) —
+npm test            # full Vitest suite (~3.4k tests after build:fixtures) —
                     # replay determinism, spec validation across the full
                     # persona × LFI × endpoint matrix (banking + insurance),
                     # LFI mechanics, underwriting calculator, exports,
@@ -136,10 +136,12 @@ npm run ci          # full suite (verify → build → lint → test → MCP tes
 
 If you are wiring sandbox personas into a TPP demo journey to overcome the
 intentionally-thin mock data in the Nebras-operated regulatory sandbox,
-the [integration guide](./src/integrate.html) walks through four plug
+the [integration guide](./src/integrate.html) walks through five plug
 points (iframe, npm `loadJourney()`, PyPI `load_journey()`, raw HTTPS
-fixtures at `/fixtures/v1/`). A worked example lives in
-[`examples/tpp-budgeting-demo/`](./examples/tpp-budgeting-demo/).
+fixtures at `/fixtures/v1/`, and the `@openfinance-os/sandbox-mcp` MCP
+server). Worked examples live in
+[`examples/tpp-budgeting-demo/`](./examples/tpp-budgeting-demo/) and
+[`examples/accounting-multi-bank-demo/`](./examples/accounting-multi-bank-demo/).
 
 ## MCP server
 
