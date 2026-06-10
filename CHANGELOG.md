@@ -5,6 +5,84 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follo
 
 ## [Unreleased]
 
+### Added — structural gates for load-bearing invariants (EXP-04 / EXP-07 / EXP-17)
+
+A hardening slice that converts invariants which previously held by
+convention into ones that fail CI:
+
+- **`lint-pii-leak` now probes all three LFI profiles** (was Median-only) —
+  a pool-membership leak surviving only the Rich or Sparse redaction path
+  can no longer pass (EXP-07 / EXP-22a). 47,535 identity strings checked
+  across 29 banking-domain personas × 3 profiles.
+- **New `tests/lfi-bands-mandatory-overlap.test.mjs`** intersects every
+  `spec/lfi-bands.*.yaml` override path with the field statuses parsed from
+  the vendored OpenAPI spec (`dist/SPEC*.json`): every band path must
+  resolve to a real spec field, and a path matching a spec-MANDATORY field
+  is only legal at the always-keep `Universal` band. Invariant 5 (EXP-04 /
+  §8.3 "mandatory fields are never redacted") was previously enforced only
+  by omission from the band tables; it is now structural — and stays
+  spec-driven per EXP-01 (no hand-authored field lists). The gate also
+  documents the one legitimate mandatory entry: `Atm.SupportedCurrencies`
+  at `Universal`, which never deletes.
+- **Single version source across the three distribution packages** — the
+  root `package.json` now drives all of them: `build-fixture-package-py.mjs`
+  stamps `pyproject.toml` at build time and the new
+  `tests/package-version-sync.test.mjs` gates root vs the generated npm
+  package vs `sandbox-mcp` vs PyPI. The PyPI manifest's aspirational
+  `1.0.0` / "Production/Stable" claims (nothing is published yet on either
+  registry — verified 404s) drop back to `0.0.1` / Beta. Package
+  descriptions corrected to 39 personas (the `atm-directory` infrastructure
+  persona was uncounted).
+- **Recipe schema versioning (EXP-17)** — `encodeRecipe()` embeds a `_v`
+  tag in the base64url blob so a future dimension-semantics change can
+  migrate old shared custom-persona URLs explicitly instead of silently
+  reinterpreting them. The tag is stripped at decode and excluded from the
+  canonical form, so `recipeHash` — and every existing custom-fixture URL
+  path — stays byte-stable; pre-versioning blobs decode unchanged. A
+  regression test pins all three properties.
+
+### Changed — duplication consolidation across generator + frontend (byte-identical)
+
+Refactor-only slice; sha256 over all 6,442 generated bundle + enrichment
+files is unchanged before/after (EXP-05), full suite green.
+
+- **Insurance per-line dedup** — `insurance/_shared.js` gains `aed()`
+  (moved from `motor-policy.js`, which six sibling modules imported it
+  from), `refNumber()` (the 9-digit policy/quote reference body that
+  existed in 14 prefix-only copies), and `channelMap()` (the five-entry
+  base shared by every line's `PolicyPurchaseChannelType` map, with
+  per-line extras — kept per-line rather than as a superset so unknown
+  channels still fall back to `Other` on lines whose enum lacks them).
+  `NATIONALITY_BY_POOL` / `genEmiratesId` / `genVisaNumber` / `dobFromAge`
+  dedupe onto their canonical home in `insurance/identity.js` (health /
+  life / travel carried byte-identical local copies).
+- **Shared LFI-redaction kernel** at `src/generator/lfi-profile-shared.js`
+  — `MEDIAN_PROBABILITY`, `shouldKeep()`, the independent redaction-PRNG
+  derivation, and the cached per-(path, band) decider were copy-pasted
+  across the three domain `lfi-profile.js` modules. Band tables and the
+  per-domain redaction walks stay domain-local; ATM keeps its deliberate
+  per-record (uncached) draw pattern. Dead `medianProbability` export
+  removed (no consumers).
+- **mod-97 consolidation** — `transactions.js`'s inline `b2bIbanCheck`
+  replaced by the canonical `identity.js#mod97IbanCheck` (identical
+  arithmetic for the digits-only AE case).
+- **`src/shared/spec-meta.js`** — the live spec-pin metadata fill existed
+  byte-for-byte in both `connect.js` and `integrate.js`; now one shared
+  module, null-safe on missing element IDs.
+- **Python loader** caches `manifest.json` at module scope (mirrors the
+  npm loader's module-scope caching; several public functions consult the
+  manifest more than once per call).
+
+### Fixed — CLAUDE.md / README realigned with the shipped codebase
+
+The steering docs had drifted: no mention of the `/connect` page (the
+repo's largest frontend file), the ATM Locator domain (Phase 2.3 GA), the
+MCP plug-point (five, not four), or `examples/accounting-multi-bank-demo/`;
+six lints claimed (seven exist); ~1,668 tests claimed (~3.4k now); Arabic /
+RTL i18n and the v1.5 trio listed as future work though both shipped.
+Phasing gains a Phase 2.3 entry; Phase 2.x keeps only what is genuinely
+open (Open Wealth, deeper i18n strings, PostHog go-live).
+
 ### Added — D-10: Arabic persona names + narratives (parallel-text content)
 
 Completes the persona-content half of the Arabic / RTL track. The i18n
