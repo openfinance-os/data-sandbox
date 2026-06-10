@@ -3,13 +3,11 @@
 // ILOE quote-side Premium uses the same AEInsurancePremiumProperties
 // shape as motor / home / life / travel quote-Premium (VAT split required).
 
-import { aed } from './motor-policy.js';
+import { aed, refNumber } from './_shared.js';
 import { genUuid } from './identity.js';
 import { MS_PER_DAY } from '../constants.js';
 
-function quoteReference(rng) {
-  return `EMPQ-${String(Math.floor(rng() * 1_000_000_000)).padStart(9, '0')}`;
-}
+const quoteReference = (rng) => refNumber('EMPQ', rng);
 
 function serviceRating() {
   return {

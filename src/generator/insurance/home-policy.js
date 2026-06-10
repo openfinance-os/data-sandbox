@@ -5,7 +5,7 @@
 // every mandatory leaf the v2.1-errata1 home schemas require, plus a few
 // optional enrichments LFI bands can redact.
 
-import { aed } from './motor-policy.js';
+import { aed, refNumber, channelMap } from './_shared.js';
 import { isoDate } from './identity.js';
 
 // Persona property type → spec TypeOfProperty enum.
@@ -17,17 +17,9 @@ const PROPERTY_TYPE_MAP = {
 };
 
 // Persona policy.channel → spec PolicyPurchaseChannelType enum.
-const CHANNEL_MAP = {
-  Direct: 'Direct',
-  Agent: 'Agent',
-  Broker: 'Broker',
-  Bank: 'Bank',
-  Aggregator: 'Aggregation',
-};
+const CHANNEL_MAP = channelMap();
 
-function policyNumber(rng) {
-  return `HOM-${String(Math.floor(rng() * 1_000_000_000)).padStart(9, '0')}`;
-}
+const policyNumber = (rng) => refNumber('HOM', rng);
 
 export function generateHomeProduct({ persona, rng, now }) {
   const h = persona.home;

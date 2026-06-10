@@ -5,20 +5,12 @@
 // Location with PostalAddress + GeoLocation) are NEVER redacted.
 //
 // Path literals here are ATM-shaped (Atm.<field>) and tested-equal to
-// spec/lfi-bands.atm.yaml via tests/lfi-bands.test.mjs. MEDIAN_PROBABILITY
-// is duplicated from the banking / insurance modules by intent — the
-// global per-§8.3 calibration is shared, but the per-domain redaction
-// body stays local until a generic walker lands.
+// spec/lfi-bands.atm.yaml via tests/lfi-bands.test.mjs. The probability
+// table + keep/drop rule come from src/generator/lfi-profile-shared.js;
+// unlike banking/insurance this module does NOT use the cached decider —
+// see applyAtmLfiProfile below.
 
-import { mulberry32, seedFromTuple } from '../../prng.js';
-
-const MEDIAN_PROBABILITY = {
-  Universal: 1.0,
-  Common: 0.7,
-  Variable: 0.4,
-  Rare: 0.1,
-  Unknown: 0.0,
-};
+import { redactionRng, shouldKeep } from '../lfi-profile-shared.js';
 
 const OPTIONAL_FIELD_BANDS = [
   { path: 'Atm.SupportedLanguages', band: 'Universal' },
@@ -36,13 +28,6 @@ const OPTIONAL_FIELD_BANDS = [
   { path: 'Atm.Links', band: 'Rare' },
 ];
 
-function shouldKeep(profile, band, rng) {
-  if (profile === 'rich') return band !== 'Unknown';
-  if (profile === 'sparse') return band === 'Universal';
-  const p = MEDIAN_PROBABILITY[band] ?? 0;
-  return rng() < p;
-}
-
 /**
  * Apply the LFI profile to an ATM directory bundle. Each ATM record
  * gets independent per-field decisions so a Median directory shows
@@ -56,7 +41,7 @@ function shouldKeep(profile, band, rng) {
  * it because `band === 'Universal'` always returns true.
  */
 export function applyAtmLfiProfile({ bundle, personaId, lfi, seed }) {
-  const rng = mulberry32(seedFromTuple(personaId, `lfi:${lfi}`, seed));
+  const rng = redactionRng(personaId, lfi, seed);
 
   function decide(band) {
     return shouldKeep(lfi, band, rng);

@@ -1,10 +1,15 @@
 #!/usr/bin/env node
 // Mirror the JS fixture package's data tree into the Python package's
-// importable data dir. Run after `npm run build:fixtures`.
+// importable data dir, and stamp the PyPI version from the root
+// package.json so npm / PyPI / repo can never diverge (the JS package's
+// package.json is generated from the same source in
+// build-fixture-package.mjs; tests/package-version-sync.test.mjs gates it).
+// Run after `npm run build:fixtures`.
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readPackageVersion } from './build-shared.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,6 +41,17 @@ for (const child of [
   const d = path.join(DST, child);
   if (!fs.existsSync(s)) continue;
   fs.cpSync(s, d, { recursive: true });
+}
+
+// Stamp the PyPI package version from the root package.json — single
+// source of truth across the three distribution packages.
+const version = readPackageVersion() ?? '0.0.0';
+const pyprojectPath = path.join(repoRoot, 'packages/sandbox-fixtures-py/pyproject.toml');
+const pyproject = fs.readFileSync(pyprojectPath, 'utf8');
+const stamped = pyproject.replace(/^version = ".*"$/m, `version = "${version}"`);
+if (stamped !== pyproject) {
+  fs.writeFileSync(pyprojectPath, stamped);
+  console.log(`stamped pyproject.toml version = "${version}" (from root package.json)`);
 }
 
 const stat = walkSize(DST);

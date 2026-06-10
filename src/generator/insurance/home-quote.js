@@ -6,13 +6,11 @@
 // Mirrors the motor-quote structure so quote totals line up with the
 // issued-policy total.
 
-import { aed } from './motor-policy.js';
+import { aed, refNumber } from './_shared.js';
 import { genUuid } from './identity.js';
 import { MS_PER_DAY } from '../constants.js';
 
-function quoteReference(rng) {
-  return `HOMQ-${String(Math.floor(rng() * 1_000_000_000)).padStart(9, '0')}`;
-}
+const quoteReference = (rng) => refNumber('HOMQ', rng);
 
 function serviceRating() {
   return {

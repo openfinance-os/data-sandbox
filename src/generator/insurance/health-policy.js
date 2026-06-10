@@ -10,22 +10,19 @@
 //      AEInsuranceDataSharingPremiumProperties used by home/motor.
 
 import { drawName } from '../identity.js';
-import { aed } from './motor-policy.js';
-import { isoDate } from './identity.js';
+import { aed, refNumber, channelMap } from './_shared.js';
+import {
+  isoDate,
+  NATIONALITY_BY_POOL,
+  dobFromAge,
+  genEmiratesId,
+  genVisaNumber,
+} from './identity.js';
 
 // Persona policy.channel → spec PolicyPurchaseChannelType enum.
-const CHANNEL_MAP = {
-  Direct: 'Direct',
-  Agent: 'Agent',
-  Broker: 'Broker',
-  Bank: 'Bank',
-  TPA: 'TPA',
-  Aggregator: 'Aggregation',
-};
+const CHANNEL_MAP = channelMap({ TPA: 'TPA' });
 
-function policyNumber(rng) {
-  return `HLT-${String(Math.floor(rng() * 1_000_000_000)).padStart(9, '0')}`;
-}
+const policyNumber = (rng) => refNumber('HLT', rng);
 
 // ISO-8601 duration: Pn[Y]n[M] — spec pattern is ^P(\d+Y)?(\d+M)?$.
 function policyTermDuration(years, months = 0) {
@@ -38,29 +35,6 @@ function policyTermDuration(years, months = 0) {
 
 // nationality_pool → ISO 3166-1 alpha-3 (mirrors identity.js, kept local
 // to avoid importing a private const).
-const NATIONALITY_BY_POOL = {
-  emirati: 'ARE',
-  expat_arab: 'EGY',
-  expat_indian: 'IND',
-};
-
-function genEmiratesId(rng) {
-  const year = 1960 + Math.floor(rng() * 50);
-  const seq = Math.floor(rng() * 9_999_999);
-  const check = Math.floor(rng() * 10);
-  return `784-${year}-${String(seq).padStart(7, '0')}-${check}`;
-}
-
-function genVisaNumber(rng) {
-  return String(Math.floor(rng() * 1_000_000_000)).padStart(9, '0');
-}
-
-function dobFromAge(age, rng, now) {
-  const year = now.getUTCFullYear() - age;
-  const month = 1 + Math.floor(rng() * 12);
-  const day = 1 + Math.floor(rng() * 28);
-  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-}
 
 function generateInsuredParties({ persona, names, rng, now }) {
   const h = persona.health;

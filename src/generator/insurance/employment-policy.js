@@ -14,21 +14,12 @@
 // Sector: Private | FederalGovernment.
 // Premium uses shared AEInsuranceDataSharingPremiumProperties.
 
-import { aed } from './motor-policy.js';
+import { aed, refNumber, channelMap } from './_shared.js';
 import { isoDate } from './identity.js';
 
-const CHANNEL_MAP = {
-  Direct: 'Direct',
-  Agent: 'Agent',
-  Broker: 'Broker',
-  Bank: 'Bank',
-  Aggregator: 'Aggregation',
-  OnlineInsideUAE: 'OnlineInsideUAE',
-};
+const CHANNEL_MAP = channelMap({ OnlineInsideUAE: 'OnlineInsideUAE' });
 
-function policyNumber(rng) {
-  return `EMP-${String(Math.floor(rng() * 1_000_000_000)).padStart(9, '0')}`;
-}
+const policyNumber = (rng) => refNumber('EMP', rng);
 
 function policyTermDuration(years) {
   return `P${Math.max(1, years)}Y`;

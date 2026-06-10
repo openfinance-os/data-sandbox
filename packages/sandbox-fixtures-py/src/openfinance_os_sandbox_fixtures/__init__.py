@@ -1,9 +1,9 @@
 """@openfinance-os/sandbox-fixtures — Python loader.
 
 Deterministic, v2.1-shaped UAE Open Finance synthetic fixtures.
-38 personas (21 banking + 9 insurance + 8 multi-domain) × 3 LFI profiles ×
-every v2.1 endpoint per persona's accounts/policies (~2,000 envelopes), plus
-the parsed v2.1 OpenAPI specs (banking + insurance) and the persona
+39 personas (21 banking + 9 insurance + 8 multi-domain + 1 ATM directory) ×
+3 LFI profiles × every v2.1 endpoint per persona's accounts/policies, plus
+the parsed v2.1 OpenAPI specs (banking + insurance + ATM) and the persona
 manifests. CC0 data, MIT loader code.
 
 Mirror of the npm package `@openfinance-os/sandbox-fixtures`.
@@ -35,8 +35,17 @@ def _data_dir() -> Path:
     return Path(__file__).parent / "data"
 
 
+_MANIFEST_CACHE: Optional[Dict[str, Any]] = None
+
+
 def _manifest() -> Dict[str, Any]:
-    return json.loads((_data_dir() / "manifest.json").read_text(encoding="utf-8"))
+    # Cached after first read — the manifest is immutable for a given
+    # installed wheel, and several public functions consult it more than
+    # once per call (mirrors the npm loader's module-scope caching).
+    global _MANIFEST_CACHE
+    if _MANIFEST_CACHE is None:
+        _MANIFEST_CACHE = json.loads((_data_dir() / "manifest.json").read_text(encoding="utf-8"))
+    return _MANIFEST_CACHE
 
 
 def list_personas() -> List[str]:

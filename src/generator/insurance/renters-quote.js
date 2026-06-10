@@ -3,13 +3,11 @@
 // Premium uses AEInsurancePremiumProperties (VAT split mandatory),
 // matching the established quote-side Premium shape.
 
-import { aed } from './motor-policy.js';
+import { aed, refNumber } from './_shared.js';
 import { genUuid } from './identity.js';
 import { MS_PER_DAY } from '../constants.js';
 
-function quoteReference(rng) {
-  return `RNTQ-${String(Math.floor(rng() * 1_000_000_000)).padStart(9, '0')}`;
-}
+const quoteReference = (rng) => refNumber('RNTQ', rng);
 
 function serviceRating() {
   return {

@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 // EXP-07 + EXP-22(a) invariant: every name / IBAN / employer / merchant
 // emitted in a generated bundle traces back to /synthetic-identity-pool/.
-// Scans every persona × LFI=Median × seed=4729 bundle for identity leaks.
+// Scans every persona × LFI (Rich, Median, Sparse) × seed=4729 bundle for
+// identity leaks — all three profiles, so a string surviving only one
+// redaction path can't slip through.
 
 import { buildBundle } from '../src/generator/index.js';
 import { loadPersonasByDomain, loadAllPools } from './load-fixtures.mjs';
@@ -51,51 +53,58 @@ const NAME_PROBE_AT = new Set([
   'scheduledPayment.CreditorAccount[0].Name',
 ]);
 
+const LFI_PROFILES = ['rich', 'median', 'sparse'];
+
 let bad = 0;
 let probesChecked = 0;
 
 for (const [pid, persona] of Object.entries(personas)) {
-  const bundle = buildBundle({ persona, lfi: 'median', seed: 4729, pools });
-  const probes = [];
-  for (const acc of bundle.accounts) {
-    probes.push({ at: 'account.AccountHolderName', val: acc.AccountHolderName });
-    probes.push({
-      at: 'account.AccountIdentifiers[0].Name',
-      val: acc.AccountIdentifiers?.[0]?.Name,
-    });
-    probes.push({ at: 'account._meta.servicerName', val: acc._meta?.servicerName });
-  }
-  for (const tx of bundle.transactions) {
-    if (tx.MerchantDetails?.MerchantName) {
-      probes.push({ at: 'tx.MerchantDetails.MerchantName', val: tx.MerchantDetails.MerchantName });
+  for (const lfi of LFI_PROFILES) {
+    const bundle = buildBundle({ persona, lfi, seed: 4729, pools });
+    const probes = [];
+    for (const acc of bundle.accounts) {
+      probes.push({ at: 'account.AccountHolderName', val: acc.AccountHolderName });
+      probes.push({
+        at: 'account.AccountIdentifiers[0].Name',
+        val: acc.AccountIdentifiers?.[0]?.Name,
+      });
+      probes.push({ at: 'account._meta.servicerName', val: acc._meta?.servicerName });
     }
-    if (tx.CreditorName) {
-      probes.push({ at: 'tx.CreditorName', val: tx.CreditorName });
+    for (const tx of bundle.transactions) {
+      if (tx.MerchantDetails?.MerchantName) {
+        probes.push({
+          at: 'tx.MerchantDetails.MerchantName',
+          val: tx.MerchantDetails.MerchantName,
+        });
+      }
+      if (tx.CreditorName) {
+        probes.push({ at: 'tx.CreditorName', val: tx.CreditorName });
+      }
     }
-  }
-  for (const b of bundle.beneficiaries) {
-    probes.push({ at: 'beneficiary.CreditorAccount[0].Name', val: b.CreditorAccount?.[0]?.Name });
-  }
-  for (const sp of bundle.scheduledPayments) {
-    probes.push({
-      at: 'scheduledPayment.CreditorAccount[0].Name',
-      val: sp.CreditorAccount?.[0]?.Name,
-    });
-  }
+    for (const b of bundle.beneficiaries) {
+      probes.push({ at: 'beneficiary.CreditorAccount[0].Name', val: b.CreditorAccount?.[0]?.Name });
+    }
+    for (const sp of bundle.scheduledPayments) {
+      probes.push({
+        at: 'scheduledPayment.CreditorAccount[0].Name',
+        val: sp.CreditorAccount?.[0]?.Name,
+      });
+    }
 
-  for (const p of probes) {
-    if (!p.val) continue;
-    probesChecked += 1;
-    if (NAME_PROBE_AT.has(p.at)) {
-      if (!allowedFullNames.has(p.val)) {
-        console.error(
-          `PII-leak (persona=${pid}): ${p.at}="${p.val}" not in any name-pool cross-product`,
-        );
+    for (const p of probes) {
+      if (!p.val) continue;
+      probesChecked += 1;
+      if (NAME_PROBE_AT.has(p.at)) {
+        if (!allowedFullNames.has(p.val)) {
+          console.error(
+            `PII-leak (persona=${pid} lfi=${lfi}): ${p.at}="${p.val}" not in any name-pool cross-product`,
+          );
+          bad += 1;
+        }
+      } else if (!allowed.has(p.val)) {
+        console.error(`PII-leak (persona=${pid} lfi=${lfi}): ${p.at}="${p.val}" not in pool`);
         bad += 1;
       }
-    } else if (!allowed.has(p.val)) {
-      console.error(`PII-leak (persona=${pid}): ${p.at}="${p.val}" not in pool`);
-      bad += 1;
     }
   }
 }
@@ -105,5 +114,5 @@ if (bad > 0) {
   process.exit(1);
 }
 console.log(
-  `lint-pii-leak OK — ${probesChecked} identity strings checked across ${Object.keys(personas).length} personas, all from pool`,
+  `lint-pii-leak OK — ${probesChecked} identity strings checked across ${Object.keys(personas).length} personas × ${LFI_PROFILES.length} LFI profiles, all from pool`,
 );

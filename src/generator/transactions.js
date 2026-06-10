@@ -9,7 +9,7 @@
 // caller's `txState` object so two buildBundle invocations don't collide.
 
 import { makePrng, rngInt, rngPick } from '../prng.js';
-import { drawMerchant, drawEmployer, drawCounterparty } from './identity.js';
+import { drawMerchant, drawEmployer, drawCounterparty, mod97IbanCheck } from './identity.js';
 import {
   bankishNarrative,
   weekdayBias,
@@ -1051,7 +1051,7 @@ function synthEmployerIbanFor(accountId, posted) {
   let account = '';
   for (let i = 0; i < 16; i++) account += rngInt(sideRng, 0, 10);
   const bban = '999' + account;
-  return `AE${b2bIbanCheck(bban)}${bban}`;
+  return `AE${mod97IbanCheck('AE', bban)}${bban}`;
 }
 
 function synthCounterpartyIban(rng) {
@@ -1060,15 +1060,5 @@ function synthCounterpartyIban(rng) {
   let account = '';
   for (let i = 0; i < 16; i++) account += rngInt(rng, 0, 10);
   const bban = '999' + account;
-  return `AE${b2bIbanCheck(bban)}${bban}`;
-}
-
-function b2bIbanCheck(bban) {
-  // Inline mod-97 to avoid an extra import. Same logic as
-  // identity.js#mod97IbanCheck for the AE country case.
-  // AE expanded: A=10, E=14 → "1014".
-  const concat = bban + '1014' + '00';
-  let r = 0;
-  for (const ch of concat) r = (r * 10 + (ch.charCodeAt(0) - 48)) % 97;
-  return (98 - r).toString().padStart(2, '0');
+  return `AE${mod97IbanCheck('AE', bban)}${bban}`;
 }
