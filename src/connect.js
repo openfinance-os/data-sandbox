@@ -29,6 +29,7 @@
 // was fabricated.
 
 import { trapFocus } from './shared/dom.js';
+import { fillSpecMeta } from './shared/spec-meta.js';
 
 // Three populate-rate profiles per PRD §8.3 / EXP-04. Anonymous-by-design
 // (NG5 / D-14) — these are never tied to a named real bank.
@@ -3942,36 +3943,6 @@ function wireControls() {
       refresh();
     });
   });
-}
-
-// ─── Live spec pin ─────────────────────────────────────────────────
-
-async function fillSpecMeta() {
-  let manifest = null;
-  try {
-    const res = await fetch('../fixtures/v1/manifest.json');
-    if (res.ok) manifest = await res.json();
-  } catch {
-    /* ignore */
-  }
-
-  let spec = null;
-  if (!manifest) {
-    try {
-      const res = await fetch('../dist/SPEC.json');
-      if (res.ok) spec = await res.json();
-    } catch {
-      /* ignore */
-    }
-  }
-
-  const sha = (manifest?.specSha ?? spec?.pinSha ?? 'unknown').slice(0, 7);
-  document.getElementById('footer-sha').textContent = sha;
-  document.getElementById('meta-sha').textContent = manifest?.specSha ?? spec?.pinSha ?? '—';
-  document.getElementById('meta-retrieved').textContent =
-    manifest?.nowAnchor ?? spec?.retrievedAt ?? '—';
-  document.getElementById('meta-version').textContent = manifest?.version ?? '—';
-  document.getElementById('meta-generated').textContent = manifest?.generatedAt ?? '—';
 }
 
 // ─── Boot ──────────────────────────────────────────────────────────
