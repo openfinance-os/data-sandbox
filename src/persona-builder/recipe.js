@@ -103,9 +103,17 @@ function base64urlDecode(s) {
   return bytes;
 }
 
+// Recipe schema version. Bump only when an existing dimension's *meaning*
+// changes (adding a new knob with a default needs no bump — the tolerant
+// decode below already covers it). The tag rides inside the encoded blob
+// so future decoders can migrate old URLs explicitly, but it is excluded
+// from the canonical form — recipeHash, the PRNG seed mix, and every
+// existing custom-fixture URL path are unaffected.
+export const RECIPE_SCHEMA_VERSION = 1;
+
 export function encodeRecipe(recipe) {
   const canonical = canonicalise(recipe);
-  const json = JSON.stringify(canonical);
+  const json = JSON.stringify({ _v: RECIPE_SCHEMA_VERSION, ...canonical });
   return base64urlEncode(utf8ToBytes(json));
 }
 
@@ -120,7 +128,13 @@ export function decodeRecipe(encoded) {
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
     return { ...RECIPE_DEFAULTS };
   }
-  return { ...RECIPE_DEFAULTS, ...parsed };
+  // _v absent → pre-versioning blob (schema 1, same shape). When a future
+  // schema bump lands, its migration runs here before the defaults merge.
+  // Strip the tag either way: it must never reach canonicalise() or the
+  // defaults merge, or it would perturb recipeHash.
+  const { _v, ...fields } = parsed;
+  void _v;
+  return { ...RECIPE_DEFAULTS, ...fields };
 }
 
 // djb2 over the canonical JSON form. Stable across machines + Node/browser.
