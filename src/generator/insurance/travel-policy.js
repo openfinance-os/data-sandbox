@@ -13,35 +13,15 @@
 //   3. Premium uses shared AEInsuranceDataSharingPremiumProperties.
 
 import { drawName } from '../identity.js';
-import { aed } from './motor-policy.js';
-import { isoDate } from './identity.js';
+import { aed, refNumber, channelMap } from './_shared.js';
+import { isoDate, NATIONALITY_BY_POOL, dobFromAge } from './identity.js';
 
-const CHANNEL_MAP = {
-  Direct: 'Direct',
-  Agent: 'Agent',
-  Broker: 'Broker',
-  Bank: 'Bank',
-  Aggregator: 'Aggregation',
+const CHANNEL_MAP = channelMap({
   OnlineInsideUAE: 'OnlineInsideUAE',
   OnlineOutsideUAE: 'OnlineOutsideUAE',
-};
+});
 
-function policyNumber(rng) {
-  return `TRV-${String(Math.floor(rng() * 1_000_000_000)).padStart(9, '0')}`;
-}
-
-const NATIONALITY_BY_POOL = {
-  emirati: 'ARE',
-  expat_arab: 'EGY',
-  expat_indian: 'IND',
-};
-
-function dobFromAge(age, rng, now) {
-  const year = now.getUTCFullYear() - age;
-  const month = 1 + Math.floor(rng() * 12);
-  const day = 1 + Math.floor(rng() * 28);
-  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-}
+const policyNumber = (rng) => refNumber('TRV', rng);
 
 function generateTravelInsuredParties({ persona, names, rng, now }) {
   const t = persona.travel;

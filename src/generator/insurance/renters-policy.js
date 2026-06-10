@@ -13,7 +13,7 @@
 //   Product (top): Policy, PropertyDetails (both required)
 //   Premium uses shared AEInsuranceDataSharingPremiumProperties.
 
-import { aed } from './motor-policy.js';
+import { aed, refNumber, channelMap } from './_shared.js';
 import { isoDate } from './identity.js';
 
 const PROPERTY_TYPE_MAP = {
@@ -23,18 +23,9 @@ const PROPERTY_TYPE_MAP = {
   Flat: 'Flat',
 };
 
-const CHANNEL_MAP = {
-  Direct: 'Direct',
-  Agent: 'Agent',
-  Broker: 'Broker',
-  Bank: 'Bank',
-  Aggregator: 'Aggregation',
-  OnlineInsideUAE: 'OnlineInsideUAE',
-};
+const CHANNEL_MAP = channelMap({ OnlineInsideUAE: 'OnlineInsideUAE' });
 
-function policyNumber(rng) {
-  return `RNT-${String(Math.floor(rng() * 1_000_000_000)).padStart(9, '0')}`;
-}
+const policyNumber = (rng) => refNumber('RNT', rng);
 
 export function generateRentersProduct({ persona, rng, now }) {
   const r = persona.renters;

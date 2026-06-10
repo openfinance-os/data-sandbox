@@ -79,6 +79,44 @@ export function makeBundleIdentity({ name, persona }) {
 }
 
 /**
+ * v2.1 ActiveOrHistoricAmount shape. Moved here from motor-policy.js —
+ * every line's policy + quote builders use it.
+ */
+export function aed(amount) {
+  const num = typeof amount === 'number' ? amount : Number(amount);
+  return { Currency: 'AED', Amount: num.toFixed(2) };
+}
+
+/**
+ * Deterministic 9-digit reference with a per-line prefix — the body shared
+ * by every line's `policyNumber()` (MTR-, HOM-, …) and `quoteReference()`
+ * (MTRQ-, HOMQ-, …). Exactly one PRNG draw, same arithmetic as the old
+ * per-line copies, so output is byte-identical per (persona, lfi, seed).
+ */
+export function refNumber(prefix, rng) {
+  return `${prefix}-${String(Math.floor(rng() * 1_000_000_000)).padStart(9, '0')}`;
+}
+
+/**
+ * Persona policy.channel → spec PolicyPurchaseChannelType enum. Every line
+ * shares the same five-entry base; lines whose spec enum admits more
+ * channels (health: TPA, life: InvFinInst, travel/renters/employment:
+ * online variants) pass them as `extra`. Kept per-line rather than as one
+ * superset map so an unknown channel keeps falling back to 'Other' for
+ * lines whose enum doesn't include it.
+ */
+export function channelMap(extra = {}) {
+  return {
+    Direct: 'Direct',
+    Agent: 'Agent',
+    Broker: 'Broker',
+    Bank: 'Bank',
+    Aggregator: 'Aggregation',
+    ...extra,
+  };
+}
+
+/**
  * Pick a counterparty-bank name uniformly from the resolved banks pool.
  * One PRNG draw — keep it inline at the same call-site that did
  * `p.banks.banks[Math.floor(rng() * p.banks.banks.length)].name` before

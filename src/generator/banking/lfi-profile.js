@@ -3,22 +3,14 @@
 // banking bundle as a post-generation field-redaction filter. Mandatory
 // fields are never redacted (NG / EXP-04 acceptance).
 //
-// Per-domain redaction lives next to the per-domain generator. Insurance
-// has (will have) its own at src/generator/insurance/lfi-profile.js once
-// bands are calibrated (slice 6c). Path literals here are banking-shaped
-// (Account, Transaction, Balance) and tested-equal to
+// Per-domain redaction lives next to the per-domain generator (insurance:
+// src/generator/insurance/lfi-profile.js, atm: src/generator/atm/).
+// The probability table + keep/drop rule + decision cache are shared via
+// src/generator/lfi-profile-shared.js. Path literals here are
+// banking-shaped (Account, Transaction, Balance) and tested-equal to
 // spec/lfi-bands.banking.yaml via tests/lfi-bands.test.mjs.
 
-import { mulberry32, seedFromTuple } from '../../prng.js';
-
-// v1 calibration of populate probabilities — single source of truth (§8.3).
-const MEDIAN_PROBABILITY = {
-  Universal: 1.0,
-  Common: 0.7,
-  Variable: 0.4,
-  Rare: 0.1,
-  Unknown: 0.0,
-};
+import { redactionRng, makeCachedDecider } from '../lfi-profile-shared.js';
 
 // Optional-field band table — mirrors the bands the redaction body below
 // applies. Source of truth is spec/lfi-bands.banking.yaml (loaded by the spec
@@ -48,30 +40,13 @@ const OPTIONAL_FIELD_BANDS = [
   { path: 'Balance.CreditLine', band: 'Variable' },
 ];
 
-function shouldKeep(profile, band, rng) {
-  if (profile === 'rich') return band !== 'Unknown';
-  if (profile === 'sparse') return band === 'Universal';
-  // median
-  const p = MEDIAN_PROBABILITY[band] ?? 0;
-  return rng() < p;
-}
-
 /**
  * Apply the LFI profile to a bundle. Bundle is mutated in place and returned.
  * `personaId`/`seed` are used to seed an *independent* PRNG stream for
  * populate decisions, derived from the same tuple per EXP-05.
  */
 export function applyLfiProfile({ bundle, personaId, lfi, seed }) {
-  const rng = mulberry32(seedFromTuple(personaId, `lfi:${lfi}`, seed));
-
-  const decisions = new Map();
-  function decide(path, band) {
-    const cacheKey = `${path}|${band}`;
-    if (!decisions.has(cacheKey)) {
-      decisions.set(cacheKey, shouldKeep(lfi, band, rng));
-    }
-    return decisions.get(cacheKey);
-  }
+  const decide = makeCachedDecider(lfi, redactionRng(personaId, lfi, seed));
 
   // Apply per-resource redactions.
   for (const acc of bundle.accounts ?? []) {
@@ -123,8 +98,4 @@ export function applyLfiProfile({ bundle, personaId, lfi, seed }) {
 
 export function getOptionalFieldBands() {
   return OPTIONAL_FIELD_BANDS.slice();
-}
-
-export function medianProbability(band) {
-  return MEDIAN_PROBABILITY[band] ?? 0;
 }

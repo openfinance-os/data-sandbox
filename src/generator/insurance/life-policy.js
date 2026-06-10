@@ -15,48 +15,21 @@
 //      mandatory).
 
 import { drawName } from '../identity.js';
-import { aed } from './motor-policy.js';
-import { isoDate } from './identity.js';
+import { aed, refNumber, channelMap } from './_shared.js';
+import {
+  isoDate,
+  NATIONALITY_BY_POOL,
+  dobFromAge,
+  genEmiratesId,
+  genVisaNumber,
+} from './identity.js';
 
-const CHANNEL_MAP = {
-  Direct: 'Direct',
-  Agent: 'Agent',
-  Broker: 'Broker',
-  Bank: 'Bank',
-  InvFinInst: 'InvFinInst',
-  Aggregator: 'Aggregation',
-};
+const CHANNEL_MAP = channelMap({ InvFinInst: 'InvFinInst' });
 
-function policyNumber(rng) {
-  return `LIF-${String(Math.floor(rng() * 1_000_000_000)).padStart(9, '0')}`;
-}
+const policyNumber = (rng) => refNumber('LIF', rng);
 
 function policyTermDuration(years) {
   return `P${Math.max(1, years)}Y`;
-}
-
-const NATIONALITY_BY_POOL = {
-  emirati: 'ARE',
-  expat_arab: 'EGY',
-  expat_indian: 'IND',
-};
-
-function genEmiratesId(rng) {
-  const year = 1960 + Math.floor(rng() * 50);
-  const seq = Math.floor(rng() * 9_999_999);
-  const check = Math.floor(rng() * 10);
-  return `784-${year}-${String(seq).padStart(7, '0')}-${check}`;
-}
-
-function genVisaNumber(rng) {
-  return String(Math.floor(rng() * 1_000_000_000)).padStart(9, '0');
-}
-
-function dobFromAge(age, rng, now) {
-  const year = now.getUTCFullYear() - age;
-  const month = 1 + Math.floor(rng() * 12);
-  const day = 1 + Math.floor(rng() * 28);
-  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
 function genMobileNumber(rng) {

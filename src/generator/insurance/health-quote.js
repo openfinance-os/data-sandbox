@@ -5,13 +5,11 @@
 // schema from the home/motor premium — adds Status + VATPercentage as
 // part of the required surface, plus matches the health-policy premium).
 
-import { aed } from './motor-policy.js';
+import { aed, refNumber } from './_shared.js';
 import { genUuid } from './identity.js';
 import { MS_PER_DAY } from '../constants.js';
 
-function quoteReference(rng) {
-  return `HLTQ-${String(Math.floor(rng() * 1_000_000_000)).padStart(9, '0')}`;
-}
+const quoteReference = (rng) => refNumber('HLTQ', rng);
 
 function serviceRating() {
   return {
