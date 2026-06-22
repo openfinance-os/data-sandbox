@@ -55,7 +55,7 @@ jobs:
     outputs:
       deploy: ${{ steps.filter.outputs.deploy }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           # Default (trusted) checkout — main tip for workflow_run, the
           # dispatched ref for workflow_dispatch. We avoid checking out the
@@ -88,7 +88,7 @@ jobs:
     steps:
       # Trusted default checkout (see the `changes` job note) — never the
       # event head_sha, since this job holds FLY_API_TOKEN.
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: superfly/flyctl-actions/setup-flyctl@v1
       - run: flyctl deploy --remote-only
         env:
@@ -102,7 +102,7 @@ jobs:
     # asserts /health returns ok:true and that an MCP initialize +
     # tools/list roundtrip returns the documented 16 tools.
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
