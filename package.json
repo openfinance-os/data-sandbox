@@ -54,20 +54,20 @@
     "js-yaml": "^4.2.0"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.10.0",
+    "@axe-core/playwright": "^4.12.1",
     "@eslint/js": "^10.0.1",
     "@lhci/cli": "^0.15.1",
-    "@playwright/test": "^1.60.0",
+    "@playwright/test": "^1.61.1",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
-    "eslint": "^10.4.1",
-    "globals": "^17.6.0",
+    "eslint": "^10.6.0",
+    "globals": "^17.7.0",
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
-    "lint-staged": "^17.0.7",
+    "lint-staged": "^17.0.8",
     "npm-run-all2": "^7.0.2",
-    "posthog-js": "^1.376.6",
-    "prettier": "^3.4.2",
-    "vitest": "^4.1.8"
+    "posthog-js": "^1.395.0",
+    "prettier": "^3.9.1",
+    "vitest": "^4.1.9"
   }
 }
