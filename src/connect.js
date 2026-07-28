@@ -29,6 +29,7 @@
 // was fabricated.
 
 import { trapFocus } from './shared/dom.js';
+import { domainLabel } from './shared/domains.js';
 import { fillSpecMeta } from './shared/spec-meta.js';
 
 // Three populate-rate profiles per PRD §8.3 / EXP-04. Anonymous-by-design
@@ -747,7 +748,11 @@ function toPersonaList(map) {
       id,
       name: v.name,
       archetype: v.archetype,
-      domain: v.domain,
+      // Normalise: the fixture manifest stamps domain:'multi' on
+      // multi-domain personas, but dist/data.json (the local-dev fallback)
+      // carries only `domains: []` with no singular key — which made this
+      // sort throw and the whole page fail on the `npm run serve` path.
+      domain: domainLabel(v),
       segment: v.segment || null,
       default_seed: v.default_seed || null,
       stress_coverage: v.stress_coverage || [],
@@ -2984,6 +2989,11 @@ function openConsentManager() {
   if (!modal) return;
   renderConsentManagerView();
   modal.hidden = false;
+  // Lock background scroll while the dialog owns the screen. Without this the
+  // long J2 wizard keeps scrolling behind the fixed-position modal on touch
+  // devices, which both reads as broken and drags the dialog out from under
+  // the user's tap.
+  document.body.style.overflow = 'hidden';
   // Stash the previously focused element so we can restore on close.
   modal.dataset.previousFocus = (document.activeElement && document.activeElement.id) || '';
   consentManagerReleaseTrap = trapFocus(modal);
@@ -2997,6 +3007,7 @@ function closeConsentManager() {
   consentManagerReleaseTrap?.();
   consentManagerReleaseTrap = null;
   modal.hidden = true;
+  document.body.style.overflow = '';
   // Trigger a refresh so any consents-dependent UI (J2 dashboard empty state)
   // picks up revocations made inside the modal.
   refresh();
@@ -3395,9 +3406,6 @@ function renderBfmDashboard(persona, perLfi) {
     const signed = t.CreditDebitIndicator === 'Credit' ? amt : -amt;
     byLfi.set(t._lfi, (byLfi.get(t._lfi) || 0) + signed);
   }
-  let netInflow30 = 0;
-  for (const v of byLfi.values()) netInflow30 += v;
-
   let inflow30 = 0,
     outflow30 = 0;
   for (const t of ins.recentTx) {

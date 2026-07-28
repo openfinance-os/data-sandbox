@@ -24,10 +24,22 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import yaml from 'js-yaml';
+import Ajv from 'ajv';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..');
+
+// T-08e — structural manifest validation. personas/_schema.machine.yaml is
+// a JSON Schema (draft-07, authored as YAML) enforcing required keys and
+// the shapes of accounts[], multi_lfi_footprint (both forms),
+// multi_insurer_footprint, income, and insurance.lines. Enum-vs-spec
+// conformance stays in the checks below (EXP-01 — the pinned OpenAPI YAML
+// is the enum source of truth, never the schema file).
+const MACHINE_SCHEMA_PATH = path.join(repoRoot, 'personas/_schema.machine.yaml');
+const machineSchema = yaml.load(fs.readFileSync(MACHINE_SCHEMA_PATH, 'utf8'));
+const ajv = new Ajv({ allErrors: true, allowUnionTypes: true });
+const validateManifestSchema = ajv.compile(machineSchema);
 
 const SPEC_PATH = path.join(repoRoot, 'spec/uae-account-information-openapi.yaml');
 const INSURANCE_SPEC_PATH = path.join(repoRoot, 'spec/uae-insurance-openapi.yaml');
@@ -130,6 +142,13 @@ function resolveDomainsForLint(m) {
 for (const file of listManifests()) {
   const m = yaml.load(fs.readFileSync(file, 'utf8'));
   if (!m) continue;
+
+  // T-08e — structural schema validation (personas/_schema.machine.yaml).
+  if (!validateManifestSchema(m)) {
+    for (const err of validateManifestSchema.errors ?? []) {
+      bad(file, `schema violation at ${err.instancePath || '(root)'} — ${err.message}`);
+    }
+  }
 
   // Every persona must declare a recognised domain (or domains[]).
   const personaDomains = resolveDomainsForLint(m);

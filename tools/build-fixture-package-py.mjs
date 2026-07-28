@@ -29,13 +29,23 @@ if (!fs.existsSync(SRC)) {
 if (fs.existsSync(DST)) fs.rmSync(DST, { recursive: true, force: true });
 fs.mkdirSync(DST, { recursive: true });
 
+// E-04: the mirror must carry EVERYTHING the loaders can reach — dropping a
+// tree here silently breaks the corresponding Python API on an installed
+// wheel. pools.json / enrichment/ / brands/ / brand-registry.json back
+// load_enrichment() and load_brand_registry(); brand-registry.json and
+// brands/ are produced by tools/build-brand-registry.mjs, which
+// `build:fixtures:pkgs` runs before this script.
 for (const child of [
   'manifest.json',
   'spec.json',
   'spec.insurance.json',
   'spec.atm.json',
+  'pools.json',
+  'brand-registry.json',
   'personas',
   'bundles',
+  'enrichment',
+  'brands',
 ]) {
   const s = path.join(SRC, child);
   const d = path.join(DST, child);

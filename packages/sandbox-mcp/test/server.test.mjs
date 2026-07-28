@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
@@ -27,6 +28,8 @@ const EXPECTED_TOOLS = [
   'load_journey',
   'list_endpoints',
   'field_status',
+  // Phase 2.3 — ATM Locator domain.
+  'get_atms',
   // Phase 2.0 motor full-coverage — insurance domain.
   'get_motor_policies',
   'get_motor_policy',
@@ -316,13 +319,115 @@ describe('sandbox-mcp server', () => {
     expect(textOf(r)).toMatch(/unknown accountId/);
   });
 
-  it('exposes spec:// and persona:// resources for both domains', async () => {
+  it('exposes spec:// and persona:// resources for all three domains', async () => {
     const { resources } = await client.listResources();
     const uris = resources.map((r) => r.uri);
     expect(uris).toContain('spec://uae-account-information-v2.1');
     expect(uris).toContain('spec://uae-insurance-v2.1');
+    expect(uris).toContain('spec://uae-atm-v2.1');
     expect(uris).toContain('persona://salaried_expat_mid');
     expect(uris).toContain('persona://motor_comprehensive_mid');
+  });
+
+  it('server version reported in the MCP handshake matches package.json (no hardcoded drift)', async () => {
+    const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+    const serverInfo = client.getServerVersion();
+    expect(serverInfo.name).toBe(pkg.name);
+    expect(serverInfo.version).toBe(pkg.version);
+  });
+
+  // ── ATM Locator domain (Phase 2.3) ────────────────────────────────────────
+
+  it('get_atms works without a session (infrastructure persona, median default)', async () => {
+    const r = await client.callTool({ name: 'get_atms', arguments: {} });
+    expect(r.isError ?? false).toBe(false);
+    const text = textOf(r);
+    expect(text).toMatch(WATERMARK_RE);
+    const env = JSON.parse(text.slice(text.indexOf('{')));
+    expect(Array.isArray(env.Data)).toBe(true);
+    expect(env.Data.length).toBeGreaterThan(0);
+    expect(env.Data[0].ATMId).toBeDefined();
+    expect(env._domain).toBe('atm');
+    expect(env._filter.limit).toBe(25);
+    expect(env._filter.total).toBeGreaterThan(0);
+  });
+
+  it('get_atms filters by city and caps output at limit', async () => {
+    const r = await client.callTool({
+      name: 'get_atms',
+      arguments: { city: 'Dubai', limit: 3 },
+    });
+    const text = textOf(r);
+    const env = JSON.parse(text.slice(text.indexOf('{')));
+    expect(env.Data.length).toBeLessThanOrEqual(3);
+    for (const atm of env.Data) {
+      const addr = atm.Location?.PostalAddress ?? {};
+      const hay = `${addr.TownName ?? ''} ${addr.CountrySubDivision ?? ''}`.toLowerCase();
+      expect(hay).toContain('dubai');
+    }
+    expect(env._filter.city).toBe('Dubai');
+    if (env._filter.matched > 3) expect(env._filter.truncated).toBe(true);
+  });
+
+  it('an atm_directory session is no longer a dead-end: set_session + get_atms round-trips', async () => {
+    const sess = await client.callTool({
+      name: 'set_session',
+      arguments: { persona: 'atm_directory', lfi: 'sparse' },
+    });
+    expect(sess.isError ?? false).toBe(false);
+    // get_atms picks up the ATM session's lfi/seed as defaults.
+    const r = await client.callTool({ name: 'get_atms', arguments: {} });
+    expect(r.isError ?? false).toBe(false);
+    const text = textOf(r);
+    expect(text).toMatch(/lfi:sparse/);
+    const env = JSON.parse(text.slice(text.indexOf('{')));
+    expect(env._lfi).toBe('sparse');
+    // list_endpoints works against the ATM session too.
+    const eps = JSON.parse(
+      textOf(await client.callTool({ name: 'list_endpoints', arguments: {} })),
+    );
+    expect(eps.domain).toBe('atm');
+    expect(eps.endpoints).toContain('/atms');
+    // Banking tools still give the clear switch-personas error (correct, not a dead-end).
+    const wrong = await client.callTool({ name: 'get_accounts', arguments: {} });
+    expect(wrong.isError).toBe(true);
+    expect(textOf(wrong)).toMatch(/requires a banking session/);
+  });
+
+  it('list_personas supports the atm domain filter and returns atm_directory', async () => {
+    const atm = JSON.parse(
+      textOf(await client.callTool({ name: 'list_personas', arguments: { domain: 'atm' } })),
+    );
+    expect(atm.count).toBe(1);
+    expect(atm.personas[0].id).toBe('atm_directory');
+    expect(atm.personas[0].domain).toBe('atm');
+  });
+
+  it('field_status auto-detects the atm domain from /atms', async () => {
+    const r = await client.callTool({ name: 'field_status', arguments: { endpoint: '/atms' } });
+    expect(r.isError ?? false).toBe(false);
+    const payload = JSON.parse(textOf(r));
+    expect(payload.domain).toBe('atm');
+    expect(payload.fields.length).toBeGreaterThan(0);
+  });
+
+  it('list_personas emits slot-aware multi_insurer_footprint for multi-domain personas', async () => {
+    const all = JSON.parse(textOf(await client.callTool({ name: 'list_personas', arguments: {} })));
+    const rmb = all.personas.find((p) => p.id === 'retail_multi_banker');
+    expect(rmb).toBeDefined();
+    expect(rmb.multi_insurer_footprint).not.toBeNull();
+    const slots = rmb.multi_insurer_footprint.slots;
+    expect(Array.isArray(slots)).toBe(true);
+    expect(slots.length).toBeGreaterThan(0);
+    for (const s of slots) {
+      expect(typeof s.slot).toBe('string');
+      expect(s.line).toBeTruthy();
+      expect(Array.isArray(s.plausible_insurer_candidates)).toBe(true);
+      expect(s.plausible_insurer_candidates.length).toBeGreaterThan(0);
+    }
+    // Personas without a declared insurer footprint surface null.
+    const salaried = all.personas.find((p) => p.id === 'salaried_expat_mid');
+    expect(salaried.multi_insurer_footprint).toBeNull();
   });
 
   it('insurance flow — set_session + get_motor_* round-trip with watermark + spec pin', async () => {
@@ -447,6 +552,23 @@ describe('sandbox-mcp server', () => {
     const names = prompts.map((p) => p.name).sort();
     expect(names).toContain('pick-a-persona');
     expect(names).toContain('monthly-summary');
+    expect(names).toContain('insurance-coverage-review');
+    expect(names).toContain('multi-lfi-financial-picture');
+  });
+
+  it('insurance and multi-LFI prompts render with and without arguments', async () => {
+    const ins = await client.getPrompt({ name: 'insurance-coverage-review', arguments: {} });
+    expect(ins.messages[0].content.text).toMatch(/get_<line>_policies|get_.*_policies/);
+    const insFor = await client.getPrompt({
+      name: 'insurance-coverage-review',
+      arguments: { persona: 'home_mortgage_villa' },
+    });
+    expect(insFor.messages[0].content.text).toMatch(/home_mortgage_villa/);
+
+    const multi = await client.getPrompt({ name: 'multi-lfi-financial-picture', arguments: {} });
+    expect(multi.messages[0].content.text).toMatch(/retail_multi_banker/);
+    expect(multi.messages[0].content.text).toMatch(/available_lfi_roles/);
+    expect(multi.messages[0].content.text).toMatch(/multi_insurer_footprint/);
   });
 
   it('get_transactions rejects malformed since/until before touching data', async () => {

@@ -115,15 +115,17 @@ if (!FIXTURES_BUILT) {
     const bankingSpec = yaml.load(
       fs.readFileSync(path.join(repoRoot, 'spec/uae-account-information-openapi.yaml'), 'utf8'),
     );
-    const insuranceSpec = yaml.load(
-      fs.readFileSync(path.join(repoRoot, 'spec/uae-insurance-openapi.yaml'), 'utf8'),
-    );
 
     // Endpoint → schema name map. Mirrors src/ui/export.js wrapping logic.
+    // NOTE: these names must exist in components.schemas — a wrong name
+    // used to fail ajv.compile silently, leaving the endpoint unvalidated
+    // with a green check ('/parties', account-detail and product fixtures
+    // shipped unvalidated that way until the unmapped-set assertion below
+    // was added and caught the three misnamed refs).
     const BANKING_REFS = {
       '/accounts': 'AEReadAccount',
-      '/parties': 'AEReadParty1',
-      'accounts/{AccountId}': 'AEReadAccount2',
+      '/parties': 'AEReadParty4',
+      'accounts/{AccountId}': 'AEReadAccountId',
       'accounts/{AccountId}/balances': 'AEReadBalance',
       'accounts/{AccountId}/transactions': 'AEReadTransaction',
       'accounts/{AccountId}/standing-orders': 'AEReadStandingOrder',
@@ -131,7 +133,7 @@ if (!FIXTURES_BUILT) {
       'accounts/{AccountId}/beneficiaries': 'AEReadBeneficiary',
       'accounts/{AccountId}/scheduled-payments': 'AEReadScheduledPayment',
       'accounts/{AccountId}/parties': 'AEReadParty2',
-      'accounts/{AccountId}/product': 'AEReadProduct',
+      'accounts/{AccountId}/product': 'AEReadProduct1',
       'accounts/{AccountId}/statements': 'AEReadStatements',
     };
     function bankingRefFor(endpoint) {
@@ -170,12 +172,28 @@ if (!FIXTURES_BUILT) {
 
     it('every banking fixture (primary + role) validates against the v2.1 schema after underscore-strip', () => {
       const failures = [];
+      // Endpoints with no schema mapping are collected and ASSERTED empty
+      // below — a bare `continue` here meant a newly added endpoint got
+      // zero validation with no signal at all (T-06). Multi-domain personas
+      // emit their insurance-family endpoints at the same persona path;
+      // those are validated by tests/spec-validation.insurance.test.mjs and
+      // are the one legitimate exclusion here.
+      const NON_BANKING_FAMILY =
+        /^\/(?:motor|home|life|health|travel|renters|employment)-insurance-|^\/insurance-consents|^\/atms/;
+      const unmapped = new Set();
       for (const { endpoint, rel, source } of allBankingFixtureRels) {
+        if (NON_BANKING_FAMILY.test(endpoint)) continue;
         const ref = bankingRefFor(endpoint);
-        if (!ref) continue;
+        if (!ref) {
+          unmapped.add(endpoint);
+          continue;
+        }
         const compiled =
           bankingValidators[Object.keys(BANKING_REFS).find((k) => BANKING_REFS[k] === ref)];
-        if (!compiled) continue;
+        if (!compiled) {
+          unmapped.add(endpoint);
+          continue;
+        }
         const env = JSON.parse(fs.readFileSync(path.join(PKG_DIR, rel), 'utf8'));
         const cleaned = deepStrip(env);
         const ok = compiled(cleaned);
@@ -192,6 +210,11 @@ if (!FIXTURES_BUILT) {
         console.error('Spec validation failures:', JSON.stringify(failures.slice(0, 5), null, 2));
       }
       expect(failures.length).toBe(0);
+      expect(
+        [...unmapped],
+        'banking fixture endpoints with no AJV schema mapping — extend BANKING_REFS ' +
+          'so new endpoints cannot ship unvalidated',
+      ).toEqual([]);
     });
 
     it('rendered fixtures never carry mandatory-field gaps (Data is present, AccountId/Transaction arrays exist)', () => {
@@ -218,8 +241,4 @@ if (!FIXTURES_BUILT) {
     // — it uses its own ajv schema mapping and runs across every motor-policy
     // / motor-quote endpoint at every (persona × LFI) tuple. We don't duplicate
     // that here.
-    it('insurance fixtures are covered by tests/spec-validation.insurance.test.mjs', () => {
-      expect(true).toBe(true);
-      void insuranceSpec; // suppress unused-import warning
-    });
   });

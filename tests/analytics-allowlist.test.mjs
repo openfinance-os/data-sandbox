@@ -37,29 +37,61 @@ function* walk(dir) {
   }
 }
 
+// Strip comments so a `track(...)` mentioned in prose can't skew the
+// raw-occurrence parity count below.
+function stripComments(code) {
+  return code.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/[^\n]*/g, '$1');
+}
+
 function findTrackCalls() {
   const calls = [];
+  let rawCallCount = 0;
   for (const file of walk(SRC)) {
     // Skip the shim itself — it defines `track`, doesn't call it.
     if (path.basename(file) === 'analytics.js') continue;
-    const code = fs.readFileSync(file, 'utf8');
-    // Match `track('event', { ... })` or `track('event')`. The regex is
-    // intentionally simple — every existing call site fits this shape and
-    // any call site that doesn't (multi-line, computed event name) is
-    // exactly what we want to flag for review.
+    const code = stripComments(fs.readFileSync(file, 'utf8'));
+    // Every real call site imports `track` from analytics.js, so a bare
+    // `track(` occurrence count is an upper bound the extraction below
+    // must reach — the parity test asserts extraction === occurrences.
+    rawCallCount += (code.match(/\btrack\(/g) ?? []).length;
+    // Match `track('event', { ... })` or `track('event')`. NOTE: a call
+    // that does NOT match this shape (computed event name, nested braces)
+    // does not silently vanish — the parity assertion below fails and
+    // points at the shape mismatch.
     const re = /\btrack\(\s*['"`]([^'"`]+)['"`]\s*(?:,\s*\{([^}]*)\})?\s*\)/g;
     for (const m of code.matchAll(re)) {
       calls.push({ file: path.relative(SRC, file), event: m[1], propsBlock: m[2] ?? '' });
     }
   }
-  return calls;
+  return { calls, rawCallCount };
 }
 
 describe('EXP-21 analytics allowlist', () => {
-  const calls = findTrackCalls();
+  const { calls, rawCallCount } = findTrackCalls();
 
   it('finds at least one track() call site (test would silently pass otherwise)', () => {
     expect(calls.length).toBeGreaterThan(0);
+  });
+
+  it('extraction parity: every raw track( occurrence was actually analysed (T-07)', () => {
+    // The extraction regex only understands single string-literal events
+    // with a flat props object. Before this assertion, any call written in
+    // another shape (multi-line with nested braces, computed event name)
+    // produced NO entry — i.e. the EXP-21/22 privacy gate silently ignored
+    // it. Now a non-conforming call fails the build and must either be
+    // reshaped or the extractor extended.
+    expect(
+      calls.length,
+      'raw track( occurrences in src/ exceed regex-extracted calls — a call site ' +
+        'is written in a shape the allowlist gate cannot analyse',
+    ).toBe(rawCallCount);
+  });
+
+  it('the allowlist itself never admits a PII-shaped property key (T-07)', () => {
+    // Guards the constant, not just the call sites: the easiest way to
+    // defeat the gate is a PR that widens ALLOWED_PROP_KEYS.
+    const banned = ALLOWED_PROP_KEYS.filter((k) => BANNED_PROP_KEY_PATTERN.test(k));
+    expect(banned, 'ALLOWED_PROP_KEYS contains PII-shaped keys').toEqual([]);
   });
 
   it('every call site uses an allowlisted event name', () => {

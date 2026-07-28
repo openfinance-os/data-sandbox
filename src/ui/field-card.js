@@ -56,40 +56,44 @@ export function createFieldCard(deps) {
 
     content.replaceChildren();
 
+    // D-10 tranche 2 — row labels come from the i18n catalog (the first
+    // tuple entry is the catalog key; 'fieldCard.status' / 'fieldCard.spec'
+    // rows render specially). Values stay English pending the tranche-3
+    // field-knowledge translation pass.
     const rowsToRender = [
-      ['Name', name],
-      ['Path', f.path],
-      ['Status', null], // rendered specially
-      ['Type', f.type],
-      ['Format', f.format ?? '—'],
-      ['Enum', Array.isArray(f.enum) ? f.enum.join(', ') : '—'],
-      ['Example', formatExample(example)],
-      ['Conditional', conditionalLine],
-      ['Real LFIs', guidance],
+      ['fieldCard.name', name],
+      ['fieldCard.path', f.path],
+      ['fieldCard.status', null], // rendered specially
+      ['fieldCard.type', f.type],
+      ['fieldCard.format', f.format ?? '—'],
+      ['fieldCard.enum', Array.isArray(f.enum) ? f.enum.join(', ') : '—'],
+      ['fieldCard.example', formatExample(example)],
+      ['fieldCard.conditional', conditionalLine],
+      ['fieldCard.realLfis', guidance],
       [
-        'PII',
+        'fieldCard.pii',
         isPii(name)
           ? 'Yes — under PDPL this field requires explicit data-handling controls.'
           : 'No (per the v1 PII allowlist).',
       ],
-      ['Spec', null], // rendered specially as a link
+      ['fieldCard.spec', null], // rendered specially as a link
     ];
-    for (const [k, v] of rowsToRender) {
+    for (const [key, v] of rowsToRender) {
       const row = el('div', { class: 'fc-row' });
-      row.appendChild(el('span', { class: 'k', text: k }));
-      if (k === 'Status') {
+      row.appendChild(el('span', { class: 'k', text: t(key, state.lang) }));
+      if (key === 'fieldCard.status') {
         const badge = statusBadge(f.status);
         const ve = el('span', { class: 'v' });
         ve.appendChild(statusPill(f.status));
         const statusKey = STATUS_TEXT_KEY[f.status];
         ve.appendChild(document.createTextNode(statusKey ? t(statusKey, state.lang) : badge.text));
         row.appendChild(ve);
-      } else if (k === 'Spec') {
+      } else if (key === 'fieldCard.spec') {
         const ve = el('span', { class: 'v' });
         if (citation) {
           ve.appendChild(
             el('a', {
-              text: 'View on Nebras GitHub at pinned SHA →',
+              text: t('fieldCard.specLink', state.lang),
               attrs: { href: citation, target: '_blank', rel: 'noopener noreferrer' },
             }),
           );
@@ -108,12 +112,12 @@ export function createFieldCard(deps) {
     // issue tracker; the placeholder repo URL is replaced at Commons publication
     // time per the implementation plan.
     const reportRow = el('div', { class: 'fc-row fc-report' });
-    reportRow.appendChild(el('span', { class: 'k', text: 'Feedback' }));
+    reportRow.appendChild(el('span', { class: 'k', text: t('fieldCard.feedback', state.lang) }));
     const reportV = el('span', { class: 'v' });
     reportV.appendChild(
       el('a', {
         class: 'fc-report-link',
-        text: 'Report an issue with this field →',
+        text: t('fieldCard.reportLink', state.lang),
         attrs: { href: buildIssueUrl(name, f), target: '_blank', rel: 'noopener noreferrer' },
       }),
     );

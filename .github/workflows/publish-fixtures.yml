@@ -5,10 +5,13 @@ name: Publish fixtures
 # fixtures-v* is pushed.
 #
 # Tokens required (set in repo Settings → Secrets):
-#   NPM_TOKEN  — npm publish token with publish access to the
-#                @openfinance-os scope
-#   PYPI_TOKEN — PyPI API token scoped to the project (or a project-
-#                specific Trusted Publisher OIDC config — preferred)
+#   NPM_TOKEN — npm publish token with publish access to the
+#               @openfinance-os scope
+#
+# PyPI needs NO repo secret: the publish-pypi job uses OIDC Trusted
+# Publishing (pypa/gh-action-pypi-publish + `id-token: write`). The
+# requirement is PyPI-side configuration — register this repo + workflow
+# as a Trusted Publisher on the project's PyPI "Publishing" settings page.
 
 on:
   push:
@@ -32,8 +35,32 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      # E-05 release integrity: the published version comes from the ROOT
+      # package.json (the fixture package.json is generated from it, the
+      # pyproject.toml is stamped from it). A tag that doesn't match it
+      # would silently publish the wrong version — fail fast instead.
+      - name: Verify tag matches root package.json version
+        if: startsWith(github.ref, 'refs/tags/fixtures-v')
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#fixtures-v}"
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::Tag '${GITHUB_REF_NAME}' implies version '${TAG_VERSION}' but root package.json declares '${PKG_VERSION}'. Bump first (node tools/release-bump.mjs ${TAG_VERSION}), commit, then re-tag."
+            exit 1
+          fi
+          echo "tag ${GITHUB_REF_NAME} matches root package.json version ${PKG_VERSION}"
       - run: npm ci
       - run: npm run ci
+      # E-04: the wheel publishes Python code that JS tests never execute —
+      # run the pytest parity suite (npm ↔ PyPI corpus + behaviour parity)
+      # against the trees `npm run ci` just built.
+      - name: Python parity suite
+        run: |
+          python -m pip install --upgrade pytest
+          python -m pytest packages/sandbox-fixtures-py/tests/ -v
 
   publish-npm:
     runs-on: ubuntu-latest

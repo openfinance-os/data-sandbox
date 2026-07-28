@@ -90,9 +90,14 @@ async function init() {
   // transactions + standing-orders, which only exist for banking personas.
   // Insurance personas live in the same manifest but have no banking bundle,
   // so listing them would 404 the moment the user picked one.
-  const bankingPersonaIds = Object.keys(manifest.personas).filter(
-    (id) => (manifest.personas[id].domain ?? 'banking') === 'banking',
-  );
+  // Multi-domain personas (`domain: 'multi'`, `domains: [...]`) DO have
+  // complete banking bundles — only pure-insurance/ATM personas would 404.
+  const bankingPersonaIds = Object.keys(manifest.personas).filter((id) => {
+    const p = manifest.personas[id];
+    const domains =
+      Array.isArray(p.domains) && p.domains.length ? p.domains : [p.domain ?? 'banking'];
+    return domains.includes('banking');
+  });
   for (const id of bankingPersonaIds) {
     const opt = document.createElement('option');
     opt.value = id;

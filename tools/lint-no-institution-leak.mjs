@@ -27,16 +27,44 @@
 //     - lfi_profile field anywhere
 //     - any UI label, any source code, any other YAML pool.
 //
-// The denylist below is the post-2024 set of CBUAE-licensed banks. Add
-// to it as the ecosystem evolves. Synthetic substitutes are silently
-// allowed everywhere.
+// The denylist is seeded from BOTH:
+//   1. The two real-institution pool files themselves (T-08d) — every
+//      `name:` in synthetic-identity-pool/counterparty-banks/uae-real.yaml
+//      and counterparty-insurers/uae-real.yaml is by definition a real
+//      institution, so a name added to a pool is automatically denied
+//      everywhere outside the allow-sites with no lint edit required.
+//   2. The hand-maintained list below — abbreviations, sub-brands, and
+//      historical / merged entities that the pools don't carry.
+// Synthetic substitutes are silently allowed everywhere.
 
 import fs from 'node:fs';
 import path from 'node:path';
 import yaml from 'js-yaml';
 import { LintReporter, repoRoot, walk } from './lint-shared.mjs';
 
-const DENYLIST = [
+// ─── Pool-seeded entries (T-08d) ─────────────────────────────────────
+function poolInstitutionNames() {
+  const names = [];
+  const sources = [
+    { rel: 'synthetic-identity-pool/counterparty-banks/uae-real.yaml', key: 'banks' },
+    { rel: 'synthetic-identity-pool/counterparty-insurers/uae-real.yaml', key: 'insurers' },
+  ];
+  for (const { rel, key } of sources) {
+    const abs = path.join(repoRoot, rel);
+    const doc = yaml.load(fs.readFileSync(abs, 'utf8'));
+    const entries = doc?.[key];
+    if (!Array.isArray(entries) || entries.length === 0) {
+      throw new Error(`lint-no-institution-leak: ${rel} has no ${key}[] — denylist seed broken`);
+    }
+    for (const e of entries) {
+      if (typeof e?.name === 'string' && e.name.trim()) names.push(e.name.trim());
+    }
+  }
+  return names;
+}
+
+// ─── Hand-maintained entries — abbreviations / sub-brands / historical ──
+const HAND_DENYLIST = [
   // Tier-1 conventional
   'Emirates NBD',
   'ENBD',
@@ -136,6 +164,16 @@ const DENYLIST = [
   'Watania Takaful',
   'Noor Takaful',
 ];
+
+// Union: pool-seeded + hand-maintained, case-insensitively deduplicated.
+const DENYLIST = (() => {
+  const seen = new Map();
+  for (const term of [...poolInstitutionNames(), ...HAND_DENYLIST]) {
+    const k = term.toLowerCase();
+    if (!seen.has(k)) seen.set(k, term);
+  }
+  return [...seen.values()];
+})();
 
 const SCAN_DIRS = ['personas', 'synthetic-identity-pool', 'src'];
 const ALLOWED_EXT = /\.(yaml|yml|json|md|js|mjs|html|css)$/;

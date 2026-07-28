@@ -1,0 +1,231 @@
+# Machine-readable persona-manifest schema — T-08e (EXP-02, D-07 prerequisite).
+#
+# This is a JSON Schema (draft-07) expressed as YAML. It is ENFORCED in CI:
+# tools/lint-persona-spec-conformance.mjs compiles it with AJV and validates
+# every personas/*.yaml (except _schema*) against it on every `npm run lint`.
+#
+# Relationship to the sibling docs:
+#   - personas/_schema.yaml and _schema.insurance.yaml stay the human-readable
+#     reference (field meanings, per-line blocks, narrative conventions).
+#   - This file encodes the STRUCTURAL contract: required keys, types, and
+#     the shapes of accounts[], multi_lfi_footprint (both legacy triad and
+#     Phase 2.2 slots[] forms), multi_insurer_footprint, income, and
+#     insurance.lines.
+#   - Spec-enum conformance (segment / account types / roles / lines vs the
+#     pinned OpenAPI enums) remains in lint-persona-spec-conformance.mjs
+#     proper — the spec, not this file, is the source of truth for enums
+#     (EXP-01), so this schema deliberately types those fields loosely.
+#   - Deeper per-line insurance shape checks live in
+#     tests/persona-manifest.test.mjs.
+#
+# Deliberately tolerant (`additionalProperties: true` at the top level):
+# personas carry narrative and steering keys that evolve per phase. Tighten
+# only where CLAUDE.md / _schema.yaml documents intent.
+
+$schema: "http://json-schema.org/draft-07/schema#"
+title: Persona manifest
+type: object
+additionalProperties: true
+required:
+  - persona_id
+  - name
+  - archetype
+  - default_seed
+  - stress_coverage
+  - demographics
+# Every persona declares its domain either as singular `domain:` or as the
+# Phase 2.2 plural `domains: []` — at least one of the two must be present.
+anyOf:
+  - required: [domain]
+  - required: [domains]
+allOf:
+  # Banking personas (singular or in the domains[] array) must declare
+  # accounts + income — the banking generator hard-requires both.
+  - if:
+      type: object
+      anyOf:
+        - properties: { domain: { const: banking } }
+          required: [domain]
+        - properties: { domains: { type: array, contains: { const: banking } } }
+          required: [domains]
+    then:
+      required: [accounts, income]
+  # Multi-domain personas declaring insurance via domains[] must say which
+  # lines via insurance.lines (single-domain insurance personas may instead
+  # use the legacy `line:` discriminator, defaulting to motor).
+  - if:
+      type: object
+      properties: { domains: { type: array, contains: { const: insurance } } }
+      required: [domains]
+    then:
+      required: [insurance]
+
+properties:
+  persona_id:
+    type: string
+    pattern: "^[a-z][a-z0-9_]*$"
+  name:
+    type: string
+    minLength: 1
+  name_ar:
+    type: string
+    minLength: 1
+  narrative:
+    type: string
+  narrative_ar:
+    type: string
+    minLength: 1
+  archetype:
+    type: string
+    minLength: 1
+  default_seed:
+    type: integer
+  domain:
+    enum: [banking, insurance, atm]
+  domains:
+    type: array
+    minItems: 1
+    uniqueItems: true
+    items:
+      enum: [banking, insurance, atm]
+  segment:
+    enum: [Retail, SME, Corporate]
+  stress_coverage:
+    type: array
+    minItems: 1
+    items:
+      type: string
+      minLength: 1
+  demographics:
+    type: object
+    properties:
+      nationality_pool: { type: string }
+      age_band: { type: [string, integer] }
+      emirate: { type: string }
+      has_visa: { type: boolean }
+
+  line:
+    enum: [motor, home, health, life, travel, renters, employment]
+  insurance:
+    type: object
+    required: [lines]
+    properties:
+      lines:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items:
+          enum: [motor, home, health, life, travel, renters, employment]
+
+  income:
+    type: object
+    required: [primary_employer_pool, monthly_amount_aed, pay_day, variability, flag_payroll]
+    properties:
+      primary_employer_pool: { type: string }
+      monthly_amount_aed: { type: number }
+      pay_day: { type: integer, minimum: 1, maximum: 31 }
+      variability: { enum: [none, low, medium, high] }
+      flag_payroll: { type: boolean }
+
+  accounts:
+    type: array
+    minItems: 1
+    items:
+      type: object
+      required: [type, currency, age_months]
+      properties:
+        # `type` / `account_type` enums are validated against the pinned
+        # OpenAPI spec by lint-persona-spec-conformance.mjs (EXP-01) — the
+        # schema only pins the primitive shape.
+        type: { type: string, minLength: 1 }
+        account_type: { enum: [Retail, SME, Corporate] }
+        currency: { type: string, pattern: "^[A-Z]{3}$" }
+        age_months: { type: integer, minimum: 0 }
+        credit_limit_aed: { type: number }
+        at_slot: { type: string, minLength: 1 }
+
+  fixed_commitments:
+    type: array
+    items:
+      type: object
+      required: [kind, purpose]
+      properties:
+        kind: { enum: [standing_order, direct_debit] }
+        purpose: { type: string, minLength: 1 }
+        amount_aed: { type: number }
+        amount_aed_band: { $ref: "#/definitions/numberBand" }
+        schedule: { type: string }
+        at_slot: { type: string, minLength: 1 }
+
+  multi_lfi_footprint:
+    type: object
+    # Two accepted shapes (normalizeFootprint() canonicalises both):
+    #   A (legacy D-14): { primary, secondary?, tertiary? }
+    #   B (Phase 2.2+):  { slots: [...] } — slots[0] is the primary.
+    oneOf:
+      - required: [slots]
+        properties:
+          slots:
+            type: array
+            minItems: 1
+            items: { $ref: "#/definitions/lfiSlotWithKey" }
+        not:
+          anyOf:
+            - required: [primary]
+            - required: [secondary]
+            - required: [tertiary]
+      - required: [primary]
+        properties:
+          primary: { $ref: "#/definitions/lfiSlot" }
+          secondary: { $ref: "#/definitions/lfiSlot" }
+          tertiary: { $ref: "#/definitions/lfiSlot" }
+        not:
+          required: [slots]
+
+  multi_insurer_footprint:
+    type: object
+    required: [slots]
+    properties:
+      slots:
+        type: array
+        minItems: 1
+        items:
+          type: object
+          required: [line, key]
+          properties:
+            line:
+              enum: [motor, home, health, life, travel, renters, employment]
+            key: { type: string, minLength: 1 }
+            insurer_default: { enum: [Rich, Median, Sparse] }
+            plausible_insurer_candidates:
+              type: array
+              minItems: 1
+              items: { type: string, minLength: 1 }
+            cross_domain_link: { type: string, minLength: 1 }
+
+definitions:
+  numberBand:
+    type: array
+    minItems: 2
+    maxItems: 2
+    items: { type: number }
+  lfiSlot:
+    type: object
+    required: [role, lfi_default]
+    properties:
+      # role ids are validated against spec/lfi-roles.yaml by the lint —
+      # keep the schema loose so a new role is a YAML addition, not a
+      # schema edit (EXP-01 posture).
+      role: { type: string, minLength: 1 }
+      lfi_default: { enum: [Rich, Median, Sparse] }
+      plausible_lfi_candidates:
+        type: array
+        minItems: 1
+        items: { type: string, minLength: 1 }
+  lfiSlotWithKey:
+    allOf:
+      - $ref: "#/definitions/lfiSlot"
+      - type: object
+        required: [key]
+        properties:
+          key: { type: string, minLength: 1 }

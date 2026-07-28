@@ -30,6 +30,7 @@
     "lint:persona-spec-conformance": "node tools/lint-persona-spec-conformance.mjs",
     "lint:stress-coverage-uniqueness": "node tools/lint-stress-coverage-uniqueness.mjs",
     "lint:brand-registry-coverage": "node tools/lint-brand-registry-coverage.mjs",
+    "audit:realism": "node tools/realism-audit.mjs --assert",
     "lint:js": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -40,9 +41,11 @@
     "test:perf": "lhci autorun --config=lighthouserc.json",
     "validate:spec-conformance": "npm run lint:persona-spec-conformance && vitest run tests/spec-validation.test.mjs tests/spec-validation.insurance.test.mjs tests/rendered-fixture-spec-validation.test.mjs",
     "serve": "python3 -m http.server 8000 --directory src",
-    "ci": "npm run verify:spec-shape && npm run build:spec && npm run build:data && npm run build:avatars && npm run build:fixtures:pkgs && npm run check:dist-clean && npm run lint && npm test && npm run test:mcp",
+    "ci": "npm run verify:spec-shape && npm run build:spec && npm run build:data && npm run build:avatars && npm run build:fixtures:pkgs && npm run check:dist-clean && npm run lint && npm run audit:realism && npm test && npm run test:mcp && npm run test:py",
     "ci:full": "npm run ci && npm run build:site && npm run test:e2e && npm run test:perf",
-    "prepare": "husky || true"
+    "prepare": "husky || true",
+    "release:bump": "node tools/release-bump.mjs",
+    "test:py": "python3 -m pytest packages/sandbox-fixtures-py/tests/ -q"
   },
   "lint-staged": {
     "*.{js,mjs,cjs}": [
@@ -68,6 +71,7 @@
     "npm-run-all2": "^7.0.2",
     "posthog-js": "^1.376.6",
     "prettier": "^3.4.2",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.8",
+    "typescript": "^5.7.0"
   }
 }

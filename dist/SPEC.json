@@ -4,7 +4,7 @@
   "pinSha": "52caa147fa754f6b898757e4c39976574b755d66",
   "retrievedAt": "2026-05-20T02:41:46Z",
   "upstreamRepo": "Nebras-Open-Finance/api-specs",
-  "upstreamPath": "dist/standards/v2.1/uae-account-information-openapi.yaml",
+  "upstreamPath": "dist/standards/v2.1-errata2/uae-account-information-openapi.yaml",
   "inScopePaths": [
     "/accounts",
     "/accounts/{AccountId}",

@@ -31,6 +31,10 @@ export function parseArgs(argv, env = process.env) {
     allowedHosts: parseEnvAllowedHosts(env),
     enableDnsRebindingProtection: true,
     simulateOauth: parseEnvSimulateOauth(env),
+    // Public https:// origin of a hosted deployment (behind a TLS-terminating
+    // proxy, e.g. Fly). Used as the OAuth issuer instead of http://host:port.
+    // Validated (must be https://) in startHttp, not here.
+    publicUrl: env?.MCP_PUBLIC_URL || null,
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -43,11 +47,13 @@ export function parseArgs(argv, env = process.env) {
     else if (a === '--port') out.port = Number(argv[++i]);
     else if (a === '--host') out.host = argv[++i];
     else if (a === '--allowed-host') out.allowedHosts.push(argv[++i]);
+    else if (a === '--public-url') out.publicUrl = argv[++i];
     else if (a.startsWith('--transport=')) out.transport = a.slice('--transport='.length);
     else if (a.startsWith('--port=')) out.port = Number(a.slice('--port='.length));
     else if (a.startsWith('--host=')) out.host = a.slice('--host='.length);
     else if (a.startsWith('--allowed-host='))
       out.allowedHosts.push(a.slice('--allowed-host='.length));
+    else if (a.startsWith('--public-url=')) out.publicUrl = a.slice('--public-url='.length);
   }
   return out;
 }

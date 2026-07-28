@@ -22,8 +22,13 @@ function volatileMasks(page) {
   return [page.locator('#version-pin'), page.locator('[data-volatile]')];
 }
 
-test('index — accounts default state', async ({ page }) => {
-  await loadPersona(page, { persona: PERSONA });
+test('index — accounts endpoint', async ({ page }) => {
+  // PR #5 made the Underwriting Summary the banking default landing, so
+  // /accounts must be pinned explicitly (EXP-17 honours the URL endpoint).
+  // This test was authored pre-PR #5 as "accounts default state" and rotted
+  // unnoticed for as long as the visual project never ran in CI (T-02) —
+  // the underwriting-panel test below covers the actual default landing.
+  await loadPersona(page, { persona: PERSONA, extraParams: { endpoint: '/accounts' } });
   await expect(page.locator('.payload-rendered table')).toBeVisible();
   await expect(page).toHaveScreenshot('index-accounts.png', {
     fullPage: true,

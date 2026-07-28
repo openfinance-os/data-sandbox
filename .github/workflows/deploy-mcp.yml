@@ -100,7 +100,8 @@ jobs:
     needs: deploy
     # Catches the "Fly says deployed but container is crash-looping" case:
     # asserts /health returns ok:true and that an MCP initialize +
-    # tools/list roundtrip returns the documented 16 tools.
+    # tools/list roundtrip returns at least the documented tool floor
+    # (EXPECTED_TOOL_COUNT in scripts/smoke.mjs).
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6

@@ -128,7 +128,7 @@ export function buildInsuranceBundle({ persona, lfi, seed, pools, now = DEFAULT_
   // seed, motor/home/travel consents collide on identical IDs and the
   // /insurance-consents/{ConsentId} detail endpoint overwrites itself
   // — a TPP asking for the motor consent would get travel data back.
-  const consentRng = makePrng(persona.persona_id, 'consents', line, seed);
+  const consentRng = makePrng(persona.persona_id, `consents:${line}`, seed);
   bundle.consents = [generateConsentRecord({ persona, rng: consentRng, now })];
   return bundle;
 }
