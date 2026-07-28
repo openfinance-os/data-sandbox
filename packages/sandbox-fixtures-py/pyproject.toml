@@ -23,11 +23,14 @@ Repository = "https://github.com/openfinance-os/data-sandbox"
 Issues = "https://github.com/openfinance-os/data-sandbox/issues"
 
 [build-system]
-requires = ["setuptools>=61.0"]
+# setuptools >= 62.3 is a hard floor: recursive `data/**/*` package-data
+# globs are silently dropped on 61.x, producing a wheel that installs but
+# FileNotFoundErrors on every loader call (E-04).
+requires = ["setuptools>=62.3"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-"openfinance_os_sandbox_fixtures" = ["data/**/*"]
+"openfinance_os_sandbox_fixtures" = ["data/**/*", "py.typed"]

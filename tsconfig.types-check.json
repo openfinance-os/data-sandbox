@@ -1,0 +1,14 @@
+{
+  "// purpose": "E-01 type-check gate config. tests/types-check.test.mjs generates a smoke-consumer project in a temp dir that `extends` this file and runs `tsc --noEmit` against the built packages/sandbox-fixtures package. node16 resolution is deliberate: it exercises the exports map's `types` condition — the exact resolution mode that produced TS7016 before the condition existed.",
+  "compilerOptions": {
+    "module": "node16",
+    "moduleResolution": "node16",
+    "target": "es2022",
+    "lib": ["es2022"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "types": []
+  }
+}

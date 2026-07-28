@@ -1389,6 +1389,22 @@ input:focus,
   font-size: 13px;
   line-height: 1.2;
 }
+/* C-A1 — the persona name is now a real <button> (keyboard-activatable card
+   entry point). Reset UA button chrome so it renders exactly like the old
+   <div>; the card keeps its own hover/active affordances. */
+button.persona-name {
+  display: block;
+  width: 100%;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  font-weight: 600;
+  color: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
 .persona-archetype {
   font-size: 10px;
   color: var(--text-muted);

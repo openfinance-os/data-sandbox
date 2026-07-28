@@ -48,9 +48,27 @@ def _manifest() -> Dict[str, Any]:
     return _MANIFEST_CACHE
 
 
-def list_personas() -> List[str]:
-    """Return the list of persona ids in the bundled fixture set."""
-    return list(_manifest()["personas"].keys())
+def list_personas(domain: Optional[str] = None) -> List[str]:
+    """Return the list of persona ids in the bundled fixture set.
+
+    With ``domain`` ('banking' | 'insurance' | 'atm'), filters on the
+    persona's declared domain set. Phase 2.2 multi-domain personas declare
+    ``domains: ['banking', 'insurance']`` and appear under BOTH the banking
+    and insurance filters — mirroring the npm loader and the sandbox UI.
+    Legacy single-domain personas carrying only the singular ``domain``
+    field are honoured too.
+    """
+    personas = _manifest()["personas"]
+    if domain is None:
+        return list(personas.keys())
+    out: List[str] = []
+    for pid, info in personas.items():
+        ds = info.get("domains")
+        if not isinstance(ds, list) or not ds:
+            ds = [info.get("domain") or "banking"]
+        if domain in ds:
+            out.append(pid)
+    return out
 
 
 def get_persona_info(persona_id: str) -> Optional[Dict[str, Any]]:
@@ -75,17 +93,32 @@ def load_fixture(
     lfi: str = "median",
     seed: Optional[int] = None,
     endpoint: str,
+    lfi_role: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Load a v2.1-shaped envelope for a (persona, lfi, seed, endpoint) tuple.
 
     Returns the parsed JSON envelope including the watermark fields
     (_persona, _lfi, _seed, _specSha, _retrievedAt).
+
+    ``lfi_role`` (D-14 / Phase D Slice 5): pass a non-primary role-slot key
+    to read the persona's multi-LFI-footprint role bundle instead of the
+    primary fixture. Legacy personas use 'secondary'/'tertiary'; Phase 2.2
+    N-slot personas use arbitrary keys — see :func:`list_role_bundles`.
     """
     manifest = _manifest()
     info = manifest["personas"].get(persona)
     if info is None:
         raise KeyError(f"unknown persona: {persona}")
     use_seed = seed if seed is not None else info["default_seed"]
+    if lfi_role and lfi_role != "primary":
+        rkey = f"{persona}|{lfi_role}|{lfi}|{use_seed}"
+        rfx = (manifest.get("roleFixtures") or {}).get(rkey)
+        if rfx is None:
+            raise KeyError(f"no role-bundle fixture for {rkey}")
+        rel = rfx["endpoints"].get(endpoint)
+        if rel is None:
+            raise KeyError(f"no fixture for endpoint {endpoint!r} in {rkey}")
+        return json.loads((_data_dir() / rel).read_text(encoding="utf-8"))
     key = f"{persona}|{lfi}|{use_seed}"
     fx = manifest["fixtures"].get(key)
     if fx is None:
@@ -96,9 +129,45 @@ def load_fixture(
     return json.loads((_data_dir() / rel).read_text(encoding="utf-8"))
 
 
-def load_spec() -> Dict[str, Any]:
-    """Load the parsed v2.1 OpenAPI spec — keyed by endpoint with field metadata."""
-    return json.loads((_data_dir() / "spec.json").read_text(encoding="utf-8"))
+def list_role_bundles(persona_id: str) -> List[str]:
+    """Return the role-slot keys with an emitted role bundle for this persona.
+
+    Derived from the manifest's roleFixtures (supports Phase 2.2 N-slot
+    personas, not just the legacy secondary/tertiary triad). Mirrors the npm
+    loader's ``listRoleBundles``.
+    """
+    out: List[str] = []
+    m = _manifest()
+    if persona_id not in m["personas"]:
+        return out
+    prefix = f"{persona_id}|"
+    for key in (m.get("roleFixtures") or {}):
+        if not key.startswith(prefix):
+            continue
+        slot = key[len(prefix):].split("|")[0]
+        if slot not in out:
+            out.append(slot)
+    return out
+
+
+_SPEC_FILE_BY_DOMAIN = {
+    "banking": "spec.json",
+    "insurance": "spec.insurance.json",
+    "atm": "spec.atm.json",
+}
+
+
+def load_spec(domain: str = "banking") -> Dict[str, Any]:
+    """Load a parsed v2.1 OpenAPI spec — keyed by endpoint with field metadata.
+
+    ``domain`` selects the spec: 'banking' (default, spec.json),
+    'insurance' (spec.insurance.json), or 'atm' (spec.atm.json). Mirrors the
+    npm loader's ``loadSpec({ domain })``.
+    """
+    file = _SPEC_FILE_BY_DOMAIN.get(domain)
+    if file is None:
+        raise KeyError(f"unknown domain: {domain!r} (expected one of {sorted(_SPEC_FILE_BY_DOMAIN)})")
+    return json.loads((_data_dir() / file).read_text(encoding="utf-8"))
 
 
 def load_persona_manifest(persona_id: str) -> Dict[str, Any]:
@@ -111,6 +180,7 @@ def load_journey(
     *,
     lfi: str = "median",
     seed: Optional[int] = None,
+    lfi_role: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Load the full coherent bundle for one (persona, lfi, seed) tuple.
 
@@ -135,6 +205,31 @@ def load_journey(
     if info is None:
         raise KeyError(f"unknown persona: {persona}")
     use_seed = seed if seed is not None else info["default_seed"]
+    if lfi_role and lfi_role != "primary":
+        rkey = f"{persona}|{lfi_role}|{lfi}|{use_seed}"
+        rfx = (m.get("roleFixtures") or {}).get(rkey)
+        if rfx is None:
+            raise KeyError(f"no role-bundle journey for {rkey}")
+        endpoints = {
+            ep: json.loads((_data_dir() / rel).read_text(encoding="utf-8"))
+            for ep, rel in rfx["endpoints"].items()
+        }
+        parties_env = endpoints.get("/parties", {})
+        return {
+            "persona": persona,
+            "lfi": lfi,
+            "lfi_role": lfi_role,
+            "seed": use_seed,
+            "domain": info.get("domain") or "banking",
+            "accountIds": rfx.get("accountIds", []),
+            "policyIds": [],
+            "quoteId": None,
+            "customerId": parties_env.get("Data", {}).get("Party", {}).get("PartyId"),
+            "specVersion": m["specVersion"],
+            "specSha": m["specSha"],
+            "version": m["version"],
+            "endpoints": endpoints,
+        }
     key = f"{persona}|{lfi}|{use_seed}"
     fx = m["fixtures"].get(key)
     if fx is None:
@@ -148,8 +243,12 @@ def load_journey(
     return {
         "persona": persona,
         "lfi": lfi,
+        "lfi_role": "primary",
         "seed": use_seed,
+        "domain": info.get("domain") or "banking",
         "accountIds": fx.get("accountIds", []),
+        "policyIds": fx.get("policyIds", []),
+        "quoteId": fx.get("quoteId"),
         "customerId": customer_id,
         "specVersion": m["specVersion"],
         "specSha": m["specSha"],
@@ -161,6 +260,52 @@ def load_journey(
 def manifest() -> Dict[str, Any]:
     """Return the top-level manifest.json."""
     return _manifest()
+
+
+def load_enrichment(persona: str, *, seed: Optional[int] = None) -> Dict[str, Any]:
+    """Load the per-(persona, seed) enrichment sidecar.
+
+    The bundle stays as the v2.1 envelope a real UAE core would serve over
+    Open Finance (the "raw" view); the enrichment sidecar is what a TPP's
+    enrichment engine produces after cleaning (merchant, corrected MCC,
+    category taxonomy, logo slug/URL, brand colour, parent group,
+    MCC-misrouting metadata). Join to transactions by TransactionId.
+    LFI-independent — identical under rich/median/sparse. Mirrors the npm
+    loader's ``loadEnrichment``.
+    """
+    info = _manifest()["personas"].get(persona)
+    if info is None:
+        raise KeyError(f"unknown persona: {persona}")
+    use_seed = seed if seed is not None else info["default_seed"]
+    files = info.get("enrichmentFiles") or {}
+    rel = files.get(str(use_seed)) or info.get("enrichmentFile")
+    if rel is None:
+        raise KeyError(f"no enrichment sidecar published for {persona} seed={use_seed}")
+    data = json.loads((_data_dir() / rel).read_text(encoding="utf-8"))
+    if data.get("seed") != use_seed:
+        raise ValueError(
+            f"enrichment sidecar seed mismatch: file has {data.get('seed')}, requested {use_seed}"
+        )
+    return data
+
+
+_BRAND_REGISTRY_CACHE: Optional[Dict[str, Any]] = None
+
+
+def load_brand_registry() -> Dict[str, Any]:
+    """Load the slug-keyed brand registry (Phase R4).
+
+    Maps merchant slug → logo URL, primary colour, website, parent group,
+    display variants. The ``logoSlug`` field on an enrichment record is the
+    join key. Logos are algorithmically-generated placeholders — no real
+    brand marks. Mirrors the npm loader's ``loadBrandRegistry``.
+    """
+    global _BRAND_REGISTRY_CACHE
+    if _BRAND_REGISTRY_CACHE is None:
+        _BRAND_REGISTRY_CACHE = json.loads(
+            (_data_dir() / "brand-registry.json").read_text(encoding="utf-8")
+        )
+    return _BRAND_REGISTRY_CACHE
 
 
 # --- Pagination — Open Finance v2.1 Links/Meta envelope ----------------------
@@ -313,11 +458,14 @@ __all__ = [
     "list_personas",
     "get_persona_info",
     "list_endpoints",
+    "list_role_bundles",
     "load_fixture",
     "load_fixture_page",
     "load_journey",
     "load_spec",
     "load_persona_manifest",
+    "load_enrichment",
+    "load_brand_registry",
     "manifest",
     "paginate_envelope",
     "is_paginatable_envelope",

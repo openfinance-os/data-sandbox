@@ -3,24 +3,30 @@
 // JSON (no build chain). State lives in a single object updated by select-
 // box and persona-card events; every change re-renders the active panes.
 
-import { buildBundle } from './generator/index.js';
+// C-P1 perf — browser pages build bundles through the async lazy entry:
+// banking is static (cold-landing default), insurance/ATM pipelines
+// dynamic-import on first use. Node tooling keeps the sync entry at
+// ./generator/index.js.
+import { buildBundle } from './generator/lazy.js';
 import { track } from './analytics.js';
 import {
   coverage,
   coverageByBand,
   coverageForEndpoint,
   leafFields,
-  specCitationUrl,
   realLfisGuidance,
   bandForFieldName,
 } from './shared/spec-helpers.js';
 import { personaInDomain } from './shared/domains.js';
 import { statusPill, syncViewTabs } from './shared/dom.js';
-import { setDocumentLocale, normalizeLocale, DEFAULT_LOCALE } from './shared/i18n.js';
+import { setDocumentLocale, normalizeLocale, DEFAULT_LOCALE, t } from './shared/i18n.js';
 import { decodeFromUrl, encodeEmbed, encodeFixtureUrl, CUSTOM_PERSONA_SLUG } from './url.js';
 import { expandRecipe } from './persona-builder/expand.js';
 import { decodeRecipe, encodeRecipe, RECIPE_DEFAULTS } from './persona-builder/recipe.js';
-import { mountPersonaBuilder } from './ui/persona-builder-ui.js';
+// C-P1 perf — the persona-builder UI (and its export-zip → generator chain)
+// is dynamic-imported on the first "+ Build a custom persona" click; see
+// attachBuilderHandlers. Keeping it off the cold path matters because
+// export-zip statically imports the FULL sync generator entry.
 // PR-14 perf — find-box module is dynamic-imported on first ⌘K /
 // button click. Like Export popover, the entry point is user-triggered
 // outside the cold-load measurement window, so the dynamic-import
@@ -48,7 +54,7 @@ import {
   downloadCsv,
   downloadTarball,
 } from './ui/export.js';
-import { conditionalRule, isPii, whyEmpty } from './shared/field-knowledge.js';
+import { isPii, whyEmpty } from './shared/field-knowledge.js';
 import { createUnderwriting } from './ui/underwriting.js';
 import { createFieldCard } from './ui/field-card.js';
 import { createHoverPreview } from './ui/hover-preview.js';
@@ -69,8 +75,6 @@ import {
   ENDPOINTS,
   ACCOUNT_SCOPED_PATHS,
   BUNDLE_SCOPED_PATHS,
-  JTBD_PRESETS,
-  INSURANCE_JTBD_PRESETS,
   getJtbdPresets,
   STRESS_BEST_FOR,
   LFI_CAPTIONS,
@@ -263,6 +267,8 @@ const { renderCompareView } = createCompareView({
   el,
   stripInternal,
   personaAvatarEl,
+  // D-10 — Arabic display names in the compare header.
+  localizedName: (p) => localizedName(p),
 });
 const { renderTxFilterBar, applyFilter, applySort, toggleSort } = createTxFilter({
   state,
@@ -604,7 +610,9 @@ async function init() {
   // requires sandbox-host configuration outside this commit's scope. Until
   // that lands, custom-persona bundles are accessible via the npm engine
   // (plug-point 2) and the static-fixture zip download (plug-point 3).
-  rebuildAndRender();
+  // C-P1 — awaited so state.bundle exists before the tour (which reads
+  // bundle.accounts in its step setups) can auto-launch below.
+  await rebuildAndRender();
   emitPersonaLoad();
 
   // Auto-launch the 5-step tour on cold landing (URL with no query params)
@@ -639,8 +647,12 @@ let builderInstance = null;
 function attachBuilderHandlers() {
   const btn = document.getElementById('open-builder-btn');
   if (!btn) return;
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', async () => {
     if (!builderInstance) {
+      // C-P1 perf — first click pays the dynamic-import; the builder UI's
+      // transitive graph (export-zip → sync generator entry → insurance +
+      // ATM trees) stays off the cold-load critical path.
+      const { mountPersonaBuilder } = await import('./ui/persona-builder-ui.js');
       builderInstance = mountPersonaBuilder({
         pools: state.data.pools,
         currentRecipe: state.recipe,
@@ -833,14 +845,38 @@ function buildPersonaList() {
     visibleCount += 1;
 
     const isCustom = id === CUSTOM_PERSONA_SLUG;
+    // C-A1 — the card's primary activation is a real <button> (the persona
+    // name), so the library is keyboard-reachable (Tab) and activatable
+    // (Enter/Space) with correct button semantics for screen readers. The
+    // card-level click stays as a larger mouse target; nested interactive
+    // children (JTBD chips, the disclosure) keep handling their own events.
+    const activatePersona = () => {
+      state.personaId = id;
+      state.navAccountCollapsed.clear();
+      // PR #5 — banking persona-switch now lands on the Underwriting
+      // Summary by default; insurance flow has its own per-domain
+      // default endpoint resolved in rebuildAndRender.
+      state.endpoint = UNDERWRITING_PSEUDO;
+      state.selectedAccountId = null;
+      rebuildAndRender();
+      // PR-11 — emit EXP-21 persona_load on every card activation
+      // (previously this fired from the persona-select change listener;
+      // the dropdown is gone).
+      emitPersonaLoad();
+    };
     const cardBody = el(
       'div',
       { class: 'persona-card-body' },
       el(
-        'div',
-        { class: 'persona-name' },
+        'button',
+        { class: 'persona-name', attrs: { type: 'button' }, onClick: activatePersona },
         document.createTextNode(localizedName(p)),
-        isCustom ? el('span', { class: 'custom-badge', text: 'Custom (not curated)' }) : null,
+        isCustom
+          ? el('span', {
+              class: 'custom-badge',
+              text: t('personaCard.customBadge', state.lang),
+            })
+          : null,
       ),
       el('div', { class: 'persona-archetype', text: humanArchetype(p.archetype) }),
     );
@@ -891,7 +927,7 @@ function buildPersonaList() {
     if (hasMore) {
       const details = el('details', { class: 'persona-more' });
       const summary = el('summary', { class: 'persona-more-summary' });
-      summary.appendChild(document.createTextNode('More about this persona'));
+      summary.appendChild(document.createTextNode(t('personaCard.more', state.lang)));
       details.appendChild(summary);
       if (bestFor) details.appendChild(el('div', { class: 'persona-best', text: bestFor }));
       if (p.narrative)
@@ -945,21 +981,12 @@ function buildPersonaList() {
         attrs: { role: 'listitem' },
         dataset: { personaId: id },
         onClick: (e) => {
-          // Chips and the disclosure handle their own clicks. The card-level
-          // click only fires when the user clicks empty card chrome.
-          if (e.target.closest('.stress-chip, .persona-jtbd-chip, .persona-more')) return;
-          state.personaId = id;
-          state.navAccountCollapsed.clear();
-          // PR #5 — banking persona-switch now lands on the Underwriting
-          // Summary by default; insurance flow has its own per-domain
-          // default endpoint resolved in rebuildAndRender.
-          state.endpoint = UNDERWRITING_PSEUDO;
-          state.selectedAccountId = null;
-          rebuildAndRender();
-          // PR-11 — emit EXP-21 persona_load on every card-click activation
-          // (previously this fired from the persona-select change listener;
-          // the dropdown is gone).
-          emitPersonaLoad();
+          // Chips, the disclosure, and the name button handle their own
+          // clicks. The card-level click only fires when the user clicks
+          // empty card chrome (larger mouse target, C-A1).
+          if (e.target.closest('.stress-chip, .persona-jtbd-chip, .persona-more, .persona-name'))
+            return;
+          activatePersona();
         },
       },
       personaAvatarEl(id, p, 'sm'),
@@ -972,7 +999,7 @@ function buildPersonaList() {
     list.appendChild(
       el('div', {
         class: 'persona-empty',
-        text: 'No personas cover this stress term yet. Clear the filter to see the full library.',
+        text: t('personaCard.emptyFiltered', state.lang),
       }),
     );
   }
@@ -1322,7 +1349,11 @@ function exportTarball() {
   downloadTarball(state.bundle, ctx, `${state.personaId}-${state.lfi}-seed${state.seed}.tar`);
 }
 
-function rebuildAndRender() {
+// C-P1 — async because the lazy generator entry may dynamic-import a
+// non-banking pipeline on first use. Callers are fire-and-forget except
+// init() and switchDomain(), which await so state.bundle exists before
+// anything downstream reads it.
+async function rebuildAndRender() {
   // 120ms fade — visually confirms "the data just changed" when the user
   // switches persona / LFI / seed. Ignored when prefers-reduced-motion is set
   // (the CSS rule kills the transition).
@@ -1331,7 +1362,7 @@ function rebuildAndRender() {
 
   const persona = state.data.personas[state.personaId];
   try {
-    state.bundle = buildBundle({
+    state.bundle = await buildBundle({
       persona,
       lfi: state.lfi,
       seed: state.seed,
@@ -1610,7 +1641,7 @@ async function switchDomain(newDomain) {
   buildJtbdRail();
   buildPersonaList();
   renderDomainChip();
-  rebuildAndRender();
+  await rebuildAndRender();
   emitPersonaLoad();
 }
 
@@ -1967,7 +1998,12 @@ function renderPayloadUnsafe() {
   // (orthogonal to state.view: representation × cardinality). Either
   // branch can be re-entered without losing the other axis.
   if (state.compareMode) {
-    renderCompareView(body);
+    // C-P1/C-P2 — async: compare bundles come from the lazy generator entry
+    // with a small memo cache. The surrounding try/catch can't see async
+    // failures, so surface them explicitly.
+    renderCompareView(body).catch((err) => {
+      console.error('renderCompareView failed', err);
+    });
     return;
   }
 
@@ -2084,15 +2120,39 @@ function renderPayloadUnsafe() {
 
   // Cross-link match counts (EXP-12) — pre-computed per row so the header
   // affordance reads "→ N matching transactions" instead of a quiet hover.
+  // C-P4 — instead of running the raw match() predicate over every
+  // (visible row × account transaction) pair (~600k regex/lowercase calls
+  // per render on /standing-orders for HNW personas), pre-lowercase each
+  // transaction's text ONCE and bucket by TransactionType; each row then
+  // compiles its needle once and scans only its type bucket.
   const jumpFrom = jumpFromForActiveEndpoint();
   const linkedColumn = jumpFrom != null;
   const matchCountByRow = new Map();
   if (linkedColumn) {
-    const accTx = (state.bundle.transactions ?? []).filter(
-      (t) => t._accountId === state.selectedAccountId,
-    );
+    const prepared = [];
+    for (const tx of state.bundle.transactions ?? []) {
+      if (tx._accountId !== state.selectedAccountId) continue;
+      prepared.push({
+        type: tx.TransactionType,
+        ref: tx.TransactionReference ?? '',
+        info: (tx.TransactionInformation ?? '').toLowerCase(),
+      });
+    }
+    const byType = new Map();
+    for (const p of prepared) {
+      let bucket = byType.get(p.type);
+      if (!bucket) byType.set(p.type, (bucket = []));
+      bucket.push(p);
+    }
     for (const r of visible) {
-      const n = accTx.filter((t) => jumpFrom.match(t, r)).length;
+      const predicate = jumpFrom.prepare(r);
+      if (!predicate) {
+        matchCountByRow.set(r, 0);
+        continue;
+      }
+      const pool = jumpFrom.txType ? (byType.get(jumpFrom.txType) ?? []) : prepared;
+      let n = 0;
+      for (const p of pool) if (predicate(p)) n += 1;
       matchCountByRow.set(r, n);
     }
   }
@@ -2106,13 +2166,31 @@ function renderPayloadUnsafe() {
   const table = el('table');
   const headRow = el('tr');
   for (const k of allKeys) {
-    const th = el('th');
+    // C-A2 — column-header semantics for screen-reader table navigation.
+    const th = el('th', { attrs: { scope: 'col' }, dataset: { col: k } });
     const f = fieldsByName.get(k);
     if (f) th.dataset.status = f.status; // drives the status-stripe colour
     if (isTransactions) {
+      // C-A2 — keyboard-accessible sort: the header is focusable, Enter /
+      // Space toggles, and aria-sort reflects the active sort state (set
+      // only on the sorted column per the ARIA authoring guidance).
       th.classList.add('sortable');
-      if (state.txSort.column === k) th.classList.add(`sort-${state.txSort.dir}`);
+      th.setAttribute('tabindex', '0');
+      if (state.txSort.column === k) {
+        th.classList.add(`sort-${state.txSort.dir}`);
+        th.setAttribute('aria-sort', state.txSort.dir === 'asc' ? 'ascending' : 'descending');
+      }
       th.addEventListener('click', () => toggleSort(k));
+      th.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter' || ev.key === ' ') {
+          ev.preventDefault();
+          toggleSort(k);
+          // toggleSort re-renders the table (destroying this th) — restore
+          // focus to the same column's rebuilt header so keyboard flow
+          // continues where it was.
+          document.querySelector(`.payload-rendered th[data-col="${CSS.escape(k)}"]`)?.focus();
+        }
+      });
     }
     if (f) {
       th.appendChild(statusPill(f.status));
@@ -2690,12 +2768,27 @@ curl -fsS '${curlUrl}'`;
 
 // ---- EXP-12 bidirectional links ----------------------------------------------------------
 
+// Each descriptor carries two match paths with identical semantics:
+//   - match(tx, record): the raw per-pair predicate, used by the click-through
+//     (crossLinkToTransactions) where only one record is evaluated.
+//   - txType + prepare(record): the indexed path (C-P4) used by the visible-row
+//     count loop — `prepare` compiles the record's needle(s) once and returns a
+//     predicate over pre-lowercased {type, ref, info} entries (or null when the
+//     record can never match); `txType` names the TransactionType bucket to
+//     scan (null = all).
 function jumpFromForActiveEndpoint() {
   switch (state.endpoint) {
     case '/accounts/{AccountId}/standing-orders':
       return {
         kind: 'standing-order',
         label: (so) => `standing order "${so.Reference || so.StandingOrderId}"`,
+        txType: 'LocalBankTransfer',
+        prepare: (so) => {
+          if (!so.Reference) return null;
+          const ref = String(so.Reference).toUpperCase().slice(0, 6);
+          const needle = String(so.Reference).replace(/_/g, ' ').toLowerCase();
+          return (p) => p.ref.startsWith(ref) || p.info.includes(needle);
+        },
         match: (tx, so) => {
           if (!so.Reference) return false;
           const ref = String(so.Reference).toUpperCase().slice(0, 6);
@@ -2712,6 +2805,11 @@ function jumpFromForActiveEndpoint() {
       return {
         kind: 'direct-debit',
         label: (dd) => `direct debit "${dd.Name || dd.DirectDebitId}"`,
+        txType: 'BillPayments',
+        prepare: (dd) => {
+          const purpose = String(dd.Name || '').toLowerCase();
+          return (p) => p.info.includes(purpose);
+        },
         match: (tx, dd) => {
           const purpose = String(dd.Name || '').toLowerCase();
           return (
@@ -2724,6 +2822,12 @@ function jumpFromForActiveEndpoint() {
       return {
         kind: 'beneficiary',
         label: (b) => `beneficiary "${b.CreditorAccount?.[0]?.Name || b.BeneficiaryId}"`,
+        txType: null,
+        prepare: (b) => {
+          const ben = b.CreditorAccount?.[0]?.Name?.toLowerCase();
+          if (!ben) return null;
+          return (p) => p.info.includes(ben);
+        },
         match: (tx, b) => {
           const ben = b.CreditorAccount?.[0]?.Name?.toLowerCase();
           if (!ben) return false;

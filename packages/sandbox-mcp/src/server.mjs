@@ -1,5 +1,9 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import {
+  loadFixture,
   loadJourney,
   loadPersonaManifest,
   loadSpec,
@@ -27,17 +31,24 @@ import {
 } from './session.mjs';
 import { registerPrompts } from './prompts.mjs';
 
-const PKG_NAME = '@openfinance-os/sandbox-mcp';
-const PKG_VERSION = '0.0.1';
+// Read name/version from package.json (same pattern as src/index.mjs) so the
+// MCP `initialize` handshake and version-stamped payloads can never drift
+// from the published package version.
+const _here = path.dirname(fileURLToPath(import.meta.url));
+const _pkg = JSON.parse(readFileSync(path.join(_here, '..', 'package.json'), 'utf8'));
+const PKG_NAME = _pkg.name;
+const PKG_VERSION = _pkg.version;
 
 const PFM_INSTRUCTIONS = [
-  'You are wired to a sandbox of synthetic UAE Open Finance v2.1 payloads across two domains:',
+  'You are wired to a sandbox of synthetic UAE Open Finance v2.1 payloads across three domains:',
   '  • Bank Data Sharing (29 personas in the banking domain: 21 banking-only + 8 multi-domain) —',
   '    accounts, balances, transactions, parties, etc.',
   '  • Insurance Data Sharing (17 personas in the insurance domain: 9 insurance-only + 8 multi-domain',
   '    across 7 lines: motor, home, health, life, travel, renters, employment). Per-line MCP tools —',
   '    `get_<line>_policies`, `get_<line>_policy`, `get_<line>_payment_details`, `get_<line>_quote` —',
   '    cover every line. Multi-domain personas (e.g. `retail_multi_banker`) accept tools from both sides.',
+  '  • ATM Locator (the `atm_directory` infrastructure persona) — call `get_atms` for the public',
+  '    ATM directory (locations, services, fees, accessibility). No session required.',
   'All data is fictional — no real customer, no real institution. Every response carries a `_watermark`',
   'field; preserve it in any user-visible summary, table, or export.',
   '',
@@ -385,6 +396,7 @@ function inferDomain(endpoint) {
   if (typeof endpoint !== 'string') return 'banking';
   if (INSURANCE_ENDPOINT_RE.test(endpoint)) return 'insurance';
   if (endpoint.startsWith('/insurance-consents')) return 'insurance';
+  if (endpoint === '/atms' || endpoint.startsWith('/atms/')) return 'atm';
   return 'banking';
 }
 
@@ -568,10 +580,10 @@ export function createServer() {
     {
       title: 'List synthetic personas',
       description:
-        'List the curated synthetic UAE personas in this sandbox: 21 banking-only + 9 insurance-only + 8 multi-domain = 38 personas (the 9 insurance personas cover all 7 lines — 3 motor, 1 home, 1 health, 1 life, 1 travel, 1 renters, 1 employment). Returns id, display name, archetype, default seed, domain (`"banking"` / `"insurance"` / `"multi"`), stress-coverage tags, and `multi_lfi_footprint` / `multi_insurer_footprint` slot arrays declaring the persona\'s plausible multi-LFI / multi-insurer reality (each slot with named real-UAE candidates — D-14 allow-site). Pass { domain: "banking" } or { domain: "insurance" } to filter; multi-domain personas appear under both filters. Omit to get all 38.',
+        'List the curated synthetic UAE personas in this sandbox: 21 banking-only + 9 insurance-only + 8 multi-domain + 1 ATM-directory infrastructure persona = 39 personas (the 9 insurance personas cover all 7 lines — 3 motor, 1 home, 1 health, 1 life, 1 travel, 1 renters, 1 employment). Returns id, display name, archetype, default seed, domain (`"banking"` / `"insurance"` / `"multi"` / `"atm"`), stress-coverage tags, and `multi_lfi_footprint` / `multi_insurer_footprint` slot arrays declaring the persona\'s plausible multi-LFI / multi-insurer reality (each slot with named real-UAE candidates — D-14 allow-site). Pass { domain: "banking" }, { domain: "insurance" }, or { domain: "atm" } to filter; multi-domain personas appear under both banking and insurance filters. Omit to get all 39.',
       inputSchema: {
         domain: z
-          .enum(['banking', 'insurance'])
+          .enum(['banking', 'insurance', 'atm'])
           .optional()
           .describe('Optional domain filter. Omit to list every curated persona across domains.'),
       },
@@ -627,6 +639,22 @@ export function createServer() {
                 slot: s.key ?? (i === 0 ? 'primary' : `slot-${i + 1}`),
                 role: s.role,
                 plausible_lfi_candidates: s.plausible_lfi_candidates ?? [],
+              })),
+            };
+          })(),
+          // Phase 2.2: the insurance mirror of the banking footprint. Slot
+          // arrays only (no legacy triad shape ever existed for insurers).
+          // Null for personas without a declared multi-insurer reality.
+          multi_insurer_footprint: (() => {
+            const ifp = info?.multi_insurer_footprint ?? null;
+            const slots = Array.isArray(ifp?.slots) ? ifp.slots.filter((s) => s != null) : [];
+            if (slots.length === 0) return null;
+            return {
+              slots: slots.map((s, i) => ({
+                slot: s.key ?? `slot-${i + 1}`,
+                line: s.line ?? null,
+                plausible_insurer_candidates: s.plausible_insurer_candidates ?? [],
+                ...(s.cross_domain_link ? { cross_domain_link: s.cross_domain_link } : {}),
               })),
             };
           })(),
@@ -1165,6 +1193,94 @@ export function createServer() {
     },
   );
 
+  // ── ATM Locator domain (Phase 2.3 GA) ─────────────────────────────────────
+  // The ATM directory is an *infrastructure* persona (atm_directory), not a
+  // customer — so unlike the other get_* tools, get_atms works without a
+  // session. When the active session IS an ATM session (set_session with
+  // persona "atm_directory"), its lfi/seed are used as defaults, so an ATM
+  // session is no longer a dead-end.
+
+  server.registerTool(
+    'get_atms',
+    {
+      title: 'Get the ATM directory',
+      description:
+        'Return the /atms envelope from the UAE ATM Locator domain — the synthetic public ATM directory (per-ATM location, services, fees, accessibility, supported currencies/languages) emitted by the `atm_directory` infrastructure persona. Works without a session: lfi defaults to the active ATM session\'s profile (else "median") and seed to the directory\'s default seed. The rich-profile directory is large, so output is capped at `limit` entries (default 25, max 500) with `_filter.truncated=true` when the cap bites; `city` filters by TownName / CountrySubDivision substring.',
+      inputSchema: {
+        lfi: z
+          .enum(['rich', 'median', 'sparse'])
+          .optional()
+          .describe(
+            'LFI populate-rate profile for the directory. Default: the active ATM session\'s profile, else "median".',
+          ),
+        seed: z
+          .number()
+          .int()
+          .optional()
+          .describe("RNG seed. Default: the atm_directory persona's default_seed."),
+        city: z
+          .string()
+          .optional()
+          .describe(
+            'Case-insensitive substring filter against Location.PostalAddress TownName / CountrySubDivision (e.g. "Dubai", "Abu Dhabi").',
+          ),
+        limit: z
+          .number()
+          .int()
+          .min(0)
+          .max(MAX_LIMIT)
+          .optional()
+          .describe(
+            `Max ATM entries in the response. Default 25, hard cap ${MAX_LIMIT}. When the matching set exceeds this, \`_filter.truncated\` is set.`,
+          ),
+      },
+    },
+    async ({ lfi, seed, city, limit }) => {
+      const info = getPersonaInfo('atm_directory');
+      if (!info) throw new Error('atm_directory persona missing from the fixture corpus');
+      const s = session.peek();
+      const isAtmSession = s && s.kind === 'curated' && s.persona === 'atm_directory';
+      const effLfi = lfi ?? (isAtmSession ? s.lfi : 'median');
+      const effSeed = seed ?? (isAtmSession ? s.seed : info.default_seed);
+      const env = loadFixture({
+        persona: 'atm_directory',
+        lfi: effLfi,
+        seed: effSeed,
+        endpoint: '/atms',
+      });
+      const atms = Array.isArray(env?.Data) ? env.Data : [];
+      const q = city ? String(city).toLowerCase() : null;
+      const matched = q
+        ? atms.filter((a) => {
+            const addr = a?.Location?.PostalAddress ?? {};
+            return (
+              String(addr.TownName ?? '')
+                .toLowerCase()
+                .includes(q) ||
+              String(addr.CountrySubDivision ?? '')
+                .toLowerCase()
+                .includes(q)
+            );
+          })
+        : atms;
+      const cap = Math.max(0, Math.min(MAX_LIMIT, limit ?? 25));
+      const kept = matched.slice(0, cap);
+      const filtered = {
+        ...env,
+        Data: kept,
+        _filter: {
+          city: city ?? null,
+          limit: cap,
+          total: atms.length,
+          matched: matched.length,
+          kept: kept.length,
+          truncated: matched.length > kept.length,
+        },
+      };
+      return envelope('atm_directory', effLfi, effSeed, '/atms', filtered);
+    },
+  );
+
   // ── Insurance endpoint wrappers (Phase 2.0 motor full-coverage) ───────────
 
   server.registerTool(
@@ -1458,7 +1574,7 @@ export function createServer() {
             'Field name or dotted path to filter on (e.g. "Currency" or "Data.Account[].Currency"). Omit to return every field on the endpoint.',
           ),
         domain: z
-          .enum(['banking', 'insurance'])
+          .enum(['banking', 'insurance', 'atm'])
           .optional()
           .describe('Optional domain override. Auto-detected from endpoint prefix when omitted.'),
         limit: z
@@ -1538,6 +1654,29 @@ export function createServer() {
     },
     async (uri) => {
       const spec = loadSpec({ domain: 'insurance' });
+      return {
+        contents: [
+          {
+            uri: uri.href,
+            mimeType: 'application/json',
+            text: JSON.stringify(spec),
+          },
+        ],
+      };
+    },
+  );
+
+  server.registerResource(
+    'spec-atm',
+    'spec://uae-atm-v2.1',
+    {
+      title: 'UAE Open Finance ATM Locator v2.1 (parsed)',
+      description:
+        'Parsed ATM Locator OpenAPI spec from the pinned upstream commit. Covers the /atms directory endpoint (per-ATM location, services, fees, accessibility). Use to ground field-level answers about the ATM domain ("is GeoLocation mandatory on an ATM entry?").',
+      mimeType: 'application/json',
+    },
+    async (uri) => {
+      const spec = loadSpec({ domain: 'atm' });
       return {
         contents: [
           {

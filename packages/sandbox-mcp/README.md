@@ -1,18 +1,18 @@
 # @openfinance-os/sandbox-mcp
 
-MCP server that exposes the [Open Finance Data Sandbox](https://github.com/openfinance-os/data-sandbox) — synthetic UAE Open Finance v2.1 Bank Data Sharing payloads — as MCP tools, resources, and prompts.
+MCP server that exposes the [Open Finance Data Sandbox](https://github.com/openfinance-os/data-sandbox) — synthetic UAE Open Finance v2.1 payloads across three domains (Bank Data Sharing, Insurance Data Sharing, and the ATM Locator) — as MCP tools, resources, and prompts.
 
-The intended use: run Claude as a **dynamic PFM** against a synthetic customer. Pick one of 38 curated personas (21 banking-only + 9 insurance-only + 8 multi-domain — salaried expat, gig worker, mortgage holder, SME owner, motor / home / health / life / travel / renters / employment-insured, plus the flagship `retail_multi_banker` whose footprint spans four LFIs and three insurers) and let Claude answer balance, spend, obligation, and coverage questions over deterministic v2.1-shaped JSON.
+The intended use: run Claude as a **dynamic PFM** against a synthetic customer. Pick one of 39 curated personas (21 banking-only + 9 insurance-only + 8 multi-domain + the `atm_directory` infrastructure persona — salaried expat, gig worker, mortgage holder, SME owner, motor / home / health / life / travel / renters / employment-insured, plus the flagship `retail_multi_banker` whose footprint spans four LFIs and three insurers) and let Claude answer balance, spend, obligation, and coverage questions over deterministic v2.1-shaped JSON.
 
 > **All data is synthetic.** No real customer, no real institution. Every tool response carries a `_watermark` field such as `SYNTHETIC — Open Finance Data Sandbox · OpenFinance-OS Commons · persona:salaried_expat_mid lfi:median seed:4729 retrieved:2026-04-01T00:00:00.000Z`. Preserve this watermark in any export or summary.
 
 ## Scope
 
-- **Two domains** — Bank Data Sharing v2.1 (all 12 Account-Information endpoints) and Insurance Data Sharing v2.1 GA (7 lines: motor, home, health, life, travel, renters, employment — each with the 4-endpoint MVP + cross-line Consents = 30 endpoints).
-- **38 curated personas (21 banking-only + 9 insurance-only + 8 multi-domain) + a custom-persona builder** — pick from the curated list with `set_session`, or compose a recipe and call `build_persona` to generate a fresh deterministic persona at runtime. Multi-domain personas appear in both `domain: "banking"` and `domain: "insurance"` filters.
+- **Three domains** — Bank Data Sharing v2.1 (all 12 Account-Information endpoints), Insurance Data Sharing v2.1 GA (7 lines: motor, home, health, life, travel, renters, employment — each with the 4-endpoint MVP + cross-line Consents = 30 endpoints), and the ATM Locator (`/atms` public directory via `get_atms`).
+- **39 curated personas (21 banking-only + 9 insurance-only + 8 multi-domain + 1 ATM directory) + a custom-persona builder** — pick from the curated list with `set_session`, or compose a recipe and call `build_persona` to generate a fresh deterministic persona at runtime. Multi-domain personas appear in both `domain: "banking"` and `domain: "insurance"` filters.
 - **Read-only** — no writes, no Service Initiation.
 - **Anonymous by default** — no auth, no API keys, no OAuth. The data is synthetic so there is nothing real to protect. PRD D-13.
-- **Opt-in OAuth journey simulation** — `--simulate-oauth` / `MCP_SIMULATE_OAUTH=1` wires a bank-own OAuth 2.1 + PKCE consent screen, RFC 9728 + RFC 8414 metadata, and a PKCE-validated `/authorize` + `/token` pair in front of `/mcp`, so a consumer-facing AI assistant can walk the share-with-Claude journey end-to-end. Off by default — the production deploy stays anonymous. See [`CLAUDE_PERSONAL_BANKING.md`](../../CLAUDE_PERSONAL_BANKING.md) at the repo root.
+- **Opt-in OAuth journey simulation** — `--simulate-oauth` / `MCP_SIMULATE_OAUTH=1` wires a bank-own OAuth 2.1 + PKCE consent screen, RFC 9728 + RFC 8414 metadata, a PKCE-validated `/authorize` + `/token` pair, and a stub RFC 7591 `/register` (Dynamic Client Registration) endpoint in front of `/mcp`, so a consumer-facing AI assistant can walk the share-with-Claude journey end-to-end. Off by default — the production deploy stays anonymous. See [`CLAUDE_PERSONAL_BANKING.md`](../../CLAUDE_PERSONAL_BANKING.md) at the repo root.
 - **Two transports** — stdio (default, for `npx` / Claude Desktop / Claude Code) and Streamable HTTP (for the Claude marketplace listing and any browser-side client). PRD decision D-13.
 
 ## Which connection journey does this server back?
@@ -59,7 +59,8 @@ Health check:
 
 ```sh
 curl http://127.0.0.1:8787/health
-# → {"ok":true,"sessions":0}
+# → {"ok":true,"version":"0.0.1","specVersion":"v2.1-errata2","specSha":"52caa14…",
+#    "personaCount":39,"toolCount":51,"uptimeMs":1234,"sessions":0}
 ```
 
 The endpoint is the [Streamable HTTP](https://spec.modelcontextprotocol.io/specification/basic/transports/#streamable-http) transport at `/mcp`. CORS is permissive (`*`); `Mcp-Session-Id` round-trips. One process serves many concurrent MCP sessions with per-session state isolation.
@@ -99,6 +100,10 @@ Anything that runs Docker continuously and supports long-lived HTTP connections 
 
 - **DNS-rebinding protection** is on by default — Host header is validated against `localhost`, `127.0.0.1`, the bound address (all `:port`), plus anything passed via `--allowed-host` (repeatable) or the `MCP_ALLOWED_HOSTS` env var (comma-separated). Pass `--no-dns-rebinding-protection` to disable.
 - **Idle session TTL** (default 30 min) and **max session count** (default 1024) cap memory growth on a public anonymous endpoint. Tunable via `MCP_SESSION_IDLE_TTL_MS` and `MCP_MAX_SESSIONS` env vars.
+- **Per-IP rate limit** — a token bucket on `POST /mcp` (default: burst 60, refill 10 req/s per client IP; `429` + `Retry-After` when exceeded). Tunable via `MCP_RATE_LIMIT_BURST` / `MCP_RATE_LIMIT_RPS`; set `MCP_RATE_LIMIT_BURST=0` to disable.
+- **Scoped CORS** — the `Access-Control-Allow-Origin: *` wildcard applies only to `/mcp` and `/health`, never to the OAuth simulation endpoints (`/authorize`, `/token`, `/register`, `/.well-known/*`).
+- **Public URL** — `--public-url https://mcp.example.org` (or `MCP_PUBLIC_URL`) declares the deployment's public https origin. It is validated (must be `https://`), added to the Host allowlist, and used as the OAuth issuer in the RFC 8414/9728 discovery documents instead of the internal `http://host:port` listen address. For the Fly deploy, set `MCP_PUBLIC_URL = "https://data-sandbox.fly.dev"` in `fly.toml` `[env]` (the deploy workflow already uses the same value to smoke-test the endpoint).
+- **Stub Dynamic Client Registration** — with `--simulate-oauth`, `POST /register` implements an RFC 7591 stub (echoes back a synthetic `client_id`, public client, PKCE-only) and the RFC 8414 metadata advertises `registration_endpoint`, so real MCP clients that attempt DCR (Claude.ai, VS Code) can complete the simulated flow.
 - **Graceful shutdown** — SIGTERM / SIGINT closes every active MCP session before the process exits, so `docker stop` and Kubernetes pod evictions don't drop in-flight requests.
 - **Structured request logging** — every request emits `<ISO timestamp> METHOD /path STATUS Nms session=<id8>` to stderr (stdout is reserved for stdio MCP framing).
 
@@ -131,7 +136,7 @@ claude mcp add open-finance-sandbox -- npx -y @openfinance-os/sandbox-mcp
 
 | Tool | Purpose |
 |---|---|
-| `list_personas` | List the 38 synthetic personas (21 banking-only + 9 insurance-only: 3 motor, 1 home, 1 health, 1 life, 1 travel, 1 renters, 1 employment + 8 multi-domain) with id, name, archetype, default seed, domain (`"banking"` / `"insurance"` / `"multi"`), and stress-coverage tags. Pass `{ domain: 'banking' \| 'insurance' }` to filter; multi-domain personas appear under both filters. Per-line `get_*` tools (motor / home / health / life / travel / renters / employment) cover every insurance line. |
+| `list_personas` | List the 39 synthetic personas (21 banking-only + 9 insurance-only: 3 motor, 1 home, 1 health, 1 life, 1 travel, 1 renters, 1 employment + 8 multi-domain + the `atm_directory` infrastructure persona) with id, name, archetype, default seed, domain (`"banking"` / `"insurance"` / `"multi"` / `"atm"`), stress-coverage tags, and `multi_lfi_footprint` / `multi_insurer_footprint` slot arrays. Pass `{ domain: 'banking' \| 'insurance' \| 'atm' }` to filter; multi-domain personas appear under both banking and insurance filters. Per-line `get_*` tools (motor / home / health / life / travel / renters / employment) cover every insurance line. |
 | `lfi_profiles` | Describe the three LFI populate-rate profiles (rich/median/sparse) and the EXP-04 invariant that mandatory fields are never redacted. |
 | `set_session` | Pin a curated persona via `{ persona, lfi?, seed? }`. `lfi` defaults to `median`; `seed` defaults to `persona.default_seed`. |
 | `get_session` | Echo the active persona / lfi / seed (and recipe hash for custom personas). |
@@ -162,14 +167,24 @@ claude mcp add open-finance-sandbox -- npx -y @openfinance-os/sandbox-mcp
 | `get_statements` | `/accounts/{AccountId}/statements`. `accountId` required. |
 | `load_journey` | Every endpoint in one call. Verbose — prefer the granular tools. |
 
-### Insurance endpoints (motor v2.1; non-motor lines exposed via fixture resources only)
+### Insurance endpoints (v2.1, all 7 lines — same 4-tool surface per line)
+
+Every line — `motor`, `home`, `health`, `life`, `travel`, `renters`, `employment` — gets the same four tools. Substitute the line for `<line>`:
 
 | Tool | Purpose |
 |---|---|
-| `get_motor_policies` | `/motor-insurance-policies` envelope — list of policy summaries for the active insurance persona. |
-| `get_motor_policy` | `/motor-insurance-policies/{InsurancePolicyId}` — full policy detail (PolicyHolder, Identity, Product, Claims, Premium). Omit `policyId` to use the persona's only policy. |
-| `get_motor_payment_details` | `/motor-insurance-policies/{InsurancePolicyId}/payment-details` — IBAN-keyed payment account for the premium-payment instruction. |
-| `get_motor_quote` | `/motor-insurance-quotes/{QuoteId}` — quote-read response with `ServiceRating`, `Premium`, `PolicyIssuanceAllowed`. |
+| `get_<line>_policies` | `/<line>-insurance-policies` envelope — list of policy summaries for the active insurance persona on that line. |
+| `get_<line>_policy` | `/<line>-insurance-policies/{InsurancePolicyId}` — full policy detail (PolicyHolder, Identity, Product, Claims, Premium). Omit `policyId` to use the persona's only policy on that line. |
+| `get_<line>_payment_details` | `/<line>-insurance-policies/{InsurancePolicyId}/payment-details` — IBAN-keyed payment account for the premium-payment instruction. |
+| `get_<line>_quote` | `/<line>-insurance-quotes/{QuoteId}` — quote-read response with `ServiceRating`, `Premium`, `PolicyIssuanceAllowed`. |
+
+Calling a tool for a line the active persona doesn't carry errors with a "switch persona" hint; multi-domain personas resolve per line.
+
+### ATM Locator (Phase 2.3)
+
+| Tool | Purpose |
+|---|---|
+| `get_atms` | `/atms` envelope — the synthetic public ATM directory (per-ATM location, services, fees, accessibility) from the `atm_directory` infrastructure persona. Works without a session (`lfi` defaults to `median`); an active `atm_directory` session's lfi/seed are used as defaults. `city` filters by TownName / CountrySubDivision; `limit` caps entries (default 25). |
 
 ### Discovery & spec metadata
 
@@ -181,7 +196,8 @@ claude mcp add open-finance-sandbox -- npx -y @openfinance-os/sandbox-mcp
 ## Resources
 
 - `spec://uae-account-information-v2.1` — parsed banking v2.1 OpenAPI (pinned by SHA upstream).
-- `spec://uae-insurance-v2.1` — parsed insurance v2.1-errata1 OpenAPI (motor-line GETs).
+- `spec://uae-insurance-v2.1` — parsed insurance v2.1-errata1 OpenAPI (all 7 lines + Insurance Consents).
+- `spec://uae-atm-v2.1` — parsed ATM Locator OpenAPI (`/atms`).
 - `recipe://schema` — full `RECIPE_DEFAULTS` object documenting every knob `build_persona` accepts.
 - `persona://<id>` — manifest for each curated persona (demographics, income, accounts, commitments, narrative).
 
@@ -189,6 +205,8 @@ claude mcp add open-finance-sandbox -- npx -y @openfinance-os/sandbox-mcp
 
 - `pick-a-persona` — guided persona-selection flow.
 - `monthly-summary` — month-end PFM summary that chains `get_accounts → get_balances → get_transactions → get_standing_orders → get_direct_debits` and preserves the watermark.
+- `insurance-coverage-review` — per-line coverage review (policies → detail → payment details → quote) for an insurance or multi-domain persona.
+- `multi-lfi-financial-picture` — whole-of-market aggregation across every bank slot in a persona's `multi_lfi_footprint` (via `set_session` `lfi_role`) plus their insurance lines.
 
 ## Example transcripts
 

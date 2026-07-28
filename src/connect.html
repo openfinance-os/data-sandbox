@@ -265,7 +265,10 @@
     margin-bottom: 8px;
   }
   .j3-contrast .j3-pane.warn .pane-label { color: #a14242; }
-  .j3-contrast .j3-pane.amber .pane-label { color: #b07b1f; }
+  /* WCAG 1.4.3 — #b07b1f on white is 3.68:1 (below the 4.5:1 floor at this
+     11.5px weight); #906314 keeps the amber hue at 5.28:1. The pane border
+     and the aria-hidden SVG keep the brighter amber (decorative). */
+  .j3-contrast .j3-pane.amber .pane-label { color: #906314; }
   .j3-contrast .j3-pane.compliant .pane-label { color: #2f6c4a; }
   .j3-contrast .j3-pane svg { width: 100%; height: auto; display: block; margin-bottom: 8px; }
   .j3-contrast .j3-pane .pane-body { font-size: 12px; color: var(--text); line-height: 1.5; }

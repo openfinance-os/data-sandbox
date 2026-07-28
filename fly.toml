@@ -16,6 +16,12 @@ primary_region = 'fra'
   # current live URL) and the canonical OF-OS Commons CNAME (PRD D-13) need to
   # be allowlisted so the connector keeps working through DNS cutover.
   MCP_ALLOWED_HOSTS = "data-sandbox.fly.dev,mcp.openfinance-os.org"
+  # Public origin used as the OAuth issuer in discovery documents when the
+  # opt-in OAuth simulation is enabled (--simulate-oauth). Without it the
+  # issuer resolves to the container's internal bind address, which is
+  # unroutable behind Fly's TLS terminator. Swap to the canonical CNAME on
+  # the D-13 cutover together with MCP_ALLOWED_HOSTS above.
+  MCP_PUBLIC_URL = "https://data-sandbox.fly.dev"
 
 [http_service]
   internal_port = 8787

@@ -19,8 +19,12 @@
 
 import http from 'node:http';
 import { randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
+import { manifest } from '@openfinance-os/sandbox-fixtures';
 import { createServer } from '../server.mjs';
 import { createOAuthSimulation } from './oauth-simulation.mjs';
 
@@ -32,6 +36,41 @@ const MAX_BODY_BYTES = 1_000_000; // 1 MB — JSON-RPC messages are tiny
 const DEFAULT_IDLE_TTL_MS = Number(process.env.MCP_SESSION_IDLE_TTL_MS) || 30 * 60 * 1000;
 const DEFAULT_MAX_SESSIONS = Number(process.env.MCP_MAX_SESSIONS) || 1024;
 const SWEEP_INTERVAL_MS = 60 * 1000;
+
+// Per-IP token bucket on POST /mcp (public-endpoint hardening). Generous
+// defaults — an interactive MCP session issues a handful of tool calls per
+// user turn; only scripted hammering trips this. Tunable via env for the
+// Fly deploy, and via createHttpHandler options for tests.
+const DEFAULT_RATE_BURST = Number(process.env.MCP_RATE_LIMIT_BURST) || 60;
+const DEFAULT_RATE_RPS = Number(process.env.MCP_RATE_LIMIT_RPS) || 10;
+
+const _here = path.dirname(fileURLToPath(import.meta.url));
+const _pkg = JSON.parse(readFileSync(path.join(_here, '..', '..', 'package.json'), 'utf8'));
+const STARTED_AT = Date.now();
+
+// Tool count for /health — counted once from a throwaway (never-connected)
+// server instance so the reported number can't drift from the registry.
+let _toolCount = null;
+function getToolCount() {
+  if (_toolCount == null) {
+    try {
+      const s = createServer();
+      _toolCount = Object.keys(s._registeredTools ?? {}).length || null;
+    } catch {
+      _toolCount = null;
+    }
+  }
+  return _toolCount;
+}
+
+// CORS `*` is correct for the anonymous /mcp endpoint (browser-side MCP
+// clients) and harmless on /health — but it must NOT blanket the OAuth
+// simulation endpoints: wildcarting an authorization server's /authorize,
+// /token, and /register invites cross-origin token harvesting patterns.
+// Scope it to /mcp + /health only.
+function corsEligible(pathname) {
+  return pathname === MCP_PATH || pathname === HEALTH_PATH;
+}
 
 function applyCors(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -111,10 +150,47 @@ export function createHttpHandler({
   allowedOrigins,
   enableDnsRebindingProtection = true,
   oauthSimulation = null,
+  rateLimitBurst = DEFAULT_RATE_BURST,
+  rateLimitRps = DEFAULT_RATE_RPS,
   log = defaultLogger,
 } = {}) {
   // sessionId → { transport, server, lastActivity }
   const sessions = new Map();
+
+  // ip → { tokens, last } token buckets for POST /mcp. Refill is continuous
+  // (rateLimitRps tokens/second up to rateLimitBurst). rateLimitBurst <= 0
+  // disables rate limiting entirely.
+  const rateBuckets = new Map();
+
+  function clientIp(req) {
+    // On Fly the edge proxy terminates TLS; the client address arrives in
+    // Fly-Client-IP / X-Forwarded-For. Spoofing XFF only lets an attacker
+    // spread their own load across buckets — acceptable for a limiter.
+    const fly = req.headers['fly-client-ip'];
+    if (fly) return String(fly);
+    const xff = req.headers['x-forwarded-for'];
+    if (xff) return String(xff).split(',')[0].trim();
+    return req.socket?.remoteAddress ?? 'unknown';
+  }
+
+  function rateLimitAllows(req) {
+    if (!(rateLimitBurst > 0)) return true;
+    const ip = clientIp(req);
+    const now = Date.now();
+    let bucket = rateBuckets.get(ip);
+    if (!bucket) {
+      bucket = { tokens: rateLimitBurst, last: now };
+      rateBuckets.set(ip, bucket);
+    }
+    bucket.tokens = Math.min(
+      rateLimitBurst,
+      bucket.tokens + ((now - bucket.last) / 1000) * rateLimitRps,
+    );
+    bucket.last = now;
+    if (bucket.tokens < 1) return false;
+    bucket.tokens -= 1;
+    return true;
+  }
 
   function touch(sessionId) {
     const entry = sessions.get(sessionId);
@@ -133,7 +209,11 @@ export function createHttpHandler({
     }
     if (oldestId) {
       log(`session-evict ${shortId(oldestId)} reason=cap`);
-      destroySession(oldestId);
+      // Fire-and-forget teardown; never let a close() rejection surface as
+      // an unhandled rejection on the eviction path.
+      destroySession(oldestId).catch((err) => {
+        log(`session-evict ${shortId(oldestId)} destroy-error: ${err?.message ?? err}`);
+      });
     }
   }
 
@@ -154,15 +234,28 @@ export function createHttpHandler({
     for (const [id, entry] of sessions) {
       if (entry.lastActivity < cutoff) {
         log(`session-evict ${shortId(id)} reason=idle`);
-        destroySession(id);
+        destroySession(id).catch((err) => {
+          log(`session-evict ${shortId(id)} destroy-error: ${err?.message ?? err}`);
+        });
       }
+    }
+    // Cull idle rate-limit buckets too — a full bucket carries no state worth
+    // keeping, and per-IP entries must not grow unboundedly.
+    const bucketCutoff = Date.now() - idleTtlMs;
+    for (const [ip, bucket] of rateBuckets) {
+      if (bucket.last < bucketCutoff) rateBuckets.delete(ip);
     }
   }
   const sweepTimer = setInterval(sweep, sweepIntervalMs);
   sweepTimer.unref();
 
   async function handle(req, res) {
-    applyCors(res);
+    const url = new URL(req.url, 'http://placeholder');
+    const path = url.pathname;
+
+    // CORS wildcard only on /mcp + /health — never on the OAuth endpoints
+    // (see corsEligible).
+    if (corsEligible(path)) applyCors(res);
 
     if (req.method === 'OPTIONS') {
       res.statusCode = 204;
@@ -170,11 +263,17 @@ export function createHttpHandler({
       return;
     }
 
-    const url = new URL(req.url, 'http://placeholder');
-    const path = url.pathname;
-
     if (path === HEALTH_PATH && req.method === 'GET') {
-      sendJson(res, 200, { ok: true, sessions: sessions.size });
+      sendJson(res, 200, {
+        ok: true,
+        version: _pkg.version,
+        specVersion: manifest.specVersion ?? null,
+        specSha: manifest.specSha ?? null,
+        personaCount: Object.keys(manifest.personas ?? {}).length,
+        toolCount: getToolCount(),
+        uptimeMs: Date.now() - STARTED_AT,
+        sessions: sessions.size,
+      });
       return;
     }
 
@@ -215,6 +314,19 @@ export function createHttpHandler({
     const sessionId = req.headers[SESSION_HEADER];
 
     if (req.method === 'POST') {
+      // Per-IP token bucket — public-endpoint abuse guard (custom-persona
+      // generation is the most expensive call behind this path).
+      if (!rateLimitAllows(req)) {
+        res.statusCode = 429;
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Retry-After', '1');
+        res.end(
+          JSON.stringify(
+            jsonRpcError(null, -32000, 'rate limit exceeded — slow down and retry shortly'),
+          ),
+        );
+        return;
+      }
       let body;
       try {
         body = await readJsonBody(req);
@@ -308,6 +420,25 @@ export function createHttpHandler({
   return { dispatch, sessions, closeAll, sweep };
 }
 
+// Validate --public-url / MCP_PUBLIC_URL. Must be an https:// origin (the
+// hosted OAuth issuer must never be advertised over plaintext). Returns the
+// normalised origin (no trailing slash, no path) or throws.
+export function normalizePublicUrl(publicUrl) {
+  if (!publicUrl) return null;
+  let parsed;
+  try {
+    parsed = new URL(publicUrl);
+  } catch {
+    throw new Error(`invalid --public-url / MCP_PUBLIC_URL: ${publicUrl}`);
+  }
+  if (parsed.protocol !== 'https:') {
+    throw new Error(
+      `--public-url / MCP_PUBLIC_URL must be https:// (got ${parsed.protocol}//) — the OAuth issuer for a public deployment must not be plaintext`,
+    );
+  }
+  return parsed.origin;
+}
+
 export async function startHttp({
   port = 8787,
   host = '127.0.0.1',
@@ -318,8 +449,14 @@ export async function startHttp({
   allowedOrigins,
   enableDnsRebindingProtection = true,
   simulateOauth = false,
+  publicUrl,
+  rateLimitBurst,
+  rateLimitRps,
   log,
 } = {}) {
+  // Validate before binding the port so a bad config fails fast.
+  const publicOrigin = normalizePublicUrl(publicUrl);
+
   const earlyServer = http.createServer();
   await new Promise((resolve, reject) => {
     earlyServer.once('error', reject);
@@ -334,18 +471,29 @@ export async function startHttp({
   const resolvedHost = typeof addr === 'object' && addr ? addr.address : host;
 
   // Build the Host allowlist with the *resolved* port so port:0 works in tests.
+  // When a public URL is configured, its host is allowed too — the edge proxy
+  // forwards requests with that Host header.
+  const publicHosts = [];
+  if (publicOrigin) {
+    const u = new URL(publicOrigin);
+    publicHosts.push(u.host);
+    if (!u.port) publicHosts.push(`${u.hostname}:443`);
+  }
   const allowedHosts = buildAllowedHosts({
     host: resolvedHost,
     port: resolvedPort,
-    extraAllowedHosts,
+    extraAllowedHosts: [...(extraAllowedHosts ?? []), ...publicHosts],
   });
   const oauthSimulation = simulateOauth
     ? createOAuthSimulation({
-        // Lock the issuer to the resolved listen address so discovery
-        // documents can never be poisoned by a forged Host header (PR-52
-        // Greptile P1). Defence-in-depth: the simulation also validates
-        // Host against `allowedHosts` independently of the /mcp guard.
-        issuer: `http://${resolvedHost}:${resolvedPort}`,
+        // Static issuer so discovery documents can never be poisoned by a
+        // forged Host header (PR-52 Greptile P1). When --public-url /
+        // MCP_PUBLIC_URL is set (hosted deploys behind a TLS-terminating
+        // proxy, e.g. Fly), the validated https:// origin is the issuer;
+        // otherwise the resolved listen address. Defence-in-depth: the
+        // simulation also validates Host against `allowedHosts`
+        // independently of the /mcp guard.
+        issuer: publicOrigin ?? `http://${resolvedHost}:${resolvedPort}`,
         allowedHosts,
       })
     : null;
@@ -357,6 +505,8 @@ export async function startHttp({
     allowedOrigins,
     enableDnsRebindingProtection,
     oauthSimulation,
+    rateLimitBurst,
+    rateLimitRps,
     log,
   });
   const server = earlyServer;
@@ -369,6 +519,7 @@ export async function startHttp({
     port: resolvedPort,
     host: resolvedHost,
     url: `http://${resolvedHost}:${resolvedPort}${MCP_PATH}`,
+    publicUrl: publicOrigin,
     allowedHosts,
     oauthSimulation,
     async close() {

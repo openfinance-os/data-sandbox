@@ -119,4 +119,12 @@ export default [
   jsdomTests,
   generatorDeterminism,
   sharedRules,
+  // src/ is kept at zero unused-vars; error (not warn) so dead code can't
+  // re-accumulate silently (C-07).
+  {
+    files: ['src/**/*.{js,mjs,cjs}'],
+    rules: {
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+    },
+  },
 ];

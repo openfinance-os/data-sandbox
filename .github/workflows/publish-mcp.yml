@@ -23,7 +23,7 @@ permissions:
 jobs:
   publish-npm:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -31,9 +31,24 @@ jobs:
           node-version: '22'
           cache: 'npm'
           registry-url: 'https://registry.npmjs.org'
+      # E-05 release integrity: sandbox-mcp's version is gated to the root
+      # package.json version by tests/package-version-sync.test.mjs — verify
+      # the pushed tag matches before publishing anything under it.
+      - name: Verify tag matches root package.json version
+        if: startsWith(github.ref, 'refs/tags/mcp-v')
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#mcp-v}"
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::Tag '${GITHUB_REF_NAME}' implies version '${TAG_VERSION}' but root package.json declares '${PKG_VERSION}'. Bump first (node tools/release-bump.mjs ${TAG_VERSION}), commit, then re-tag."
+            exit 1
+          fi
+          echo "tag ${GITHUB_REF_NAME} matches root package.json version ${PKG_VERSION}"
       - run: npm ci
-      - run: npm run build:fixtures
-      - run: npm run test:mcp
+      # Full CI gate (spec shape → builds → lints → vitest → MCP workspace
+      # tests) — same bar as publish-fixtures.yml. Never publish an MCP
+      # image/package whose underlying fixture corpus wouldn't pass CI.
+      - run: npm run ci
       - name: Publish to npm
         working-directory: packages/sandbox-mcp
         run: npm publish --access=public --provenance
@@ -62,9 +77,13 @@ jobs:
         uses: docker/metadata-action@v6
         with:
           images: ghcr.io/${{ github.repository_owner }}/sandbox-mcp
+          # `latest` must track mcp-v* tag pushes — this workflow only runs
+          # on tag pushes (plus manual dispatch), so the previous
+          # `enable={{is_default_branch}}` condition was never true and no
+          # `latest` tag was ever published.
           tags: |
             type=match,pattern=mcp-v(.*),group=1
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/mcp-v') }}
             type=sha
 
       - name: Build and push image

@@ -72,6 +72,11 @@ jobs:
       # Lints + eslint + prettier all run in parallel (run-p in package.json
       # `lint` script). Cuts ~10s off the lint phase.
       - run: npm run lint
+      # T-08c — realism floors from ENRICHMENT_REALISM_PLAN.md §Verification:
+      # across a deterministic 100-bundle sample, ≥12 distinct MCCs, ≥80
+      # distinct merchant display forms, ≥30 distinct narrative shapes.
+      # Prevents silent regression of the enrichment-realism work (R1–R5.1).
+      - run: npm run audit:realism
       # Surfaces persona-data conformance against the pinned UAE Open Finance
       # v2.1 OpenAPI specs as a named CI step (EXP-01 + EXP-10). Wraps:
       #   - lint-persona-spec-conformance (persona-manifest enums vs spec enums)
@@ -87,6 +92,12 @@ jobs:
       # packages/sandbox-mcp/. Exercises the determinism + watermark + HTTP
       # transport guarantees against the just-built fixture corpus.
       - run: npm run test:mcp
+      # Python fixture-package parity suite (E-04) — the PyPI wheel used to
+      # publish gated exclusively on JavaScript tests.
+      - name: Python parity tests
+        run: |
+          python3 -m pip install --quiet pytest
+          npm run test:py
       # Share the built artefacts with the e2e and lighthouse jobs so they
       # don't have to rebuild spec/data/fixtures from scratch on fresh runners.
       - name: Upload built artefacts

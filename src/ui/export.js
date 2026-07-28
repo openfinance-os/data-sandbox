@@ -3,7 +3,7 @@
 // tarball of all of the above. Every file carries the §6.5 watermark.
 // Phase 1 — works in the browser only (no Node-side helpers needed).
 
-import { watermark, watermarkJsonEnvelope, watermarkCsvHeader } from '../shared/watermark.js';
+import { watermark, watermarkCsvHeader } from '../shared/watermark.js';
 
 // Strip generator-internal underscore-prefixed fields before serialisation.
 // `RECORD_LEVEL_METADATA_KEEP` is a curated allowlist of underscore-prefixed

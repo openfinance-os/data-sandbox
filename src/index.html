@@ -10,7 +10,10 @@
 <link rel="modulepreload" href="app.js" />
 <link rel="modulepreload" href="prng.js" />
 <link rel="modulepreload" href="url.js" />
-<link rel="modulepreload" href="generator/index.js" />
+<link rel="modulepreload" href="generator/lazy.js" />
+<link rel="modulepreload" href="generator/dispatch.js" />
+<link rel="modulepreload" href="generator/pipelines/banking.js" />
+<link rel="modulepreload" href="generator/banking/index.js" />
 <link rel="modulepreload" href="generator/identity.js" />
 <link rel="modulepreload" href="generator/accounts.js" />
 <link rel="modulepreload" href="generator/balances.js" />
@@ -24,11 +27,10 @@
 <link rel="modulepreload" href="generator/product.js" />
 <link rel="modulepreload" href="generator/lfi-profile-shared.js" />
 <link rel="modulepreload" href="generator/banking/lfi-profile.js" />
-<link rel="modulepreload" href="generator/insurance/index.js" />
-<link rel="modulepreload" href="generator/insurance/_shared.js" />
-<link rel="modulepreload" href="generator/insurance/identity.js" />
-<link rel="modulepreload" href="generator/insurance/motor-policy.js" />
-<link rel="modulepreload" href="generator/insurance/lfi-profile.js" />
+<!-- C-P1 — insurance generator modules are no longer preloaded: the lazy
+     generator entry dynamic-imports the insurance/ATM pipelines only when a
+     persona declares those domains, keeping them off the banking cold path
+     (EXP-24). -->
 <link rel="modulepreload" href="shared/spec-helpers.js" />
 <link rel="modulepreload" href="shared/watermark.js" />
 <link rel="modulepreload" href="shared/banner.js" />
@@ -216,18 +218,18 @@
         </span>
         <div class="toolbar-actions">
           <div class="toggle-group" role="tablist" aria-label="View toggle">
-            <button class="toggle active" id="view-rendered" role="tab" aria-selected="true">Rendered</button>
-            <button class="toggle" id="view-raw" role="tab" aria-selected="false">Raw JSON</button>
+            <button class="toggle active" id="view-rendered" role="tab" aria-selected="true" data-i18n="toolbar.rendered">Rendered</button>
+            <button class="toggle" id="view-raw" role="tab" aria-selected="false" data-i18n="toolbar.rawJson">Raw JSON</button>
           </div>
           <label class="toolbar-checkbox" title="Inline every column's type / format / enum cardinality under the header — useful for first reads of an endpoint without click-then-read field cards.">
             <input type="checkbox" id="toggle-expand-all" />
-            Expand fields
+            <span data-i18n="toolbar.expandFields">Expand fields</span>
           </label>
           <label class="toolbar-checkbox" title="Hide every non-PII column. PII allowlist follows the curated PDPL-relevant set; pairs with the per-card PII badge so a privacy/DPO audit can scope data-handling controls per endpoint.">
             <input type="checkbox" id="toggle-pii-only" />
-            PII only
+            <span data-i18n="toolbar.piiOnly">PII only</span>
           </label>
-          <button class="toggle export-btn" id="export-toggle" type="button" aria-haspopup="dialog" aria-label="Open export popover (⌘E)" title="Export the active bundle — Permalink · Embed iframe · JSON · CSV · Tarball · npm · Python · curl · MCP. (⌘E)">Export ▾</button>
+          <button class="toggle export-btn" id="export-toggle" type="button" aria-haspopup="dialog" aria-label="Open export popover (⌘E)" title="Export the active bundle — Permalink · Embed iframe · JSON · CSV · Tarball · npm · Python · curl · MCP. (⌘E)"><span data-i18n="toolbar.export">Export</span> ▾</button>
         </div>
       </div>
       <div class="payload-body" id="payload-body" tabindex="0"></div>

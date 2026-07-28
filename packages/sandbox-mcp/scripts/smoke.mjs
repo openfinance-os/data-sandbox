@@ -6,18 +6,21 @@
 //
 // Asserts:
 //   1. GET /health → { ok: true }
-//   2. POST /mcp initialize + tools/list returns the documented 50 tools
+//   2. POST /mcp initialize + tools/list returns at least the documented
+//      tool floor (EXPECTED_TOOL_COUNT)
 //
 // Exits non-zero on any failure so deploy-mcp.yml can gate on it. Catches
 // the case where Fly says "deployed" but the container is crash-looping.
 //
-// Keep EXPECTED_TOOL_COUNT in lockstep with EXPECTED_TOOLS in
-// packages/sandbox-mcp/test/server.test.mjs — that list is the source of
-// truth for what tools/list should return.
+// EXPECTED_TOOL_COUNT is a FLOOR, not an exact count — adding a tool to the
+// server must not break the deploy gate. The exact list lives in
+// EXPECTED_TOOLS in packages/sandbox-mcp/test/server.test.mjs (the source of
+// truth for what tools/list should return); bump this floor when that list
+// grows.
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 
-const EXPECTED_TOOL_COUNT = 50;
+const EXPECTED_TOOL_COUNT = 51;
 const baseUrl = (process.argv[2] || '').replace(/\/+$/, '');
 if (!baseUrl) {
   console.error('usage: smoke.mjs <base-url>');
@@ -60,10 +63,10 @@ try {
   fail(`tools/list failed: ${err?.message ?? err}`);
 }
 if (!Array.isArray(tools)) fail(`tools/list returned non-array`);
-if (tools.length !== EXPECTED_TOOL_COUNT) {
-  fail(`tools/list returned ${tools.length} tools, expected ${EXPECTED_TOOL_COUNT}`);
+if (tools.length < EXPECTED_TOOL_COUNT) {
+  fail(`tools/list returned ${tools.length} tools, expected at least ${EXPECTED_TOOL_COUNT}`);
 }
-const sample = ['list_personas', 'set_session', 'build_persona', 'get_accounts'];
+const sample = ['list_personas', 'set_session', 'build_persona', 'get_accounts', 'get_atms'];
 for (const name of sample) {
   if (!tools.find((t) => t.name === name)) fail(`tool "${name}" missing from tools/list`);
 }

@@ -1,37 +1,115 @@
+/** A generator domain a persona can declare. */
 export type Domain = 'banking' | 'insurance' | 'atm';
+/** Manifest label: single-domain personas carry their Domain; Phase 2.2
+ * multi-domain personas (domains.length > 1) are labelled 'multi'. Use
+ * PersonaInfo.domains for the real declared set. */
+export type DomainLabel = Domain | 'multi';
+export type LfiProfile = 'rich' | 'median' | 'sparse';
+
+/** One slot in a multi-LFI / multi-insurer footprint. NG5/D-14: candidate
+ * lists are plausibility sets only — no populate-rate claim binds to them. */
+export interface FootprintSlot {
+  /** Slot key (Phase 2.2 N-slot shape), e.g. 'salary', 'mortgage-lender'.
+   * Absent on the legacy triad shape (the key is the property name). */
+  key?: string;
+  role: string;
+  lfi_default?: string;
+  plausible_lfi_candidates?: string[];
+  [k: string]: unknown;
+}
+/** Legacy (pre-Phase-2.2) fixed triad footprint. */
+export interface LegacyMultiLfiFootprint {
+  primary?: FootprintSlot;
+  secondary?: FootprintSlot;
+  tertiary?: FootprintSlot;
+}
+/** Phase 2.2 N-slot footprint — slots[0] is the primary. */
+export interface SlotsMultiLfiFootprint {
+  slots: FootprintSlot[];
+}
+/** Both manifest shapes occur; normalizeFootprint() in lib/generator/
+ * multi-lfi.js walks either. */
+export type MultiLfiFootprint = LegacyMultiLfiFootprint | SlotsMultiLfiFootprint;
+
+/** Phase 2.2 — insurance-carrier mirror of the banking footprint. */
+export interface InsurerFootprintSlot {
+  key?: string;
+  role?: string;
+  insurer_default?: string;
+  plausible_insurer_candidates?: string[];
+  [k: string]: unknown;
+}
+export interface MultiInsurerFootprint {
+  slots: InsurerFootprintSlot[];
+}
+
 export interface PersonaInfo {
   name: string;
   archetype: string;
   default_seed: number;
-  domain: Domain;
+  /** 'multi' for multi-domain personas — see `domains` for the real set. */
+  domain: DomainLabel;
+  /** Declared domain set. Multi-domain personas list every domain they
+   * render under (e.g. ['banking', 'insurance']). */
+  domains?: Domain[];
   stress_coverage: string[];
+  /** D-14: legacy triad or Phase 2.2 slots[] shape; null when absent. */
+  multi_lfi_footprint?: MultiLfiFootprint | null;
+  /** Phase 2.2: insurance-carrier footprint; null when absent. */
+  multi_insurer_footprint?: MultiInsurerFootprint | null;
+  /** Phase R1.5 — seed-keyed relative paths of enrichment sidecars. */
+  enrichmentFiles?: Record<string, string>;
+  enrichmentRecordCount?: number;
 }
 export interface FixtureEntry {
   personaId: string;
   lfi: string;
   seed: number;
-  domain: Domain;
+  domain: DomainLabel;
+  domains?: Domain[];
   accountIds: string[];
   policyIds: string[];
   quoteId: string | null;
+  consentIds?: string[];
+  endpoints: Record<string, string>;
+}
+/** Phase D Slice 5 — a secondary/tertiary (or Phase 2.2 N-slot) role
+ * bundle emitted for a persona with a multi_lfi_footprint. */
+export interface RoleFixtureEntry {
+  personaId: string;
+  slot: string;
+  role: string;
+  lfi: string;
+  seed: number;
+  domain: string;
+  accountIds: string[];
   endpoints: Record<string, string>;
 }
 export interface Manifest {
   package: string;
   version: string;
   specVersion: string;
+  /** Per-domain spec versions (banking / insurance / atm are pinned
+   * independently). */
+  specVersions?: Record<string, string>;
   specSha: string;
   generatedAt: string;
   nowAnchor: string;
   domains: Domain[];
   fixtures: Record<string, FixtureEntry>;
+  /** Keyed `<persona>|<slot>|<lfi>|<seed>`. */
+  roleFixtures?: Record<string, RoleFixtureEntry>;
   personas: Record<string, PersonaInfo>;
 }
 export interface Journey {
   persona: string;
-  lfi: 'rich' | 'median' | 'sparse';
+  lfi: LfiProfile;
+  /** 'primary' for the historical primary bundle; otherwise the role-slot
+   * key that was loaded (legacy 'secondary'/'tertiary' or a Phase 2.2
+   * N-slot key — see listRoleBundles). */
+  lfi_role: string;
   seed: number;
-  domain: Domain;
+  domain: DomainLabel;
   accountIds: string[];
   policyIds: string[];
   quoteId: string | null;
@@ -42,6 +120,9 @@ export interface Journey {
   endpoints: Record<string, unknown>;
 }
 export const manifest: Manifest;
+/** List persona ids. With `domain`, filters on the persona's declared
+ * domain set — multi-domain personas appear under BOTH 'banking' and
+ * 'insurance' filters (Phase 2.2). */
 export function listPersonas(opts?: { domain?: Domain }): string[];
 export function getPersonaInfo(personaId: string): PersonaInfo | null;
 export function listEndpoints(personaId: string, lfi?: 'rich' | 'median' | 'sparse'): string[];
@@ -103,6 +184,10 @@ export interface PaginatedEnvelope {
   _pagination: PaginationSidecar;
   [k: string]: unknown;
 }
+/** NOTE (CJS entry): under `require('@openfinance-os/sandbox-fixtures')`
+ * this function is **async** — it dynamically imports the ESM pagination
+ * engine and returns `Promise<PaginatedEnvelope>`; `await` the result.
+ * The ESM entry (`import`) is synchronous as typed here. */
 export function loadFixturePage(
   opts: {
     persona: string;
@@ -249,3 +334,35 @@ export function getPools(): IndexedPools;
 export function expandRecipe(recipe: CustomRecipe, pools: IndexedPools): unknown;
 export function buildBundle(opts: { persona: unknown; lfi: 'rich' | 'median' | 'sparse'; seed: number; pools: IndexedPools; now?: Date }): unknown;
 export function envelopesFromBundle(bundle: unknown, ctx: { personaId: string; lfi: 'rich' | 'median' | 'sparse'; seed: number; specVersion?: string; specSha?: string; retrievedAt: string }): Record<string, unknown>;
+
+// ---------------------------------------------------------------------------
+// CJS-only async accessors. The CommonJS entry (index.cjs) cannot re-export
+// the ESM runtime engine synchronously, so it exposes these two accessors
+// instead of the direct named exports above (buildBundle, expandRecipe, the
+// recipe codec, envelopesFromBundle, and the pagination helpers are
+// ESM-entry-only). They are NOT present on the ESM entry — under `import`,
+// use the direct named exports.
+// ---------------------------------------------------------------------------
+export interface Engine {
+  buildBundle: typeof buildBundle;
+  expandRecipe: typeof expandRecipe;
+  RECIPE_DEFAULTS: Required<CustomRecipe>;
+  encodeRecipe: typeof encodeRecipe;
+  decodeRecipe: typeof decodeRecipe;
+  recipeHash: typeof recipeHash;
+  validateRecipe: typeof validateRecipe;
+  envelopesFromBundle: typeof envelopesFromBundle;
+}
+/** CJS entry only — resolves the runtime engine (generator + recipe codec +
+ * envelope wrapper) via dynamic import. */
+export function getEngine(): Promise<Engine>;
+/** CJS entry only — resolves the pagination helper module
+ * (paginateEnvelope, parsePaginationParams, isPaginatableEnvelope,
+ * findListKey, PAGINATION_DEFAULTS) via dynamic import. */
+export function getPagination(): Promise<{
+  paginateEnvelope: typeof paginateEnvelope;
+  parsePaginationParams: typeof parsePaginationParams;
+  isPaginatableEnvelope: typeof isPaginatableEnvelope;
+  findListKey: typeof findListKey;
+  PAGINATION_DEFAULTS: { readonly defaultLimit: number; readonly maxLimit: number };
+}>;

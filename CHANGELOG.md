@@ -5,6 +5,135 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follo
 
 ## [Unreleased]
 
+### Fixed — post-Phase-2.3 review: correctness + determinism (plan slice 1)
+
+Findings from the five-dimension review recorded in
+`APP_IMPROVEMENT_PLAN.md`, all hand-verified before fixing:
+
+- **Multi-domain personas restored to every consumer** — the explorer,
+  embed, `/connect` (which crashed on the `npm run serve` dev path), both
+  example demos, and the MCP `list_personas` footprint walk all filtered on
+  the singular `domain:` key, hiding all 8 `domains: []` personas
+  (including `retail-multi-banker`). New `src/shared/domains.js`
+  (`normalizeDomains` / `personaInDomain` / `domainLabel`) is now the only
+  legal way to filter; `tests/persona-domain-counts.test.mjs` derives the
+  29-banking / 17-insurance tab counts from the manifests and pins them.
+- **Insurance `ConsentId` now varies by seed (EXP-05)** — a 4-arg call to
+  the 3-param `makePrng` silently dropped the seed, so every seed produced
+  the same consent id per persona × line. `makePrng` throws on arity > 3.
+  Insurance consent ids across the fixture corpus change once, here.
+- **Primary-anchor derivation unified** — the cross-LFI ledger recomputed
+  the anchor account from the raw persona account list while `accounts.js`
+  indexes the slot-filtered list; the next `at_slot` persona not leading
+  with a primary-slot CurrentAccount would have silently dropped its
+  ledger rows. Single `derivePrimaryAnchor()`;
+  `tests/tx-account-resolution.test.mjs` asserts every `_accountId`
+  resolves, corpus-wide. Byte-identical for all current personas.
+- **`/parties`, `/accounts/{id}`, `/product` fixtures validate for the
+  first time (EXP-10)** — three misnamed schema refs made `ajv.compile`
+  fail silently, so those endpoints were never validated; with correct refs
+  897 fixtures failed. The product generator emitted a pre-v2.1 vocabulary
+  the pinned `AEProduct` schema rejects wholesale (rewritten, zero PRNG
+  draws — no fingerprint shifts); the account-detail envelope hoists
+  `AccountId` out of the inner object; `/parties` projects onto
+  `AEPartyIdentityAssurance4`. The unmapped-endpoint set is now asserted
+  empty so a new endpoint can't ship unvalidated.
+- **Ordinal transaction sort (EXP-05)** — the one sort deciding final
+  transaction byte order used locale/ICU-dependent `localeCompare`; now
+  ordinal, with an ESLint ban on `localeCompare` under `src/generator/`.
+- **Banking spec provenance corrected** — `upstreamPath` said `v2.1` for
+  the vendored `v2.1-errata2` YAML (published into `dist/SPEC.json`, the
+  top bar, `/about`, and the fixture manifest); `parse-spec.mjs` now
+  asserts the path names the declared version.
+- **Unknown/partial domain combinations throw** — `DOMAIN_PIPELINES`
+  registry in the generator + `DOMAIN_ENVELOPES` in `export.js` replace
+  by-name multi-domain arms that silently produced partial bundles.
+
+### Added — gates that fail instead of skipping, distribution parity (plan slice 2)
+
+- **CI honesty** — the visual-regression Playwright project actually runs
+  in CI (baselines existed since `942e6ae`; the project never did);
+  `tests/no-silent-skips.test.mjs` fails CI when the artefacts the ~11
+  skip-gated suites need are missing; `check:dist-clean` moved after the
+  build it checks; vitest gets a 30 s matrix-suite timeout +
+  `github-actions` reporter; the analytics gate asserts `track(` occurrence
+  parity and a PII-free allowlist constant (EXP-21/22).
+- **`lint-pii-leak` covers all three domains** (EXP-07) — insurance
+  policyholder/beneficiary/employer/payment-details probes and ATM
+  site-vocabulary probes join banking; 49,249 strings across the full
+  39-persona × 3-LFI matrix. `verify-spec-shape` is now domain-generic off
+  `domains.config.mjs` (12 + 30 + 1 paths); the institution denylist seeds
+  from the two real-name pools (D-14/NG5); `tools/realism-audit.mjs
+  --assert` enforces the ENRICHMENT_REALISM_PLAN diversity floors in CI;
+  persona manifests are AJV-validated against the new
+  `personas/_schema.machine.yaml` (all 39 pass unmodified).
+- **Contract tests** — `tests/underscore-strip-contract.test.mjs` (no
+  `_`-key ever escapes into an envelope beyond the documented allowlist)
+  and `tests/cross-lfi-iban-identity.test.mjs` (self-beneficiary IBAN ≡
+  role-bundle account IBAN over the built corpus; `_crossLfiPairId`
+  pairing in-memory for all 14 footprint personas).
+- **`/connect` finally has tests** — `tests/e2e/connect.spec.mjs` walks J1
+  end-to-end and J2 through the consent manager with an axe wcag2a/2aa
+  scan (which found and led to fixing a real 1.4.3 contrast failure on the
+  J3 amber pane label).
+- **npm package TypeScript story (EXP-20)** — generated `package.json` now
+  carries `types` + a first-position `types` export condition; the `.d.ts`
+  gains `domains[]`, both footprint shapes, `multi_insurer_footprint`,
+  `Journey.lfi_role`, and documents the CJS async divergence; new
+  `tsc --noEmit` smoke gate in `tests/types-check.test.mjs`; subpath
+  exports for `brand-registry.json`, `enrichment/*`, `brands/*`; README
+  persona counts derived from the manifest, with the previously
+  undocumented pagination / role-bundle / enrichment / recipe APIs
+  documented.
+- **Python package parity (EXP-20)** — first Python executed in CI:
+  19-test pytest parity suite (wired into `npm run ci` and the publish
+  validate gate); `setuptools>=62.3` floor (61.x silently dropped the
+  `data/**/*` bundle tree from the wheel); `py.typed`; `load_spec(domain)`;
+  `list_personas(domain=...)`; enrichment + brand-registry + pools now
+  mirrored and loadable; `lfi_role` journeys.
+- **Release integrity** — both publish workflows verify tag ↔
+  `package.json` version before publishing; `publish-mcp` gates on the
+  full `npm run ci`; the docker `latest` tag condition actually fires on
+  tag pushes; `npm run release:bump` (`tools/release-bump.mjs`) bumps and
+  rebuilds in lockstep.
+- **MCP server parity (D-13)** — `get_atms` (city filter + capped output)
+  ends the `atm_directory` session dead-end; `'atm'` in the domain enums,
+  `inferDomain`, and a third spec resource; slot-aware
+  `multi_insurer_footprint` emission; server version read from
+  `package.json`; `/health` reports version/specSha/persona/tool counts;
+  per-IP token-bucket rate limiting on the public endpoint; CORS `*` no
+  longer applied to OAuth endpoints; `MCP_PUBLIC_URL` issuer override +
+  stub RFC 7591 `/register` so real MCP clients can complete the simulated
+  J1 flow; insurance + multi-LFI prompts; stale 12/38-persona copy swept.
+
+### Changed — frontend performance, keyboard access, i18n tranches 1–2
+
+- **The EXP-24 gate measured 62 KB short** — `tests/bundle-weight.test.mjs`
+  never walked modules reachable only through `modulepreload`-seeded
+  entries; the true index cold load was 286.8 KB gz against the 250 KB
+  budget. Fixed traversal + per-page budgets (`connect`/`integrate`/
+  `embed`), and the index path now lazy-loads the insurance + ATM
+  generator pipelines (`src/generator/lazy.js`, registry split into
+  `dispatch.js` + `pipelines/`; sync `buildBundle` entry unchanged for
+  Node/SW consumers) — **246.2 KB gz, back under budget**, byte-identical
+  output verified against the pre-refactor generator.
+- **Main-thread hot paths** — compare mode memoizes bundles (was 3 full
+  generations per interaction); the transactions filter debounces and
+  preserves caret/focus (was full table teardown per keystroke with
+  caret-to-end); cross-link counting pre-buckets by `TransactionType`
+  (was O(visible × transactions) ≈ 600 k `match()` calls per render).
+- **Keyboard access (EXP-23)** — persona cards are real buttons; sortable
+  headers get `scope="col"`, Enter/Space sort + `aria-sort`; new
+  `tests/e2e/keyboard-nav.spec.mjs` pins both (axe can't see either).
+  `/connect` J3 amber pane label contrast raised to 5.28:1.
+- **i18n tranches 1–2 (D-10)** — 39 new EN+AR catalog keys: toolbar
+  controls, find-box leftovers (including the dangling `' · close with '`
+  EN/AR mix), persona-card chrome, field-card row labels, tx-filter chrome
+  (whose `aria-label`s exposed raw prop names), and the compare view now
+  uses `localizedName` (a live D-10 regression). `tests/i18n.test.mjs`
+  asserts every `data-i18n` key exists in both locales.
+- `no-unused-vars` promoted to `error` for `src/` (now at zero).
+
 ### Added — structural gates for load-bearing invariants (EXP-04 / EXP-07 / EXP-17)
 
 A hardening slice that converts invariants which previously held by

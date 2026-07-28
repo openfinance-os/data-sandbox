@@ -1,7 +1,7 @@
 {
   "name": "@openfinance-os/sandbox-mcp",
   "version": "0.0.1",
-  "description": "MCP server that exposes the Open Finance Data Sandbox (synthetic UAE Open Finance v2.1 Bank Data Sharing fixtures) as tools, resources, and prompts so Claude can act as a dynamic PFM. Stdio transport in v1; banking domain only; curated personas; anonymous.",
+  "description": "MCP server that exposes the Open Finance Data Sandbox (synthetic UAE Open Finance v2.1 fixtures across three domains: Bank Data Sharing, Insurance Data Sharing — all 7 lines — and the ATM Locator) as tools, resources, and prompts so Claude can act as a dynamic PFM. Stdio + Streamable HTTP transports; 39 curated personas plus a custom-persona builder; anonymous by default.",
   "keywords": [
     "mcp",
     "model-context-protocol",

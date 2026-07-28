@@ -3400,9 +3400,6 @@ function renderBfmDashboard(persona, perLfi) {
     const signed = t.CreditDebitIndicator === 'Credit' ? amt : -amt;
     byLfi.set(t._lfi, (byLfi.get(t._lfi) || 0) + signed);
   }
-  let netInflow30 = 0;
-  for (const v of byLfi.values()) netInflow30 += v;
-
   let inflow30 = 0,
     outflow30 = 0;
   for (const t of ins.recentTx) {
