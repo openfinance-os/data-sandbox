@@ -122,6 +122,13 @@ Findings from the five-dimension review recorded in
   preserves caret/focus (was full table teardown per keystroke with
   caret-to-end); cross-link counting pre-buckets by `TransactionType`
   (was O(visible × transactions) ≈ 600 k `match()` calls per render).
+- **`/connect` was unusable on a phone** — a `160px 1fr` meta grid whose
+  `1fr` couldn't shrink pushed the page to 484px inside a 412px viewport.
+  Because the widened layout viewport is also the containing block for
+  `position: fixed`, the Consent Manager modal overflowed with its close
+  button off-screen, leaving no way to dismiss the dialog on mobile; the
+  five-step J2 stepper was likewise clipped to three visible steps. Found
+  by the new `/connect` e2e spec running on the mobile-chrome project.
 - **Keyboard access (EXP-23)** — persona cards are real buttons; sortable
   headers get `scope="col"`, Enter/Space sort + `aria-sort`; new
   `tests/e2e/keyboard-nav.spec.mjs` pins both (axe can't see either).
