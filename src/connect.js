@@ -2989,6 +2989,11 @@ function openConsentManager() {
   if (!modal) return;
   renderConsentManagerView();
   modal.hidden = false;
+  // Lock background scroll while the dialog owns the screen. Without this the
+  // long J2 wizard keeps scrolling behind the fixed-position modal on touch
+  // devices, which both reads as broken and drags the dialog out from under
+  // the user's tap.
+  document.body.style.overflow = 'hidden';
   // Stash the previously focused element so we can restore on close.
   modal.dataset.previousFocus = (document.activeElement && document.activeElement.id) || '';
   consentManagerReleaseTrap = trapFocus(modal);
@@ -3002,6 +3007,7 @@ function closeConsentManager() {
   consentManagerReleaseTrap?.();
   consentManagerReleaseTrap = null;
   modal.hidden = true;
+  document.body.style.overflow = '';
   // Trigger a refresh so any consents-dependent UI (J2 dashboard empty state)
   // picks up revocations made inside the modal.
   refresh();

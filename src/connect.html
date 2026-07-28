@@ -420,6 +420,17 @@
     position: relative;
   }
   .wizard-steps .step:last-child { border-right: none; }
+  /* Five steps in one row don't fit a phone: the tail steps get clipped by
+     .wizard's overflow:hidden and become invisible. Wrap instead so the whole
+     journey stays legible. */
+  @media (max-width: 680px) {
+    .wizard-steps { flex-wrap: wrap; }
+    .wizard-steps .step {
+      flex: 1 1 50%;
+      min-width: 0;
+      border-bottom: 1px solid var(--border);
+    }
+  }
   .wizard-steps .step .num {
     width: 22px; height: 22px;
     border-radius: 50%;
@@ -1161,7 +1172,12 @@
 
   .meta-grid {
     display: grid;
-    grid-template-columns: 160px 1fr;
+    /* minmax(0, …) on both tracks: a bare `1fr` keeps min-width:auto, so the
+       monospace SHA / timestamp values refuse to shrink and push the whole
+       page wider than a phone viewport. That horizontal overflow widens the
+       layout viewport, which in turn drags the fixed-position Consent
+       Manager modal (and its close button) partly off-screen. */
+    grid-template-columns: minmax(0, 160px) minmax(0, 1fr);
     gap: 4px 16px;
     margin-top: 8px;
   }
@@ -1175,6 +1191,14 @@
     margin: 0;
     font-family: ui-monospace, "SF Mono", Menlo, monospace;
     font-size: 12px;
+    overflow-wrap: anywhere;
+  }
+  /* Stack label over value on phones — a 160px label column leaves too little
+     for a 40-char SHA. Matches the one-column collapse used by .scope-grid
+     and .permissions-items at the same breakpoint. */
+  @media (max-width: 680px) {
+    .meta-grid { grid-template-columns: minmax(0, 1fr); }
+    .meta-grid dd { margin-bottom: 6px; }
   }
 
   .callout {
@@ -2168,7 +2192,12 @@
     border-radius: 8px;
     max-width: 640px;
     width: 100%;
+    /* dvh tracks the *visible* area on mobile, where the browser's collapsing
+       URL bar makes 88vh taller than what the user can actually see — the
+       card would overflow and strand its header (and the close button)
+       off-screen. vh first as the fallback for engines without dvh. */
     max-height: 88vh;
+    max-height: 88dvh;
     display: flex;
     flex-direction: column;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.18);
@@ -2201,6 +2230,9 @@
     background: rgba(255,255,255,0.15);
     border: 1px solid rgba(255,255,255,0.25);
     color: #fff;
+    /* Never let the long brand string squeeze the dismiss control on a
+       narrow viewport — a modal you can't close is a trap. */
+    flex-shrink: 0;
     width: 32px; height: 32px;
     border-radius: 50%;
     cursor: pointer;
