@@ -6,6 +6,7 @@
 
 import { buildBundle } from './generator/index.js';
 import { leafFields, statusBadge } from './shared/spec-helpers.js';
+import { personaInDomain } from './shared/domains.js';
 import { decodeFromUrl, CUSTOM_PERSONA_SLUG } from './url.js';
 import { expandRecipe } from './persona-builder/expand.js';
 import { decodeRecipe } from './persona-builder/recipe.js';
@@ -39,7 +40,7 @@ async function init() {
   // Filter the persona pool to the active domain so the default fallback
   // can't bleed an insurance persona into a banking embed (or vice versa).
   const activePersonas = Object.fromEntries(
-    Object.entries(data.personas).filter(([, p]) => (p.domain ?? 'banking') === domain),
+    Object.entries(data.personas).filter(([, p]) => personaInDomain(p, domain)),
   );
 
   // Workstream B — materialise a custom persona from the URL recipe param.

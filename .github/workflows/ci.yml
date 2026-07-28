@@ -54,14 +54,18 @@ jobs:
       - run: npm run build:spec
       - run: npm run build:data
       - run: npm run build:avatars
-      # Fail fast if dist/ artifacts are stale relative to sources, so a
-      # contributor who forgot to re-bake them sees a clear signal here
-      # rather than a downstream test surprise.
-      - run: npm run check:dist-clean
       # tests/fixture-package.test.mjs reads from packages/sandbox-fixtures/
       # which is generated, not checked in. Use the :pkgs variant since
       # build:spec already ran above.
       - run: npm run build:fixtures:pkgs
+      # Fail fast if dist/ artifacts are stale relative to sources, so a
+      # contributor who forgot to re-bake them sees a clear signal here
+      # rather than a downstream test surprise. MUST run after
+      # build:fixtures:pkgs — check-dist-clean.mjs compares the freshly
+      # generated packages/sandbox-fixtures/ files against the committed
+      # state, so running it before the build makes that half of the check
+      # trivially pass (the tool's own header says so).
+      - run: npm run check:dist-clean
       # tests/integrate-staging.test.mjs reads from _site/, which stage-site.mjs
       # populates.
       - run: node tools/stage-site.mjs
@@ -126,16 +130,20 @@ jobs:
           key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium firefox webkit
-      # Run all cross-browser / mobile projects. The `visual` project is
-      # excluded here until baselines are generated on Linux via the
-      # e2e-update-baselines workflow_dispatch — see tests/e2e/README.md.
+      # Run all cross-browser / mobile projects PLUS the visual-regression
+      # project. Linux baselines were committed in 942e6ae; before this line
+      # included `visual`, the only workflow that ran the project was
+      # e2e-update-baselines with --update-snapshots, which by definition
+      # can never fail — i.e. visual regression was never actually gating.
+      # Refresh baselines via the e2e-update-baselines workflow_dispatch.
       - run: |
           npx playwright test \
             --project=chromium-desktop \
             --project=firefox-desktop \
             --project=webkit-desktop \
             --project=mobile-chrome \
-            --project=mobile-webkit
+            --project=mobile-webkit \
+            --project=visual
       - uses: actions/upload-artifact@v7
         if: always()
         with:

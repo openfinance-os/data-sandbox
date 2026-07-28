@@ -521,10 +521,16 @@ export function generateTransactions({
 
   // TransactionId is the stable tiebreaker so same-timestamp transactions
   // keep a deterministic order independent of generation-loop ordering.
+  // Ordinal (code-unit) comparison, NOT localeCompare: this sort fixes the
+  // final byte order of every transaction array, and localeCompare's result
+  // depends on the runtime's locale + ICU build — a cross-environment
+  // determinism hazard (EXP-05). Both comparands are structurally uniform
+  // ASCII (ISO-8601 timestamps, hyphenated ids), so ordinal order is
+  // exactly the intended chronological/stable order.
+  const ordinal = (x, y) => (x < y ? -1 : x > y ? 1 : 0);
   out.sort(
     (a, b) =>
-      a.BookingDateTime.localeCompare(b.BookingDateTime) ||
-      a.TransactionId.localeCompare(b.TransactionId),
+      ordinal(a.BookingDateTime, b.BookingDateTime) || ordinal(a.TransactionId, b.TransactionId),
   );
   return out;
 }

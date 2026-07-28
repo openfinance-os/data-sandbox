@@ -609,17 +609,27 @@ export function createServer() {
           // discover the persona's plausible multi-bank reality without
           // a separate persona://<id> resource fetch. `multi_lfi_footprint`
           // is null for personas without a declared footprint.
-          multi_lfi_footprint: fp
-            ? {
-                roles: ['primary', 'secondary', 'tertiary']
-                  .filter((r) => fp[r])
-                  .map((r) => ({
-                    slot: r,
-                    role: fp[r].role,
-                    plausible_lfi_candidates: fp[r].plausible_lfi_candidates ?? [],
-                  })),
-              }
-            : null,
+          multi_lfi_footprint: (() => {
+            // Handle both footprint shapes: the legacy triad AND the
+            // Phase 2.2 N-slot `slots: []` array. The previous triad-only
+            // walk reported `roles: []` for every N-slot persona —
+            // including the flagship retail_multi_banker — while
+            // available_lfi_roles in the same payload listed their
+            // real slots.
+            const slots = Array.isArray(fp?.slots)
+              ? fp.slots.filter((s) => s != null)
+              : ['primary', 'secondary', 'tertiary']
+                  .filter((r) => fp?.[r])
+                  .map((r) => ({ ...fp[r], key: r }));
+            if (slots.length === 0) return null;
+            return {
+              roles: slots.map((s, i) => ({
+                slot: s.key ?? (i === 0 ? 'primary' : `slot-${i + 1}`),
+                role: s.role,
+                plausible_lfi_candidates: s.plausible_lfi_candidates ?? [],
+              })),
+            };
+          })(),
           available_lfi_roles: availableRoles,
         };
       });

@@ -44,17 +44,29 @@ const atmBaseLinks = (resource) => ({
  * envelopes for both domains, so the output shape MUST match what the
  * spec-validation tests assert against the AJV-compiled schema.
  */
+// Per-domain envelope emitters, keyed identically to the generator's
+// DOMAIN_PIPELINES registry (src/generator/index.js). A new domain adds
+// one entry here and one there.
+const DOMAIN_ENVELOPES = {
+  banking: (bundle, ctx) => bankingEnvelopesFromBundle(bundle, ctx),
+  insurance: (bundle, ctx) => insuranceEnvelopesFromBundle(bundle, ctx),
+  atm: (bundle, ctx) => atmEnvelopesFromBundle(bundle, ctx),
+};
+
 export function envelopesFromBundle(bundle, ctx) {
   // Phase 2.2 — multi-domain bundles carry a `domains` array and have
   // both banking and insurance fields populated. Emit both envelope
   // sets so all endpoints land at the same persona path.
   if (Array.isArray(bundle.domains) && bundle.domains.length > 1) {
     const envelopes = {};
-    if (bundle.domains.includes('banking')) {
-      Object.assign(envelopes, bankingEnvelopesFromBundle(bundle, ctx));
-    }
-    if (bundle.domains.includes('insurance')) {
-      Object.assign(envelopes, insuranceEnvelopesFromBundle(bundle, ctx));
+    for (const domain of bundle.domains) {
+      const emit = DOMAIN_ENVELOPES[domain];
+      if (!emit) {
+        // Mirror the generator registry's posture: an unknown domain is a
+        // hard error, never a silently missing endpoint family (A-6).
+        throw new Error(`envelopesFromBundle: unknown bundle domain: ${domain}`);
+      }
+      Object.assign(envelopes, emit(bundle, ctx));
     }
     return envelopes;
   }
@@ -93,15 +105,37 @@ function atmEnvelopesFromBundle(bundle, ctx) {
   return envelopes;
 }
 
+// Project a party record onto the AEPartyIdentityAssurance4 vocabulary
+// (PartyId / PartyNumber / PartyCategory / VerifiedClaims) used by the
+// bundle-level /parties endpoint.
+function toAssurance4(party) {
+  const out = {};
+  for (const k of ['PartyId', 'PartyNumber', 'PartyCategory', 'VerifiedClaims']) {
+    if (party?.[k] !== undefined) out[k] = party[k];
+  }
+  return out;
+}
+
 function bankingEnvelopesFromBundle(bundle, ctx) {
   const envelopes = {};
   envelopes['/accounts'] = wrap({ Data: { Account: bundle.accounts.map(strip) } }, 'accounts', ctx);
-  envelopes['/parties'] = wrap({ Data: { Party: strip(bundle.callingUserParty) } }, 'parties', ctx);
+  // /parties returns AEReadParty4 whose Party is AEPartyIdentityAssurance4 —
+  // it does NOT admit the Assurance2-only keys (PartyType, AccountRole) that
+  // the per-account /accounts/{id}/parties (AEReadParty2) shape carries.
+  envelopes['/parties'] = wrap(
+    { Data: { Party: toAssurance4(strip(bundle.callingUserParty)) } },
+    'parties',
+    ctx,
+  );
 
   for (const acc of bundle.accounts) {
     const id = acc.AccountId;
+    // Account-by-id returns AEReadAccountId: AccountId is hoisted to a
+    // Data-level sibling, and the inner AEAccountId object must NOT carry
+    // its own AccountId key (additionalProperties: false).
+    const { AccountId: _hoisted, ...detailAccount } = strip(acc);
     envelopes[`/accounts/${id}`] = wrap(
-      { Data: { AccountId: id, Account: strip(acc) } },
+      { Data: { AccountId: id, Account: detailAccount } },
       `accounts/${id}`,
       ctx,
     );

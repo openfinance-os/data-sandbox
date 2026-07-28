@@ -252,6 +252,21 @@ export function parseDomain(config) {
     process.exit(1);
   }
 
+  // Provenance self-check: the recorded upstream path must name the same
+  // Standards version the vendored YAML declares. Catches the drift class
+  // where a spec bump updates the file but not the config (or vice versa)
+  // — that wrong string would otherwise publish into dist/SPEC*.json, the
+  // UI top bar, /about, and the fixture-package manifest.
+  const declaredVersion = spec.info?.version ?? 'unknown';
+  if (declaredVersion !== 'unknown' && !config.upstreamPath.includes(`/${declaredVersion}/`)) {
+    console.error(
+      `[${config.id}] upstreamPath (${config.upstreamPath}) does not contain the ` +
+        `vendored spec's declared version "${declaredVersion}" — fix tools/domains.config.mjs ` +
+        `or re-vendor the spec.`,
+    );
+    process.exit(1);
+  }
+
   const out = stripUndefined({
     specVersion: spec.info?.version ?? 'unknown',
     openapiVersion: spec.openapi ?? 'unknown',

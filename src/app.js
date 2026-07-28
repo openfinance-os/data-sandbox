@@ -14,6 +14,7 @@ import {
   realLfisGuidance,
   bandForFieldName,
 } from './shared/spec-helpers.js';
+import { personaInDomain } from './shared/domains.js';
 import { statusPill, syncViewTabs } from './shared/dom.js';
 import { setDocumentLocale, normalizeLocale, DEFAULT_LOCALE } from './shared/i18n.js';
 import { decodeFromUrl, encodeEmbed, encodeFixtureUrl, CUSTOM_PERSONA_SLUG } from './url.js';
@@ -541,7 +542,7 @@ async function init() {
   state.spec = await specRes.json();
 
   state.activePersonas = Object.fromEntries(
-    Object.entries(state.data.personas).filter(([, p]) => p.domain === state.domain),
+    Object.entries(state.data.personas).filter(([, p]) => personaInDomain(p, state.domain)),
   );
 
   // Workstream B — materialise a custom persona from the URL recipe param,
@@ -1585,7 +1586,7 @@ async function switchDomain(newDomain) {
   const leavingAtm = state.domain === 'atm' && newDomain !== 'atm';
   state.domain = newDomain;
   state.activePersonas = Object.fromEntries(
-    Object.entries(state.data.personas).filter(([, p]) => p.domain === newDomain),
+    Object.entries(state.data.personas).filter(([, p]) => personaInDomain(p, newDomain)),
   );
   state.personaId = Object.keys(state.activePersonas)[0];
   state.navAccountCollapsed.clear();

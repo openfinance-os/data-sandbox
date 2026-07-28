@@ -16,7 +16,7 @@ export const DOMAINS = [
     bandsPath: 'spec/lfi-bands.banking.yaml',
     outPath: 'dist/SPEC.json',
     upstreamRepo: 'Nebras-Open-Finance/api-specs',
-    upstreamPath: 'dist/standards/v2.1/uae-account-information-openapi.yaml',
+    upstreamPath: 'dist/standards/v2.1-errata2/uae-account-information-openapi.yaml',
     defaultEndpoint: '/accounts',
     // PRD Appendix C — v1 = 12 GETs.
     inScopePaths: [

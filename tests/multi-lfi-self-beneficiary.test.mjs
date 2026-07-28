@@ -46,12 +46,24 @@ describe('Slice 4 — purpose-to-role routing in standing orders', () => {
   // islamic_deposit, which the persona declares with Sharjah Islamic
   // among its plausible candidates). Assert the zakat SO's CreditorAgent
   // resolves to one of the Islamic-deposit candidates' BICs.
-  const fxKey = 'sme_rak_trading_emirati|rich|4106';
+  // Derive the fixture key from the persona's OWN default_seed rather than
+  // hard-coding it: a hard-coded key silently deleted this invariant
+  // assertion (via the it.skip below) the moment the persona was renamed
+  // or re-seeded. With the package built, a missing fixture is a FAILURE,
+  // not a skip.
+  const personaJson = JSON.parse(
+    fs.readFileSync(path.join(PKG_DIR, 'personas/sme_rak_trading_emirati.json'), 'utf8'),
+  );
+  const fxKey = `sme_rak_trading_emirati|rich|${personaJson.default_seed}`;
   const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
   const fx = manifest.fixtures[fxKey];
   if (!fx) {
-    it.skip(`fixture ${fxKey} missing — rebuild with npm run build:fixtures`, () => {});
-    return;
+    throw new Error(
+      `fixture ${fxKey} missing from a built fixture package — the Slice-4 ` +
+        `purpose-to-role routing assertion must not silently disappear. ` +
+        `Rebuild with npm run build:fixtures, or update this test if the ` +
+        `persona was intentionally renamed.`,
+    );
   }
   const operatingId = fx.accountIds[0];
   const env = JSON.parse(
@@ -61,9 +73,6 @@ describe('Slice 4 — purpose-to-role routing in standing orders', () => {
     ),
   );
   const sos = env.Data?.StandingOrder ?? [];
-  const personaJson = JSON.parse(
-    fs.readFileSync(path.join(PKG_DIR, 'personas/sme_rak_trading_emirati.json'), 'utf8'),
-  );
   const islamicSlot = ['primary', 'secondary', 'tertiary']
     .map((s) => personaJson.multi_lfi_footprint[s])
     .find((v) => v?.role === 'islamic_deposit');

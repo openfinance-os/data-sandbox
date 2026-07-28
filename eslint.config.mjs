@@ -55,6 +55,24 @@ const jsdomTests = {
   },
 };
 
+// The generator's output must be byte-identical across runtimes (EXP-05).
+// localeCompare's result depends on the process locale + ICU build, so it is
+// banned anywhere it could decide generated ordering. Use ordinal comparison
+// ((a < b ? -1 : a > b ? 1 : 0)) instead.
+const generatorDeterminism = {
+  files: ['src/generator/**/*.{js,mjs,cjs}', 'src/prng.js'],
+  rules: {
+    'no-restricted-syntax': [
+      'error',
+      {
+        selector: "CallExpression[callee.property.name='localeCompare']",
+        message:
+          'localeCompare is locale/ICU-dependent and breaks deterministic generation (EXP-05). Use ordinal comparison.',
+      },
+    ],
+  },
+};
+
 const sharedRules = {
   rules: {
     'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
@@ -99,5 +117,6 @@ export default [
   nodeFiles,
   e2eTests,
   jsdomTests,
+  generatorDeterminism,
   sharedRules,
 ];

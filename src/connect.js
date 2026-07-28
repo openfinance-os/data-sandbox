@@ -29,6 +29,7 @@
 // was fabricated.
 
 import { trapFocus } from './shared/dom.js';
+import { domainLabel } from './shared/domains.js';
 import { fillSpecMeta } from './shared/spec-meta.js';
 
 // Three populate-rate profiles per PRD §8.3 / EXP-04. Anonymous-by-design
@@ -747,7 +748,11 @@ function toPersonaList(map) {
       id,
       name: v.name,
       archetype: v.archetype,
-      domain: v.domain,
+      // Normalise: the fixture manifest stamps domain:'multi' on
+      // multi-domain personas, but dist/data.json (the local-dev fallback)
+      // carries only `domains: []` with no singular key — which made this
+      // sort throw and the whole page fail on the `npm run serve` path.
+      domain: domainLabel(v),
       segment: v.segment || null,
       default_seed: v.default_seed || null,
       stress_coverage: v.stress_coverage || [],

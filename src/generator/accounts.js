@@ -16,6 +16,30 @@ const SUBTYPE_BY_KIND = {
   Finance: 'Finance',
 };
 
+// Single source of truth for the primary bundle's anchor account
+// (AccountId + deterministic IBAN). Mirrors exactly the slot-filtered
+// indexing generateAccounts() uses for the primary bundle, so callers that
+// need the anchor WITHOUT running the account generator (the cross-LFI
+// ledger in index.js, including from role-bundle projections) can never
+// diverge from what the primary bundle actually emits. See
+// APP_IMPROVEMENT_PLAN.md §1 A-3 for the divergence this replaces.
+export function derivePrimaryAnchor(sourcePersona) {
+  const sourceAccounts = sourcePersona.accounts ?? [];
+  const hasAtSlotTags = sourceAccounts.some((a) => a.at_slot != null);
+  const fp = normalizeFootprint(sourcePersona.multi_lfi_footprint);
+  const primarySlotKey = fp?.slots[0]?.key;
+  const filtered =
+    hasAtSlotTags && primarySlotKey
+      ? sourceAccounts.filter((a) => a.at_slot === primarySlotKey)
+      : sourceAccounts;
+  const idx = filtered.findIndex((s) => s.type === 'CurrentAccount');
+  if (idx < 0) return null;
+  return {
+    accountId: makeAccountId(sourcePersona.persona_id, idx),
+    iban: derivePrimaryAccountIban(sourcePersona.persona_id, idx),
+  };
+}
+
 function makeAccountId(personaId, idx) {
   return `${personaId.replace(/_/g, '-')}-acct-${String(idx + 1).padStart(2, '0')}`;
 }
