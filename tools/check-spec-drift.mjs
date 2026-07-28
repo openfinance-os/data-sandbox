@@ -26,8 +26,32 @@ import { repoRoot } from './load-fixtures.mjs';
 const dryRun = process.argv.includes('--dry-run');
 const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '';
 
+// Every value that reaches the outbound request is read from a file in
+// this repo, so each is validated against a strict shape first. These are
+// repo-controlled inputs, not user input, but an unvalidated pin file
+// would otherwise be able to steer the request path — cheap to forbid.
+const SHA_RE = /^[0-9a-f]{40}$/;
+const ISO_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/;
+const REPO_RE = /^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/;
+const PATH_RE = /^[A-Za-z0-9._\-/]+$/;
+
 function readTrimmed(rel) {
   return fs.readFileSync(path.join(repoRoot, rel), 'utf8').trim();
+}
+
+function readValidated(rel, re, label) {
+  const value = readTrimmed(rel);
+  if (!re.test(value)) {
+    throw new Error(`${label} in ${rel} is malformed: ${JSON.stringify(value.slice(0, 40))}`);
+  }
+  return value;
+}
+
+function validate(value, re, label) {
+  if (typeof value !== 'string' || !re.test(value)) {
+    throw new Error(`${label} is malformed: ${JSON.stringify(String(value).slice(0, 40))}`);
+  }
+  return value;
 }
 
 // Watch the whole standards directory that contains the pinned file, not
@@ -41,9 +65,16 @@ function standardsDirOf(upstreamPath) {
 }
 
 async function commitsSince({ repo, dirPath, since }) {
-  const url =
-    `https://api.github.com/repos/${repo}/commits` +
-    `?path=${encodeURIComponent(dirPath)}&since=${encodeURIComponent(since)}&per_page=20`;
+  // Re-validate at the sink and assemble structurally: the host is a
+  // fixed literal, the repo slug is checked to be exactly `owner/name`
+  // (so it cannot escape the /repos/ prefix), and the file-derived
+  // values ride in searchParams rather than raw string concatenation.
+  const [owner, name] = validate(repo, REPO_RE, 'upstreamRepo').split('/');
+  const url = new URL(`https://api.github.com/repos/${owner}/${name}/commits`);
+  url.searchParams.set('path', validate(dirPath, PATH_RE, 'upstream path'));
+  url.searchParams.set('since', validate(since, ISO_RE, 'retrieved timestamp'));
+  url.searchParams.set('per_page', '20');
+
   const headers = { Accept: 'application/vnd.github+json', 'User-Agent': 'of-data-sandbox-drift' };
   if (token) headers.Authorization = `Bearer ${token}`;
   const res = await fetch(url, { headers });
@@ -57,8 +88,10 @@ const report = [];
 let failed = false;
 
 for (const domain of DOMAINS) {
-  const pin = readTrimmed(domain.pinPath);
-  const retrieved = readTrimmed(domain.retrievedPath);
+  // Validate at the source too, so a malformed pin file fails loudly with
+  // the offending path named rather than at the request sink.
+  const pin = readValidated(domain.pinPath, SHA_RE, 'pinned SHA');
+  const retrieved = readValidated(domain.retrievedPath, ISO_RE, 'retrieved timestamp');
   const dirPath = standardsDirOf(domain.upstreamPath);
 
   if (dryRun) {

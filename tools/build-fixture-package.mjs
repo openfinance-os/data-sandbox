@@ -44,34 +44,57 @@ const CACHE_INPUT_ROOTS = [
   'package.json',
 ];
 
+// Entry type comes from the directory read itself (withFileTypes) and
+// missing paths surface as a failed read rather than a prior existsSync,
+// so there is no check-then-use window on any path we hash.
 function corpusInputHash() {
   const h = crypto.createHash('sha256');
-  const walk = (p) => {
-    const st = fs.statSync(p);
-    if (st.isDirectory()) {
-      for (const name of fs.readdirSync(p).sort()) walk(path.join(p, name));
-      return;
-    }
+
+  const hashFile = (p) => {
     // Hash path + content, never mtime — a `touch` must not invalidate.
     h.update(path.relative(repoRoot, p));
     h.update('\0');
     h.update(fs.readFileSync(p));
     h.update('\0');
   };
+
+  const walkDir = (dir) => {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    entries.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+    for (const entry of entries) {
+      const p = path.join(dir, entry.name);
+      if (entry.isDirectory()) walkDir(p);
+      else if (entry.isFile()) hashFile(p);
+    }
+  };
+
   for (const root of CACHE_INPUT_ROOTS) {
     const p = path.join(repoRoot, root);
-    if (fs.existsSync(p)) walk(p);
+    try {
+      walkDir(p);
+    } catch (err) {
+      // ENOTDIR → the root is a plain file (package.json); ENOENT → an
+      // optional root that isn't present in this checkout.
+      if (err.code === 'ENOTDIR') hashFile(p);
+      else if (err.code !== 'ENOENT') throw err;
+    }
   }
   return h.digest('hex');
 }
 
+function readStamp() {
+  try {
+    // A missing manifest means the outputs were cleared even if a stamp
+    // survives, so both reads must succeed for the cache to be valid.
+    fs.readFileSync(path.join(OUT, 'manifest.json'));
+    return fs.readFileSync(STAMP_PATH, 'utf8').trim();
+  } catch {
+    return null;
+  }
+}
+
 const inputHash = corpusInputHash();
-if (
-  process.env.FIXTURES_FORCE !== '1' &&
-  fs.existsSync(STAMP_PATH) &&
-  fs.existsSync(path.join(OUT, 'manifest.json')) &&
-  fs.readFileSync(STAMP_PATH, 'utf8').trim() === inputHash
-) {
+if (process.env.FIXTURES_FORCE !== '1' && readStamp() === inputHash) {
   console.log(
     `fixture package up to date (input hash ${inputHash.slice(0, 12)}…) — skipping rebuild. ` +
       `Force with FIXTURES_FORCE=1.`,
