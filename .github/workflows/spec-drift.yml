@@ -1,0 +1,65 @@
+name: spec drift watch
+
+# Weekly check that the vendored, pinned-by-SHA specs (D-01: one pinned
+# SHA per domain) haven't silently fallen behind upstream. The check logic
+# lives in tools/check-spec-drift.mjs, which reads the per-domain upstream
+# coordinates straight from tools/domains.config.mjs — adding a domain
+# needs no change here. On drift it opens (or comments on) a single
+# `spec-drift`-labelled issue. Nothing is ever auto-bumped: re-vendoring
+# is a deliberate decision, since a new errata can introduce mandatory
+# fields that the lfi-bands mandatory-overlap gate must be re-checked
+# against (R-EXP-01 mitigation — this removes the silence, not the human).
+
+on:
+  schedule:
+    - cron: '41 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Compare upstream standards tree against the domain pins
+        id: drift
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          node tools/check-spec-drift.mjs
+          code=$?
+          set -e
+          if [ "$code" = "1" ]; then
+            echo "spec-drift check errored" >&2
+            exit 1
+          fi
+          echo "found=$([ "$code" = "2" ] && echo yes || echo no)" >> "$GITHUB_OUTPUT"
+
+      - name: Open or refresh the spec-drift issue
+        if: steps.drift.outputs.found == 'yes'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DRIFT: ${{ steps.drift.outputs.drift }}
+        run: |
+          set -euo pipefail
+          body="$(printf '%s\n\n%s\n' \
+            "The weekly spec-drift watch found upstream commits newer than one or more domain pins. Review whether to re-vendor — deliberately: D-01 keeps a single pinned SHA per domain and nothing is auto-bumped." \
+            "$DRIFT")"
+          body="$(printf '%s\n%s\n' "$body" \
+            "_Re-vendoring checklist: update the spec YAML + its \`spec/SPEC_PIN.*\` pair, run \`npm run ci\`, and check \`tests/lfi-bands-mandatory-overlap.test.mjs\` for newly-mandatory fields._")"
+          existing="$(gh issue list --label spec-drift --state open --json number --jq '.[0].number' 2>/dev/null || true)"
+          if [ -n "$existing" ] && [ "$existing" != "null" ]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh label create spec-drift --description "Vendored OpenAPI pin is behind upstream" --color FBCA04 2>/dev/null || true
+            gh issue create --title "Upstream spec drift detected" --body "$body" --label spec-drift
+          fi
