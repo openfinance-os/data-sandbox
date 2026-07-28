@@ -42,7 +42,7 @@ jobs:
       # restricts this workflow to push-to-main, and a default checkout
       # resolves to that same trusted main tip (worst case it deploys a
       # slightly newer main commit, which self-corrects on its own run).
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
