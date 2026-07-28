@@ -134,7 +134,7 @@ jobs:
       # cache invalidates whenever @playwright/test bumps. Saves ~60–90s
       # per run on a cache hit.
       - name: Cache Playwright browsers
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         id: playwright-cache
         with:
           path: ~/.cache/ms-playwright
@@ -191,7 +191,7 @@ jobs:
         with:
           name: built-artefacts
       - name: Cache Playwright browsers
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
