@@ -49,7 +49,12 @@ const e2eTests = {
 // Vitest suites that opt into the jsdom environment (`// @vitest-environment
 // jsdom`) exercise real DOM nodes, so `document` / `window` are legal there.
 const jsdomTests = {
-  files: ['tests/dom-helpers.test.mjs', 'tests/ui-module-graph.test.mjs', 'tests/i18n.test.mjs'],
+  files: [
+    'tests/dom-helpers.test.mjs',
+    'tests/ui-module-graph.test.mjs',
+    'tests/i18n.test.mjs',
+    'tests/ui-modules.test.mjs',
+  ],
   languageOptions: {
     globals: { ...globals.node, ...globals.browser },
   },
