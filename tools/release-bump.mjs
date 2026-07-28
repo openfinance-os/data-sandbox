@@ -47,8 +47,16 @@ console.log(`root package.json: ${previous} → ${version}`);
 // 2. sandbox-mcp package.json is hand-maintained — bump it in lockstep so
 // tests/package-version-sync.test.mjs stays green.
 const mcpPkgPath = path.join(repoRoot, 'packages/sandbox-mcp/package.json');
-if (fs.existsSync(mcpPkgPath)) {
-  const mcpPkg = JSON.parse(fs.readFileSync(mcpPkgPath, 'utf8'));
+// Single read (no exists-then-read race) — a missing workspace is fine, any
+// other read/parse error should surface.
+let mcpRaw = null;
+try {
+  mcpRaw = fs.readFileSync(mcpPkgPath, 'utf8');
+} catch (err) {
+  if (err.code !== 'ENOENT') throw err;
+}
+if (mcpRaw !== null) {
+  const mcpPkg = JSON.parse(mcpRaw);
   const mcpPrevious = mcpPkg.version;
   mcpPkg.version = version;
   fs.writeFileSync(mcpPkgPath, `${JSON.stringify(mcpPkg, null, 2)}\n`);

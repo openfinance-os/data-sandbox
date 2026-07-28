@@ -38,13 +38,16 @@ async function routeFixtures(page) {
   await page.route('**/fixtures/v1/**', (route) => {
     const url = new URL(route.request().url());
     const rel = url.pathname.replace(/^.*\/fixtures\/v1\//, '');
-    const file = path.join(PKG_DIR, rel);
-    if (file.startsWith(PKG_DIR) && fs.existsSync(file) && fs.statSync(file).isFile()) {
-      return route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: fs.readFileSync(file, 'utf8'),
-      });
+    const file = path.resolve(PKG_DIR, rel);
+    // Containment check + single read (no exists-then-read race): a missing
+    // or non-file path lands in the catch and 404s, same as the staged site.
+    if (file.startsWith(PKG_DIR + path.sep)) {
+      try {
+        const body = fs.readFileSync(file, 'utf8');
+        return route.fulfill({ status: 200, contentType: 'application/json', body });
+      } catch {
+        // fall through to 404
+      }
     }
     return route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
   });

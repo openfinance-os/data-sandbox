@@ -160,10 +160,9 @@ describe('data-i18n key coverage — the HTML ↔ catalog contract', () => {
       const trimmed = literal
         .replace(/\s+/g, ' ')
         .trim()
-        // Decode the basic entities the static HTML uses.
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>');
+        // Decode the basic entities the static HTML uses — single pass so
+        // sequences like `&amp;lt;` can never be double-unescaped.
+        .replace(/&(amp|lt|gt);/g, (_, e) => ({ amp: '&', lt: '<', gt: '>' })[e]);
       if (!trimmed) continue; // element whose text is populated at runtime
       expect(STRINGS.en[key], `STRINGS.en['${key}'] vs literal HTML`).toBe(trimmed);
       checked += 1;
