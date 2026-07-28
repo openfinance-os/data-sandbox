@@ -4,6 +4,7 @@
 // the parsed SPEC + persona manifests + a tiny ESM/CJS loader, into
 // packages/sandbox-fixtures/. Runs after `npm run build:spec`.
 
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -24,6 +25,60 @@ const __dirname = path.dirname(__filename);
 
 const PKG_VERSION = readPackageVersion() || '0.0.0';
 const OUT = path.join(repoRoot, 'packages/sandbox-fixtures');
+
+// ── Build cache ──────────────────────────────────────────────────────
+// EXP-05 makes the corpus a pure function of its inputs, so a content
+// hash over every input root is a sound staleness key. All-or-nothing by
+// design: any change under src/ or tools/ (not just the generator's
+// transitive import closure) invalidates — a broad key trades cache hits
+// for zero risk of serving a stale corpus. The stamp lives next to the
+// (gitignored) outputs, so a fresh clone or CI runner always builds once.
+// Bypass with FIXTURES_FORCE=1.
+const STAMP_PATH = path.join(OUT, '.build-stamp');
+const CACHE_INPUT_ROOTS = [
+  'personas',
+  'synthetic-identity-pool',
+  'spec',
+  'src',
+  'tools',
+  'package.json',
+];
+
+function corpusInputHash() {
+  const h = crypto.createHash('sha256');
+  const walk = (p) => {
+    const st = fs.statSync(p);
+    if (st.isDirectory()) {
+      for (const name of fs.readdirSync(p).sort()) walk(path.join(p, name));
+      return;
+    }
+    // Hash path + content, never mtime — a `touch` must not invalidate.
+    h.update(path.relative(repoRoot, p));
+    h.update('\0');
+    h.update(fs.readFileSync(p));
+    h.update('\0');
+  };
+  for (const root of CACHE_INPUT_ROOTS) {
+    const p = path.join(repoRoot, root);
+    if (fs.existsSync(p)) walk(p);
+  }
+  return h.digest('hex');
+}
+
+const inputHash = corpusInputHash();
+if (
+  process.env.FIXTURES_FORCE !== '1' &&
+  fs.existsSync(STAMP_PATH) &&
+  fs.existsSync(path.join(OUT, 'manifest.json')) &&
+  fs.readFileSync(STAMP_PATH, 'utf8').trim() === inputHash
+) {
+  console.log(
+    `fixture package up to date (input hash ${inputHash.slice(0, 12)}…) — skipping rebuild. ` +
+      `Force with FIXTURES_FORCE=1.`,
+  );
+  process.exit(0);
+}
+
 const NOW_ANCHOR = readNowAnchor();
 const SHA = readSpecSha();
 // Banking and insurance specs are pinned independently — banking on
@@ -1265,3 +1320,7 @@ console.log(
     `\n  ${Object.keys(manifest.personas).length} personas (${personaSummary}) · ${Object.keys(manifest.fixtures).length} (persona × lfi) keys` +
     `\n  spec ${manifest.specVersion} @ ${manifest.specSha.slice(0, 7)}`,
 );
+
+// Stamp the cache only after a fully successful build — any throw above
+// leaves no stamp, so the next run rebuilds from scratch.
+fs.writeFileSync(STAMP_PATH, `${inputHash}\n`);
