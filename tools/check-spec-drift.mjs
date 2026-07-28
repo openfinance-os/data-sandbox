@@ -31,7 +31,9 @@ const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '';
 // repo-controlled inputs, not user input, but an unvalidated pin file
 // would otherwise be able to steer the request path — cheap to forbid.
 const SHA_RE = /^[0-9a-f]{40}$/;
-const ISO_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/;
+// Accepts a numeric UTC offset as well as `Z` — a future SPEC_PIN.*.retrieved
+// written as +00:00 is still a valid instant and shouldn't hard-fail.
+const ISO_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
 const REPO_RE = /^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/;
 const PATH_RE = /^[A-Za-z0-9._\-/]+$/;
 

@@ -47,6 +47,14 @@ const CACHE_INPUT_ROOTS = [
 // Entry type comes from the directory read itself (withFileTypes) and
 // missing paths surface as a failed read rather than a prior existsSync,
 // so there is no check-then-use window on any path we hash.
+//
+// The walk fails loudly rather than skipping anything it cannot hash: a
+// silently-omitted input would produce a hash that matches across a real
+// change, and the cache would then serve a stale corpus (EXP-05). Dirent
+// types follow lstat semantics, so a symlink is neither isFile() nor
+// isDirectory() — it must error, not fall through. Errors below the root
+// probe propagate for the same reason: a file vanishing mid-walk would
+// otherwise truncate the hash and return it as if complete.
 function corpusInputHash() {
   const h = crypto.createHash('sha256');
 
@@ -58,35 +66,49 @@ function corpusInputHash() {
     h.update('\0');
   };
 
-  const walkDir = (dir) => {
-    const entries = fs.readdirSync(dir, { withFileTypes: true });
+  const walkEntries = (dir, entries) => {
     entries.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
     for (const entry of entries) {
       const p = path.join(dir, entry.name);
-      if (entry.isDirectory()) walkDir(p);
+      if (entry.isDirectory()) walkEntries(p, fs.readdirSync(p, { withFileTypes: true }));
       else if (entry.isFile()) hashFile(p);
+      else {
+        throw new Error(
+          `corpusInputHash: ${path.relative(repoRoot, p)} is neither a regular file nor a ` +
+            `directory (symlink or special file). The build cache key cannot cover it — ` +
+            `add explicit handling or move it out of CACHE_INPUT_ROOTS.`,
+        );
+      }
     }
   };
 
   for (const root of CACHE_INPUT_ROOTS) {
     const p = path.join(repoRoot, root);
+    let entries;
     try {
-      walkDir(p);
+      entries = fs.readdirSync(p, { withFileTypes: true });
     } catch (err) {
-      // ENOTDIR → the root is a plain file (package.json); ENOENT → an
-      // optional root that isn't present in this checkout.
-      if (err.code === 'ENOTDIR') hashFile(p);
-      else if (err.code !== 'ENOENT') throw err;
+      // Scoped to the root probe only — anything deeper must propagate.
+      // ENOTDIR → the root is a plain file (package.json);
+      // ENOENT → an optional root absent from this checkout.
+      if (err.code === 'ENOTDIR') {
+        hashFile(p);
+        continue;
+      }
+      if (err.code === 'ENOENT') continue;
+      throw err;
     }
+    walkEntries(p, entries);
   }
   return h.digest('hex');
 }
 
 function readStamp() {
   try {
-    // A missing manifest means the outputs were cleared even if a stamp
-    // survives, so both reads must succeed for the cache to be valid.
-    fs.readFileSync(path.join(OUT, 'manifest.json'));
+    // A surviving stamp with cleared outputs must not count as a hit, so
+    // the manifest has to be present too — opened rather than read, since
+    // this is only an existence probe (it is ~1.4 MB).
+    fs.closeSync(fs.openSync(path.join(OUT, 'manifest.json'), 'r'));
     return fs.readFileSync(STAMP_PATH, 'utf8').trim();
   } catch {
     return null;
