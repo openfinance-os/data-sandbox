@@ -27,9 +27,9 @@ const REQUIRED_IN_CI = [
     gates: 'fixture-package, rendered-fixture-spec-validation, multi-lfi-*, counterparty-* suites',
   },
   {
-    rel: 'dist/brand-registry.json',
+    rel: 'packages/sandbox-fixtures/brand-registry.json',
     build: 'npm run build:fixtures',
-    gates: 'brand-registry suite',
+    gates: 'brand-registry suite + lint-brand-registry-coverage',
   },
   {
     rel: '_site/src/index.html',
