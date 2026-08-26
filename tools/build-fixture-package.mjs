@@ -4,6 +4,7 @@
 // the parsed SPEC + persona manifests + a tiny ESM/CJS loader, into
 // packages/sandbox-fixtures/. Runs after `npm run build:spec`.
 
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -24,6 +25,105 @@ const __dirname = path.dirname(__filename);
 
 const PKG_VERSION = readPackageVersion() || '0.0.0';
 const OUT = path.join(repoRoot, 'packages/sandbox-fixtures');
+
+// ── Build cache ──────────────────────────────────────────────────────
+// EXP-05 makes the corpus a pure function of its inputs, so a content
+// hash over every input root is a sound staleness key. All-or-nothing by
+// design: any change under src/ or tools/ (not just the generator's
+// transitive import closure) invalidates — a broad key trades cache hits
+// for zero risk of serving a stale corpus. The stamp lives next to the
+// (gitignored) outputs, so a fresh clone or CI runner always builds once.
+// Bypass with FIXTURES_FORCE=1.
+const STAMP_PATH = path.join(OUT, '.build-stamp');
+const CACHE_INPUT_ROOTS = [
+  'personas',
+  'synthetic-identity-pool',
+  'spec',
+  'src',
+  'tools',
+  'package.json',
+];
+
+// Entry type comes from the directory read itself (withFileTypes) and
+// missing paths surface as a failed read rather than a prior existsSync,
+// so there is no check-then-use window on any path we hash.
+//
+// The walk fails loudly rather than skipping anything it cannot hash: a
+// silently-omitted input would produce a hash that matches across a real
+// change, and the cache would then serve a stale corpus (EXP-05). Dirent
+// types follow lstat semantics, so a symlink is neither isFile() nor
+// isDirectory() — it must error, not fall through. Errors below the root
+// probe propagate for the same reason: a file vanishing mid-walk would
+// otherwise truncate the hash and return it as if complete.
+function corpusInputHash() {
+  const h = crypto.createHash('sha256');
+
+  const hashFile = (p) => {
+    // Hash path + content, never mtime — a `touch` must not invalidate.
+    h.update(path.relative(repoRoot, p));
+    h.update('\0');
+    h.update(fs.readFileSync(p));
+    h.update('\0');
+  };
+
+  const walkEntries = (dir, entries) => {
+    entries.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+    for (const entry of entries) {
+      const p = path.join(dir, entry.name);
+      if (entry.isDirectory()) walkEntries(p, fs.readdirSync(p, { withFileTypes: true }));
+      else if (entry.isFile()) hashFile(p);
+      else {
+        throw new Error(
+          `corpusInputHash: ${path.relative(repoRoot, p)} is neither a regular file nor a ` +
+            `directory (symlink or special file). The build cache key cannot cover it — ` +
+            `add explicit handling or move it out of CACHE_INPUT_ROOTS.`,
+        );
+      }
+    }
+  };
+
+  for (const root of CACHE_INPUT_ROOTS) {
+    const p = path.join(repoRoot, root);
+    let entries;
+    try {
+      entries = fs.readdirSync(p, { withFileTypes: true });
+    } catch (err) {
+      // Scoped to the root probe only — anything deeper must propagate.
+      // ENOTDIR → the root is a plain file (package.json);
+      // ENOENT → an optional root absent from this checkout.
+      if (err.code === 'ENOTDIR') {
+        hashFile(p);
+        continue;
+      }
+      if (err.code === 'ENOENT') continue;
+      throw err;
+    }
+    walkEntries(p, entries);
+  }
+  return h.digest('hex');
+}
+
+function readStamp() {
+  try {
+    // A surviving stamp with cleared outputs must not count as a hit, so
+    // the manifest has to be present too — opened rather than read, since
+    // this is only an existence probe (it is ~1.4 MB).
+    fs.closeSync(fs.openSync(path.join(OUT, 'manifest.json'), 'r'));
+    return fs.readFileSync(STAMP_PATH, 'utf8').trim();
+  } catch {
+    return null;
+  }
+}
+
+const inputHash = corpusInputHash();
+if (process.env.FIXTURES_FORCE !== '1' && readStamp() === inputHash) {
+  console.log(
+    `fixture package up to date (input hash ${inputHash.slice(0, 12)}…) — skipping rebuild. ` +
+      `Force with FIXTURES_FORCE=1.`,
+  );
+  process.exit(0);
+}
+
 const NOW_ANCHOR = readNowAnchor();
 const SHA = readSpecSha();
 // Banking and insurance specs are pinned independently — banking on
@@ -1455,3 +1555,7 @@ console.log(
     `\n  ${Object.keys(manifest.personas).length} personas (${personaSummary}) · ${Object.keys(manifest.fixtures).length} (persona × lfi) keys` +
     `\n  spec ${manifest.specVersion} @ ${manifest.specSha.slice(0, 7)}`,
 );
+
+// Stamp the cache only after a fully successful build — any throw above
+// leaves no stamp, so the next run rebuilds from scratch.
+fs.writeFileSync(STAMP_PATH, `${inputHash}\n`);
