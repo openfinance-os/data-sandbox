@@ -214,6 +214,7 @@ export function buildBankingBundle({ persona, lfi, seed, pools, now = DEFAULT_NO
       const ledger = computeCrossLfiLedger({
         persona: sourcePersona,
         primaryAccountId,
+        primaryCurrency: anchor.currency,
         primaryIban,
         counterpartyBanksPool: p.counterpartyBanks,
         now,

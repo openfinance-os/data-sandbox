@@ -19,6 +19,7 @@ import {
   loadFixture,
   listRoleBundles,
   manifest,
+  scenarioDescriptor,
 } from '@openfinance-os/sandbox-fixtures';
 
 const LFI_PROFILES = new Set(['rich', 'median', 'sparse']);
@@ -52,6 +53,14 @@ export function createSessionStore() {
     }
     active = {
       kind: 'curated',
+      scenario: scenarioDescriptor({
+        personaId: persona,
+        role: lfi_role,
+        lfi,
+        seed: seed ?? info.default_seed,
+        referenceDate: manifest.nowAnchor,
+        specProvenance: manifest.specProvenance,
+      }),
       domain: info.domain ?? 'banking',
       persona,
       lfi,
@@ -68,6 +77,14 @@ export function createSessionStore() {
     }
     active = {
       kind: 'custom',
+      scenario: scenarioDescriptor({
+        personaId: persona,
+        recipeHash,
+        lfi,
+        seed,
+        referenceDate: manifest.nowAnchor,
+        specProvenance: manifest.specProvenance,
+      }),
       // Custom personas are banking-only — the recipe schema in this package
       // covers retail/SME/corporate banking knobs, with no insurance shape.
       domain: 'banking',

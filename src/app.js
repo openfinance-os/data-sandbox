@@ -1,3 +1,5 @@
+import { deploymentBase, publishedScenario } from './core/fixture-url.js';
+import { CORPUS_VERSION, REFERENCE_DATE } from './core/scenario.js';
 // Sandbox UI entry — wires the three-pane layout to the deterministic
 // generator and the parsed SPEC.json. The browser fetches both as static
 // JSON (no build chain). State lives in a single object updated by select-
@@ -41,7 +43,6 @@ import { createTour } from './ui/tour.js';
 // median to 0.57. Static import + modulepreload is the right shape.
 import { createCompareView } from './ui/compare-view.js';
 import { createTxFilter } from './ui/tx-filter.js';
-import { createMonthlySummary } from './ui/monthly-summary.js';
 // PR-15 perf — insurance module is dynamic-imported when the active
 // domain shifts to insurance. The banking default landing never needs
 // it, so keeping it off the cold-load path tightens the EXP-24
@@ -277,7 +278,23 @@ const { renderTxFilterBar, applyFilter, applySort, toggleSort } = createTxFilter
   emptyTxFilter,
   updateUrl: pushPermalink,
 });
-const { renderMonthlySummary } = createMonthlySummary({ el, formatAmount });
+// Load the monthly calculation when a transaction view is opened.
+let monthlySummaryFactory;
+function renderMonthlySummary(rows) {
+  const host = el('div');
+  monthlySummaryFactory ??= import('./ui/monthly-summary.js').then(({ createMonthlySummary }) =>
+    createMonthlySummary({ el, formatAmount }),
+  );
+  monthlySummaryFactory
+    .then(({ renderMonthlySummary: render }) => {
+      host.replaceChildren(render(rows));
+    })
+    .catch((err) => {
+      host.textContent = 'Monthly summary could not load.';
+      console.error('Monthly summary failed', err);
+    });
+  return host;
+}
 // PR-15 — lazy insurance wrapper. The factory loads on the first
 // renderInsuranceBundle() call; subsequent calls reuse the cached
 // instance. Banking flow never triggers the import.
@@ -370,9 +387,8 @@ const exportPopover = (() => {
     exportTarball: () => exportTarball(),
     embedIframeSnippet: () => buildEmbedSnippet(),
     activeFixtureUrl: () => {
-      const origin =
-        window.location.origin +
-        window.location.pathname.replace(/\/index\.html$/, '').replace(/\/$/, '');
+      const origin = deploymentBase();
+      if (!publishedScenario(state.fixtureManifest, state)) return null;
       return encodeFixtureUrl({
         origin,
         personaId: state.personaId,
@@ -381,7 +397,7 @@ const exportPopover = (() => {
         endpoint:
           state.endpoint === OVERVIEW_PSEUDO || state.endpoint === UNDERWRITING_PSEUDO
             ? '/accounts'
-            : state.endpoint,
+            : activeEnvelopeKey(),
       });
     },
     activeJsonString: () => {
@@ -412,12 +428,12 @@ const exportPopover = (() => {
   // at src/ui/export-popover.js:126 is itself a toggle, so a real
   // dblclick still opens-then-closes by design.
   return {
-    open() {
+    open(trigger = document.activeElement) {
       if (inner) {
-        inner.open();
+        inner.open(trigger);
         return;
       }
-      ensure().then((p) => p.open());
+      ensure().then((p) => p.open(trigger));
     },
     close() {
       inner?.close();
@@ -513,13 +529,21 @@ async function init() {
   // network blip must not block the rest of init (the fallback initials
   // path covers any missing avatar). data / domains are load-bearing and
   // stay strict.
-  const [domainsRes, dataRes, avatarsRes] = await Promise.all([
+  const [domainsRes, dataRes, avatarsRes, published] = await Promise.all([
     fetch('../dist/domains.json'),
     fetch('../dist/data.json'),
     fetch('../dist/avatars.json').catch(() => null),
+    fetch('../dist/published-scenarios.json')
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null),
   ]);
   const domainsManifest = await domainsRes.json();
   state.data = await dataRes.json();
+  state.fixtureManifest = published;
+  if (url.corpus && url.corpus !== CORPUS_VERSION)
+    throw new Error(
+      `Corpus ${url.corpus} requires its archived package. This explorer serves ${CORPUS_VERSION}.`,
+    );
   // D-10 — on a non-default initial locale, merge the lazy Arabic content
   // before first paint so persona names render localized. The default English
   // path skips the extra fetch entirely (the overlay is opt-in, not preloaded).
@@ -574,7 +598,9 @@ async function init() {
       ? url.personaId
       : Object.keys(state.activePersonas)[0];
   state.lfi = url.lfi;
-  state.seed = url.seed;
+  state.seed = new URL(window.location.href).searchParams.has('seed')
+    ? url.seed
+    : state.activePersonas[state.personaId].default_seed;
   // EXP-17: honour the URL's pinned endpoint when it's recognised by the
   // active domain's spec or one of the two banking pseudo-endpoints
   // (overview, underwriting). Falls back to the domain default otherwise.
@@ -604,12 +630,6 @@ async function init() {
   syncControls();
   attachEventHandlers();
   attachBuilderHandlers();
-  // Workstream C plug-point 1 (Service Worker fixture mock) is implemented
-  // and unit-tested under tests/fixture-handler.test.mjs; live registration
-  // is gated on a deployment-time `Service-Worker-Allowed: /` header that
-  // requires sandbox-host configuration outside this commit's scope. Until
-  // that lands, custom-persona bundles are accessible via the npm engine
-  // (plug-point 2) and the static-fixture zip download (plug-point 3).
   // C-P1 — awaited so state.bundle exists before the tour (which reads
   // bundle.accounts in its step setups) can auto-launch below.
   await rebuildAndRender();
@@ -654,6 +674,7 @@ function attachBuilderHandlers() {
       // ATM trees) stays off the cold-load critical path.
       const { mountPersonaBuilder } = await import('./ui/persona-builder-ui.js');
       builderInstance = mountPersonaBuilder({
+        exportContext,
         pools: state.data.pools,
         currentRecipe: state.recipe,
         onApply: ({ recipe, persona }) => {
@@ -1247,8 +1268,8 @@ function attachEventHandlers() {
   });
   // PR #6 — unified Export popover replaces the JSON / CSV / Tarball /
   // Embed button row and the toolbar Share button.
-  document.getElementById('export-toggle')?.addEventListener('click', () => {
-    exportPopover.open();
+  document.getElementById('export-toggle')?.addEventListener('click', (e) => {
+    exportPopover.open(e.currentTarget);
   });
   document.getElementById('tour-btn')?.addEventListener('click', () => startTour());
   document.getElementById('find-btn')?.addEventListener('click', openFind);
@@ -1279,12 +1300,21 @@ function setPersona(personaId, lfi) {
 
 function exportContext() {
   return {
-    personaId: state.personaId,
+    personaId:
+      state.bundle?.personaId ??
+      state.data.personas[state.personaId]?.persona_id ??
+      state.personaId,
+    recipeHash: state.data.personas[state.personaId]?._custom?.recipeHash ?? null,
     lfi: state.lfi,
     seed: state.seed,
     specVersion: state.spec?.specVersion,
     specSha: state.spec?.pinSha,
-    retrievedAt: new Date().toISOString(),
+    retrievedAt: state.spec?.retrievedAt,
+    referenceDate: REFERENCE_DATE,
+    specVersions: Object.fromEntries(
+      Object.entries(state.data.buildInfo.specProvenance).map(([d, p]) => [d, p.version]),
+    ),
+    specProvenance: state.data.buildInfo.specProvenance,
   };
 }
 
@@ -1653,6 +1683,7 @@ function pushPermalink() {
   params.set('persona', state.personaId);
   params.set('lfi', state.lfi);
   params.set('seed', String(state.seed));
+  params.set('corpus', CORPUS_VERSION);
   // Slice 8: domain + preview round-trip. Banking is the default and stays
   // implicit so existing permalinks remain unchanged.
   if (state.domain && state.domain !== 'banking') params.set('domain', state.domain);
@@ -2644,7 +2675,7 @@ function renderUseInDemoPanel() {
   const personaId = state.personaId;
   const lfi = state.lfi;
   const seed = state.seed;
-  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const origin = typeof window !== 'undefined' ? deploymentBase() : '';
   const slugBase =
     typeof window !== 'undefined'
       ? (
@@ -2680,7 +2711,9 @@ j = load_journey('${personaId}', lfi='${lfi}', seed=${seed})
 # j['endpoints']['/accounts'], j['endpoints']['/parties'],
 # j['endpoints']['/accounts/{AccountId}/transactions'], ...`;
 
-  const curlSnippet = `curl -fsS '${manifestUrl}'   # discover personas, LFIs, endpoints, version pin
+  const curlSnippet = !publishedScenario(state.fixtureManifest, state)
+    ? 'This seed is generated locally. Download JSON, or run npm run mock and use its local HTTP endpoint.'
+    : `curl -fsS '${manifestUrl}'   # discover personas, LFIs, endpoints, version pin
 curl -fsS '${curlUrl}'`;
 
   const details = el('details', {
@@ -2735,7 +2768,7 @@ curl -fsS '${curlUrl}'`;
     },
     {
       eyebrow: 'Path 4 · raw HTTPS — Swift / Kotlin / Postman / curl / .NET',
-      hint: 'Static JSON, CORS-permissive. Pin manifest.json.version for stability.',
+      hint: 'Static JSON for published seeds. Archive/package versions support reproducible replay; current URLs may change.',
       snippet: curlSnippet,
       copyLabel: 'Copy curl',
       doneLabel: 'curl snippet copied.',

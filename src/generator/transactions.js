@@ -96,7 +96,7 @@ export function generateTransactions({
   const today = new Date(now.getTime());
   today.setUTCHours(0, 0, 0, 0);
 
-  for (let m = HISTORY_MONTHS - 1; m >= 0; m--) {
+  for (let m = HISTORY_MONTHS; m >= 1; m--) {
     const monthStart = new Date(today);
     monthStart.setUTCDate(1);
     monthStart.setUTCMonth(monthStart.getUTCMonth() - m);

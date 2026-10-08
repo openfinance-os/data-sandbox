@@ -5,6 +5,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follo
 
 ## [Unreleased]
 
+### 0.1.0 candidate — 8 October 2026
+
+- Reviewed official Errata 4 and pinned the effective stable files per domain. Preserved the literal insurance source defect and added a hash-scoped quote composition adapter, saved patch, strict validators, conditional badges and generated payload types.
+- Corrected insurance metadata, health premiums and ATM envelopes. Booked balances/statements use integer money, completed periods, currency identity and one explicit corpus clock; failed and pending attempts do not move booked money. Monthly views separate currencies; monthly standing orders carry a matching frequency.
+- Added versioned scenario identities, manifest-aware fixture links, useful 404s, clean external package checks and portable shared exports. Retired the unused Service Worker route. Added immutable downloadable corpus/domain/evaluation snapshots and normalized tables.
+- Added local HTTP success/failure and API Hub-labelled consent simulations, exhaustive MCP cursors, currency/status summaries with source evidence, provenance health metadata, exact-CI-revision release selection and fixture-before-MCP publication gates.
+- Added four runnable labs, outcome comparisons, anonymous self-reported completion and separate observed/label evaluation packs with family/entity holdouts and numerical MCP checks.
+- This candidate is unpublished. Literal upstream quote-schema conformance, public parity, registry publisher configuration, observed user completion and the production mobile performance target remain explicit release/product gates.
+
 ### Fixed — post-Phase-2.3 review: correctness + determinism (plan slice 1)
 
 Findings from the five-dimension review recorded in

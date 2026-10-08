@@ -1,0 +1,4726 @@
+[
+  {
+    "op": "replace",
+    "path": "/components/schemas/AEHealthInsuranceQuoteReadApplicationApprovedResponseProperties",
+    "value": {
+      "type": "object",
+      "required": [
+        "QuoteId",
+        "QuoteReference",
+        "CreationDateTime",
+        "ServiceRating",
+        "PolicyIssuanceAllowed",
+        "QuoteStatus"
+      ],
+      "properties": {
+        "QuoteId": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteIdType"
+        },
+        "QuoteReference": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReferenceType"
+        },
+        "CreationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date and time at which the quote was created."
+        },
+        "ExpirationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The expiration date of the quote, after which it is no longer valid.  If no date is provided the quote will be valid for up to 30 days as per the Standards."
+        },
+        "PlanName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The specific name of the insurance plan."
+        },
+        "LevelOfCover": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The level of insurance Cover offered in the quote"
+        },
+        "Commission": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceCommission"
+            }
+          ],
+          "description": "An object containing details of the commission amount that would be payable to the TPP if the User proceeded with the insurance application and purchased the policy based on the provided information"
+        },
+        "PolicyCover": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuotePolicyCover"
+          },
+          "minItems": 1,
+          "description": "An array containing options for policy cover, which contain information about the cover and benefits included in the quoted policies."
+        },
+        "PolicyDocumentsUris": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuoteUri"
+          },
+          "minItems": 1,
+          "description": "A list of URLs linking to policy-related documents, such as terms and conditions, policy wording, or product disclosures"
+        },
+        "AvailableAddOns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "CoverName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 70,
+                "description": "Name of the insurance cover add-on"
+              },
+              "Description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 140,
+                "description": "Description of the insurance cover add-on"
+              },
+              "Amount": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "Premium value of the insurance cover add-on"
+              },
+              "CoverLimit": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the benefit coverage limit that could be paid if a claim was made."
+              },
+              "CoverInclusionAndExclusionDescriptions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "description": "Included inclusions and exclusions for cover type."
+              },
+              "PolicyExcess": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the amount that would be deductible from any claim."
+              }
+            },
+            "required": [
+              "CoverName",
+              "Description"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "description": "An object containing details of optional add-ons available for the quoted policy"
+        },
+        "RequiredDocuments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceDocumentRequirement"
+          },
+          "minItems": 1,
+          "description": "A list of documents required that must be provided by the User to the LFI to proceed with the policy purchase"
+        },
+        "DiscountOffers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsurancePremiumDiscountOffers"
+          },
+          "minItems": 1,
+          "description": "An object containing details of any discounts or offers applied to the quote"
+        },
+        "ServiceRating": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceServiceRating"
+            }
+          ],
+          "description": "An object containing ratings or reviews of the insurer's service quality"
+        },
+        "SpecialConditionsApplicable": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceSpecialConditions"
+          },
+          "description": "Provides special conditions or clauses applicable to the policy specified by the LFI, which must be displayed to the User if provided."
+        },
+        "PolicyIssuanceAllowed": {
+          "type": "object",
+          "properties": {
+            "CustomerVerification": {
+              "type": "boolean",
+              "description": "Broker allowed to complete capture of customer verification information and documents for this quote."
+            },
+            "Payment": {
+              "type": "boolean",
+              "description": "Broker allowed to host payment checkout."
+            },
+            "PolicyDocuments": {
+              "type": "boolean",
+              "description": "Broker allowed to provide policy documents to customer."
+            }
+          },
+          "required": [
+            "CustomerVerification",
+            "Payment",
+            "PolicyDocuments"
+          ],
+          "description": "Broker requests to handle following steps of policy issuance process.",
+          "additionalProperties": false
+        },
+        "Takaful": {
+          "type": "boolean",
+          "description": "Indicates whether the policy is Sharia compliant."
+        },
+        "AlternativeBrandName": {
+          "type": "string",
+          "description": "Provides and alternative brand name where the product is Sharia compliant"
+        },
+        "Premium": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEHealthInsurancePremium"
+            }
+          ],
+          "minProperties": 1,
+          "description": "An object containing details of the quoted insurance premium"
+        },
+        "QuoteStatus": {
+          "type": "string",
+          "enum": [
+            "ApplicationApproved"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "op": "replace",
+    "path": "/components/schemas/AEHealthInsuranceQuoteReadApplicationPendingResponseProperties",
+    "value": {
+      "type": "object",
+      "required": [
+        "QuoteId",
+        "QuoteReference",
+        "CreationDateTime",
+        "ServiceRating",
+        "PolicyIssuanceAllowed",
+        "QuoteStatus"
+      ],
+      "properties": {
+        "QuoteId": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteIdType"
+        },
+        "QuoteReference": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReferenceType"
+        },
+        "CreationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date and time at which the quote was created."
+        },
+        "ExpirationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The expiration date of the quote, after which it is no longer valid.  If no date is provided the quote will be valid for up to 30 days as per the Standards."
+        },
+        "PlanName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The specific name of the insurance plan."
+        },
+        "LevelOfCover": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The level of insurance Cover offered in the quote"
+        },
+        "Commission": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceCommission"
+            }
+          ],
+          "description": "An object containing details of the commission amount that would be payable to the TPP if the User proceeded with the insurance application and purchased the policy based on the provided information"
+        },
+        "PolicyCover": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuotePolicyCover"
+          },
+          "minItems": 1,
+          "description": "An array containing options for policy cover, which contain information about the cover and benefits included in the quoted policies."
+        },
+        "PolicyDocumentsUris": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuoteUri"
+          },
+          "minItems": 1,
+          "description": "A list of URLs linking to policy-related documents, such as terms and conditions, policy wording, or product disclosures"
+        },
+        "AvailableAddOns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "CoverName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 70,
+                "description": "Name of the insurance cover add-on"
+              },
+              "Description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 140,
+                "description": "Description of the insurance cover add-on"
+              },
+              "Amount": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "Premium value of the insurance cover add-on"
+              },
+              "CoverLimit": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the benefit coverage limit that could be paid if a claim was made."
+              },
+              "CoverInclusionAndExclusionDescriptions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "description": "Included inclusions and exclusions for cover type."
+              },
+              "PolicyExcess": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the amount that would be deductible from any claim."
+              }
+            },
+            "required": [
+              "CoverName",
+              "Description"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "description": "An object containing details of optional add-ons available for the quoted policy"
+        },
+        "RequiredDocuments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceDocumentRequirement"
+          },
+          "minItems": 1,
+          "description": "A list of documents required that must be provided by the User to the LFI to proceed with the policy purchase"
+        },
+        "DiscountOffers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsurancePremiumDiscountOffers"
+          },
+          "minItems": 1,
+          "description": "An object containing details of any discounts or offers applied to the quote"
+        },
+        "ServiceRating": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceServiceRating"
+            }
+          ],
+          "description": "An object containing ratings or reviews of the insurer's service quality"
+        },
+        "SpecialConditionsApplicable": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceSpecialConditions"
+          },
+          "description": "Provides special conditions or clauses applicable to the policy specified by the LFI, which must be displayed to the User if provided."
+        },
+        "PolicyIssuanceAllowed": {
+          "type": "object",
+          "properties": {
+            "CustomerVerification": {
+              "type": "boolean",
+              "description": "Broker allowed to complete capture of customer verification information and documents for this quote."
+            },
+            "Payment": {
+              "type": "boolean",
+              "description": "Broker allowed to host payment checkout."
+            },
+            "PolicyDocuments": {
+              "type": "boolean",
+              "description": "Broker allowed to provide policy documents to customer."
+            }
+          },
+          "required": [
+            "CustomerVerification",
+            "Payment",
+            "PolicyDocuments"
+          ],
+          "description": "Broker requests to handle following steps of policy issuance process.",
+          "additionalProperties": false
+        },
+        "Takaful": {
+          "type": "boolean",
+          "description": "Indicates whether the policy is Sharia compliant."
+        },
+        "AlternativeBrandName": {
+          "type": "string",
+          "description": "Provides and alternative brand name where the product is Sharia compliant"
+        },
+        "Premium": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEHealthInsurancePremium"
+            }
+          ],
+          "minProperties": 1,
+          "description": "An object containing details of the quoted insurance premium"
+        },
+        "QuoteStatus": {
+          "type": "string",
+          "enum": [
+            "ApplicationPending"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "op": "replace",
+    "path": "/components/schemas/AEHealthInsuranceQuoteReadAvailableResponseProperties",
+    "value": {
+      "type": "object",
+      "required": [
+        "QuoteId",
+        "QuoteReference",
+        "CreationDateTime",
+        "ServiceRating",
+        "PolicyIssuanceAllowed",
+        "QuoteStatus"
+      ],
+      "properties": {
+        "QuoteId": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteIdType"
+        },
+        "QuoteReference": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReferenceType"
+        },
+        "CreationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date and time at which the quote was created."
+        },
+        "ExpirationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The expiration date of the quote, after which it is no longer valid.  If no date is provided the quote will be valid for up to 30 days as per the Standards."
+        },
+        "PlanName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The specific name of the insurance plan."
+        },
+        "LevelOfCover": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The level of insurance Cover offered in the quote"
+        },
+        "Commission": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceCommission"
+            }
+          ],
+          "description": "An object containing details of the commission amount that would be payable to the TPP if the User proceeded with the insurance application and purchased the policy based on the provided information"
+        },
+        "PolicyCover": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuotePolicyCover"
+          },
+          "minItems": 1,
+          "description": "An array containing options for policy cover, which contain information about the cover and benefits included in the quoted policies."
+        },
+        "PolicyDocumentsUris": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuoteUri"
+          },
+          "minItems": 1,
+          "description": "A list of URLs linking to policy-related documents, such as terms and conditions, policy wording, or product disclosures"
+        },
+        "AvailableAddOns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "CoverName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 70,
+                "description": "Name of the insurance cover add-on"
+              },
+              "Description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 140,
+                "description": "Description of the insurance cover add-on"
+              },
+              "Amount": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "Premium value of the insurance cover add-on"
+              },
+              "CoverLimit": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the benefit coverage limit that could be paid if a claim was made."
+              },
+              "CoverInclusionAndExclusionDescriptions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "description": "Included inclusions and exclusions for cover type."
+              },
+              "PolicyExcess": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the amount that would be deductible from any claim."
+              }
+            },
+            "required": [
+              "CoverName",
+              "Description"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "description": "An object containing details of optional add-ons available for the quoted policy"
+        },
+        "RequiredDocuments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceDocumentRequirement"
+          },
+          "minItems": 1,
+          "description": "A list of documents required that must be provided by the User to the LFI to proceed with the policy purchase"
+        },
+        "DiscountOffers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsurancePremiumDiscountOffers"
+          },
+          "minItems": 1,
+          "description": "An object containing details of any discounts or offers applied to the quote"
+        },
+        "ServiceRating": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceServiceRating"
+            }
+          ],
+          "description": "An object containing ratings or reviews of the insurer's service quality"
+        },
+        "SpecialConditionsApplicable": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceSpecialConditions"
+          },
+          "description": "Provides special conditions or clauses applicable to the policy specified by the LFI, which must be displayed to the User if provided."
+        },
+        "PolicyIssuanceAllowed": {
+          "type": "object",
+          "properties": {
+            "CustomerVerification": {
+              "type": "boolean",
+              "description": "Broker allowed to complete capture of customer verification information and documents for this quote."
+            },
+            "Payment": {
+              "type": "boolean",
+              "description": "Broker allowed to host payment checkout."
+            },
+            "PolicyDocuments": {
+              "type": "boolean",
+              "description": "Broker allowed to provide policy documents to customer."
+            }
+          },
+          "required": [
+            "CustomerVerification",
+            "Payment",
+            "PolicyDocuments"
+          ],
+          "description": "Broker requests to handle following steps of policy issuance process.",
+          "additionalProperties": false
+        },
+        "Takaful": {
+          "type": "boolean",
+          "description": "Indicates whether the policy is Sharia compliant."
+        },
+        "AlternativeBrandName": {
+          "type": "string",
+          "description": "Provides and alternative brand name where the product is Sharia compliant"
+        },
+        "Premium": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEHealthInsurancePremium"
+            }
+          ],
+          "minProperties": 1,
+          "description": "An object containing details of the quoted insurance premium"
+        },
+        "QuoteStatus": {
+          "type": "string",
+          "enum": [
+            "Available"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "op": "replace",
+    "path": "/components/schemas/AEHealthInsuranceQuoteReadCompletedResponseProperties",
+    "value": {
+      "type": "object",
+      "required": [
+        "QuoteId",
+        "QuoteReference",
+        "CreationDateTime",
+        "ServiceRating",
+        "PolicyIssuanceAllowed",
+        "QuoteStatus"
+      ],
+      "properties": {
+        "QuoteId": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteIdType"
+        },
+        "QuoteReference": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReferenceType"
+        },
+        "CreationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date and time at which the quote was created."
+        },
+        "ExpirationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The expiration date of the quote, after which it is no longer valid.  If no date is provided the quote will be valid for up to 30 days as per the Standards."
+        },
+        "PlanName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The specific name of the insurance plan."
+        },
+        "LevelOfCover": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The level of insurance Cover offered in the quote"
+        },
+        "Commission": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceCommission"
+            }
+          ],
+          "description": "An object containing details of the commission amount that would be payable to the TPP if the User proceeded with the insurance application and purchased the policy based on the provided information"
+        },
+        "PolicyCover": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuotePolicyCover"
+          },
+          "minItems": 1,
+          "description": "An array containing options for policy cover, which contain information about the cover and benefits included in the quoted policies."
+        },
+        "PolicyDocumentsUris": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuoteUri"
+          },
+          "minItems": 1,
+          "description": "A list of URLs linking to policy-related documents, such as terms and conditions, policy wording, or product disclosures"
+        },
+        "AvailableAddOns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "CoverName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 70,
+                "description": "Name of the insurance cover add-on"
+              },
+              "Description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 140,
+                "description": "Description of the insurance cover add-on"
+              },
+              "Amount": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "Premium value of the insurance cover add-on"
+              },
+              "CoverLimit": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the benefit coverage limit that could be paid if a claim was made."
+              },
+              "CoverInclusionAndExclusionDescriptions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "description": "Included inclusions and exclusions for cover type."
+              },
+              "PolicyExcess": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the amount that would be deductible from any claim."
+              }
+            },
+            "required": [
+              "CoverName",
+              "Description"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "description": "An object containing details of optional add-ons available for the quoted policy"
+        },
+        "RequiredDocuments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceDocumentRequirement"
+          },
+          "minItems": 1,
+          "description": "A list of documents required that must be provided by the User to the LFI to proceed with the policy purchase"
+        },
+        "DiscountOffers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsurancePremiumDiscountOffers"
+          },
+          "minItems": 1,
+          "description": "An object containing details of any discounts or offers applied to the quote"
+        },
+        "ServiceRating": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceServiceRating"
+            }
+          ],
+          "description": "An object containing ratings or reviews of the insurer's service quality"
+        },
+        "SpecialConditionsApplicable": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceSpecialConditions"
+          },
+          "description": "Provides special conditions or clauses applicable to the policy specified by the LFI, which must be displayed to the User if provided."
+        },
+        "PolicyIssuanceAllowed": {
+          "type": "object",
+          "properties": {
+            "CustomerVerification": {
+              "type": "boolean",
+              "description": "Broker allowed to complete capture of customer verification information and documents for this quote."
+            },
+            "Payment": {
+              "type": "boolean",
+              "description": "Broker allowed to host payment checkout."
+            },
+            "PolicyDocuments": {
+              "type": "boolean",
+              "description": "Broker allowed to provide policy documents to customer."
+            }
+          },
+          "required": [
+            "CustomerVerification",
+            "Payment",
+            "PolicyDocuments"
+          ],
+          "description": "Broker requests to handle following steps of policy issuance process.",
+          "additionalProperties": false
+        },
+        "Takaful": {
+          "type": "boolean",
+          "description": "Indicates whether the policy is Sharia compliant."
+        },
+        "AlternativeBrandName": {
+          "type": "string",
+          "description": "Provides and alternative brand name where the product is Sharia compliant"
+        },
+        "Premium": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEHealthInsurancePremium"
+            }
+          ],
+          "minProperties": 1,
+          "description": "An object containing details of the quoted insurance premium"
+        },
+        "QuoteStatus": {
+          "type": "string",
+          "enum": [
+            "Completed"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "op": "replace",
+    "path": "/components/schemas/AEHealthInsuranceQuoteReadCustomerCancelledResponseProperties",
+    "value": {
+      "type": "object",
+      "required": [
+        "QuoteId",
+        "QuoteReference",
+        "CreationDateTime",
+        "ServiceRating",
+        "PolicyIssuanceAllowed",
+        "QuoteStatus"
+      ],
+      "properties": {
+        "QuoteId": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteIdType"
+        },
+        "QuoteReference": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReferenceType"
+        },
+        "CreationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date and time at which the quote was created."
+        },
+        "ExpirationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The expiration date of the quote, after which it is no longer valid.  If no date is provided the quote will be valid for up to 30 days as per the Standards."
+        },
+        "PlanName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The specific name of the insurance plan."
+        },
+        "LevelOfCover": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The level of insurance Cover offered in the quote"
+        },
+        "Commission": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceCommission"
+            }
+          ],
+          "description": "An object containing details of the commission amount that would be payable to the TPP if the User proceeded with the insurance application and purchased the policy based on the provided information"
+        },
+        "PolicyCover": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuotePolicyCover"
+          },
+          "minItems": 1,
+          "description": "An array containing options for policy cover, which contain information about the cover and benefits included in the quoted policies."
+        },
+        "PolicyDocumentsUris": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuoteUri"
+          },
+          "minItems": 1,
+          "description": "A list of URLs linking to policy-related documents, such as terms and conditions, policy wording, or product disclosures"
+        },
+        "AvailableAddOns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "CoverName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 70,
+                "description": "Name of the insurance cover add-on"
+              },
+              "Description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 140,
+                "description": "Description of the insurance cover add-on"
+              },
+              "Amount": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "Premium value of the insurance cover add-on"
+              },
+              "CoverLimit": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the benefit coverage limit that could be paid if a claim was made."
+              },
+              "CoverInclusionAndExclusionDescriptions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "description": "Included inclusions and exclusions for cover type."
+              },
+              "PolicyExcess": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the amount that would be deductible from any claim."
+              }
+            },
+            "required": [
+              "CoverName",
+              "Description"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "description": "An object containing details of optional add-ons available for the quoted policy"
+        },
+        "RequiredDocuments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceDocumentRequirement"
+          },
+          "minItems": 1,
+          "description": "A list of documents required that must be provided by the User to the LFI to proceed with the policy purchase"
+        },
+        "DiscountOffers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsurancePremiumDiscountOffers"
+          },
+          "minItems": 1,
+          "description": "An object containing details of any discounts or offers applied to the quote"
+        },
+        "ServiceRating": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceServiceRating"
+            }
+          ],
+          "description": "An object containing ratings or reviews of the insurer's service quality"
+        },
+        "SpecialConditionsApplicable": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceSpecialConditions"
+          },
+          "description": "Provides special conditions or clauses applicable to the policy specified by the LFI, which must be displayed to the User if provided."
+        },
+        "PolicyIssuanceAllowed": {
+          "type": "object",
+          "properties": {
+            "CustomerVerification": {
+              "type": "boolean",
+              "description": "Broker allowed to complete capture of customer verification information and documents for this quote."
+            },
+            "Payment": {
+              "type": "boolean",
+              "description": "Broker allowed to host payment checkout."
+            },
+            "PolicyDocuments": {
+              "type": "boolean",
+              "description": "Broker allowed to provide policy documents to customer."
+            }
+          },
+          "required": [
+            "CustomerVerification",
+            "Payment",
+            "PolicyDocuments"
+          ],
+          "description": "Broker requests to handle following steps of policy issuance process.",
+          "additionalProperties": false
+        },
+        "Takaful": {
+          "type": "boolean",
+          "description": "Indicates whether the policy is Sharia compliant."
+        },
+        "AlternativeBrandName": {
+          "type": "string",
+          "description": "Provides and alternative brand name where the product is Sharia compliant"
+        },
+        "Premium": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEHealthInsurancePremium"
+            }
+          ],
+          "minProperties": 1,
+          "description": "An object containing details of the quoted insurance premium"
+        },
+        "QuoteStatus": {
+          "type": "string",
+          "enum": [
+            "CustomerCancelled"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "op": "replace",
+    "path": "/components/schemas/AEHealthInsuranceQuoteReadExpiredResponseProperties",
+    "value": {
+      "type": "object",
+      "required": [
+        "QuoteId",
+        "QuoteReference",
+        "CreationDateTime",
+        "ServiceRating",
+        "PolicyIssuanceAllowed",
+        "QuoteStatus"
+      ],
+      "properties": {
+        "QuoteId": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteIdType"
+        },
+        "QuoteReference": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReferenceType"
+        },
+        "CreationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date and time at which the quote was created."
+        },
+        "ExpirationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The expiration date of the quote, after which it is no longer valid.  If no date is provided the quote will be valid for up to 30 days as per the Standards."
+        },
+        "PlanName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The specific name of the insurance plan."
+        },
+        "LevelOfCover": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The level of insurance Cover offered in the quote"
+        },
+        "Commission": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceCommission"
+            }
+          ],
+          "description": "An object containing details of the commission amount that would be payable to the TPP if the User proceeded with the insurance application and purchased the policy based on the provided information"
+        },
+        "PolicyCover": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuotePolicyCover"
+          },
+          "minItems": 1,
+          "description": "An array containing options for policy cover, which contain information about the cover and benefits included in the quoted policies."
+        },
+        "PolicyDocumentsUris": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuoteUri"
+          },
+          "minItems": 1,
+          "description": "A list of URLs linking to policy-related documents, such as terms and conditions, policy wording, or product disclosures"
+        },
+        "AvailableAddOns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "CoverName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 70,
+                "description": "Name of the insurance cover add-on"
+              },
+              "Description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 140,
+                "description": "Description of the insurance cover add-on"
+              },
+              "Amount": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "Premium value of the insurance cover add-on"
+              },
+              "CoverLimit": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the benefit coverage limit that could be paid if a claim was made."
+              },
+              "CoverInclusionAndExclusionDescriptions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "description": "Included inclusions and exclusions for cover type."
+              },
+              "PolicyExcess": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the amount that would be deductible from any claim."
+              }
+            },
+            "required": [
+              "CoverName",
+              "Description"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "description": "An object containing details of optional add-ons available for the quoted policy"
+        },
+        "RequiredDocuments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceDocumentRequirement"
+          },
+          "minItems": 1,
+          "description": "A list of documents required that must be provided by the User to the LFI to proceed with the policy purchase"
+        },
+        "DiscountOffers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsurancePremiumDiscountOffers"
+          },
+          "minItems": 1,
+          "description": "An object containing details of any discounts or offers applied to the quote"
+        },
+        "ServiceRating": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceServiceRating"
+            }
+          ],
+          "description": "An object containing ratings or reviews of the insurer's service quality"
+        },
+        "SpecialConditionsApplicable": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceSpecialConditions"
+          },
+          "description": "Provides special conditions or clauses applicable to the policy specified by the LFI, which must be displayed to the User if provided."
+        },
+        "PolicyIssuanceAllowed": {
+          "type": "object",
+          "properties": {
+            "CustomerVerification": {
+              "type": "boolean",
+              "description": "Broker allowed to complete capture of customer verification information and documents for this quote."
+            },
+            "Payment": {
+              "type": "boolean",
+              "description": "Broker allowed to host payment checkout."
+            },
+            "PolicyDocuments": {
+              "type": "boolean",
+              "description": "Broker allowed to provide policy documents to customer."
+            }
+          },
+          "required": [
+            "CustomerVerification",
+            "Payment",
+            "PolicyDocuments"
+          ],
+          "description": "Broker requests to handle following steps of policy issuance process.",
+          "additionalProperties": false
+        },
+        "Takaful": {
+          "type": "boolean",
+          "description": "Indicates whether the policy is Sharia compliant."
+        },
+        "AlternativeBrandName": {
+          "type": "string",
+          "description": "Provides and alternative brand name where the product is Sharia compliant"
+        },
+        "Premium": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEHealthInsurancePremium"
+            }
+          ],
+          "minProperties": 1,
+          "description": "An object containing details of the quoted insurance premium"
+        },
+        "QuoteStatus": {
+          "type": "string",
+          "enum": [
+            "Expired"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "op": "replace",
+    "path": "/components/schemas/AEHealthInsuranceQuoteReadKYCCapturedResponseProperties",
+    "value": {
+      "type": "object",
+      "required": [
+        "QuoteId",
+        "QuoteReference",
+        "CreationDateTime",
+        "ServiceRating",
+        "PolicyIssuanceAllowed",
+        "QuoteStatus"
+      ],
+      "properties": {
+        "QuoteId": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteIdType"
+        },
+        "QuoteReference": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReferenceType"
+        },
+        "CreationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date and time at which the quote was created."
+        },
+        "ExpirationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The expiration date of the quote, after which it is no longer valid.  If no date is provided the quote will be valid for up to 30 days as per the Standards."
+        },
+        "PlanName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The specific name of the insurance plan."
+        },
+        "LevelOfCover": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The level of insurance Cover offered in the quote"
+        },
+        "Commission": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceCommission"
+            }
+          ],
+          "description": "An object containing details of the commission amount that would be payable to the TPP if the User proceeded with the insurance application and purchased the policy based on the provided information"
+        },
+        "PolicyCover": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuotePolicyCover"
+          },
+          "minItems": 1,
+          "description": "An array containing options for policy cover, which contain information about the cover and benefits included in the quoted policies."
+        },
+        "PolicyDocumentsUris": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuoteUri"
+          },
+          "minItems": 1,
+          "description": "A list of URLs linking to policy-related documents, such as terms and conditions, policy wording, or product disclosures"
+        },
+        "AvailableAddOns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "CoverName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 70,
+                "description": "Name of the insurance cover add-on"
+              },
+              "Description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 140,
+                "description": "Description of the insurance cover add-on"
+              },
+              "Amount": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "Premium value of the insurance cover add-on"
+              },
+              "CoverLimit": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the benefit coverage limit that could be paid if a claim was made."
+              },
+              "CoverInclusionAndExclusionDescriptions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "description": "Included inclusions and exclusions for cover type."
+              },
+              "PolicyExcess": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the amount that would be deductible from any claim."
+              }
+            },
+            "required": [
+              "CoverName",
+              "Description"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "description": "An object containing details of optional add-ons available for the quoted policy"
+        },
+        "RequiredDocuments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceDocumentRequirement"
+          },
+          "minItems": 1,
+          "description": "A list of documents required that must be provided by the User to the LFI to proceed with the policy purchase"
+        },
+        "DiscountOffers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsurancePremiumDiscountOffers"
+          },
+          "minItems": 1,
+          "description": "An object containing details of any discounts or offers applied to the quote"
+        },
+        "ServiceRating": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceServiceRating"
+            }
+          ],
+          "description": "An object containing ratings or reviews of the insurer's service quality"
+        },
+        "SpecialConditionsApplicable": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceSpecialConditions"
+          },
+          "description": "Provides special conditions or clauses applicable to the policy specified by the LFI, which must be displayed to the User if provided."
+        },
+        "PolicyIssuanceAllowed": {
+          "type": "object",
+          "properties": {
+            "CustomerVerification": {
+              "type": "boolean",
+              "description": "Broker allowed to complete capture of customer verification information and documents for this quote."
+            },
+            "Payment": {
+              "type": "boolean",
+              "description": "Broker allowed to host payment checkout."
+            },
+            "PolicyDocuments": {
+              "type": "boolean",
+              "description": "Broker allowed to provide policy documents to customer."
+            }
+          },
+          "required": [
+            "CustomerVerification",
+            "Payment",
+            "PolicyDocuments"
+          ],
+          "description": "Broker requests to handle following steps of policy issuance process.",
+          "additionalProperties": false
+        },
+        "Takaful": {
+          "type": "boolean",
+          "description": "Indicates whether the policy is Sharia compliant."
+        },
+        "AlternativeBrandName": {
+          "type": "string",
+          "description": "Provides and alternative brand name where the product is Sharia compliant"
+        },
+        "Premium": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEHealthInsurancePremium"
+            }
+          ],
+          "minProperties": 1,
+          "description": "An object containing details of the quoted insurance premium"
+        },
+        "QuoteStatus": {
+          "type": "string",
+          "enum": [
+            "KYCCaptured"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "op": "replace",
+    "path": "/components/schemas/AEHealthInsuranceQuoteReadLFICancelledResponseProperties",
+    "value": {
+      "type": "object",
+      "required": [
+        "QuoteId",
+        "QuoteReference",
+        "CreationDateTime",
+        "ServiceRating",
+        "PolicyIssuanceAllowed",
+        "QuoteStatus"
+      ],
+      "properties": {
+        "QuoteId": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteIdType"
+        },
+        "QuoteReference": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReferenceType"
+        },
+        "CreationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date and time at which the quote was created."
+        },
+        "ExpirationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The expiration date of the quote, after which it is no longer valid.  If no date is provided the quote will be valid for up to 30 days as per the Standards."
+        },
+        "PlanName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The specific name of the insurance plan."
+        },
+        "LevelOfCover": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The level of insurance Cover offered in the quote"
+        },
+        "Commission": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceCommission"
+            }
+          ],
+          "description": "An object containing details of the commission amount that would be payable to the TPP if the User proceeded with the insurance application and purchased the policy based on the provided information"
+        },
+        "PolicyCover": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuotePolicyCover"
+          },
+          "minItems": 1,
+          "description": "An array containing options for policy cover, which contain information about the cover and benefits included in the quoted policies."
+        },
+        "PolicyDocumentsUris": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuoteUri"
+          },
+          "minItems": 1,
+          "description": "A list of URLs linking to policy-related documents, such as terms and conditions, policy wording, or product disclosures"
+        },
+        "AvailableAddOns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "CoverName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 70,
+                "description": "Name of the insurance cover add-on"
+              },
+              "Description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 140,
+                "description": "Description of the insurance cover add-on"
+              },
+              "Amount": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "Premium value of the insurance cover add-on"
+              },
+              "CoverLimit": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the benefit coverage limit that could be paid if a claim was made."
+              },
+              "CoverInclusionAndExclusionDescriptions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "description": "Included inclusions and exclusions for cover type."
+              },
+              "PolicyExcess": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the amount that would be deductible from any claim."
+              }
+            },
+            "required": [
+              "CoverName",
+              "Description"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "description": "An object containing details of optional add-ons available for the quoted policy"
+        },
+        "RequiredDocuments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceDocumentRequirement"
+          },
+          "minItems": 1,
+          "description": "A list of documents required that must be provided by the User to the LFI to proceed with the policy purchase"
+        },
+        "DiscountOffers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsurancePremiumDiscountOffers"
+          },
+          "minItems": 1,
+          "description": "An object containing details of any discounts or offers applied to the quote"
+        },
+        "ServiceRating": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceServiceRating"
+            }
+          ],
+          "description": "An object containing ratings or reviews of the insurer's service quality"
+        },
+        "SpecialConditionsApplicable": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceSpecialConditions"
+          },
+          "description": "Provides special conditions or clauses applicable to the policy specified by the LFI, which must be displayed to the User if provided."
+        },
+        "PolicyIssuanceAllowed": {
+          "type": "object",
+          "properties": {
+            "CustomerVerification": {
+              "type": "boolean",
+              "description": "Broker allowed to complete capture of customer verification information and documents for this quote."
+            },
+            "Payment": {
+              "type": "boolean",
+              "description": "Broker allowed to host payment checkout."
+            },
+            "PolicyDocuments": {
+              "type": "boolean",
+              "description": "Broker allowed to provide policy documents to customer."
+            }
+          },
+          "required": [
+            "CustomerVerification",
+            "Payment",
+            "PolicyDocuments"
+          ],
+          "description": "Broker requests to handle following steps of policy issuance process.",
+          "additionalProperties": false
+        },
+        "Takaful": {
+          "type": "boolean",
+          "description": "Indicates whether the policy is Sharia compliant."
+        },
+        "AlternativeBrandName": {
+          "type": "string",
+          "description": "Provides and alternative brand name where the product is Sharia compliant"
+        },
+        "Premium": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEHealthInsurancePremium"
+            }
+          ],
+          "minProperties": 1,
+          "description": "An object containing details of the quoted insurance premium"
+        },
+        "QuoteStatus": {
+          "type": "string",
+          "enum": [
+            "LFICancelled"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "op": "replace",
+    "path": "/components/schemas/AEHealthInsuranceQuoteReadPaymentRequiredResponseProperties",
+    "value": {
+      "type": "object",
+      "required": [
+        "QuoteId",
+        "QuoteReference",
+        "CreationDateTime",
+        "ServiceRating",
+        "PolicyIssuanceAllowed",
+        "QuoteStatus"
+      ],
+      "properties": {
+        "QuoteId": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteIdType"
+        },
+        "QuoteReference": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReferenceType"
+        },
+        "CreationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date and time at which the quote was created."
+        },
+        "ExpirationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The expiration date of the quote, after which it is no longer valid.  If no date is provided the quote will be valid for up to 30 days as per the Standards."
+        },
+        "PlanName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The specific name of the insurance plan."
+        },
+        "LevelOfCover": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The level of insurance Cover offered in the quote"
+        },
+        "Commission": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceCommission"
+            }
+          ],
+          "description": "An object containing details of the commission amount that would be payable to the TPP if the User proceeded with the insurance application and purchased the policy based on the provided information"
+        },
+        "PolicyCover": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuotePolicyCover"
+          },
+          "minItems": 1,
+          "description": "An array containing options for policy cover, which contain information about the cover and benefits included in the quoted policies."
+        },
+        "PolicyDocumentsUris": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuoteUri"
+          },
+          "minItems": 1,
+          "description": "A list of URLs linking to policy-related documents, such as terms and conditions, policy wording, or product disclosures"
+        },
+        "AvailableAddOns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "CoverName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 70,
+                "description": "Name of the insurance cover add-on"
+              },
+              "Description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 140,
+                "description": "Description of the insurance cover add-on"
+              },
+              "Amount": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "Premium value of the insurance cover add-on"
+              },
+              "CoverLimit": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the benefit coverage limit that could be paid if a claim was made."
+              },
+              "CoverInclusionAndExclusionDescriptions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "description": "Included inclusions and exclusions for cover type."
+              },
+              "PolicyExcess": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the amount that would be deductible from any claim."
+              }
+            },
+            "required": [
+              "CoverName",
+              "Description"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "description": "An object containing details of optional add-ons available for the quoted policy"
+        },
+        "RequiredDocuments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceDocumentRequirement"
+          },
+          "minItems": 1,
+          "description": "A list of documents required that must be provided by the User to the LFI to proceed with the policy purchase"
+        },
+        "DiscountOffers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsurancePremiumDiscountOffers"
+          },
+          "minItems": 1,
+          "description": "An object containing details of any discounts or offers applied to the quote"
+        },
+        "ServiceRating": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceServiceRating"
+            }
+          ],
+          "description": "An object containing ratings or reviews of the insurer's service quality"
+        },
+        "SpecialConditionsApplicable": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceSpecialConditions"
+          },
+          "description": "Provides special conditions or clauses applicable to the policy specified by the LFI, which must be displayed to the User if provided."
+        },
+        "PolicyIssuanceAllowed": {
+          "type": "object",
+          "properties": {
+            "CustomerVerification": {
+              "type": "boolean",
+              "description": "Broker allowed to complete capture of customer verification information and documents for this quote."
+            },
+            "Payment": {
+              "type": "boolean",
+              "description": "Broker allowed to host payment checkout."
+            },
+            "PolicyDocuments": {
+              "type": "boolean",
+              "description": "Broker allowed to provide policy documents to customer."
+            }
+          },
+          "required": [
+            "CustomerVerification",
+            "Payment",
+            "PolicyDocuments"
+          ],
+          "description": "Broker requests to handle following steps of policy issuance process.",
+          "additionalProperties": false
+        },
+        "Takaful": {
+          "type": "boolean",
+          "description": "Indicates whether the policy is Sharia compliant."
+        },
+        "AlternativeBrandName": {
+          "type": "string",
+          "description": "Provides and alternative brand name where the product is Sharia compliant"
+        },
+        "Premium": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEHealthInsurancePremium"
+            }
+          ],
+          "minProperties": 1,
+          "description": "An object containing details of the quoted insurance premium"
+        },
+        "QuoteStatus": {
+          "type": "string",
+          "enum": [
+            "PaymentRequired"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "op": "replace",
+    "path": "/components/schemas/AEHealthInsuranceQuoteReadPolicyIssuedResponseProperties",
+    "value": {
+      "type": "object",
+      "required": [
+        "QuoteId",
+        "QuoteReference",
+        "CreationDateTime",
+        "ServiceRating",
+        "PolicyIssuanceAllowed",
+        "QuoteStatus"
+      ],
+      "properties": {
+        "QuoteId": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteIdType"
+        },
+        "QuoteReference": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReferenceType"
+        },
+        "CreationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date and time at which the quote was created."
+        },
+        "ExpirationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The expiration date of the quote, after which it is no longer valid.  If no date is provided the quote will be valid for up to 30 days as per the Standards."
+        },
+        "PlanName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The specific name of the insurance plan."
+        },
+        "LevelOfCover": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The level of insurance Cover offered in the quote"
+        },
+        "Commission": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceCommission"
+            }
+          ],
+          "description": "An object containing details of the commission amount that would be payable to the TPP if the User proceeded with the insurance application and purchased the policy based on the provided information"
+        },
+        "PolicyCover": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuotePolicyCover"
+          },
+          "minItems": 1,
+          "description": "An array containing options for policy cover, which contain information about the cover and benefits included in the quoted policies."
+        },
+        "PolicyDocumentsUris": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuoteUri"
+          },
+          "minItems": 1,
+          "description": "A list of URLs linking to policy-related documents, such as terms and conditions, policy wording, or product disclosures"
+        },
+        "AvailableAddOns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "CoverName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 70,
+                "description": "Name of the insurance cover add-on"
+              },
+              "Description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 140,
+                "description": "Description of the insurance cover add-on"
+              },
+              "Amount": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "Premium value of the insurance cover add-on"
+              },
+              "CoverLimit": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the benefit coverage limit that could be paid if a claim was made."
+              },
+              "CoverInclusionAndExclusionDescriptions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "description": "Included inclusions and exclusions for cover type."
+              },
+              "PolicyExcess": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the amount that would be deductible from any claim."
+              }
+            },
+            "required": [
+              "CoverName",
+              "Description"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "description": "An object containing details of optional add-ons available for the quoted policy"
+        },
+        "RequiredDocuments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceDocumentRequirement"
+          },
+          "minItems": 1,
+          "description": "A list of documents required that must be provided by the User to the LFI to proceed with the policy purchase"
+        },
+        "DiscountOffers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsurancePremiumDiscountOffers"
+          },
+          "minItems": 1,
+          "description": "An object containing details of any discounts or offers applied to the quote"
+        },
+        "ServiceRating": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceServiceRating"
+            }
+          ],
+          "description": "An object containing ratings or reviews of the insurer's service quality"
+        },
+        "SpecialConditionsApplicable": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceSpecialConditions"
+          },
+          "description": "Provides special conditions or clauses applicable to the policy specified by the LFI, which must be displayed to the User if provided."
+        },
+        "PolicyIssuanceAllowed": {
+          "type": "object",
+          "properties": {
+            "CustomerVerification": {
+              "type": "boolean",
+              "description": "Broker allowed to complete capture of customer verification information and documents for this quote."
+            },
+            "Payment": {
+              "type": "boolean",
+              "description": "Broker allowed to host payment checkout."
+            },
+            "PolicyDocuments": {
+              "type": "boolean",
+              "description": "Broker allowed to provide policy documents to customer."
+            }
+          },
+          "required": [
+            "CustomerVerification",
+            "Payment",
+            "PolicyDocuments"
+          ],
+          "description": "Broker requests to handle following steps of policy issuance process.",
+          "additionalProperties": false
+        },
+        "Takaful": {
+          "type": "boolean",
+          "description": "Indicates whether the policy is Sharia compliant."
+        },
+        "AlternativeBrandName": {
+          "type": "string",
+          "description": "Provides and alternative brand name where the product is Sharia compliant"
+        },
+        "Premium": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEHealthInsurancePremium"
+            }
+          ],
+          "minProperties": 1,
+          "description": "An object containing details of the quoted insurance premium"
+        },
+        "QuoteStatus": {
+          "type": "string",
+          "enum": [
+            "PolicyIssued"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "op": "replace",
+    "path": "/components/schemas/AEHealthInsuranceQuoteReadRejectedResponseProperties",
+    "value": {
+      "type": "object",
+      "required": [
+        "QuoteId",
+        "QuoteReference",
+        "CreationDateTime",
+        "ServiceRating",
+        "PolicyIssuanceAllowed",
+        "QuoteStatus"
+      ],
+      "properties": {
+        "QuoteId": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteIdType"
+        },
+        "QuoteReference": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReferenceType"
+        },
+        "CreationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date and time at which the quote was created."
+        },
+        "ExpirationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The expiration date of the quote, after which it is no longer valid.  If no date is provided the quote will be valid for up to 30 days as per the Standards."
+        },
+        "PlanName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The specific name of the insurance plan."
+        },
+        "LevelOfCover": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The level of insurance Cover offered in the quote"
+        },
+        "Commission": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceCommission"
+            }
+          ],
+          "description": "An object containing details of the commission amount that would be payable to the TPP if the User proceeded with the insurance application and purchased the policy based on the provided information"
+        },
+        "PolicyCover": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuotePolicyCover"
+          },
+          "minItems": 1,
+          "description": "An array containing options for policy cover, which contain information about the cover and benefits included in the quoted policies."
+        },
+        "PolicyDocumentsUris": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuoteUri"
+          },
+          "minItems": 1,
+          "description": "A list of URLs linking to policy-related documents, such as terms and conditions, policy wording, or product disclosures"
+        },
+        "AvailableAddOns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "CoverName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 70,
+                "description": "Name of the insurance cover add-on"
+              },
+              "Description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 140,
+                "description": "Description of the insurance cover add-on"
+              },
+              "Amount": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "Premium value of the insurance cover add-on"
+              },
+              "CoverLimit": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the benefit coverage limit that could be paid if a claim was made."
+              },
+              "CoverInclusionAndExclusionDescriptions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "description": "Included inclusions and exclusions for cover type."
+              },
+              "PolicyExcess": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the amount that would be deductible from any claim."
+              }
+            },
+            "required": [
+              "CoverName",
+              "Description"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "description": "An object containing details of optional add-ons available for the quoted policy"
+        },
+        "RequiredDocuments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceDocumentRequirement"
+          },
+          "minItems": 1,
+          "description": "A list of documents required that must be provided by the User to the LFI to proceed with the policy purchase"
+        },
+        "DiscountOffers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsurancePremiumDiscountOffers"
+          },
+          "minItems": 1,
+          "description": "An object containing details of any discounts or offers applied to the quote"
+        },
+        "ServiceRating": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceServiceRating"
+            }
+          ],
+          "description": "An object containing ratings or reviews of the insurer's service quality"
+        },
+        "SpecialConditionsApplicable": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceSpecialConditions"
+          },
+          "description": "Provides special conditions or clauses applicable to the policy specified by the LFI, which must be displayed to the User if provided."
+        },
+        "PolicyIssuanceAllowed": {
+          "type": "object",
+          "properties": {
+            "CustomerVerification": {
+              "type": "boolean",
+              "description": "Broker allowed to complete capture of customer verification information and documents for this quote."
+            },
+            "Payment": {
+              "type": "boolean",
+              "description": "Broker allowed to host payment checkout."
+            },
+            "PolicyDocuments": {
+              "type": "boolean",
+              "description": "Broker allowed to provide policy documents to customer."
+            }
+          },
+          "required": [
+            "CustomerVerification",
+            "Payment",
+            "PolicyDocuments"
+          ],
+          "description": "Broker requests to handle following steps of policy issuance process.",
+          "additionalProperties": false
+        },
+        "Takaful": {
+          "type": "boolean",
+          "description": "Indicates whether the policy is Sharia compliant."
+        },
+        "AlternativeBrandName": {
+          "type": "string",
+          "description": "Provides and alternative brand name where the product is Sharia compliant"
+        },
+        "Premium": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEHealthInsurancePremium"
+            }
+          ],
+          "minProperties": 1,
+          "description": "An object containing details of the quoted insurance premium"
+        },
+        "QuoteStatus": {
+          "type": "string",
+          "enum": [
+            "Rejected"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "op": "replace",
+    "path": "/components/schemas/AEHealthInsuranceQuoteReadResponseProperties",
+    "value": {
+      "type": "object",
+      "oneOf": [
+        {
+          "$ref": "#/components/schemas/AEHealthInsuranceQuoteReadPendingResponseProperties"
+        },
+        {
+          "$ref": "#/components/schemas/AEHealthInsuranceQuoteReadAvailableResponseProperties"
+        },
+        {
+          "$ref": "#/components/schemas/AEHealthInsuranceQuoteReadApplicationApprovedResponseProperties"
+        },
+        {
+          "$ref": "#/components/schemas/AEHealthInsuranceQuoteReadApplicationPendingResponseProperties"
+        },
+        {
+          "$ref": "#/components/schemas/AEHealthInsuranceQuoteReadCompletedResponseProperties"
+        },
+        {
+          "$ref": "#/components/schemas/AEHealthInsuranceQuoteReadCustomerCancelledResponseProperties"
+        },
+        {
+          "$ref": "#/components/schemas/AEHealthInsuranceQuoteReadExpiredResponseProperties"
+        },
+        {
+          "$ref": "#/components/schemas/AEHealthInsuranceQuoteReadKYCCapturedResponseProperties"
+        },
+        {
+          "$ref": "#/components/schemas/AEHealthInsuranceQuoteReadLFICancelledResponseProperties"
+        },
+        {
+          "$ref": "#/components/schemas/AEHealthInsuranceQuoteReadPaymentRequiredResponseProperties"
+        },
+        {
+          "$ref": "#/components/schemas/AEHealthInsuranceQuoteReadPolicyIssuedResponseProperties"
+        },
+        {
+          "$ref": "#/components/schemas/AEHealthInsuranceQuoteReadRejectedResponseProperties"
+        }
+      ],
+      "discriminator": {
+        "propertyName": "QuoteStatus",
+        "mapping": {
+          "Pending": "#/components/schemas/AEHealthInsuranceQuoteReadPendingResponseProperties",
+          "Available": "#/components/schemas/AEHealthInsuranceQuoteReadAvailableResponseProperties",
+          "ApplicationApproved": "#/components/schemas/AEHealthInsuranceQuoteReadApplicationApprovedResponseProperties",
+          "ApplicationPending": "#/components/schemas/AEHealthInsuranceQuoteReadApplicationPendingResponseProperties",
+          "Completed": "#/components/schemas/AEHealthInsuranceQuoteReadCompletedResponseProperties",
+          "CustomerCancelled": "#/components/schemas/AEHealthInsuranceQuoteReadCustomerCancelledResponseProperties",
+          "Expired": "#/components/schemas/AEHealthInsuranceQuoteReadExpiredResponseProperties",
+          "KYCCaptured": "#/components/schemas/AEHealthInsuranceQuoteReadKYCCapturedResponseProperties",
+          "LFICancelled": "#/components/schemas/AEHealthInsuranceQuoteReadLFICancelledResponseProperties",
+          "PaymentRequired": "#/components/schemas/AEHealthInsuranceQuoteReadPaymentRequiredResponseProperties",
+          "PolicyIssued": "#/components/schemas/AEHealthInsuranceQuoteReadPolicyIssuedResponseProperties",
+          "Rejected": "#/components/schemas/AEHealthInsuranceQuoteReadRejectedResponseProperties"
+        }
+      },
+      "additionalProperties": false,
+      "properties": {
+        "QuoteStatus": {},
+        "QuoteId": {},
+        "QuoteReference": {},
+        "PremiumTargetDateTime": {},
+        "CreationDateTime": {},
+        "ExpirationDateTime": {},
+        "PlanName": {},
+        "LevelOfCover": {},
+        "Commission": {},
+        "PolicyCover": {},
+        "PolicyDocumentsUris": {},
+        "AvailableAddOns": {},
+        "RequiredDocuments": {},
+        "DiscountOffers": {},
+        "ServiceRating": {},
+        "SpecialConditionsApplicable": {},
+        "PolicyIssuanceAllowed": {},
+        "Takaful": {},
+        "AlternativeBrandName": {},
+        "Premium": {}
+      }
+    }
+  },
+  {
+    "op": "replace",
+    "path": "/components/schemas/AEInsuranceQuoteReadApplicationApprovedResponseProperties",
+    "value": {
+      "type": "object",
+      "required": [
+        "QuoteId",
+        "QuoteReference",
+        "CreationDateTime",
+        "ServiceRating",
+        "PolicyIssuanceAllowed",
+        "QuoteStatus"
+      ],
+      "properties": {
+        "QuoteId": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteIdType"
+        },
+        "QuoteReference": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReferenceType"
+        },
+        "CreationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date and time at which the quote was created."
+        },
+        "ExpirationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The expiration date of the quote, after which it is no longer valid.  If no date is provided the quote will be valid for up to 30 days as per the Standards."
+        },
+        "PlanName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The specific name of the insurance plan."
+        },
+        "LevelOfCover": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The level of insurance Cover offered in the quote"
+        },
+        "Commission": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceCommission"
+            }
+          ],
+          "description": "An object containing details of the commission amount that would be payable to the TPP if the User proceeded with the insurance application and purchased the policy based on the provided information"
+        },
+        "PolicyCover": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuotePolicyCover"
+          },
+          "minItems": 1,
+          "description": "An array containing options for policy cover, which contain information about the cover and benefits included in the quoted policies."
+        },
+        "PolicyDocumentsUris": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuoteUri"
+          },
+          "minItems": 1,
+          "description": "A list of URLs linking to policy-related documents, such as terms and conditions, policy wording, or product disclosures"
+        },
+        "AvailableAddOns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "CoverName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 70,
+                "description": "Name of the insurance cover add-on"
+              },
+              "Description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 140,
+                "description": "Description of the insurance cover add-on"
+              },
+              "Amount": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "Premium value of the insurance cover add-on"
+              },
+              "CoverLimit": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the benefit coverage limit that could be paid if a claim was made."
+              },
+              "CoverInclusionAndExclusionDescriptions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "description": "Included inclusions and exclusions for cover type."
+              },
+              "PolicyExcess": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the amount that would be deductible from any claim."
+              }
+            },
+            "required": [
+              "CoverName",
+              "Description"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "description": "An object containing details of optional add-ons available for the quoted policy"
+        },
+        "RequiredDocuments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceDocumentRequirement"
+          },
+          "minItems": 1,
+          "description": "A list of documents required that must be provided by the User to the LFI to proceed with the policy purchase"
+        },
+        "DiscountOffers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsurancePremiumDiscountOffers"
+          },
+          "minItems": 1,
+          "description": "An object containing details of any discounts or offers applied to the quote"
+        },
+        "ServiceRating": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceServiceRating"
+            }
+          ],
+          "description": "An object containing ratings or reviews of the insurer's service quality"
+        },
+        "SpecialConditionsApplicable": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceSpecialConditions"
+          },
+          "description": "Provides special conditions or clauses applicable to the policy specified by the LFI, which must be displayed to the User if provided."
+        },
+        "PolicyIssuanceAllowed": {
+          "type": "object",
+          "properties": {
+            "CustomerVerification": {
+              "type": "boolean",
+              "description": "Broker allowed to complete capture of customer verification information and documents for this quote."
+            },
+            "Payment": {
+              "type": "boolean",
+              "description": "Broker allowed to host payment checkout."
+            },
+            "PolicyDocuments": {
+              "type": "boolean",
+              "description": "Broker allowed to provide policy documents to customer."
+            }
+          },
+          "required": [
+            "CustomerVerification",
+            "Payment",
+            "PolicyDocuments"
+          ],
+          "description": "Broker requests to handle following steps of policy issuance process.",
+          "additionalProperties": false
+        },
+        "Takaful": {
+          "type": "boolean",
+          "description": "Indicates whether the policy is Sharia compliant."
+        },
+        "AlternativeBrandName": {
+          "type": "string",
+          "description": "Provides and alternative brand name where the product is Sharia compliant"
+        },
+        "Premium": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsurancePremiumProperties"
+            }
+          ],
+          "minProperties": 1,
+          "description": "An object containing details of the quoted insurance premium."
+        },
+        "QuoteStatus": {
+          "type": "string",
+          "enum": [
+            "ApplicationApproved"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "op": "replace",
+    "path": "/components/schemas/AEInsuranceQuoteReadApplicationPendingResponseProperties",
+    "value": {
+      "type": "object",
+      "required": [
+        "QuoteId",
+        "QuoteReference",
+        "CreationDateTime",
+        "ServiceRating",
+        "PolicyIssuanceAllowed",
+        "QuoteStatus"
+      ],
+      "properties": {
+        "QuoteId": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteIdType"
+        },
+        "QuoteReference": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReferenceType"
+        },
+        "CreationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date and time at which the quote was created."
+        },
+        "ExpirationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The expiration date of the quote, after which it is no longer valid.  If no date is provided the quote will be valid for up to 30 days as per the Standards."
+        },
+        "PlanName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The specific name of the insurance plan."
+        },
+        "LevelOfCover": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The level of insurance Cover offered in the quote"
+        },
+        "Commission": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceCommission"
+            }
+          ],
+          "description": "An object containing details of the commission amount that would be payable to the TPP if the User proceeded with the insurance application and purchased the policy based on the provided information"
+        },
+        "PolicyCover": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuotePolicyCover"
+          },
+          "minItems": 1,
+          "description": "An array containing options for policy cover, which contain information about the cover and benefits included in the quoted policies."
+        },
+        "PolicyDocumentsUris": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuoteUri"
+          },
+          "minItems": 1,
+          "description": "A list of URLs linking to policy-related documents, such as terms and conditions, policy wording, or product disclosures"
+        },
+        "AvailableAddOns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "CoverName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 70,
+                "description": "Name of the insurance cover add-on"
+              },
+              "Description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 140,
+                "description": "Description of the insurance cover add-on"
+              },
+              "Amount": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "Premium value of the insurance cover add-on"
+              },
+              "CoverLimit": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the benefit coverage limit that could be paid if a claim was made."
+              },
+              "CoverInclusionAndExclusionDescriptions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "description": "Included inclusions and exclusions for cover type."
+              },
+              "PolicyExcess": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the amount that would be deductible from any claim."
+              }
+            },
+            "required": [
+              "CoverName",
+              "Description"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "description": "An object containing details of optional add-ons available for the quoted policy"
+        },
+        "RequiredDocuments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceDocumentRequirement"
+          },
+          "minItems": 1,
+          "description": "A list of documents required that must be provided by the User to the LFI to proceed with the policy purchase"
+        },
+        "DiscountOffers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsurancePremiumDiscountOffers"
+          },
+          "minItems": 1,
+          "description": "An object containing details of any discounts or offers applied to the quote"
+        },
+        "ServiceRating": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceServiceRating"
+            }
+          ],
+          "description": "An object containing ratings or reviews of the insurer's service quality"
+        },
+        "SpecialConditionsApplicable": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceSpecialConditions"
+          },
+          "description": "Provides special conditions or clauses applicable to the policy specified by the LFI, which must be displayed to the User if provided."
+        },
+        "PolicyIssuanceAllowed": {
+          "type": "object",
+          "properties": {
+            "CustomerVerification": {
+              "type": "boolean",
+              "description": "Broker allowed to complete capture of customer verification information and documents for this quote."
+            },
+            "Payment": {
+              "type": "boolean",
+              "description": "Broker allowed to host payment checkout."
+            },
+            "PolicyDocuments": {
+              "type": "boolean",
+              "description": "Broker allowed to provide policy documents to customer."
+            }
+          },
+          "required": [
+            "CustomerVerification",
+            "Payment",
+            "PolicyDocuments"
+          ],
+          "description": "Broker requests to handle following steps of policy issuance process.",
+          "additionalProperties": false
+        },
+        "Takaful": {
+          "type": "boolean",
+          "description": "Indicates whether the policy is Sharia compliant."
+        },
+        "AlternativeBrandName": {
+          "type": "string",
+          "description": "Provides and alternative brand name where the product is Sharia compliant"
+        },
+        "Premium": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsurancePremiumProperties"
+            }
+          ],
+          "minProperties": 1,
+          "description": "An object containing details of the quoted insurance premium."
+        },
+        "QuoteStatus": {
+          "type": "string",
+          "enum": [
+            "ApplicationPending"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "op": "replace",
+    "path": "/components/schemas/AEInsuranceQuoteReadAvailableResponseProperties",
+    "value": {
+      "type": "object",
+      "required": [
+        "QuoteId",
+        "QuoteReference",
+        "CreationDateTime",
+        "ServiceRating",
+        "PolicyIssuanceAllowed",
+        "QuoteStatus"
+      ],
+      "properties": {
+        "QuoteId": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteIdType"
+        },
+        "QuoteReference": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReferenceType"
+        },
+        "CreationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date and time at which the quote was created."
+        },
+        "ExpirationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The expiration date of the quote, after which it is no longer valid.  If no date is provided the quote will be valid for up to 30 days as per the Standards."
+        },
+        "PlanName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The specific name of the insurance plan."
+        },
+        "LevelOfCover": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The level of insurance Cover offered in the quote"
+        },
+        "Commission": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceCommission"
+            }
+          ],
+          "description": "An object containing details of the commission amount that would be payable to the TPP if the User proceeded with the insurance application and purchased the policy based on the provided information"
+        },
+        "PolicyCover": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuotePolicyCover"
+          },
+          "minItems": 1,
+          "description": "An array containing options for policy cover, which contain information about the cover and benefits included in the quoted policies."
+        },
+        "PolicyDocumentsUris": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuoteUri"
+          },
+          "minItems": 1,
+          "description": "A list of URLs linking to policy-related documents, such as terms and conditions, policy wording, or product disclosures"
+        },
+        "AvailableAddOns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "CoverName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 70,
+                "description": "Name of the insurance cover add-on"
+              },
+              "Description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 140,
+                "description": "Description of the insurance cover add-on"
+              },
+              "Amount": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "Premium value of the insurance cover add-on"
+              },
+              "CoverLimit": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the benefit coverage limit that could be paid if a claim was made."
+              },
+              "CoverInclusionAndExclusionDescriptions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "description": "Included inclusions and exclusions for cover type."
+              },
+              "PolicyExcess": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the amount that would be deductible from any claim."
+              }
+            },
+            "required": [
+              "CoverName",
+              "Description"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "description": "An object containing details of optional add-ons available for the quoted policy"
+        },
+        "RequiredDocuments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceDocumentRequirement"
+          },
+          "minItems": 1,
+          "description": "A list of documents required that must be provided by the User to the LFI to proceed with the policy purchase"
+        },
+        "DiscountOffers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsurancePremiumDiscountOffers"
+          },
+          "minItems": 1,
+          "description": "An object containing details of any discounts or offers applied to the quote"
+        },
+        "ServiceRating": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceServiceRating"
+            }
+          ],
+          "description": "An object containing ratings or reviews of the insurer's service quality"
+        },
+        "SpecialConditionsApplicable": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceSpecialConditions"
+          },
+          "description": "Provides special conditions or clauses applicable to the policy specified by the LFI, which must be displayed to the User if provided."
+        },
+        "PolicyIssuanceAllowed": {
+          "type": "object",
+          "properties": {
+            "CustomerVerification": {
+              "type": "boolean",
+              "description": "Broker allowed to complete capture of customer verification information and documents for this quote."
+            },
+            "Payment": {
+              "type": "boolean",
+              "description": "Broker allowed to host payment checkout."
+            },
+            "PolicyDocuments": {
+              "type": "boolean",
+              "description": "Broker allowed to provide policy documents to customer."
+            }
+          },
+          "required": [
+            "CustomerVerification",
+            "Payment",
+            "PolicyDocuments"
+          ],
+          "description": "Broker requests to handle following steps of policy issuance process.",
+          "additionalProperties": false
+        },
+        "Takaful": {
+          "type": "boolean",
+          "description": "Indicates whether the policy is Sharia compliant."
+        },
+        "AlternativeBrandName": {
+          "type": "string",
+          "description": "Provides and alternative brand name where the product is Sharia compliant"
+        },
+        "Premium": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsurancePremiumProperties"
+            }
+          ],
+          "minProperties": 1,
+          "description": "An object containing details of the quoted insurance premium."
+        },
+        "QuoteStatus": {
+          "type": "string",
+          "enum": [
+            "Available"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "op": "replace",
+    "path": "/components/schemas/AEInsuranceQuoteReadCompletedResponseProperties",
+    "value": {
+      "type": "object",
+      "required": [
+        "QuoteId",
+        "QuoteReference",
+        "CreationDateTime",
+        "ServiceRating",
+        "PolicyIssuanceAllowed",
+        "QuoteStatus"
+      ],
+      "properties": {
+        "QuoteId": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteIdType"
+        },
+        "QuoteReference": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReferenceType"
+        },
+        "CreationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date and time at which the quote was created."
+        },
+        "ExpirationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The expiration date of the quote, after which it is no longer valid.  If no date is provided the quote will be valid for up to 30 days as per the Standards."
+        },
+        "PlanName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The specific name of the insurance plan."
+        },
+        "LevelOfCover": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The level of insurance Cover offered in the quote"
+        },
+        "Commission": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceCommission"
+            }
+          ],
+          "description": "An object containing details of the commission amount that would be payable to the TPP if the User proceeded with the insurance application and purchased the policy based on the provided information"
+        },
+        "PolicyCover": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuotePolicyCover"
+          },
+          "minItems": 1,
+          "description": "An array containing options for policy cover, which contain information about the cover and benefits included in the quoted policies."
+        },
+        "PolicyDocumentsUris": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuoteUri"
+          },
+          "minItems": 1,
+          "description": "A list of URLs linking to policy-related documents, such as terms and conditions, policy wording, or product disclosures"
+        },
+        "AvailableAddOns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "CoverName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 70,
+                "description": "Name of the insurance cover add-on"
+              },
+              "Description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 140,
+                "description": "Description of the insurance cover add-on"
+              },
+              "Amount": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "Premium value of the insurance cover add-on"
+              },
+              "CoverLimit": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the benefit coverage limit that could be paid if a claim was made."
+              },
+              "CoverInclusionAndExclusionDescriptions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "description": "Included inclusions and exclusions for cover type."
+              },
+              "PolicyExcess": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the amount that would be deductible from any claim."
+              }
+            },
+            "required": [
+              "CoverName",
+              "Description"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "description": "An object containing details of optional add-ons available for the quoted policy"
+        },
+        "RequiredDocuments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceDocumentRequirement"
+          },
+          "minItems": 1,
+          "description": "A list of documents required that must be provided by the User to the LFI to proceed with the policy purchase"
+        },
+        "DiscountOffers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsurancePremiumDiscountOffers"
+          },
+          "minItems": 1,
+          "description": "An object containing details of any discounts or offers applied to the quote"
+        },
+        "ServiceRating": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceServiceRating"
+            }
+          ],
+          "description": "An object containing ratings or reviews of the insurer's service quality"
+        },
+        "SpecialConditionsApplicable": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceSpecialConditions"
+          },
+          "description": "Provides special conditions or clauses applicable to the policy specified by the LFI, which must be displayed to the User if provided."
+        },
+        "PolicyIssuanceAllowed": {
+          "type": "object",
+          "properties": {
+            "CustomerVerification": {
+              "type": "boolean",
+              "description": "Broker allowed to complete capture of customer verification information and documents for this quote."
+            },
+            "Payment": {
+              "type": "boolean",
+              "description": "Broker allowed to host payment checkout."
+            },
+            "PolicyDocuments": {
+              "type": "boolean",
+              "description": "Broker allowed to provide policy documents to customer."
+            }
+          },
+          "required": [
+            "CustomerVerification",
+            "Payment",
+            "PolicyDocuments"
+          ],
+          "description": "Broker requests to handle following steps of policy issuance process.",
+          "additionalProperties": false
+        },
+        "Takaful": {
+          "type": "boolean",
+          "description": "Indicates whether the policy is Sharia compliant."
+        },
+        "AlternativeBrandName": {
+          "type": "string",
+          "description": "Provides and alternative brand name where the product is Sharia compliant"
+        },
+        "Premium": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsurancePremiumProperties"
+            }
+          ],
+          "minProperties": 1,
+          "description": "An object containing details of the quoted insurance premium."
+        },
+        "QuoteStatus": {
+          "type": "string",
+          "enum": [
+            "Completed"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "op": "replace",
+    "path": "/components/schemas/AEInsuranceQuoteReadCustomerCancelledResponseProperties",
+    "value": {
+      "type": "object",
+      "required": [
+        "QuoteId",
+        "QuoteReference",
+        "CreationDateTime",
+        "ServiceRating",
+        "PolicyIssuanceAllowed",
+        "QuoteStatus"
+      ],
+      "properties": {
+        "QuoteId": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteIdType"
+        },
+        "QuoteReference": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReferenceType"
+        },
+        "CreationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date and time at which the quote was created."
+        },
+        "ExpirationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The expiration date of the quote, after which it is no longer valid.  If no date is provided the quote will be valid for up to 30 days as per the Standards."
+        },
+        "PlanName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The specific name of the insurance plan."
+        },
+        "LevelOfCover": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The level of insurance Cover offered in the quote"
+        },
+        "Commission": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceCommission"
+            }
+          ],
+          "description": "An object containing details of the commission amount that would be payable to the TPP if the User proceeded with the insurance application and purchased the policy based on the provided information"
+        },
+        "PolicyCover": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuotePolicyCover"
+          },
+          "minItems": 1,
+          "description": "An array containing options for policy cover, which contain information about the cover and benefits included in the quoted policies."
+        },
+        "PolicyDocumentsUris": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuoteUri"
+          },
+          "minItems": 1,
+          "description": "A list of URLs linking to policy-related documents, such as terms and conditions, policy wording, or product disclosures"
+        },
+        "AvailableAddOns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "CoverName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 70,
+                "description": "Name of the insurance cover add-on"
+              },
+              "Description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 140,
+                "description": "Description of the insurance cover add-on"
+              },
+              "Amount": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "Premium value of the insurance cover add-on"
+              },
+              "CoverLimit": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the benefit coverage limit that could be paid if a claim was made."
+              },
+              "CoverInclusionAndExclusionDescriptions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "description": "Included inclusions and exclusions for cover type."
+              },
+              "PolicyExcess": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the amount that would be deductible from any claim."
+              }
+            },
+            "required": [
+              "CoverName",
+              "Description"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "description": "An object containing details of optional add-ons available for the quoted policy"
+        },
+        "RequiredDocuments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceDocumentRequirement"
+          },
+          "minItems": 1,
+          "description": "A list of documents required that must be provided by the User to the LFI to proceed with the policy purchase"
+        },
+        "DiscountOffers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsurancePremiumDiscountOffers"
+          },
+          "minItems": 1,
+          "description": "An object containing details of any discounts or offers applied to the quote"
+        },
+        "ServiceRating": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceServiceRating"
+            }
+          ],
+          "description": "An object containing ratings or reviews of the insurer's service quality"
+        },
+        "SpecialConditionsApplicable": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceSpecialConditions"
+          },
+          "description": "Provides special conditions or clauses applicable to the policy specified by the LFI, which must be displayed to the User if provided."
+        },
+        "PolicyIssuanceAllowed": {
+          "type": "object",
+          "properties": {
+            "CustomerVerification": {
+              "type": "boolean",
+              "description": "Broker allowed to complete capture of customer verification information and documents for this quote."
+            },
+            "Payment": {
+              "type": "boolean",
+              "description": "Broker allowed to host payment checkout."
+            },
+            "PolicyDocuments": {
+              "type": "boolean",
+              "description": "Broker allowed to provide policy documents to customer."
+            }
+          },
+          "required": [
+            "CustomerVerification",
+            "Payment",
+            "PolicyDocuments"
+          ],
+          "description": "Broker requests to handle following steps of policy issuance process.",
+          "additionalProperties": false
+        },
+        "Takaful": {
+          "type": "boolean",
+          "description": "Indicates whether the policy is Sharia compliant."
+        },
+        "AlternativeBrandName": {
+          "type": "string",
+          "description": "Provides and alternative brand name where the product is Sharia compliant"
+        },
+        "Premium": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsurancePremiumProperties"
+            }
+          ],
+          "minProperties": 1,
+          "description": "An object containing details of the quoted insurance premium."
+        },
+        "QuoteStatus": {
+          "type": "string",
+          "enum": [
+            "CustomerCancelled"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "op": "replace",
+    "path": "/components/schemas/AEInsuranceQuoteReadExpiredResponseProperties",
+    "value": {
+      "type": "object",
+      "required": [
+        "QuoteId",
+        "QuoteReference",
+        "CreationDateTime",
+        "ServiceRating",
+        "PolicyIssuanceAllowed",
+        "QuoteStatus"
+      ],
+      "properties": {
+        "QuoteId": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteIdType"
+        },
+        "QuoteReference": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReferenceType"
+        },
+        "CreationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date and time at which the quote was created."
+        },
+        "ExpirationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The expiration date of the quote, after which it is no longer valid.  If no date is provided the quote will be valid for up to 30 days as per the Standards."
+        },
+        "PlanName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The specific name of the insurance plan."
+        },
+        "LevelOfCover": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The level of insurance Cover offered in the quote"
+        },
+        "Commission": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceCommission"
+            }
+          ],
+          "description": "An object containing details of the commission amount that would be payable to the TPP if the User proceeded with the insurance application and purchased the policy based on the provided information"
+        },
+        "PolicyCover": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuotePolicyCover"
+          },
+          "minItems": 1,
+          "description": "An array containing options for policy cover, which contain information about the cover and benefits included in the quoted policies."
+        },
+        "PolicyDocumentsUris": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuoteUri"
+          },
+          "minItems": 1,
+          "description": "A list of URLs linking to policy-related documents, such as terms and conditions, policy wording, or product disclosures"
+        },
+        "AvailableAddOns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "CoverName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 70,
+                "description": "Name of the insurance cover add-on"
+              },
+              "Description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 140,
+                "description": "Description of the insurance cover add-on"
+              },
+              "Amount": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "Premium value of the insurance cover add-on"
+              },
+              "CoverLimit": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the benefit coverage limit that could be paid if a claim was made."
+              },
+              "CoverInclusionAndExclusionDescriptions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "description": "Included inclusions and exclusions for cover type."
+              },
+              "PolicyExcess": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the amount that would be deductible from any claim."
+              }
+            },
+            "required": [
+              "CoverName",
+              "Description"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "description": "An object containing details of optional add-ons available for the quoted policy"
+        },
+        "RequiredDocuments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceDocumentRequirement"
+          },
+          "minItems": 1,
+          "description": "A list of documents required that must be provided by the User to the LFI to proceed with the policy purchase"
+        },
+        "DiscountOffers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsurancePremiumDiscountOffers"
+          },
+          "minItems": 1,
+          "description": "An object containing details of any discounts or offers applied to the quote"
+        },
+        "ServiceRating": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceServiceRating"
+            }
+          ],
+          "description": "An object containing ratings or reviews of the insurer's service quality"
+        },
+        "SpecialConditionsApplicable": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceSpecialConditions"
+          },
+          "description": "Provides special conditions or clauses applicable to the policy specified by the LFI, which must be displayed to the User if provided."
+        },
+        "PolicyIssuanceAllowed": {
+          "type": "object",
+          "properties": {
+            "CustomerVerification": {
+              "type": "boolean",
+              "description": "Broker allowed to complete capture of customer verification information and documents for this quote."
+            },
+            "Payment": {
+              "type": "boolean",
+              "description": "Broker allowed to host payment checkout."
+            },
+            "PolicyDocuments": {
+              "type": "boolean",
+              "description": "Broker allowed to provide policy documents to customer."
+            }
+          },
+          "required": [
+            "CustomerVerification",
+            "Payment",
+            "PolicyDocuments"
+          ],
+          "description": "Broker requests to handle following steps of policy issuance process.",
+          "additionalProperties": false
+        },
+        "Takaful": {
+          "type": "boolean",
+          "description": "Indicates whether the policy is Sharia compliant."
+        },
+        "AlternativeBrandName": {
+          "type": "string",
+          "description": "Provides and alternative brand name where the product is Sharia compliant"
+        },
+        "Premium": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsurancePremiumProperties"
+            }
+          ],
+          "minProperties": 1,
+          "description": "An object containing details of the quoted insurance premium."
+        },
+        "QuoteStatus": {
+          "type": "string",
+          "enum": [
+            "Expired"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "op": "replace",
+    "path": "/components/schemas/AEInsuranceQuoteReadKYCCapturedResponseProperties",
+    "value": {
+      "type": "object",
+      "required": [
+        "QuoteId",
+        "QuoteReference",
+        "CreationDateTime",
+        "ServiceRating",
+        "PolicyIssuanceAllowed",
+        "QuoteStatus"
+      ],
+      "properties": {
+        "QuoteId": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteIdType"
+        },
+        "QuoteReference": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReferenceType"
+        },
+        "CreationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date and time at which the quote was created."
+        },
+        "ExpirationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The expiration date of the quote, after which it is no longer valid.  If no date is provided the quote will be valid for up to 30 days as per the Standards."
+        },
+        "PlanName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The specific name of the insurance plan."
+        },
+        "LevelOfCover": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The level of insurance Cover offered in the quote"
+        },
+        "Commission": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceCommission"
+            }
+          ],
+          "description": "An object containing details of the commission amount that would be payable to the TPP if the User proceeded with the insurance application and purchased the policy based on the provided information"
+        },
+        "PolicyCover": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuotePolicyCover"
+          },
+          "minItems": 1,
+          "description": "An array containing options for policy cover, which contain information about the cover and benefits included in the quoted policies."
+        },
+        "PolicyDocumentsUris": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuoteUri"
+          },
+          "minItems": 1,
+          "description": "A list of URLs linking to policy-related documents, such as terms and conditions, policy wording, or product disclosures"
+        },
+        "AvailableAddOns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "CoverName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 70,
+                "description": "Name of the insurance cover add-on"
+              },
+              "Description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 140,
+                "description": "Description of the insurance cover add-on"
+              },
+              "Amount": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "Premium value of the insurance cover add-on"
+              },
+              "CoverLimit": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the benefit coverage limit that could be paid if a claim was made."
+              },
+              "CoverInclusionAndExclusionDescriptions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "description": "Included inclusions and exclusions for cover type."
+              },
+              "PolicyExcess": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the amount that would be deductible from any claim."
+              }
+            },
+            "required": [
+              "CoverName",
+              "Description"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "description": "An object containing details of optional add-ons available for the quoted policy"
+        },
+        "RequiredDocuments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceDocumentRequirement"
+          },
+          "minItems": 1,
+          "description": "A list of documents required that must be provided by the User to the LFI to proceed with the policy purchase"
+        },
+        "DiscountOffers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsurancePremiumDiscountOffers"
+          },
+          "minItems": 1,
+          "description": "An object containing details of any discounts or offers applied to the quote"
+        },
+        "ServiceRating": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceServiceRating"
+            }
+          ],
+          "description": "An object containing ratings or reviews of the insurer's service quality"
+        },
+        "SpecialConditionsApplicable": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceSpecialConditions"
+          },
+          "description": "Provides special conditions or clauses applicable to the policy specified by the LFI, which must be displayed to the User if provided."
+        },
+        "PolicyIssuanceAllowed": {
+          "type": "object",
+          "properties": {
+            "CustomerVerification": {
+              "type": "boolean",
+              "description": "Broker allowed to complete capture of customer verification information and documents for this quote."
+            },
+            "Payment": {
+              "type": "boolean",
+              "description": "Broker allowed to host payment checkout."
+            },
+            "PolicyDocuments": {
+              "type": "boolean",
+              "description": "Broker allowed to provide policy documents to customer."
+            }
+          },
+          "required": [
+            "CustomerVerification",
+            "Payment",
+            "PolicyDocuments"
+          ],
+          "description": "Broker requests to handle following steps of policy issuance process.",
+          "additionalProperties": false
+        },
+        "Takaful": {
+          "type": "boolean",
+          "description": "Indicates whether the policy is Sharia compliant."
+        },
+        "AlternativeBrandName": {
+          "type": "string",
+          "description": "Provides and alternative brand name where the product is Sharia compliant"
+        },
+        "Premium": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsurancePremiumProperties"
+            }
+          ],
+          "minProperties": 1,
+          "description": "An object containing details of the quoted insurance premium."
+        },
+        "QuoteStatus": {
+          "type": "string",
+          "enum": [
+            "KYCCaptured"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "op": "replace",
+    "path": "/components/schemas/AEInsuranceQuoteReadLFICancelledResponseProperties",
+    "value": {
+      "type": "object",
+      "required": [
+        "QuoteId",
+        "QuoteReference",
+        "CreationDateTime",
+        "ServiceRating",
+        "PolicyIssuanceAllowed",
+        "QuoteStatus"
+      ],
+      "properties": {
+        "QuoteId": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteIdType"
+        },
+        "QuoteReference": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReferenceType"
+        },
+        "CreationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date and time at which the quote was created."
+        },
+        "ExpirationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The expiration date of the quote, after which it is no longer valid.  If no date is provided the quote will be valid for up to 30 days as per the Standards."
+        },
+        "PlanName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The specific name of the insurance plan."
+        },
+        "LevelOfCover": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The level of insurance Cover offered in the quote"
+        },
+        "Commission": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceCommission"
+            }
+          ],
+          "description": "An object containing details of the commission amount that would be payable to the TPP if the User proceeded with the insurance application and purchased the policy based on the provided information"
+        },
+        "PolicyCover": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuotePolicyCover"
+          },
+          "minItems": 1,
+          "description": "An array containing options for policy cover, which contain information about the cover and benefits included in the quoted policies."
+        },
+        "PolicyDocumentsUris": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuoteUri"
+          },
+          "minItems": 1,
+          "description": "A list of URLs linking to policy-related documents, such as terms and conditions, policy wording, or product disclosures"
+        },
+        "AvailableAddOns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "CoverName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 70,
+                "description": "Name of the insurance cover add-on"
+              },
+              "Description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 140,
+                "description": "Description of the insurance cover add-on"
+              },
+              "Amount": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "Premium value of the insurance cover add-on"
+              },
+              "CoverLimit": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the benefit coverage limit that could be paid if a claim was made."
+              },
+              "CoverInclusionAndExclusionDescriptions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "description": "Included inclusions and exclusions for cover type."
+              },
+              "PolicyExcess": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the amount that would be deductible from any claim."
+              }
+            },
+            "required": [
+              "CoverName",
+              "Description"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "description": "An object containing details of optional add-ons available for the quoted policy"
+        },
+        "RequiredDocuments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceDocumentRequirement"
+          },
+          "minItems": 1,
+          "description": "A list of documents required that must be provided by the User to the LFI to proceed with the policy purchase"
+        },
+        "DiscountOffers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsurancePremiumDiscountOffers"
+          },
+          "minItems": 1,
+          "description": "An object containing details of any discounts or offers applied to the quote"
+        },
+        "ServiceRating": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceServiceRating"
+            }
+          ],
+          "description": "An object containing ratings or reviews of the insurer's service quality"
+        },
+        "SpecialConditionsApplicable": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceSpecialConditions"
+          },
+          "description": "Provides special conditions or clauses applicable to the policy specified by the LFI, which must be displayed to the User if provided."
+        },
+        "PolicyIssuanceAllowed": {
+          "type": "object",
+          "properties": {
+            "CustomerVerification": {
+              "type": "boolean",
+              "description": "Broker allowed to complete capture of customer verification information and documents for this quote."
+            },
+            "Payment": {
+              "type": "boolean",
+              "description": "Broker allowed to host payment checkout."
+            },
+            "PolicyDocuments": {
+              "type": "boolean",
+              "description": "Broker allowed to provide policy documents to customer."
+            }
+          },
+          "required": [
+            "CustomerVerification",
+            "Payment",
+            "PolicyDocuments"
+          ],
+          "description": "Broker requests to handle following steps of policy issuance process.",
+          "additionalProperties": false
+        },
+        "Takaful": {
+          "type": "boolean",
+          "description": "Indicates whether the policy is Sharia compliant."
+        },
+        "AlternativeBrandName": {
+          "type": "string",
+          "description": "Provides and alternative brand name where the product is Sharia compliant"
+        },
+        "Premium": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsurancePremiumProperties"
+            }
+          ],
+          "minProperties": 1,
+          "description": "An object containing details of the quoted insurance premium."
+        },
+        "QuoteStatus": {
+          "type": "string",
+          "enum": [
+            "LFICancelled"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "op": "replace",
+    "path": "/components/schemas/AEInsuranceQuoteReadPaymentRequiredResponseProperties",
+    "value": {
+      "type": "object",
+      "required": [
+        "QuoteId",
+        "QuoteReference",
+        "CreationDateTime",
+        "ServiceRating",
+        "PolicyIssuanceAllowed",
+        "QuoteStatus"
+      ],
+      "properties": {
+        "QuoteId": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteIdType"
+        },
+        "QuoteReference": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReferenceType"
+        },
+        "CreationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date and time at which the quote was created."
+        },
+        "ExpirationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The expiration date of the quote, after which it is no longer valid.  If no date is provided the quote will be valid for up to 30 days as per the Standards."
+        },
+        "PlanName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The specific name of the insurance plan."
+        },
+        "LevelOfCover": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The level of insurance Cover offered in the quote"
+        },
+        "Commission": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceCommission"
+            }
+          ],
+          "description": "An object containing details of the commission amount that would be payable to the TPP if the User proceeded with the insurance application and purchased the policy based on the provided information"
+        },
+        "PolicyCover": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuotePolicyCover"
+          },
+          "minItems": 1,
+          "description": "An array containing options for policy cover, which contain information about the cover and benefits included in the quoted policies."
+        },
+        "PolicyDocumentsUris": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuoteUri"
+          },
+          "minItems": 1,
+          "description": "A list of URLs linking to policy-related documents, such as terms and conditions, policy wording, or product disclosures"
+        },
+        "AvailableAddOns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "CoverName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 70,
+                "description": "Name of the insurance cover add-on"
+              },
+              "Description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 140,
+                "description": "Description of the insurance cover add-on"
+              },
+              "Amount": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "Premium value of the insurance cover add-on"
+              },
+              "CoverLimit": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the benefit coverage limit that could be paid if a claim was made."
+              },
+              "CoverInclusionAndExclusionDescriptions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "description": "Included inclusions and exclusions for cover type."
+              },
+              "PolicyExcess": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the amount that would be deductible from any claim."
+              }
+            },
+            "required": [
+              "CoverName",
+              "Description"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "description": "An object containing details of optional add-ons available for the quoted policy"
+        },
+        "RequiredDocuments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceDocumentRequirement"
+          },
+          "minItems": 1,
+          "description": "A list of documents required that must be provided by the User to the LFI to proceed with the policy purchase"
+        },
+        "DiscountOffers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsurancePremiumDiscountOffers"
+          },
+          "minItems": 1,
+          "description": "An object containing details of any discounts or offers applied to the quote"
+        },
+        "ServiceRating": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceServiceRating"
+            }
+          ],
+          "description": "An object containing ratings or reviews of the insurer's service quality"
+        },
+        "SpecialConditionsApplicable": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceSpecialConditions"
+          },
+          "description": "Provides special conditions or clauses applicable to the policy specified by the LFI, which must be displayed to the User if provided."
+        },
+        "PolicyIssuanceAllowed": {
+          "type": "object",
+          "properties": {
+            "CustomerVerification": {
+              "type": "boolean",
+              "description": "Broker allowed to complete capture of customer verification information and documents for this quote."
+            },
+            "Payment": {
+              "type": "boolean",
+              "description": "Broker allowed to host payment checkout."
+            },
+            "PolicyDocuments": {
+              "type": "boolean",
+              "description": "Broker allowed to provide policy documents to customer."
+            }
+          },
+          "required": [
+            "CustomerVerification",
+            "Payment",
+            "PolicyDocuments"
+          ],
+          "description": "Broker requests to handle following steps of policy issuance process.",
+          "additionalProperties": false
+        },
+        "Takaful": {
+          "type": "boolean",
+          "description": "Indicates whether the policy is Sharia compliant."
+        },
+        "AlternativeBrandName": {
+          "type": "string",
+          "description": "Provides and alternative brand name where the product is Sharia compliant"
+        },
+        "Premium": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsurancePremiumProperties"
+            }
+          ],
+          "minProperties": 1,
+          "description": "An object containing details of the quoted insurance premium."
+        },
+        "QuoteStatus": {
+          "type": "string",
+          "enum": [
+            "PaymentRequired"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "op": "replace",
+    "path": "/components/schemas/AEInsuranceQuoteReadPolicyIssuedResponseProperties",
+    "value": {
+      "type": "object",
+      "required": [
+        "QuoteId",
+        "QuoteReference",
+        "CreationDateTime",
+        "ServiceRating",
+        "PolicyIssuanceAllowed",
+        "QuoteStatus"
+      ],
+      "properties": {
+        "QuoteId": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteIdType"
+        },
+        "QuoteReference": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReferenceType"
+        },
+        "CreationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date and time at which the quote was created."
+        },
+        "ExpirationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The expiration date of the quote, after which it is no longer valid.  If no date is provided the quote will be valid for up to 30 days as per the Standards."
+        },
+        "PlanName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The specific name of the insurance plan."
+        },
+        "LevelOfCover": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The level of insurance Cover offered in the quote"
+        },
+        "Commission": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceCommission"
+            }
+          ],
+          "description": "An object containing details of the commission amount that would be payable to the TPP if the User proceeded with the insurance application and purchased the policy based on the provided information"
+        },
+        "PolicyCover": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuotePolicyCover"
+          },
+          "minItems": 1,
+          "description": "An array containing options for policy cover, which contain information about the cover and benefits included in the quoted policies."
+        },
+        "PolicyDocumentsUris": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuoteUri"
+          },
+          "minItems": 1,
+          "description": "A list of URLs linking to policy-related documents, such as terms and conditions, policy wording, or product disclosures"
+        },
+        "AvailableAddOns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "CoverName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 70,
+                "description": "Name of the insurance cover add-on"
+              },
+              "Description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 140,
+                "description": "Description of the insurance cover add-on"
+              },
+              "Amount": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "Premium value of the insurance cover add-on"
+              },
+              "CoverLimit": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the benefit coverage limit that could be paid if a claim was made."
+              },
+              "CoverInclusionAndExclusionDescriptions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "description": "Included inclusions and exclusions for cover type."
+              },
+              "PolicyExcess": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the amount that would be deductible from any claim."
+              }
+            },
+            "required": [
+              "CoverName",
+              "Description"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "description": "An object containing details of optional add-ons available for the quoted policy"
+        },
+        "RequiredDocuments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceDocumentRequirement"
+          },
+          "minItems": 1,
+          "description": "A list of documents required that must be provided by the User to the LFI to proceed with the policy purchase"
+        },
+        "DiscountOffers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsurancePremiumDiscountOffers"
+          },
+          "minItems": 1,
+          "description": "An object containing details of any discounts or offers applied to the quote"
+        },
+        "ServiceRating": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceServiceRating"
+            }
+          ],
+          "description": "An object containing ratings or reviews of the insurer's service quality"
+        },
+        "SpecialConditionsApplicable": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceSpecialConditions"
+          },
+          "description": "Provides special conditions or clauses applicable to the policy specified by the LFI, which must be displayed to the User if provided."
+        },
+        "PolicyIssuanceAllowed": {
+          "type": "object",
+          "properties": {
+            "CustomerVerification": {
+              "type": "boolean",
+              "description": "Broker allowed to complete capture of customer verification information and documents for this quote."
+            },
+            "Payment": {
+              "type": "boolean",
+              "description": "Broker allowed to host payment checkout."
+            },
+            "PolicyDocuments": {
+              "type": "boolean",
+              "description": "Broker allowed to provide policy documents to customer."
+            }
+          },
+          "required": [
+            "CustomerVerification",
+            "Payment",
+            "PolicyDocuments"
+          ],
+          "description": "Broker requests to handle following steps of policy issuance process.",
+          "additionalProperties": false
+        },
+        "Takaful": {
+          "type": "boolean",
+          "description": "Indicates whether the policy is Sharia compliant."
+        },
+        "AlternativeBrandName": {
+          "type": "string",
+          "description": "Provides and alternative brand name where the product is Sharia compliant"
+        },
+        "Premium": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsurancePremiumProperties"
+            }
+          ],
+          "minProperties": 1,
+          "description": "An object containing details of the quoted insurance premium."
+        },
+        "QuoteStatus": {
+          "type": "string",
+          "enum": [
+            "PolicyIssued"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "op": "replace",
+    "path": "/components/schemas/AEInsuranceQuoteReadRejectedResponseProperties",
+    "value": {
+      "type": "object",
+      "required": [
+        "QuoteId",
+        "QuoteReference",
+        "CreationDateTime",
+        "ServiceRating",
+        "PolicyIssuanceAllowed",
+        "QuoteStatus"
+      ],
+      "properties": {
+        "QuoteId": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteIdType"
+        },
+        "QuoteReference": {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReferenceType"
+        },
+        "CreationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date and time at which the quote was created."
+        },
+        "ExpirationDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The expiration date of the quote, after which it is no longer valid.  If no date is provided the quote will be valid for up to 30 days as per the Standards."
+        },
+        "PlanName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The specific name of the insurance plan."
+        },
+        "LevelOfCover": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "The level of insurance Cover offered in the quote"
+        },
+        "Commission": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceCommission"
+            }
+          ],
+          "description": "An object containing details of the commission amount that would be payable to the TPP if the User proceeded with the insurance application and purchased the policy based on the provided information"
+        },
+        "PolicyCover": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuotePolicyCover"
+          },
+          "minItems": 1,
+          "description": "An array containing options for policy cover, which contain information about the cover and benefits included in the quoted policies."
+        },
+        "PolicyDocumentsUris": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceQuoteUri"
+          },
+          "minItems": 1,
+          "description": "A list of URLs linking to policy-related documents, such as terms and conditions, policy wording, or product disclosures"
+        },
+        "AvailableAddOns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "CoverName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 70,
+                "description": "Name of the insurance cover add-on"
+              },
+              "Description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 140,
+                "description": "Description of the insurance cover add-on"
+              },
+              "Amount": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "Premium value of the insurance cover add-on"
+              },
+              "CoverLimit": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the benefit coverage limit that could be paid if a claim was made."
+              },
+              "CoverInclusionAndExclusionDescriptions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "description": "Included inclusions and exclusions for cover type."
+              },
+              "PolicyExcess": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AEActiveCurrencyAmount"
+                  }
+                ],
+                "description": "When applicable, the amount that would be deductible from any claim."
+              }
+            },
+            "required": [
+              "CoverName",
+              "Description"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "description": "An object containing details of optional add-ons available for the quoted policy"
+        },
+        "RequiredDocuments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceDocumentRequirement"
+          },
+          "minItems": 1,
+          "description": "A list of documents required that must be provided by the User to the LFI to proceed with the policy purchase"
+        },
+        "DiscountOffers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsurancePremiumDiscountOffers"
+          },
+          "minItems": 1,
+          "description": "An object containing details of any discounts or offers applied to the quote"
+        },
+        "ServiceRating": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsuranceServiceRating"
+            }
+          ],
+          "description": "An object containing ratings or reviews of the insurer's service quality"
+        },
+        "SpecialConditionsApplicable": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AEInsuranceSpecialConditions"
+          },
+          "description": "Provides special conditions or clauses applicable to the policy specified by the LFI, which must be displayed to the User if provided."
+        },
+        "PolicyIssuanceAllowed": {
+          "type": "object",
+          "properties": {
+            "CustomerVerification": {
+              "type": "boolean",
+              "description": "Broker allowed to complete capture of customer verification information and documents for this quote."
+            },
+            "Payment": {
+              "type": "boolean",
+              "description": "Broker allowed to host payment checkout."
+            },
+            "PolicyDocuments": {
+              "type": "boolean",
+              "description": "Broker allowed to provide policy documents to customer."
+            }
+          },
+          "required": [
+            "CustomerVerification",
+            "Payment",
+            "PolicyDocuments"
+          ],
+          "description": "Broker requests to handle following steps of policy issuance process.",
+          "additionalProperties": false
+        },
+        "Takaful": {
+          "type": "boolean",
+          "description": "Indicates whether the policy is Sharia compliant."
+        },
+        "AlternativeBrandName": {
+          "type": "string",
+          "description": "Provides and alternative brand name where the product is Sharia compliant"
+        },
+        "Premium": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AEInsurancePremiumProperties"
+            }
+          ],
+          "minProperties": 1,
+          "description": "An object containing details of the quoted insurance premium."
+        },
+        "QuoteStatus": {
+          "type": "string",
+          "enum": [
+            "Rejected"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "op": "replace",
+    "path": "/components/schemas/AEInsuranceQuoteReadResponseProperties",
+    "value": {
+      "type": "object",
+      "oneOf": [
+        {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReadPendingResponseProperties"
+        },
+        {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReadAvailableResponseProperties"
+        },
+        {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReadApplicationApprovedResponseProperties"
+        },
+        {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReadApplicationPendingResponseProperties"
+        },
+        {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReadCompletedResponseProperties"
+        },
+        {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReadCustomerCancelledResponseProperties"
+        },
+        {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReadExpiredResponseProperties"
+        },
+        {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReadKYCCapturedResponseProperties"
+        },
+        {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReadLFICancelledResponseProperties"
+        },
+        {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReadPaymentRequiredResponseProperties"
+        },
+        {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReadPolicyIssuedResponseProperties"
+        },
+        {
+          "$ref": "#/components/schemas/AEInsuranceQuoteReadRejectedResponseProperties"
+        }
+      ],
+      "discriminator": {
+        "propertyName": "QuoteStatus",
+        "mapping": {
+          "Pending": "#/components/schemas/AEInsuranceQuoteReadPendingResponseProperties",
+          "Available": "#/components/schemas/AEInsuranceQuoteReadAvailableResponseProperties",
+          "ApplicationApproved": "#/components/schemas/AEInsuranceQuoteReadApplicationApprovedResponseProperties",
+          "ApplicationPending": "#/components/schemas/AEInsuranceQuoteReadApplicationPendingResponseProperties",
+          "Completed": "#/components/schemas/AEInsuranceQuoteReadCompletedResponseProperties",
+          "CustomerCancelled": "#/components/schemas/AEInsuranceQuoteReadCustomerCancelledResponseProperties",
+          "Expired": "#/components/schemas/AEInsuranceQuoteReadExpiredResponseProperties",
+          "KYCCaptured": "#/components/schemas/AEInsuranceQuoteReadKYCCapturedResponseProperties",
+          "LFICancelled": "#/components/schemas/AEInsuranceQuoteReadLFICancelledResponseProperties",
+          "PaymentRequired": "#/components/schemas/AEInsuranceQuoteReadPaymentRequiredResponseProperties",
+          "PolicyIssued": "#/components/schemas/AEInsuranceQuoteReadPolicyIssuedResponseProperties",
+          "Rejected": "#/components/schemas/AEInsuranceQuoteReadRejectedResponseProperties"
+        }
+      },
+      "additionalProperties": false,
+      "properties": {
+        "QuoteStatus": {},
+        "QuoteId": {},
+        "QuoteReference": {},
+        "PremiumTargetDateTime": {},
+        "CreationDateTime": {},
+        "ExpirationDateTime": {},
+        "PlanName": {},
+        "LevelOfCover": {},
+        "Commission": {},
+        "PolicyCover": {},
+        "PolicyDocumentsUris": {},
+        "AvailableAddOns": {},
+        "RequiredDocuments": {},
+        "DiscountOffers": {},
+        "ServiceRating": {},
+        "SpecialConditionsApplicable": {},
+        "PolicyIssuanceAllowed": {},
+        "Takaful": {},
+        "AlternativeBrandName": {},
+        "Premium": {}
+      }
+    }
+  }
+]

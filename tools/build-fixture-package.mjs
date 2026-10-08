@@ -10,13 +10,17 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildBundle } from '../src/generator/index.js';
 import { buildRoleBundle, normalizeFootprint } from '../src/generator/multi-lfi.js';
-import { envelopesFromBundle } from '../src/ui/export.js';
+import { envelopesFromBundle } from '../src/core/envelopes.js';
+import { scenarioDescriptor, CORPUS_VERSION } from '../src/core/scenario.js';
+import { createValidators, stripAnnotations } from './schema-validator.mjs';
 import { loadPersonasByDomain, loadAllPools, repoRoot } from './load-fixtures.mjs';
 import {
   readPackageVersion,
+  readBuildRevision,
   readNowAnchor,
   readSpecSha,
   readSpecVersions,
+  readSpecProvenance,
   safeEndpointName as safeName,
 } from './build-shared.mjs';
 
@@ -57,6 +61,7 @@ const CACHE_INPUT_ROOTS = [
 // otherwise truncate the hash and return it as if complete.
 function corpusInputHash() {
   const h = crypto.createHash('sha256');
+  h.update(readBuildRevision());
 
   const hashFile = (p) => {
     // Hash path + content, never mtime — a `touch` must not invalidate.
@@ -109,6 +114,7 @@ function readStamp() {
     // the manifest has to be present too — opened rather than read, since
     // this is only an existence probe (it is ~1.4 MB).
     fs.closeSync(fs.openSync(path.join(OUT, 'manifest.json'), 'r'));
+    fs.closeSync(fs.openSync(path.join(repoRoot, 'dist/published-scenarios.json'), 'r'));
     return fs.readFileSync(STAMP_PATH, 'utf8').trim();
   } catch {
     return null;
@@ -127,9 +133,25 @@ if (process.env.FIXTURES_FORCE !== '1' && readStamp() === inputHash) {
 const NOW_ANCHOR = readNowAnchor();
 const SHA = readSpecSha();
 // Banking and insurance specs are pinned independently — banking on
-// `v2.1-errata2`, insurance on `v2.1-errata1`. Each envelope is stamped
+// `v2.1-errata2`, insurance on `v2.1-errata3`. Each envelope is stamped
 // with the version that matches its domain.
 const SPEC_VERSIONS = readSpecVersions();
+const SPEC_PROVENANCE = readSpecProvenance();
+const validators = Object.fromEntries(
+  ['banking', 'insurance', 'atm'].map((domain) => [
+    domain,
+    createValidators(
+      fs.readFileSync(
+        path.join(
+          repoRoot,
+          `spec/uae-${domain === 'banking' ? 'account-information' : domain}-openapi.yaml`,
+        ),
+        'utf8',
+      ),
+      { normalization: domain === 'insurance' },
+    ),
+  ]),
+);
 
 // Fail the build BEFORE writing a malformed envelope, rather than deferring
 // the only structural check to rendered-fixture-spec-validation.test.mjs
@@ -140,8 +162,17 @@ function assertEnvelope(env, endpoint, personaId) {
   const ctx = `${personaId} ${endpoint}`;
   if (!env || typeof env !== 'object') throw new Error(`emit ${ctx}: envelope is not an object`);
   if (env.Data === undefined) throw new Error(`emit ${ctx}: missing Data`);
-  if (!env.Links || env.Links.Self === undefined)
+  if (endpoint !== '/atms' && (!env.Links || env.Links.Self === undefined))
     throw new Error(`emit ${ctx}: missing Links.Self`);
+  const domain =
+    endpoint === '/atms'
+      ? 'atm'
+      : endpoint.includes('-insurance-') || endpoint.startsWith('/insurance-consents')
+        ? 'insurance'
+        : 'banking';
+  const validate = validators[domain].forEndpoint(endpoint);
+  if (!validate(stripAnnotations(env)))
+    throw new Error(`emit ${ctx}: ${JSON.stringify(validate.errors?.slice(0, 4))}`);
   if (env.Meta === undefined) throw new Error(`emit ${ctx}: missing Meta`);
   if (typeof env._watermark !== 'string' || !env._watermark.includes('SYNTHETIC')) {
     throw new Error(`emit ${ctx}: missing/invalid _watermark`);
@@ -166,6 +197,9 @@ const now = new Date(NOW_ANCHOR);
 const manifest = {
   package: '@openfinance-os/sandbox-fixtures',
   version: PKG_VERSION,
+  corpusVersion: CORPUS_VERSION,
+  revision: readBuildRevision(),
+  specProvenance: SPEC_PROVENANCE,
   // Banking is the primary domain of the npm/PyPI bundle — keep the
   // back-compat string field on the banking spec. `specVersions` carries
   // the per-domain breakdown for consumers that need it.
@@ -232,6 +266,8 @@ async function emitPersona(personaId, persona, domain) {
       specVersion: SPEC_VERSIONS.banking,
       specVersions: SPEC_VERSIONS,
       specSha: SHA,
+      specProvenance: SPEC_PROVENANCE,
+      referenceDate: NOW_ANCHOR,
       retrievedAt: NOW_ANCHOR,
     };
     const bundle = buildBundle({ persona, lfi, seed, pools, now });
@@ -256,6 +292,8 @@ async function emitPersona(personaId, persona, domain) {
       const enrichText = JSON.stringify(
         {
           schema: 'openfinance-os/data-sandbox/enrichment/v1',
+          purpose: 'synthetic-evaluation-labels',
+          evaluationOnly: true,
           personaId,
           seed,
           generatedAt: new Date(NOW_ANCHOR).toISOString(),
@@ -349,6 +387,7 @@ async function emitPersona(personaId, persona, domain) {
       : [bundle.domain ?? domain];
     manifest.fixtures[`${personaId}|${lfi}|${seed}`] = {
       personaId,
+      scenario: scenarioDescriptor({ personaId, lfi, seed, specProvenance: SPEC_PROVENANCE }),
       lfi,
       seed,
       domain: bundleDomains[0],
@@ -386,7 +425,7 @@ async function emitPersona(personaId, persona, domain) {
         const slotKey = slot.key;
         const roleBundle = await buildRoleBundle({ persona, slot: slotKey, lfi, seed, pools, now });
         if (!roleBundle) continue;
-        const roleEnvelopes = envelopesFromBundle(roleBundle, ctx);
+        const roleEnvelopes = envelopesFromBundle(roleBundle, { ...ctx, role: slotKey });
         const roleDir = path.join(OUT, 'bundles', personaId, slotKey, lfi, `seed-${seed}`);
         fs.mkdirSync(roleDir, { recursive: true });
         const roleFiles = {};
@@ -415,6 +454,13 @@ async function emitPersona(personaId, persona, domain) {
           }
         }
         manifest.roleFixtures[`${personaId}|${slotKey}|${lfi}|${seed}`] = {
+          scenario: scenarioDescriptor({
+            personaId,
+            role: slotKey,
+            lfi,
+            seed,
+            specProvenance: SPEC_PROVENANCE,
+          }),
           personaId,
           slot: slotKey,
           role: slot.role,
@@ -467,6 +513,21 @@ fs.copyFileSync(
 fs.copyFileSync(path.join(repoRoot, 'dist/SPEC.atm.json'), path.join(OUT, 'spec.atm.json'));
 
 fs.writeFileSync(path.join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 2));
+// The explorer needs membership only; keep the full endpoint catalogue off
+// its initial loading path. Grouping keys by persona avoids repeated IDs.
+const published = {};
+for (const key of Object.keys(manifest.fixtures)) {
+  const [persona, profile, seed] = key.split('|');
+  (published[persona] ??= []).push(`primary|${profile}|${seed}`);
+}
+for (const key of Object.keys(manifest.roleFixtures)) {
+  const [persona, role, profile, seed] = key.split('|');
+  (published[persona] ??= []).push(`${role}|${profile}|${seed}`);
+}
+fs.writeFileSync(
+  path.join(repoRoot, 'dist/published-scenarios.json'),
+  JSON.stringify({ corpusVersion: manifest.corpusVersion, published }, null, 2),
+);
 
 // Workstream C plug-point 2 — vendor the runtime engine (generator + persona-
 // builder + prng + pool indexer) into the package so TPPs can run a custom
@@ -486,12 +547,25 @@ function copyDirRecursive(src, dst) {
 }
 copyDirRecursive(path.join(repoRoot, 'src/generator'), path.join(LIB_DIR, 'generator'));
 copyDirRecursive(path.join(repoRoot, 'src/persona-builder'), path.join(LIB_DIR, 'persona-builder'));
+copyDirRecursive(path.join(repoRoot, 'src/core'), path.join(LIB_DIR, 'core'));
 copyDirRecursive(path.join(repoRoot, 'src/shared'), path.join(LIB_DIR, 'shared'));
 // `src/ui/export.js` defines envelopesFromBundle, which lib/persona-builder/
 // fixture-handler.js + export-zip.js + the new MCP build_persona path all
 // import as `../ui/export.js`. Without this copy the published package's
 // custom-persona handlers fail to resolve their import.
 copyDirRecursive(path.join(repoRoot, 'src/ui'), path.join(LIB_DIR, 'ui'));
+fs.mkdirSync(path.join(LIB_DIR, 'validation'), { recursive: true });
+fs.copyFileSync(
+  path.join(repoRoot, 'tools/schema-validator.mjs'),
+  path.join(LIB_DIR, 'validation/schema-validator.mjs'),
+);
+fs.mkdirSync(path.join(OUT, 'schemas'), { recursive: true });
+for (const name of [
+  'uae-account-information-openapi.yaml',
+  'uae-insurance-openapi.yaml',
+  'uae-atm-openapi.yaml',
+])
+  fs.copyFileSync(path.join(repoRoot, 'spec', name), path.join(OUT, 'schemas', name));
 fs.copyFileSync(path.join(repoRoot, 'src/prng.js'), path.join(LIB_DIR, 'prng.js'));
 
 // Serialise the indexed pools so consumers can call getPools() without
@@ -537,6 +611,11 @@ const pkgJson = {
       require: './index.cjs',
       default: './index.mjs',
     },
+    './validation': { types: './validation.d.ts', import: './lib/validation/schema-validator.mjs' },
+    './payloads/banking': { types: './payloads.banking.d.ts' },
+    './payloads/insurance': { types: './payloads.insurance.d.ts' },
+    './payloads/atm': { types: './payloads.atm.d.ts' },
+    './schemas/*': './schemas/*',
     './package.json': './package.json',
     './manifest.json': './manifest.json',
     './spec.json': './spec.json',
@@ -554,6 +633,8 @@ const pkgJson = {
     'index.mjs',
     'index.cjs',
     'index.d.ts',
+    'core-types.d.ts',
+    'validation.d.ts',
     'manifest.json',
     'spec.json',
     'spec.insurance.json',
@@ -565,8 +646,13 @@ const pkgJson = {
     'brands/',
     'brand-registry.json',
     'lib/',
+    'schemas/',
+    'payloads.banking.d.ts',
+    'payloads.insurance.d.ts',
+    'payloads.atm.d.ts',
     'README.md',
   ],
+  dependencies: { ajv: '^8.17.1', 'ajv-formats': '^3.0.1', 'js-yaml': '^4.2.0' },
   publishConfig: { access: 'public' },
 };
 fs.writeFileSync(path.join(OUT, 'package.json'), JSON.stringify(pkgJson, null, 2));
@@ -614,7 +700,7 @@ export function listEndpoints(personaId, lfi = 'median') {
 // is the package-level entry point for TPPs that want to simulate paging
 // through a listing endpoint (transactions, standing orders, etc.) the
 // way they would against a real LFI. Internally it loads the full fixture
-// envelope and slices its Data array — the same engine the Service Worker
+// envelope and slices its Data array — the same portable pagination engine
 // uses for the staged \`/fixtures/v1/bundles/.../*.json?offset=&limit=\` URL.
 //
 // \`requestUrl\` is optional; supply it to make Links.{Self,First,Next,Last}
@@ -785,6 +871,9 @@ export function getPools() {
   return _poolsCache;
 }
 export { buildBundle } from './lib/generator/index.js';
+export { queryTransactions, summarizeTransactions } from './lib/core/transaction-query.js';
+export { minorUnits, formatMinor, postedTransactions, movement } from './lib/core/ledger.js';
+export { scenarioDescriptor, CORPUS_VERSION, REFERENCE_DATE } from './lib/core/scenario.js';
 export { expandRecipe } from './lib/persona-builder/expand.js';
 export {
   RECIPE_DEFAULTS,
@@ -1097,6 +1186,7 @@ export interface PersonaInfo {
   enrichmentRecordCount?: number;
 }
 export interface FixtureEntry {
+  scenario: import('./core-types.js').Scenario;
   personaId: string;
   lfi: string;
   seed: number;
@@ -1111,6 +1201,7 @@ export interface FixtureEntry {
 /** Phase D Slice 5 — a secondary/tertiary (or Phase 2.2 N-slot) role
  * bundle emitted for a persona with a multi_lfi_footprint. */
 export interface RoleFixtureEntry {
+  scenario: import('./core-types.js').Scenario;
   personaId: string;
   slot: string;
   role: string;
@@ -1121,6 +1212,9 @@ export interface RoleFixtureEntry {
   endpoints: Record<string, string>;
 }
 export interface Manifest {
+  corpusVersion: string;
+  revision: string;
+  specProvenance: NonNullable<import('./core-types.js').Scenario['specProvenance']>;
   package: string;
   version: string;
   specVersion: string;
@@ -1193,7 +1287,7 @@ export interface PaginationOptions {
   requestUrl?: string;
 }
 export interface PaginatedMeta {
-  TotalPages: number;
+  TotalPages?: number;
   [k: string]: unknown;
 }
 export interface PaginatedLinks {
@@ -1214,7 +1308,8 @@ export interface PaginationSidecar {
 }
 export interface PaginatedEnvelope {
   Data: unknown;
-  Links: PaginatedLinks;
+  Links?: PaginatedLinks;
+  _paginationLinks?: PaginatedLinks;
   Meta: PaginatedMeta;
   _pagination: PaginationSidecar;
   [k: string]: unknown;
@@ -1368,7 +1463,7 @@ export function validateRecipe(recipe: CustomRecipe, pools: IndexedPools): { ok:
 export function getPools(): IndexedPools;
 export function expandRecipe(recipe: CustomRecipe, pools: IndexedPools): unknown;
 export function buildBundle(opts: { persona: unknown; lfi: 'rich' | 'median' | 'sparse'; seed: number; pools: IndexedPools; now?: Date }): unknown;
-export function envelopesFromBundle(bundle: unknown, ctx: { personaId: string; lfi: 'rich' | 'median' | 'sparse'; seed: number; specVersion?: string; specSha?: string; retrievedAt: string }): Record<string, unknown>;
+export function envelopesFromBundle(bundle: unknown, ctx: Pick<import('./core-types.js').Scenario,'personaId'|'lfi'|'seed'> & Partial<import('./core-types.js').Scenario> & { specVersion?: string; specVersions?: Record<string,string>; specSha?: string; retrievedAt?: string }): Record<string, unknown>;
 
 // ---------------------------------------------------------------------------
 // CJS-only async accessors. The CommonJS entry (index.cjs) cannot re-export
@@ -1402,7 +1497,12 @@ export function getPagination(): Promise<{
   PAGINATION_DEFAULTS: { readonly defaultLimit: number; readonly maxLimit: number };
 }>;
 `;
-fs.writeFileSync(path.join(OUT, 'index.d.ts'), indexDts);
+fs.copyFileSync(path.join(repoRoot, 'tools/core-types.d.ts'), path.join(OUT, 'core-types.d.ts'));
+fs.copyFileSync(
+  path.join(repoRoot, 'tools/validation-types.d.ts'),
+  path.join(OUT, 'validation.d.ts'),
+);
+fs.writeFileSync(path.join(OUT, 'index.d.ts'), indexDts + "\nexport * from './core-types.js';\n");
 
 // README. Persona counts are DERIVED from the manifest just built — never
 // hand-typed literals (they went stale twice; see APP_IMPROVEMENT_PLAN E-01).
@@ -1419,7 +1519,9 @@ const bankingTabCount = (personasByDomain.banking ?? 0) + (personasByDomain.mult
 const insuranceTabCount = (personasByDomain.insurance ?? 0) + (personasByDomain.multi ?? 0);
 const fixtureFileCount = fileCount;
 
-const readme = `# @openfinance-os/sandbox-fixtures
+const readme = `> Generated distribution candidate. Registry publication must be verified before using registry install commands. Static seeds/roles are manifest-listed; raw current URLs are not immutable snapshots. Enrichment sidecars are synthetic answer labels for evaluation.
+
+# @openfinance-os/sandbox-fixtures
 
 Deterministic, v2.1-shaped UAE Open Finance synthetic fixtures from the
 [Open Finance Data Sandbox](https://github.com/openfinance-os/data-sandbox).
@@ -1476,7 +1578,7 @@ const { loadFixture } = require('@openfinance-os/sandbox-fixtures');
 
 ## What's in the box
 
-- \`bundles/<persona>/<lfi>/seed-<n>/<endpoint>.json\` — ${fixtureFileCount.toLocaleString('en-US')} fixture files across three domains (banking · insurance across all 7 lines — motor, home, health, life, travel, renters, employment · ATM Locator). Banking: ${bankingTabCount} personas (incl. ${personasByDomain.multi ?? 0} multi-domain). Insurance: ${insuranceTabCount} personas (incl. the same ${personasByDomain.multi ?? 0} multi-domain). Each is a v2.1-correct \`{ Data, Links, Meta }\` envelope plus watermark fields (\`_persona\`, \`_lfi\`, \`_seed\`, \`_specSha\`).
+- \`bundles/<persona>/<lfi>/seed-<n>/<endpoint>.json\` — ${fixtureFileCount.toLocaleString('en-US')} fixture files across three domains (banking · insurance across all 7 lines — motor, home, health, life, travel, renters, employment · ATM Locator). Banking: ${bankingTabCount} personas (incl. ${personasByDomain.multi ?? 0} multi-domain). Insurance: ${insuranceTabCount} personas (incl. the same ${personasByDomain.multi ?? 0} multi-domain). Each follows its reviewed domain contract (ATM has Data/Meta without Links; insurance quotes use the documented composition adapter) plus watermark fields (\`_persona\`, \`_lfi\`, \`_seed\`, \`_specSha\`).
 - \`personas/<persona>.json\` — persona manifest (demographics, fixed commitments, stress coverage, narrative).
 - \`spec.json\` / \`spec.insurance.json\` / \`spec.atm.json\` — the parsed UAE Open Finance v2.1 specs, keyed by endpoint with field metadata. Load via \`loadSpec()\` / \`loadSpec({ domain: 'insurance' })\` / \`loadSpec({ domain: 'atm' })\`.
 - \`enrichment/<persona>/seed-<n>.json\` + \`brand-registry.json\` + \`brands/*.svg\` — enrichment sidecars and the slug-keyed brand registry (see below).
@@ -1494,7 +1596,7 @@ All data files are also importable as subpaths, e.g.
 \`loadFixturePage({ persona, endpoint, lfi, seed, offset, limit })\` returns one
 page of a listing endpoint the way a real LFI would: the array under \`Data\`
 is sliced, \`Links.{Self,First,Next,Prev,Last}\` and \`Meta.TotalPages\` are
-populated, and a \`_pagination\` sidecar exposes the resolved page state.
+populated where the domain schema declares them, and a \`_pagination\` sidecar exposes the resolved page state. ATM navigation remains in \`_paginationLinks\` rather than invented wire fields.
 Pure helpers are exported too: \`paginateEnvelope\`, \`parsePaginationParams\`,
 \`isPaginatableEnvelope\`, \`findListKey\`, and \`PAGINATION_DEFAULTS\`
 (default limit 25, max 500). Note: on the CommonJS entry \`loadFixturePage\`

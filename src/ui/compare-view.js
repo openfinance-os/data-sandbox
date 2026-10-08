@@ -1,3 +1,4 @@
+import { CORPUS_VERSION } from '../core/scenario.js';
 // EXP-16 Compare-LFIs view. Renders the active LFI (state.lfi) against
 // a partner (state.compareWith) side-by-side, with diff highlighting:
 // green = present only on this side, amber = changed value, red =
@@ -32,7 +33,7 @@ export function createCompareView(deps) {
     if (lfi === state.lfi && state.bundle && state.bundle.persona === persona.persona_id) {
       return state.bundle;
     }
-    const key = `${persona.persona_id}|${lfi}|${state.seed}`;
+    const key = `${CORPUS_VERSION}|${now.toISOString()}|${persona.persona_id}|${lfi}|${state.seed}`;
     const hit = bundleCache.get(key);
     if (hit && hit.persona === persona) return hit.bundle;
     const bundle = await buildBundle({
@@ -89,6 +90,27 @@ export function createCompareView(deps) {
         text: `${stats.totalCellsLeft} populated cells on ${leftLfi} · ${stats.totalCellsRight} on ${rightLfi} · ${stats.diffCount} fields differ across ${Math.max(leftRows.length, rightRows.length)} rows. Cells highlighted: green = present only on this side, amber = changed, red = missing.`,
       }),
     );
+
+    const [{ incomeAndCommitments }, { envelopesFromBundle }] = await Promise.all([
+      import('../core/analysis.js'),
+      import('../core/envelopes.js'),
+    ]);
+    const outcome = el('details', { class: 'compare-outcome' });
+    outcome.appendChild(
+      el('summary', {
+        text: 'Observed April income and commitments — source IDs and missing evidence',
+      }),
+    );
+    for (const [profile, bundle] of [
+      [leftLfi, leftBundle],
+      [rightLfi, rightBundle],
+    ]) {
+      const result = incomeAndCommitments(
+        envelopesFromBundle(bundle, { personaId: state.personaId, lfi: profile, seed: state.seed }),
+      );
+      outcome.appendChild(el('pre', { text: `${profile}\n${JSON.stringify(result, null, 2)}` }));
+    }
+    body.appendChild(outcome);
 
     // Union of column keys across both sides so each half renders the same
     // columns. That's how a "missing" cell on Sparse gets a column to live in

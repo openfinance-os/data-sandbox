@@ -25,6 +25,11 @@ async function init() {
   ]);
   const domainsManifest = await domainsRes.json();
   const data = await dataRes.json();
+  if (url.corpus && url.corpus !== data.buildInfo.corpusVersion) {
+    document.getElementById('embed-body').textContent =
+      'This embed requests a different corpus version. Replay it from its pinned package or archive.';
+    return;
+  }
   let avatars = {};
   if (avatarsRes && avatarsRes.ok) {
     try {
@@ -62,7 +67,9 @@ async function init() {
   const persona = activePersonas[personaId];
   const endpoint = url.endpoint || domainEntry.defaultEndpoint || '/accounts';
   const lfi = url.lfi;
-  const seed = url.seed;
+  const seed = new URL(window.location.href).searchParams.has('seed')
+    ? url.seed
+    : persona.default_seed;
   const height = url.height;
 
   if (Number.isFinite(height)) {
@@ -87,6 +94,7 @@ async function init() {
 
   const fullPath = window.location.pathname.replace(/embed\.html$/, 'index.html');
   const linkParams = new URLSearchParams({ persona: personaId, lfi, seed: String(seed) });
+  linkParams.set('corpus', data.buildInfo.corpusVersion);
   if (domain !== 'banking') linkParams.set('domain', domain);
   document.getElementById('embed-link').href = `${fullPath}?${linkParams.toString()}`;
 

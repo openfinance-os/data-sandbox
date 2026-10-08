@@ -1,3 +1,4 @@
+import { queryTransactions } from '@openfinance-os/sandbox-fixtures';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -221,140 +222,6 @@ function fetchPerAccount(session, suffix, accountId) {
 // mode for the canonical PFM aggregate-by-category use case.
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 500;
-
-function summariseTransactions(txs) {
-  const byDirection = { Credit: { count: 0, total: 0 }, Debit: { count: 0, total: 0 } };
-  const byCategory = new Map();
-  const byMonth = new Map();
-  let earliest = null;
-  let latest = null;
-  for (const t of txs) {
-    const amt = Number(t?.Amount?.Amount) || 0;
-    const dir = t?.CreditDebitIndicator === 'Credit' ? 'Credit' : 'Debit';
-    byDirection[dir].count += 1;
-    byDirection[dir].total = +(byDirection[dir].total + amt).toFixed(2);
-    const code = (t?.MerchantDetails?.MerchantCategoryCode ?? 'uncategorised').toString();
-    const cat = byCategory.get(code) ?? { MerchantCategoryCode: code, count: 0, total: 0 };
-    cat.count += 1;
-    cat.total = +(cat.total + (dir === 'Debit' ? -amt : amt)).toFixed(2);
-    byCategory.set(code, cat);
-    if (t?.BookingDateTime) {
-      const month = String(t.BookingDateTime).slice(0, 7);
-      const m = byMonth.get(month) ?? { month, count: 0, credit: 0, debit: 0 };
-      m.count += 1;
-      if (dir === 'Credit') m.credit = +(m.credit + amt).toFixed(2);
-      else m.debit = +(m.debit + amt).toFixed(2);
-      byMonth.set(month, m);
-      const ts = Date.parse(t.BookingDateTime);
-      if (Number.isFinite(ts)) {
-        if (earliest == null || ts < earliest) earliest = ts;
-        if (latest == null || ts > latest) latest = ts;
-      }
-    }
-  }
-  const topCategories = [...byCategory.values()]
-    .sort((a, b) => Math.abs(b.total) - Math.abs(a.total))
-    .slice(0, 10);
-  const months = [...byMonth.values()].sort((a, b) => a.month.localeCompare(b.month));
-  return {
-    count: txs.length,
-    byDirection,
-    byMonth: months,
-    topCategories,
-    earliest: earliest != null ? new Date(earliest).toISOString() : null,
-    latest: latest != null ? new Date(latest).toISOString() : null,
-  };
-}
-
-function filterTransactions(
-  envelopeJson,
-  { since, until, minAmount, maxAmount, category, limit, summary },
-) {
-  const txs = envelopeJson?.Data?.Transaction;
-  if (!Array.isArray(txs)) return envelopeJson;
-  const sinceTs = since ? Date.parse(since) : null;
-  const untilTs = until ? Date.parse(until) : null;
-  const matches = (t) => {
-    const ts = t.BookingDateTime ? Date.parse(t.BookingDateTime) : null;
-    if (sinceTs && ts && ts < sinceTs) return false;
-    if (untilTs && ts && ts > untilTs) return false;
-    const amt = Number(t?.Amount?.Amount);
-    if (Number.isFinite(amt)) {
-      if (minAmount != null && amt < minAmount) return false;
-      if (maxAmount != null && amt > maxAmount) return false;
-    }
-    if (category) {
-      const code = (t?.MerchantDetails?.MerchantCategoryCode ?? '').toString();
-      const name = (t?.TransactionInformation ?? '').toString().toLowerCase();
-      const wanted = category.toLowerCase();
-      if (!code.toLowerCase().includes(wanted) && !name.includes(wanted)) return false;
-    }
-    return true;
-  };
-  const filtered = txs.filter(matches);
-
-  if (summary) {
-    const summaryBlock = summariseTransactions(filtered);
-    // The v2.1 spec defines `Data` with `additionalProperties: false` and
-    // requires `Transaction` to be present (AEReadTransaction). Aggregates
-    // therefore live at the envelope root with an underscore prefix — the
-    // same convention the codebase already uses for `_filter`, `_watermark`,
-    // `_specSha`, etc. — so a strict TPP consumer can strip them and still
-    // get a spec-conformant envelope. `Data.Transaction` stays as an empty
-    // array so the required field is present.
-    return {
-      ...envelopeJson,
-      Data: { ...envelopeJson.Data, Transaction: [] },
-      _filter: {
-        since,
-        until,
-        minAmount,
-        maxAmount,
-        category,
-        mode: 'summary',
-        total: txs.length,
-        matched: filtered.length,
-      },
-      _summary: summaryBlock,
-    };
-  }
-
-  const effLimit = Math.max(0, Math.min(MAX_LIMIT, limit ?? DEFAULT_LIMIT));
-  // Generator emits transactions in ascending BookingDateTime order. PFM use
-  // cases want recent activity, so when we cap, we keep the *tail* (most
-  // recent) and preserve ascending order in the output.
-  const truncated = filtered.length > effLimit;
-  const kept = truncated ? filtered.slice(filtered.length - effLimit) : filtered;
-  const filterBlock = {
-    since,
-    until,
-    minAmount,
-    maxAmount,
-    category,
-    limit: effLimit,
-    total: txs.length,
-    matched: filtered.length,
-    kept: kept.length,
-    truncated,
-  };
-  if (truncated) {
-    const oldestKept = kept[0]?.BookingDateTime ?? null;
-    filterBlock._paginationHint = [
-      `Returned the ${kept.length} most recent transactions (of ${filtered.length} matching, ${txs.length} total).`,
-      oldestKept
-        ? `For older items: re-call with until="${oldestKept}" (and optionally a smaller limit) to walk backwards in time.`
-        : 'For older items: re-call with a tighter since/until window or a higher limit (max ' +
-          MAX_LIMIT +
-          ').',
-      'For aggregate analysis (category/month buckets) call with summary=true instead — single small response.',
-    ].join(' ');
-  }
-  return {
-    ...envelopeJson,
-    Data: { ...envelopeJson.Data, Transaction: kept },
-    _filter: filterBlock,
-  };
-}
 
 // LFI populate-rate profiles. The wording mirrors PFM_INSTRUCTIONS so consumers
 // see the same description whether they read the server-level instructions or
@@ -776,13 +643,17 @@ export function createServer() {
       // nowAnchor so two calls with the same (recipe, lfi, seed) produce
       // byte-identical envelopes — same determinism guarantee EXP-05 gives
       // curated personas. specSha + specVersion follow the corpus.
-      const nowAnchor = manifest.nowAnchor ?? '2026-04-01T00:00:00.000Z';
+      const nowAnchor = manifest.nowAnchor;
       const now = new Date(nowAnchor);
       const bundle = buildBundle({ persona: expanded, lfi, seed, pools, now });
       const ctx = {
         personaId: expanded.persona_id,
         lfi,
         seed,
+        recipeHash: recipeHash(merged),
+        referenceDate: manifest.nowAnchor,
+        specVersions: manifest.specVersions,
+        specProvenance: manifest.specProvenance,
         specVersion: manifest.specVersion ?? 'v2.1',
         specSha: manifest.specSha ?? 'unknown',
         retrievedAt: nowAnchor,
@@ -808,7 +679,7 @@ export function createServer() {
         seed,
         journey,
         recipe: merged,
-        recipeHash: hash,
+        recipeHash: recipeHash(merged),
         personaName: expanded.name ?? `Custom (${hash})`,
       });
       return textResult(
@@ -1032,7 +903,7 @@ export function createServer() {
       title: 'Get transactions',
       description:
         'Return /accounts/{AccountId}/transactions. Server-side filters: since/until (ISO8601), minAmount/maxAmount (numeric), category (substring match against MerchantCategoryCode + TransactionInformation). Filters run after the deterministic generator — they never alter the underlying synthetic data.\n\n' +
-        "High-volume personas (HNW, Corporate, SME) can hold hundreds of transactions per account; full-list responses can exceed the host MCP client's tool-result size cap. To stay safely under it, output is capped at `limit` (default 50, max 500) — the most recent N matching transactions are returned, in ascending BookingDateTime order, with `_filter.truncated=true` and a `_paginationHint` when truncation occurs. For aggregate analysis (top categories, monthly buckets, credit/debit totals) pass `summary=true` to skip the per-row payload entirely.",
+        "High-volume personas (HNW, Corporate, SME) can hold hundreds of transactions per account; full-list responses can exceed the host MCP client's tool-result size cap. To stay safely under it, output is capped at `limit` (default 50, max 500) — the most recent N matching transactions are returned, in ascending BookingDateTime order, with `_filter.nextCursor` for complete retrieval without duplicate timestamps. For aggregate analysis (top categories, monthly buckets, credit/debit totals) pass `summary=true` to skip the per-row payload entirely.",
       inputSchema: {
         ...accountIdOptional,
         since: z
@@ -1055,10 +926,22 @@ export function createServer() {
           .string()
           .optional()
           .describe('Substring filter against MerchantCategoryCode or TransactionInformation.'),
+        currency: z
+          .string()
+          .optional()
+          .describe('ISO currency filter; currencies are never combined in summaries.'),
+        status: z.enum(['Booked', 'Pending', 'Rejected']).optional(),
+        cursor: z
+          .string()
+          .max(32768)
+          .optional()
+          .describe(
+            'Opaque nextCursor from the previous page; preserve accountId and all filters.',
+          ),
         limit: z
           .number()
           .int()
-          .min(0)
+          .min(1)
           .max(MAX_LIMIT)
           .optional()
           .describe(
@@ -1068,23 +951,40 @@ export function createServer() {
           .boolean()
           .optional()
           .describe(
-            'Return aggregates (count, byDirection totals, byMonth buckets, top MerchantCategoryCode buckets) instead of individual transactions. Use this for monthly-summary / category-breakdown style questions — a single small response per account regardless of volume.',
+            'Return exact booked totals by currency and status, with source transaction IDs and the scenario cutoff instead of individual transactions. Use this for monthly-summary / category-breakdown style questions — a single small response per account regardless of volume.',
           ),
       },
     },
-    async ({ accountId, since, until, minAmount, maxAmount, category, limit, summary }) => {
+    async ({
+      accountId,
+      since,
+      until,
+      minAmount,
+      maxAmount,
+      category,
+      currency,
+      status,
+      cursor,
+      limit,
+      summary,
+    }) => {
       const s = session.get();
       requireDomain(s, 'banking', 'get_transactions');
+      if (cursor && !accountId) throw new Error('Cursor retrieval requires accountId');
       const id = resolveAccountId(s, accountId);
       const results = fetchPerAccount(s, '/transactions', id);
       const text = results
         .map((r) => {
-          const filtered = filterTransactions(r.envelope, {
+          const filtered = queryTransactions(r.envelope, {
             since,
             until,
             minAmount,
             maxAmount,
             category,
+            currency,
+            status,
+            cursor,
+            scenario: s.scenario,
             limit,
             summary,
           });
@@ -1227,7 +1127,7 @@ export function createServer() {
         limit: z
           .number()
           .int()
-          .min(0)
+          .min(1)
           .max(MAX_LIMIT)
           .optional()
           .describe(
@@ -1288,7 +1188,7 @@ export function createServer() {
     {
       title: 'List motor insurance policies',
       description:
-        'Return the v2.1-errata1 /motor-insurance-policies envelope (list of policy summaries) for the active insurance persona. Errors if the active session is a banking persona.',
+        'Return the v2.1-errata3 /motor-insurance-policies envelope (list of policy summaries) for the active insurance persona. Errors if the active session is a banking persona.',
       inputSchema: {},
     },
     async () => {
@@ -1313,7 +1213,7 @@ export function createServer() {
     {
       title: 'Get motor insurance policy detail',
       description:
-        'Return the v2.1-errata1 /motor-insurance-policies/{InsurancePolicyId} envelope — the full policy detail (PolicyHolder, Identity, Product, Claims, Premium). Errors if the active session is a banking persona.',
+        'Return the v2.1-errata3 /motor-insurance-policies/{InsurancePolicyId} envelope — the full policy detail (PolicyHolder, Identity, Product, Claims, Premium). Errors if the active session is a banking persona.',
       inputSchema: policyIdOptional,
     },
     async ({ policyId }) => {
@@ -1331,7 +1231,7 @@ export function createServer() {
     {
       title: 'Get motor insurance payment details',
       description:
-        "Return the v2.1-errata1 /motor-insurance-policies/{InsurancePolicyId}/payment-details envelope — IBAN-keyed payment account + bank for the policy's premium-payment instruction. Errors if the active session is a banking persona.",
+        "Return the v2.1-errata3 /motor-insurance-policies/{InsurancePolicyId}/payment-details envelope — IBAN-keyed payment account + bank for the policy's premium-payment instruction. Errors if the active session is a banking persona.",
       inputSchema: policyIdOptional,
     },
     async ({ policyId }) => {
@@ -1355,7 +1255,7 @@ export function createServer() {
     {
       title: 'Get motor insurance quote',
       description:
-        'Return the v2.1-errata1 /motor-insurance-quotes/{QuoteId} envelope — the quote-read response (QuoteStatus=PolicyIssued for personas who already have an issued policy), with ServiceRating, Premium, and PolicyIssuanceAllowed sub-objects. Errors if the active session is a banking persona.',
+        'Return the v2.1-errata3 /motor-insurance-quotes/{QuoteId} envelope — the quote-read response (QuoteStatus=PolicyIssued for personas who already have an issued policy), with ServiceRating, Premium, and PolicyIssuanceAllowed sub-objects. Errors if the active session is a banking persona.',
       inputSchema: {
         quoteId: z.string().optional().describe("Quote id; omit to use the persona's only quote."),
       },
@@ -1429,7 +1329,7 @@ export function createServer() {
       `get_${line}_policies`,
       {
         title: `List ${title} policies`,
-        description: `Return the v2.1-errata1 ${basePath} envelope (list of policy summaries) for the active insurance persona on the ${line} line. Errors if the active session is a banking persona or an insurance persona on a different line.`,
+        description: `Return the v2.1-errata3 ${basePath} envelope (list of policy summaries) for the active insurance persona on the ${line} line. Errors if the active session is a banking persona or an insurance persona on a different line.`,
         inputSchema: {},
       },
       async () => {
@@ -1444,7 +1344,7 @@ export function createServer() {
       `get_${line}_policy`,
       {
         title: `Get ${title} policy detail`,
-        description: `Return the v2.1-errata1 ${basePath}/{InsurancePolicyId} envelope — the full policy detail (${detailBlocks}). Errors against a banking session or a different-line insurance session.`,
+        description: `Return the v2.1-errata3 ${basePath}/{InsurancePolicyId} envelope — the full policy detail (${detailBlocks}). Errors against a banking session or a different-line insurance session.`,
         inputSchema: lineIdSchema,
       },
       async ({ policyId }) => {
@@ -1461,7 +1361,7 @@ export function createServer() {
       `get_${line}_payment_details`,
       {
         title: `Get ${title} payment details`,
-        description: `Return the v2.1-errata1 ${basePath}/{InsurancePolicyId}/payment-details envelope — IBAN-keyed payment account + bank for the policy's premium-payment instruction. Errors against a banking session or a different-line insurance session.`,
+        description: `Return the v2.1-errata3 ${basePath}/{InsurancePolicyId}/payment-details envelope — IBAN-keyed payment account + bank for the policy's premium-payment instruction. Errors against a banking session or a different-line insurance session.`,
         inputSchema: lineIdSchema,
       },
       async ({ policyId }) => {
@@ -1478,7 +1378,7 @@ export function createServer() {
       `get_${line}_quote`,
       {
         title: `Get ${title} quote`,
-        description: `Return the v2.1-errata1 ${quotesPath}/{QuoteId} envelope — the quote-read response (QuoteStatus=PolicyIssued for personas who already have an issued policy). Errors against a banking session or a different-line insurance session.`,
+        description: `Return the v2.1-errata3 ${quotesPath}/{QuoteId} envelope — the quote-read response (QuoteStatus=PolicyIssued for personas who already have an issued policy). Errors against a banking session or a different-line insurance session.`,
         inputSchema: {
           quoteId: z
             .string()
@@ -1647,7 +1547,7 @@ export function createServer() {
     'spec-insurance',
     'spec://uae-insurance-v2.1',
     {
-      title: 'UAE Open Finance Insurance Data Sharing v2.1-errata1 (parsed, all lines)',
+      title: 'UAE Open Finance Insurance Data Sharing v2.1-errata3 (parsed, all lines)',
       description:
         'Parsed insurance OpenAPI spec from the pinned upstream commit. Covers every read-only insurance GET across all 7 lines (motor + home + health + life + travel + renters + employment) plus Insurance Consents — list, detail, payment-details, and quote-read for each line. Use to ground field-level answers about the insurance domain ("is Takaful mandatory on a motor policy?", "what blocks live under Product on a home policy?").',
       mimeType: 'application/json',

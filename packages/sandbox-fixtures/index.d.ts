@@ -62,6 +62,7 @@ export interface PersonaInfo {
   enrichmentRecordCount?: number;
 }
 export interface FixtureEntry {
+  scenario: import('./core-types.js').Scenario;
   personaId: string;
   lfi: string;
   seed: number;
@@ -76,6 +77,7 @@ export interface FixtureEntry {
 /** Phase D Slice 5 — a secondary/tertiary (or Phase 2.2 N-slot) role
  * bundle emitted for a persona with a multi_lfi_footprint. */
 export interface RoleFixtureEntry {
+  scenario: import('./core-types.js').Scenario;
   personaId: string;
   slot: string;
   role: string;
@@ -86,6 +88,9 @@ export interface RoleFixtureEntry {
   endpoints: Record<string, string>;
 }
 export interface Manifest {
+  corpusVersion: string;
+  revision: string;
+  specProvenance: NonNullable<import('./core-types.js').Scenario['specProvenance']>;
   package: string;
   version: string;
   specVersion: string;
@@ -158,7 +163,7 @@ export interface PaginationOptions {
   requestUrl?: string;
 }
 export interface PaginatedMeta {
-  TotalPages: number;
+  TotalPages?: number;
   [k: string]: unknown;
 }
 export interface PaginatedLinks {
@@ -179,7 +184,8 @@ export interface PaginationSidecar {
 }
 export interface PaginatedEnvelope {
   Data: unknown;
-  Links: PaginatedLinks;
+  Links?: PaginatedLinks;
+  _paginationLinks?: PaginatedLinks;
   Meta: PaginatedMeta;
   _pagination: PaginationSidecar;
   [k: string]: unknown;
@@ -333,7 +339,7 @@ export function validateRecipe(recipe: CustomRecipe, pools: IndexedPools): { ok:
 export function getPools(): IndexedPools;
 export function expandRecipe(recipe: CustomRecipe, pools: IndexedPools): unknown;
 export function buildBundle(opts: { persona: unknown; lfi: 'rich' | 'median' | 'sparse'; seed: number; pools: IndexedPools; now?: Date }): unknown;
-export function envelopesFromBundle(bundle: unknown, ctx: { personaId: string; lfi: 'rich' | 'median' | 'sparse'; seed: number; specVersion?: string; specSha?: string; retrievedAt: string }): Record<string, unknown>;
+export function envelopesFromBundle(bundle: unknown, ctx: Pick<import('./core-types.js').Scenario,'personaId'|'lfi'|'seed'> & Partial<import('./core-types.js').Scenario> & { specVersion?: string; specVersions?: Record<string,string>; specSha?: string; retrievedAt?: string }): Record<string, unknown>;
 
 // ---------------------------------------------------------------------------
 // CJS-only async accessors. The CommonJS entry (index.cjs) cannot re-export
@@ -366,3 +372,5 @@ export function getPagination(): Promise<{
   findListKey: typeof findListKey;
   PAGINATION_DEFAULTS: { readonly defaultLimit: number; readonly maxLimit: number };
 }>;
+
+export * from './core-types.js';

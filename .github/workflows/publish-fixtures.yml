@@ -19,6 +19,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: read
   contents: read
   id-token: write
 
@@ -29,8 +30,13 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    outputs:
+      revision: ${{ steps.revision.outputs.revision }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
@@ -38,6 +44,11 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
+      - name: Select trusted main revision with successful CI
+        id: revision
+        run: node tools/verify-release-revision.mjs --publish
+        env:
+          GH_TOKEN: ${{ github.token }}
       # E-05 release integrity: the published version comes from the ROOT
       # package.json (the fixture package.json is generated from it, the
       # pyproject.toml is stamped from it). A tag that doesn't match it
@@ -53,6 +64,7 @@ jobs:
           fi
           echo "tag ${GITHUB_REF_NAME} matches root package.json version ${PKG_VERSION}"
       - run: npm ci
+      - run: python -m pip install pytest
       - run: npm run ci
       # E-04: the wheel publishes Python code that JS tests never execute —
       # run the pytest parity suite (npm ↔ PyPI corpus + behaviour parity)
@@ -68,6 +80,8 @@ jobs:
     needs: validate
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.validate.outputs.revision }}
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
@@ -87,6 +101,8 @@ jobs:
     needs: [validate, publish-npm]
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.validate.outputs.revision }}
       - uses: actions/setup-node@v6
         with:
           node-version: '22'

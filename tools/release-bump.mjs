@@ -43,6 +43,17 @@ const previous = rootPkg.version;
 rootPkg.version = version;
 fs.writeFileSync(rootPkgPath, `${JSON.stringify(rootPkg, null, 2)}\n`);
 console.log(`root package.json: ${previous} → ${version}`);
+const scenarioPath = path.join(repoRoot, 'src/core/scenario.js');
+const scenarioSource = fs.readFileSync(scenarioPath, 'utf8');
+if (!/export const CORPUS_VERSION = '[^']+';/.test(scenarioSource))
+  throw new Error('Corpus version declaration missing');
+fs.writeFileSync(
+  scenarioPath,
+  scenarioSource.replace(
+    /export const CORPUS_VERSION = '[^']+';/,
+    `export const CORPUS_VERSION = '${version}';`,
+  ),
+);
 
 // 2. sandbox-mcp package.json is hand-maintained — bump it in lockstep so
 // tests/package-version-sync.test.mjs stays green.
@@ -59,6 +70,7 @@ if (mcpRaw !== null) {
   const mcpPkg = JSON.parse(mcpRaw);
   const mcpPrevious = mcpPkg.version;
   mcpPkg.version = version;
+  mcpPkg.dependencies['@openfinance-os/sandbox-fixtures'] = version;
   fs.writeFileSync(mcpPkgPath, `${JSON.stringify(mcpPkg, null, 2)}\n`);
   console.log(`packages/sandbox-mcp/package.json: ${mcpPrevious} → ${version}`);
 }
@@ -70,7 +82,15 @@ if (!fs.existsSync(path.join(repoRoot, 'dist/SPEC.json'))) {
   console.log('dist/SPEC.json missing — running build:spec first…');
   execSync('npm run build:spec', { cwd: repoRoot, stdio: 'inherit' });
 }
-execSync('npm run build:fixtures:pkgs', { cwd: repoRoot, stdio: 'inherit' });
+execSync('npm install --package-lock-only --ignore-scripts --no-audit', {
+  cwd: repoRoot,
+  stdio: 'inherit',
+});
+execSync('npm run build:site', { cwd: repoRoot, stdio: 'inherit' });
+execSync('npm install --package-lock-only --ignore-scripts --no-audit', {
+  cwd: repoRoot,
+  stdio: 'inherit',
+});
 
 console.log(`
 ✔ version ${version} stamped across root, sandbox-mcp, sandbox-fixtures (generated) and pyproject.toml.

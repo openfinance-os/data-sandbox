@@ -133,7 +133,7 @@ export const STRINGS = {
     'txFilter.mcc': 'MCC',
     'txFilter.mccLabel': 'Merchant category code (MCC)',
     'txFilter.humanDates': 'Humanise dates',
-    'txFilter.showEnriched': 'Show enriched',
+    'txFilter.showEnriched': 'Show synthetic answer labels',
     // Export popover. Format names (JSON/CSV/Tarball/npm/Python/curl/MCP) and
     // the code snippets themselves stay English by design — only chrome,
     // actions, and the tarball note are localised.

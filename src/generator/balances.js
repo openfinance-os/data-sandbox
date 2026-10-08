@@ -1,20 +1,20 @@
+import { postedTransactions, minorUnits, movement, formatMinor } from '../core/ledger.js';
 // Balance generation — derives a Booked balance per account at "now" from
-// the persona's opening balance + 12 months of net cash flow on that account.
+// the persona's opening balance + 24 completed months of posted cash flow.
 
 export function generateBalances({ accounts, transactions, now }) {
   const balances = [];
   for (const acc of accounts) {
-    const accTx = transactions.filter((t) => t._accountId === acc.AccountId);
-    let booked = acc._meta.openingBalance;
-    for (const t of accTx) {
-      const a = parseFloat(t.Amount.Amount);
-      booked += t.CreditDebitIndicator === 'Credit' ? a : -a;
-    }
-    booked = Math.round(booked * 100) / 100;
+    const accTx = postedTransactions(transactions, {
+      accountId: acc.AccountId,
+      currency: acc.Currency,
+      now,
+    });
+    const booked = minorUnits(acc._meta.openingBalance, acc.Currency) + movement(accTx);
 
     // v2.1 AEActiveCurrencyAndAmount_SimpleType regex requires non-negative
     // strings; sign is carried separately in CreditDebitIndicator.
-    const absAmount = Math.abs(booked).toFixed(2);
+    const absAmount = formatMinor(Math.abs(booked), acc.Currency);
     const balance = {
       _accountId: acc.AccountId,
       Amount: { Amount: absAmount, Currency: acc.Currency },
@@ -30,7 +30,7 @@ export function generateBalances({ accounts, transactions, now }) {
           Included: true,
           Type: 'Credit',
           Amount: {
-            Amount: acc._meta.creditLimitAed.toFixed(2),
+            Amount: formatMinor(minorUnits(acc._meta.creditLimitAed, acc.Currency), acc.Currency),
             Currency: acc.Currency,
           },
         },
@@ -38,7 +38,10 @@ export function generateBalances({ accounts, transactions, now }) {
           Included: true,
           Type: 'Available',
           Amount: {
-            Amount: Math.max(0, acc._meta.creditLimitAed + booked).toFixed(2),
+            Amount: formatMinor(
+              Math.max(0, minorUnits(acc._meta.creditLimitAed, acc.Currency) + booked),
+              acc.Currency,
+            ),
             Currency: acc.Currency,
           },
         },

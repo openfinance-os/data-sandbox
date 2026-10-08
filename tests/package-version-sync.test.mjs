@@ -10,6 +10,7 @@
 // for the same fixture data — this suite fails the build before that ships.
 
 import { describe, it, expect } from 'vitest';
+import { CORPUS_VERSION } from '../src/core/scenario.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -24,6 +25,8 @@ function readJsonVersion(rel) {
 const rootVersion = readJsonVersion('package.json');
 
 describe('distribution package version sync', () => {
+  it('corpus replay identity follows the release version', () =>
+    expect(CORPUS_VERSION).toBe(rootVersion));
   it('root package.json declares a version', () => {
     expect(rootVersion).toMatch(/^\d+\.\d+\.\d+/);
   });

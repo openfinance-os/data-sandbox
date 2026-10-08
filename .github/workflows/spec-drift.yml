@@ -29,7 +29,7 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Compare upstream standards tree against the domain pins
+      - name: Verify official revisions and effective stable file hashes
         id: drift
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -52,7 +52,7 @@ jobs:
         run: |
           set -euo pipefail
           body="$(printf '%s\n\n%s\n' \
-            "The weekly spec-drift watch found upstream commits newer than one or more domain pins. Review whether to re-vendor — deliberately: D-01 keeps a single pinned SHA per domain and nothing is auto-bumped." \
+            "The weekly standards check found a changed official errata revision or effective stable wire file. Review the correction matrix and per-file hashes before re-vendoring; previews are tracked separately and nothing is auto-bumped." \
             "$DRIFT")"
           body="$(printf '%s\n%s\n' "$body" \
             "_Re-vendoring checklist: update the spec YAML + its \`spec/SPEC_PIN.*\` pair, run \`npm run ci\`, and check \`tests/lfi-bands-mandatory-overlap.test.mjs\` for newly-mandatory fields._")"

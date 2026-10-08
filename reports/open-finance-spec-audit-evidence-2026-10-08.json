@@ -1,0 +1,1845 @@
+{
+  "checkedAt": "2026-10-08T10:56:42.727Z",
+  "baselineCommit": "47873dd591b8263c5e95c7a17a912d149c0fa4de",
+  "applicationCodeChanged": false,
+  "skill": {
+    "path": "/Users/michartmann/.agents/skills/open-finance-uae/SKILL.md",
+    "automatedCheck": {
+      "skill_states": "v2.1-errata3",
+      "register_published": "v2.1-errata3",
+      "repo_latest": "v2.1-errata3",
+      "all_version_lines_in_repo": ["v1.2", "v2.0", "v2.1"],
+      "prerelease_lines_in_repo": ["v2.2-rc1"],
+      "status": "FRESH",
+      "note": null
+    },
+    "manualAssessment": "Stale published errata claim; automated FRESH misses official Errata 4 and newer release-candidate documentation"
+  },
+  "officialErrata": {
+    "id": "1366294554",
+    "title": "Standards V2.1 & API Hub V8 - Consolidated Errata",
+    "pageVersion": 7,
+    "pageModified": "2026-09-18T07:27:39.506Z",
+    "errata4Date": "2026-09-18",
+    "publicClassification": true,
+    "url": "https://openfinanceuae.atlassian.net/wiki/spaces/OF/pages/1366294554/Standards+V2.1+API+Hub+V8+-+Consolidated+Errata"
+  },
+  "canonicalAndCommunitySources": [
+    {
+      "name": "tree",
+      "url": "https://api.github.com/repos/Nebras-Open-Finance/api-specs/git/trees/main?recursive=1&review=20261008",
+      "status": 200,
+      "date": "Thu, 08 Oct 2026 10:46:18 GMT",
+      "lastModified": "Fri, 21 Aug 2026 08:57:57 GMT",
+      "treeSha": "a3c8b8bf22e080046a8e0fbd9933f57431604155",
+      "versionFolders": [
+        "v1.2-errata1",
+        "v1.2",
+        "v2.0-errata1",
+        "v2.0",
+        "v2.1-errata1",
+        "v2.1-errata2",
+        "v2.1-errata3",
+        "v2.1",
+        "v2.2-rc1"
+      ],
+      "truncated": false
+    },
+    {
+      "name": "commits",
+      "url": "https://api.github.com/repos/Nebras-Open-Finance/api-specs/commits/main",
+      "status": 200,
+      "date": "2026-08-21T08:56:23Z",
+      "lastModified": "Fri, 21 Aug 2026 08:56:23 GMT",
+      "sha": "a3c8b8bf22e080046a8e0fbd9933f57431604155",
+      "message": "Merge pull request #32 from Nebras-Open-Finance/ozone\n\nOzone"
+    },
+    {
+      "name": "rc2bank",
+      "url": "https://raw.githubusercontent.com/Nebras-Open-Finance/api-specs/main/dist/standards/v2.2-rc2/uae-account-information-openapi.yaml",
+      "status": 404,
+      "date": "Thu, 08 Oct 2026 10:46:18 GMT",
+      "lastModified": null
+    },
+    {
+      "name": "doc",
+      "url": "https://nebras-open-finance.com/tech/tpp-standards",
+      "status": 200,
+      "date": "Thu, 08 Oct 2026 10:46:18 GMT",
+      "lastModified": null,
+      "rc2Mentioned": true
+    },
+    {
+      "name": "changelog",
+      "url": "https://nebras-open-finance.com/tech/release-notes-and-erratas/changelog/v2.1-to-v2.2",
+      "status": 200,
+      "date": "Thu, 08 Oct 2026 10:46:18 GMT",
+      "lastModified": null
+    }
+  ],
+  "officialInsuranceReference": [
+    {
+      "name": "insurancePage",
+      "url": "https://openfinanceuae.atlassian.net/wiki/rest/api/content/452362878?expand=body.storage,version",
+      "status": 200,
+      "title": "Insurance OpenAPI",
+      "version": 17,
+      "modified": "2026-05-20T11:19:14.777Z"
+    },
+    {
+      "name": "insuranceAttachments",
+      "url": "https://openfinanceuae.atlassian.net/wiki/rest/api/content/452362878/child/attachment?expand=version&limit=50",
+      "status": 200,
+      "attachments": [
+        {
+          "title": "image-20260518-091951.png",
+          "version": 1,
+          "modified": "2026-05-20T11:06:24.377Z",
+          "mediaType": "image/png",
+          "download": "/rest/api/content/452362878/child/attachment/att1284997129/download"
+        },
+        {
+          "title": "uae-ozone-connect-insurance-openapi.yaml",
+          "version": 5,
+          "modified": "2026-03-02T13:50:29.291Z",
+          "mediaType": "application/octet-stream",
+          "download": "/rest/api/content/452362878/child/attachment/att452362896/download"
+        },
+        {
+          "title": "uae-insurance.xlsx",
+          "version": 1,
+          "modified": "2026-03-02T13:50:05.639Z",
+          "mediaType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "download": "/rest/api/content/452362878/child/attachment/att1125416994/download"
+        },
+        {
+          "title": "uae-ozone-connect-insurance-openapi-v212-v213.diff.html",
+          "version": 1,
+          "modified": "2026-03-02T13:48:18.088Z",
+          "mediaType": "text/html",
+          "download": "/rest/api/content/452362878/child/attachment/att1124204837/download"
+        },
+        {
+          "title": "uae-ozone-connect-insurance-openapi-v211-v212.diff.html",
+          "version": 1,
+          "modified": "2025-11-26T14:16:11.773Z",
+          "mediaType": "text/html",
+          "download": "/rest/api/content/452362878/child/attachment/att880738306/download"
+        },
+        {
+          "title": "uae-ozone-connect-insurance.xlsx",
+          "version": 3,
+          "modified": "2025-11-17T11:34:45.086Z",
+          "mediaType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "download": "/rest/api/content/452362878/child/attachment/att452362890/download"
+        }
+      ]
+    }
+  ],
+  "pins": {
+    "banking": {
+      "version": "v2.1-errata2",
+      "sha": "52caa147fa754f6b898757e4c39976574b755d66",
+      "retrievedAt": "2026-05-20T02:41:46Z"
+    },
+    "insurance": {
+      "version": "v2.1-errata1",
+      "sha": "bc1cd976956d97195c5000235125cb65aca6aec8",
+      "retrievedAt": "2026-04-30T04:03:31Z"
+    },
+    "atm": {
+      "version": "v2.1",
+      "sha": "ebde95804d9bf2a13d065804ea64334b673223ca",
+      "retrievedAt": "2026-05-20T18:59:03Z"
+    }
+  },
+  "fixtureCompatibility": {
+    "checkedAt": "2026-10-08T10:53:32.596Z",
+    "baselineCommit": "47873dd591b8263c5e95c7a17a912d149c0fa4de",
+    "metadataStripped": "underscore-prefixed properties at every level",
+    "additionalProperties": "preserved from upstream schemas",
+    "decimalFormat": "OpenAPI decimal custom format accepted; schema pattern/range retained",
+    "fixtureReferenceDate": "2026-05-01T00:00:00.000Z",
+    "versions": {
+      "pinned": {
+        "domains": {
+          "banking": {
+            "version": "v2.1-errata2",
+            "sha256": "adbb04d20b086a70e0f4d635cbb8b7ef26bdf6fe8174dbe4444324f61ea7e46b",
+            "checked": 3936,
+            "failed": 0,
+            "unmapped": 0
+          },
+          "insurance": {
+            "version": "v2.1-errata1",
+            "sha256": "0d28c5d5496f9e7cbc272ef19cf5a5957887d4194a653a827b30a88d91c39a9f",
+            "checked": 1509,
+            "failed": 1116,
+            "unmapped": 0
+          },
+          "atm": {
+            "version": "v2.1",
+            "sha256": "f4b65f710b17d8eb89a56e8e3b4173d75c5fb94eac33aeffa7be5af7a4b751a0",
+            "checked": 3,
+            "failed": 3,
+            "unmapped": 0
+          }
+        },
+        "failureExamples": [
+          {
+            "domain": "insurance",
+            "endpoint": "/motor-insurance-policies/754a198e-20d7-4c04-a53d-1342aed87f4a",
+            "rel": "bundles/emirati_takaful_multi/rich/seed-77115/motor-insurance-policies__754a198e-20d7-4c04-a53d-1342aed87f4a.json",
+            "errors": [
+              {
+                "instancePath": "/Meta",
+                "schemaPath": "#/definitions/Meta/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "TotalPages"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/motor-insurance-policies/754a198e-20d7-4c04-a53d-1342aed87f4a/payment-details",
+            "rel": "bundles/emirati_takaful_multi/rich/seed-77115/motor-insurance-policies__754a198e-20d7-4c04-a53d-1342aed87f4a__payment-details.json",
+            "errors": [
+              {
+                "instancePath": "/Meta",
+                "schemaPath": "#/definitions/Meta/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "TotalPages"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/motor-insurance-quotes/ba161c7e-7490-423f-bcbb-a05e909a7bee",
+            "rel": "bundles/emirati_takaful_multi/rich/seed-77115/motor-insurance-quotes__ba161c7e-7490-423f-bcbb-a05e909a7bee.json",
+            "errors": [
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "CreationDateTime"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "ExpirationDateTime"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "PlanName"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "LevelOfCover"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "ServiceRating"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/home-insurance-policies/8754a198-e20d-47c0-9853-d1342aed87f4",
+            "rel": "bundles/emirati_takaful_multi/rich/seed-77115/home-insurance-policies__8754a198-e20d-47c0-9853-d1342aed87f4.json",
+            "errors": [
+              {
+                "instancePath": "/Data/Claims",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "NoClaimsDiscountAvailable"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Meta",
+                "schemaPath": "#/definitions/Meta/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "TotalPages"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/home-insurance-policies/8754a198-e20d-47c0-9853-d1342aed87f4/payment-details",
+            "rel": "bundles/emirati_takaful_multi/rich/seed-77115/home-insurance-policies__8754a198-e20d-47c0-9853-d1342aed87f4__payment-details.json",
+            "errors": [
+              {
+                "instancePath": "/Meta",
+                "schemaPath": "#/definitions/Meta/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "TotalPages"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/home-insurance-quotes/6dba161c-7e74-4902-8fec-bba05e909a7b",
+            "rel": "bundles/emirati_takaful_multi/rich/seed-77115/home-insurance-quotes__6dba161c-7e74-4902-8fec-bba05e909a7b.json",
+            "errors": [
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "CreationDateTime"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "ExpirationDateTime"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "PlanName"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "LevelOfCover"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "ServiceRating"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/life-insurance-policies/0d7c0485-3d13-442a-bd87-f4ad6dba161c",
+            "rel": "bundles/emirati_takaful_multi/rich/seed-77115/life-insurance-policies__0d7c0485-3d13-442a-bd87-f4ad6dba161c.json",
+            "errors": [
+              {
+                "instancePath": "/Data/Claims",
+                "schemaPath": "#/properties/Claims/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "NoClaimsDiscountAvailable"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Meta",
+                "schemaPath": "#/definitions/Meta/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "TotalPages"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/life-insurance-policies/0d7c0485-3d13-442a-bd87-f4ad6dba161c/payment-details",
+            "rel": "bundles/emirati_takaful_multi/rich/seed-77115/life-insurance-policies__0d7c0485-3d13-442a-bd87-f4ad6dba161c__payment-details.json",
+            "errors": [
+              {
+                "instancePath": "/Meta",
+                "schemaPath": "#/definitions/Meta/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "TotalPages"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/life-insurance-quotes/749023fe-cbba-405e-a09a-7bee4ac0d002",
+            "rel": "bundles/emirati_takaful_multi/rich/seed-77115/life-insurance-quotes__749023fe-cbba-405e-a09a-7bee4ac0d002.json",
+            "errors": [
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "CreationDateTime"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "ExpirationDateTime"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "PlanName"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "LevelOfCover"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "ServiceRating"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/insurance-consents/fcf0fd54-c8f4-47d8-892f-d28eddce5aec",
+            "rel": "bundles/emirati_takaful_multi/rich/seed-77115/insurance-consents__fcf0fd54-c8f4-47d8-892f-d28eddce5aec.json",
+            "errors": [
+              {
+                "instancePath": "/Meta",
+                "schemaPath": "#/definitions/Meta/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "TotalPages"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/insurance-consents/02977aee-3cf0-48cf-acc7-ef3dc3c9d1ae",
+            "rel": "bundles/emirati_takaful_multi/rich/seed-77115/insurance-consents__02977aee-3cf0-48cf-acc7-ef3dc3c9d1ae.json",
+            "errors": [
+              {
+                "instancePath": "/Meta",
+                "schemaPath": "#/definitions/Meta/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "TotalPages"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/insurance-consents/8a106f2a-2420-4361-b64e-43f83414b9c7",
+            "rel": "bundles/emirati_takaful_multi/rich/seed-77115/insurance-consents__8a106f2a-2420-4361-b64e-43f83414b9c7.json",
+            "errors": [
+              {
+                "instancePath": "/Meta",
+                "schemaPath": "#/definitions/Meta/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "TotalPages"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/motor-insurance-policies/754a198e-20d7-4c04-a53d-1342aed87f4a",
+            "rel": "bundles/emirati_takaful_multi/median/seed-77115/motor-insurance-policies__754a198e-20d7-4c04-a53d-1342aed87f4a.json",
+            "errors": [
+              {
+                "instancePath": "/Meta",
+                "schemaPath": "#/definitions/Meta/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "TotalPages"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/motor-insurance-policies/754a198e-20d7-4c04-a53d-1342aed87f4a/payment-details",
+            "rel": "bundles/emirati_takaful_multi/median/seed-77115/motor-insurance-policies__754a198e-20d7-4c04-a53d-1342aed87f4a__payment-details.json",
+            "errors": [
+              {
+                "instancePath": "/Meta",
+                "schemaPath": "#/definitions/Meta/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "TotalPages"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/motor-insurance-quotes/ba161c7e-7490-423f-bcbb-a05e909a7bee",
+            "rel": "bundles/emirati_takaful_multi/median/seed-77115/motor-insurance-quotes__ba161c7e-7490-423f-bcbb-a05e909a7bee.json",
+            "errors": [
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "CreationDateTime"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "ExpirationDateTime"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "PlanName"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "LevelOfCover"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "ServiceRating"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/home-insurance-policies/8754a198-e20d-47c0-9853-d1342aed87f4",
+            "rel": "bundles/emirati_takaful_multi/median/seed-77115/home-insurance-policies__8754a198-e20d-47c0-9853-d1342aed87f4.json",
+            "errors": [
+              {
+                "instancePath": "/Data/Claims",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "NoClaimsDiscountAvailable"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Meta",
+                "schemaPath": "#/definitions/Meta/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "TotalPages"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/home-insurance-policies/8754a198-e20d-47c0-9853-d1342aed87f4/payment-details",
+            "rel": "bundles/emirati_takaful_multi/median/seed-77115/home-insurance-policies__8754a198-e20d-47c0-9853-d1342aed87f4__payment-details.json",
+            "errors": [
+              {
+                "instancePath": "/Meta",
+                "schemaPath": "#/definitions/Meta/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "TotalPages"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/home-insurance-quotes/6dba161c-7e74-4902-8fec-bba05e909a7b",
+            "rel": "bundles/emirati_takaful_multi/median/seed-77115/home-insurance-quotes__6dba161c-7e74-4902-8fec-bba05e909a7b.json",
+            "errors": [
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "CreationDateTime"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "ExpirationDateTime"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "PlanName"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "LevelOfCover"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "ServiceRating"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/life-insurance-policies/0d7c0485-3d13-442a-bd87-f4ad6dba161c",
+            "rel": "bundles/emirati_takaful_multi/median/seed-77115/life-insurance-policies__0d7c0485-3d13-442a-bd87-f4ad6dba161c.json",
+            "errors": [
+              {
+                "instancePath": "/Data/Claims",
+                "schemaPath": "#/properties/Claims/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "NoClaimsDiscountAvailable"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Meta",
+                "schemaPath": "#/definitions/Meta/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "TotalPages"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/life-insurance-policies/0d7c0485-3d13-442a-bd87-f4ad6dba161c/payment-details",
+            "rel": "bundles/emirati_takaful_multi/median/seed-77115/life-insurance-policies__0d7c0485-3d13-442a-bd87-f4ad6dba161c__payment-details.json",
+            "errors": [
+              {
+                "instancePath": "/Meta",
+                "schemaPath": "#/definitions/Meta/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "TotalPages"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          }
+        ],
+        "examplesByDomain": {
+          "banking": [],
+          "insurance": [
+            {
+              "domain": "insurance",
+              "endpoint": "/motor-insurance-policies/754a198e-20d7-4c04-a53d-1342aed87f4a",
+              "rel": "bundles/emirati_takaful_multi/rich/seed-77115/motor-insurance-policies__754a198e-20d7-4c04-a53d-1342aed87f4a.json",
+              "errors": [
+                {
+                  "instancePath": "/Meta",
+                  "schemaPath": "#/definitions/Meta/additionalProperties",
+                  "keyword": "additionalProperties",
+                  "params": {
+                    "additionalProperty": "TotalPages"
+                  },
+                  "message": "must NOT have additional properties"
+                }
+              ]
+            },
+            {
+              "domain": "insurance",
+              "endpoint": "/motor-insurance-policies/754a198e-20d7-4c04-a53d-1342aed87f4a/payment-details",
+              "rel": "bundles/emirati_takaful_multi/rich/seed-77115/motor-insurance-policies__754a198e-20d7-4c04-a53d-1342aed87f4a__payment-details.json",
+              "errors": [
+                {
+                  "instancePath": "/Meta",
+                  "schemaPath": "#/definitions/Meta/additionalProperties",
+                  "keyword": "additionalProperties",
+                  "params": {
+                    "additionalProperty": "TotalPages"
+                  },
+                  "message": "must NOT have additional properties"
+                }
+              ]
+            },
+            {
+              "domain": "insurance",
+              "endpoint": "/motor-insurance-quotes/ba161c7e-7490-423f-bcbb-a05e909a7bee",
+              "rel": "bundles/emirati_takaful_multi/rich/seed-77115/motor-insurance-quotes__ba161c7e-7490-423f-bcbb-a05e909a7bee.json",
+              "errors": [
+                {
+                  "instancePath": "/Data",
+                  "schemaPath": "#/additionalProperties",
+                  "keyword": "additionalProperties",
+                  "params": {
+                    "additionalProperty": "CreationDateTime"
+                  },
+                  "message": "must NOT have additional properties"
+                },
+                {
+                  "instancePath": "/Data",
+                  "schemaPath": "#/additionalProperties",
+                  "keyword": "additionalProperties",
+                  "params": {
+                    "additionalProperty": "ExpirationDateTime"
+                  },
+                  "message": "must NOT have additional properties"
+                },
+                {
+                  "instancePath": "/Data",
+                  "schemaPath": "#/additionalProperties",
+                  "keyword": "additionalProperties",
+                  "params": {
+                    "additionalProperty": "PlanName"
+                  },
+                  "message": "must NOT have additional properties"
+                },
+                {
+                  "instancePath": "/Data",
+                  "schemaPath": "#/additionalProperties",
+                  "keyword": "additionalProperties",
+                  "params": {
+                    "additionalProperty": "LevelOfCover"
+                  },
+                  "message": "must NOT have additional properties"
+                },
+                {
+                  "instancePath": "/Data",
+                  "schemaPath": "#/additionalProperties",
+                  "keyword": "additionalProperties",
+                  "params": {
+                    "additionalProperty": "ServiceRating"
+                  },
+                  "message": "must NOT have additional properties"
+                }
+              ]
+            }
+          ],
+          "atm": [
+            {
+              "domain": "atm",
+              "endpoint": "/atms",
+              "rel": "bundles/atm_directory/rich/seed-47131/atms.json",
+              "errors": [
+                {
+                  "instancePath": "",
+                  "schemaPath": "#/additionalProperties",
+                  "keyword": "additionalProperties",
+                  "params": {
+                    "additionalProperty": "Links"
+                  },
+                  "message": "must NOT have additional properties"
+                }
+              ]
+            },
+            {
+              "domain": "atm",
+              "endpoint": "/atms",
+              "rel": "bundles/atm_directory/median/seed-47131/atms.json",
+              "errors": [
+                {
+                  "instancePath": "",
+                  "schemaPath": "#/additionalProperties",
+                  "keyword": "additionalProperties",
+                  "params": {
+                    "additionalProperty": "Links"
+                  },
+                  "message": "must NOT have additional properties"
+                }
+              ]
+            },
+            {
+              "domain": "atm",
+              "endpoint": "/atms",
+              "rel": "bundles/atm_directory/sparse/seed-47131/atms.json",
+              "errors": [
+                {
+                  "instancePath": "",
+                  "schemaPath": "#/additionalProperties",
+                  "keyword": "additionalProperties",
+                  "params": {
+                    "additionalProperty": "Links"
+                  },
+                  "message": "must NOT have additional properties"
+                }
+              ]
+            }
+          ]
+        },
+        "errorPatterns": {
+          "banking": {},
+          "insurance": {
+            "/Meta | additionalProperties | TotalPages": 1116,
+            "/Data | additionalProperties | CreationDateTime": 558,
+            "/Data | additionalProperties | ExpirationDateTime": 558,
+            "/Data | additionalProperties | PlanName": 558,
+            "/Data | additionalProperties | LevelOfCover": 558,
+            "/Data | additionalProperties | ServiceRating": 558,
+            "/Data | additionalProperties | PolicyIssuanceAllowed": 558,
+            "/Data | additionalProperties | Takaful": 558,
+            "/Data | additionalProperties | Premium": 558,
+            "/Data | additionalProperties | AlternativeBrandName": 78,
+            "/Data/QuoteStatus | enum | ": 3069,
+            "/Data | additionalProperties | QuoteStatus": 3348,
+            "/Data | oneOf | ": 279,
+            "/Data | additionalProperties | QuoteId": 279,
+            "/Data | additionalProperties | QuoteReference": 279,
+            "/Data/Claims | additionalProperties | NoClaimsDiscountAvailable": 141,
+            "/Data/Premium | additionalProperties | Status": 33,
+            "/Data/Premium | additionalProperties | PremiumAmountExcludingVAT": 33,
+            "/Data/Premium | additionalProperties | VATAmount": 33,
+            "/Data/Premium | additionalProperties | VATPercentage": 33,
+            "/Data/Premium | type | ": 33,
+            "/Data/Premium | anyOf | ": 33
+          },
+          "atm": {
+            " | additionalProperties | Links": 3
+          }
+        },
+        "selectedQuoteBranch": {
+          "checked": 279,
+          "failed": 279,
+          "unmapped": 0,
+          "upstreamClosedWrapperEndpoints": [
+            "/motor-insurance-quotes/{QuoteId}",
+            "/home-insurance-quotes/{QuoteId}",
+            "/life-insurance-quotes/{QuoteId}",
+            "/travel-insurance-quotes/{QuoteId}",
+            "/health-insurance-quotes/{QuoteId}",
+            "/employment-insurance-quotes/{QuoteId}",
+            "/renters-insurance-quotes/{QuoteId}"
+          ],
+          "examples": [
+            {
+              "domain": "insurance",
+              "endpoint": "/motor-insurance-quotes/ba161c7e-7490-423f-bcbb-a05e909a7bee",
+              "rel": "bundles/emirati_takaful_multi/rich/seed-77115/motor-insurance-quotes__ba161c7e-7490-423f-bcbb-a05e909a7bee.json",
+              "status": "PolicyIssued",
+              "errors": [
+                {
+                  "instancePath": "",
+                  "schemaPath": "#/additionalProperties",
+                  "keyword": "additionalProperties",
+                  "params": {
+                    "additionalProperty": "QuoteStatus"
+                  },
+                  "message": "must NOT have additional properties"
+                }
+              ]
+            },
+            {
+              "domain": "insurance",
+              "endpoint": "/home-insurance-quotes/6dba161c-7e74-4902-8fec-bba05e909a7b",
+              "rel": "bundles/emirati_takaful_multi/rich/seed-77115/home-insurance-quotes__6dba161c-7e74-4902-8fec-bba05e909a7b.json",
+              "status": "PolicyIssued",
+              "errors": [
+                {
+                  "instancePath": "",
+                  "schemaPath": "#/additionalProperties",
+                  "keyword": "additionalProperties",
+                  "params": {
+                    "additionalProperty": "QuoteStatus"
+                  },
+                  "message": "must NOT have additional properties"
+                }
+              ]
+            },
+            {
+              "domain": "insurance",
+              "endpoint": "/life-insurance-quotes/749023fe-cbba-405e-a09a-7bee4ac0d002",
+              "rel": "bundles/emirati_takaful_multi/rich/seed-77115/life-insurance-quotes__749023fe-cbba-405e-a09a-7bee4ac0d002.json",
+              "status": "PolicyIssued",
+              "errors": [
+                {
+                  "instancePath": "",
+                  "schemaPath": "#/additionalProperties",
+                  "keyword": "additionalProperties",
+                  "params": {
+                    "additionalProperty": "QuoteStatus"
+                  },
+                  "message": "must NOT have additional properties"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "effectiveV21": {
+        "domains": {
+          "banking": {
+            "version": "v2.1-errata2",
+            "sha256": "8332adf44d606cc013febf83b248c33257536e719a35bef8eda58c2cb0b88126",
+            "checked": 3936,
+            "failed": 0,
+            "unmapped": 0
+          },
+          "insurance": {
+            "version": "v2.1-errata3",
+            "sha256": "1191bba351eefd29aff91f461ba8bda2d8bb2e554adba4d4f89718d9987a1818",
+            "checked": 1509,
+            "failed": 1116,
+            "unmapped": 0
+          },
+          "atm": {
+            "version": "v2.1",
+            "sha256": "f4b65f710b17d8eb89a56e8e3b4173d75c5fb94eac33aeffa7be5af7a4b751a0",
+            "checked": 3,
+            "failed": 3,
+            "unmapped": 0
+          }
+        },
+        "failureExamples": [
+          {
+            "domain": "insurance",
+            "endpoint": "/motor-insurance-policies/754a198e-20d7-4c04-a53d-1342aed87f4a",
+            "rel": "bundles/emirati_takaful_multi/rich/seed-77115/motor-insurance-policies__754a198e-20d7-4c04-a53d-1342aed87f4a.json",
+            "errors": [
+              {
+                "instancePath": "/Meta",
+                "schemaPath": "#/definitions/Meta/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "TotalPages"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/motor-insurance-policies/754a198e-20d7-4c04-a53d-1342aed87f4a/payment-details",
+            "rel": "bundles/emirati_takaful_multi/rich/seed-77115/motor-insurance-policies__754a198e-20d7-4c04-a53d-1342aed87f4a__payment-details.json",
+            "errors": [
+              {
+                "instancePath": "/Meta",
+                "schemaPath": "#/definitions/Meta/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "TotalPages"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/motor-insurance-quotes/ba161c7e-7490-423f-bcbb-a05e909a7bee",
+            "rel": "bundles/emirati_takaful_multi/rich/seed-77115/motor-insurance-quotes__ba161c7e-7490-423f-bcbb-a05e909a7bee.json",
+            "errors": [
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "CreationDateTime"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "ExpirationDateTime"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "PlanName"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "LevelOfCover"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "ServiceRating"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/home-insurance-policies/8754a198-e20d-47c0-9853-d1342aed87f4",
+            "rel": "bundles/emirati_takaful_multi/rich/seed-77115/home-insurance-policies__8754a198-e20d-47c0-9853-d1342aed87f4.json",
+            "errors": [
+              {
+                "instancePath": "/Data/Claims",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "NoClaimsDiscountAvailable"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Meta",
+                "schemaPath": "#/definitions/Meta/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "TotalPages"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/home-insurance-policies/8754a198-e20d-47c0-9853-d1342aed87f4/payment-details",
+            "rel": "bundles/emirati_takaful_multi/rich/seed-77115/home-insurance-policies__8754a198-e20d-47c0-9853-d1342aed87f4__payment-details.json",
+            "errors": [
+              {
+                "instancePath": "/Meta",
+                "schemaPath": "#/definitions/Meta/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "TotalPages"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/home-insurance-quotes/6dba161c-7e74-4902-8fec-bba05e909a7b",
+            "rel": "bundles/emirati_takaful_multi/rich/seed-77115/home-insurance-quotes__6dba161c-7e74-4902-8fec-bba05e909a7b.json",
+            "errors": [
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "CreationDateTime"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "ExpirationDateTime"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "PlanName"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "LevelOfCover"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "ServiceRating"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/life-insurance-policies/0d7c0485-3d13-442a-bd87-f4ad6dba161c",
+            "rel": "bundles/emirati_takaful_multi/rich/seed-77115/life-insurance-policies__0d7c0485-3d13-442a-bd87-f4ad6dba161c.json",
+            "errors": [
+              {
+                "instancePath": "/Data/Claims",
+                "schemaPath": "#/properties/Claims/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "NoClaimsDiscountAvailable"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Meta",
+                "schemaPath": "#/definitions/Meta/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "TotalPages"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/life-insurance-policies/0d7c0485-3d13-442a-bd87-f4ad6dba161c/payment-details",
+            "rel": "bundles/emirati_takaful_multi/rich/seed-77115/life-insurance-policies__0d7c0485-3d13-442a-bd87-f4ad6dba161c__payment-details.json",
+            "errors": [
+              {
+                "instancePath": "/Meta",
+                "schemaPath": "#/definitions/Meta/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "TotalPages"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/life-insurance-quotes/749023fe-cbba-405e-a09a-7bee4ac0d002",
+            "rel": "bundles/emirati_takaful_multi/rich/seed-77115/life-insurance-quotes__749023fe-cbba-405e-a09a-7bee4ac0d002.json",
+            "errors": [
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "CreationDateTime"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "ExpirationDateTime"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "PlanName"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "LevelOfCover"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "ServiceRating"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/insurance-consents/fcf0fd54-c8f4-47d8-892f-d28eddce5aec",
+            "rel": "bundles/emirati_takaful_multi/rich/seed-77115/insurance-consents__fcf0fd54-c8f4-47d8-892f-d28eddce5aec.json",
+            "errors": [
+              {
+                "instancePath": "/Meta",
+                "schemaPath": "#/definitions/Meta/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "TotalPages"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/insurance-consents/02977aee-3cf0-48cf-acc7-ef3dc3c9d1ae",
+            "rel": "bundles/emirati_takaful_multi/rich/seed-77115/insurance-consents__02977aee-3cf0-48cf-acc7-ef3dc3c9d1ae.json",
+            "errors": [
+              {
+                "instancePath": "/Meta",
+                "schemaPath": "#/definitions/Meta/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "TotalPages"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/insurance-consents/8a106f2a-2420-4361-b64e-43f83414b9c7",
+            "rel": "bundles/emirati_takaful_multi/rich/seed-77115/insurance-consents__8a106f2a-2420-4361-b64e-43f83414b9c7.json",
+            "errors": [
+              {
+                "instancePath": "/Meta",
+                "schemaPath": "#/definitions/Meta/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "TotalPages"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/motor-insurance-policies/754a198e-20d7-4c04-a53d-1342aed87f4a",
+            "rel": "bundles/emirati_takaful_multi/median/seed-77115/motor-insurance-policies__754a198e-20d7-4c04-a53d-1342aed87f4a.json",
+            "errors": [
+              {
+                "instancePath": "/Meta",
+                "schemaPath": "#/definitions/Meta/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "TotalPages"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/motor-insurance-policies/754a198e-20d7-4c04-a53d-1342aed87f4a/payment-details",
+            "rel": "bundles/emirati_takaful_multi/median/seed-77115/motor-insurance-policies__754a198e-20d7-4c04-a53d-1342aed87f4a__payment-details.json",
+            "errors": [
+              {
+                "instancePath": "/Meta",
+                "schemaPath": "#/definitions/Meta/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "TotalPages"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/motor-insurance-quotes/ba161c7e-7490-423f-bcbb-a05e909a7bee",
+            "rel": "bundles/emirati_takaful_multi/median/seed-77115/motor-insurance-quotes__ba161c7e-7490-423f-bcbb-a05e909a7bee.json",
+            "errors": [
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "CreationDateTime"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "ExpirationDateTime"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "PlanName"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "LevelOfCover"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "ServiceRating"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/home-insurance-policies/8754a198-e20d-47c0-9853-d1342aed87f4",
+            "rel": "bundles/emirati_takaful_multi/median/seed-77115/home-insurance-policies__8754a198-e20d-47c0-9853-d1342aed87f4.json",
+            "errors": [
+              {
+                "instancePath": "/Data/Claims",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "NoClaimsDiscountAvailable"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Meta",
+                "schemaPath": "#/definitions/Meta/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "TotalPages"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/home-insurance-policies/8754a198-e20d-47c0-9853-d1342aed87f4/payment-details",
+            "rel": "bundles/emirati_takaful_multi/median/seed-77115/home-insurance-policies__8754a198-e20d-47c0-9853-d1342aed87f4__payment-details.json",
+            "errors": [
+              {
+                "instancePath": "/Meta",
+                "schemaPath": "#/definitions/Meta/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "TotalPages"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/home-insurance-quotes/6dba161c-7e74-4902-8fec-bba05e909a7b",
+            "rel": "bundles/emirati_takaful_multi/median/seed-77115/home-insurance-quotes__6dba161c-7e74-4902-8fec-bba05e909a7b.json",
+            "errors": [
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "CreationDateTime"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "ExpirationDateTime"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "PlanName"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "LevelOfCover"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Data",
+                "schemaPath": "#/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "ServiceRating"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/life-insurance-policies/0d7c0485-3d13-442a-bd87-f4ad6dba161c",
+            "rel": "bundles/emirati_takaful_multi/median/seed-77115/life-insurance-policies__0d7c0485-3d13-442a-bd87-f4ad6dba161c.json",
+            "errors": [
+              {
+                "instancePath": "/Data/Claims",
+                "schemaPath": "#/properties/Claims/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "NoClaimsDiscountAvailable"
+                },
+                "message": "must NOT have additional properties"
+              },
+              {
+                "instancePath": "/Meta",
+                "schemaPath": "#/definitions/Meta/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "TotalPages"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          },
+          {
+            "domain": "insurance",
+            "endpoint": "/life-insurance-policies/0d7c0485-3d13-442a-bd87-f4ad6dba161c/payment-details",
+            "rel": "bundles/emirati_takaful_multi/median/seed-77115/life-insurance-policies__0d7c0485-3d13-442a-bd87-f4ad6dba161c__payment-details.json",
+            "errors": [
+              {
+                "instancePath": "/Meta",
+                "schemaPath": "#/definitions/Meta/additionalProperties",
+                "keyword": "additionalProperties",
+                "params": {
+                  "additionalProperty": "TotalPages"
+                },
+                "message": "must NOT have additional properties"
+              }
+            ]
+          }
+        ],
+        "examplesByDomain": {
+          "banking": [],
+          "insurance": [
+            {
+              "domain": "insurance",
+              "endpoint": "/motor-insurance-policies/754a198e-20d7-4c04-a53d-1342aed87f4a",
+              "rel": "bundles/emirati_takaful_multi/rich/seed-77115/motor-insurance-policies__754a198e-20d7-4c04-a53d-1342aed87f4a.json",
+              "errors": [
+                {
+                  "instancePath": "/Meta",
+                  "schemaPath": "#/definitions/Meta/additionalProperties",
+                  "keyword": "additionalProperties",
+                  "params": {
+                    "additionalProperty": "TotalPages"
+                  },
+                  "message": "must NOT have additional properties"
+                }
+              ]
+            },
+            {
+              "domain": "insurance",
+              "endpoint": "/motor-insurance-policies/754a198e-20d7-4c04-a53d-1342aed87f4a/payment-details",
+              "rel": "bundles/emirati_takaful_multi/rich/seed-77115/motor-insurance-policies__754a198e-20d7-4c04-a53d-1342aed87f4a__payment-details.json",
+              "errors": [
+                {
+                  "instancePath": "/Meta",
+                  "schemaPath": "#/definitions/Meta/additionalProperties",
+                  "keyword": "additionalProperties",
+                  "params": {
+                    "additionalProperty": "TotalPages"
+                  },
+                  "message": "must NOT have additional properties"
+                }
+              ]
+            },
+            {
+              "domain": "insurance",
+              "endpoint": "/motor-insurance-quotes/ba161c7e-7490-423f-bcbb-a05e909a7bee",
+              "rel": "bundles/emirati_takaful_multi/rich/seed-77115/motor-insurance-quotes__ba161c7e-7490-423f-bcbb-a05e909a7bee.json",
+              "errors": [
+                {
+                  "instancePath": "/Data",
+                  "schemaPath": "#/additionalProperties",
+                  "keyword": "additionalProperties",
+                  "params": {
+                    "additionalProperty": "CreationDateTime"
+                  },
+                  "message": "must NOT have additional properties"
+                },
+                {
+                  "instancePath": "/Data",
+                  "schemaPath": "#/additionalProperties",
+                  "keyword": "additionalProperties",
+                  "params": {
+                    "additionalProperty": "ExpirationDateTime"
+                  },
+                  "message": "must NOT have additional properties"
+                },
+                {
+                  "instancePath": "/Data",
+                  "schemaPath": "#/additionalProperties",
+                  "keyword": "additionalProperties",
+                  "params": {
+                    "additionalProperty": "PlanName"
+                  },
+                  "message": "must NOT have additional properties"
+                },
+                {
+                  "instancePath": "/Data",
+                  "schemaPath": "#/additionalProperties",
+                  "keyword": "additionalProperties",
+                  "params": {
+                    "additionalProperty": "LevelOfCover"
+                  },
+                  "message": "must NOT have additional properties"
+                },
+                {
+                  "instancePath": "/Data",
+                  "schemaPath": "#/additionalProperties",
+                  "keyword": "additionalProperties",
+                  "params": {
+                    "additionalProperty": "ServiceRating"
+                  },
+                  "message": "must NOT have additional properties"
+                }
+              ]
+            }
+          ],
+          "atm": [
+            {
+              "domain": "atm",
+              "endpoint": "/atms",
+              "rel": "bundles/atm_directory/rich/seed-47131/atms.json",
+              "errors": [
+                {
+                  "instancePath": "",
+                  "schemaPath": "#/additionalProperties",
+                  "keyword": "additionalProperties",
+                  "params": {
+                    "additionalProperty": "Links"
+                  },
+                  "message": "must NOT have additional properties"
+                }
+              ]
+            },
+            {
+              "domain": "atm",
+              "endpoint": "/atms",
+              "rel": "bundles/atm_directory/median/seed-47131/atms.json",
+              "errors": [
+                {
+                  "instancePath": "",
+                  "schemaPath": "#/additionalProperties",
+                  "keyword": "additionalProperties",
+                  "params": {
+                    "additionalProperty": "Links"
+                  },
+                  "message": "must NOT have additional properties"
+                }
+              ]
+            },
+            {
+              "domain": "atm",
+              "endpoint": "/atms",
+              "rel": "bundles/atm_directory/sparse/seed-47131/atms.json",
+              "errors": [
+                {
+                  "instancePath": "",
+                  "schemaPath": "#/additionalProperties",
+                  "keyword": "additionalProperties",
+                  "params": {
+                    "additionalProperty": "Links"
+                  },
+                  "message": "must NOT have additional properties"
+                }
+              ]
+            }
+          ]
+        },
+        "errorPatterns": {
+          "banking": {},
+          "insurance": {
+            "/Meta | additionalProperties | TotalPages": 1116,
+            "/Data | additionalProperties | CreationDateTime": 558,
+            "/Data | additionalProperties | ExpirationDateTime": 558,
+            "/Data | additionalProperties | PlanName": 558,
+            "/Data | additionalProperties | LevelOfCover": 558,
+            "/Data | additionalProperties | ServiceRating": 558,
+            "/Data | additionalProperties | PolicyIssuanceAllowed": 558,
+            "/Data | additionalProperties | Takaful": 558,
+            "/Data | additionalProperties | Premium": 558,
+            "/Data | additionalProperties | AlternativeBrandName": 78,
+            "/Data/QuoteStatus | enum | ": 3069,
+            "/Data | additionalProperties | QuoteStatus": 3348,
+            "/Data | oneOf | ": 279,
+            "/Data | additionalProperties | QuoteId": 279,
+            "/Data | additionalProperties | QuoteReference": 279,
+            "/Data/Claims | additionalProperties | NoClaimsDiscountAvailable": 141,
+            "/Data/Premium | additionalProperties | Status": 33,
+            "/Data/Premium | additionalProperties | PremiumAmountExcludingVAT": 33,
+            "/Data/Premium | additionalProperties | VATAmount": 33,
+            "/Data/Premium | additionalProperties | VATPercentage": 33,
+            "/Data/Premium | type | ": 33,
+            "/Data/Premium | anyOf | ": 33
+          },
+          "atm": {
+            " | additionalProperties | Links": 3
+          }
+        },
+        "selectedQuoteBranch": {
+          "checked": 279,
+          "failed": 279,
+          "unmapped": 0,
+          "upstreamClosedWrapperEndpoints": [
+            "/motor-insurance-quotes/{QuoteId}",
+            "/home-insurance-quotes/{QuoteId}",
+            "/life-insurance-quotes/{QuoteId}",
+            "/travel-insurance-quotes/{QuoteId}",
+            "/health-insurance-quotes/{QuoteId}",
+            "/employment-insurance-quotes/{QuoteId}",
+            "/renters-insurance-quotes/{QuoteId}"
+          ],
+          "examples": [
+            {
+              "domain": "insurance",
+              "endpoint": "/motor-insurance-quotes/ba161c7e-7490-423f-bcbb-a05e909a7bee",
+              "rel": "bundles/emirati_takaful_multi/rich/seed-77115/motor-insurance-quotes__ba161c7e-7490-423f-bcbb-a05e909a7bee.json",
+              "status": "PolicyIssued",
+              "errors": [
+                {
+                  "instancePath": "",
+                  "schemaPath": "#/additionalProperties",
+                  "keyword": "additionalProperties",
+                  "params": {
+                    "additionalProperty": "QuoteStatus"
+                  },
+                  "message": "must NOT have additional properties"
+                }
+              ]
+            },
+            {
+              "domain": "insurance",
+              "endpoint": "/home-insurance-quotes/6dba161c-7e74-4902-8fec-bba05e909a7b",
+              "rel": "bundles/emirati_takaful_multi/rich/seed-77115/home-insurance-quotes__6dba161c-7e74-4902-8fec-bba05e909a7b.json",
+              "status": "PolicyIssued",
+              "errors": [
+                {
+                  "instancePath": "",
+                  "schemaPath": "#/additionalProperties",
+                  "keyword": "additionalProperties",
+                  "params": {
+                    "additionalProperty": "QuoteStatus"
+                  },
+                  "message": "must NOT have additional properties"
+                }
+              ]
+            },
+            {
+              "domain": "insurance",
+              "endpoint": "/life-insurance-quotes/749023fe-cbba-405e-a09a-7bee4ac0d002",
+              "rel": "bundles/emirati_takaful_multi/rich/seed-77115/life-insurance-quotes__749023fe-cbba-405e-a09a-7bee4ac0d002.json",
+              "status": "PolicyIssued",
+              "errors": [
+                {
+                  "instancePath": "",
+                  "schemaPath": "#/additionalProperties",
+                  "keyword": "additionalProperties",
+                  "params": {
+                    "additionalProperty": "QuoteStatus"
+                  },
+                  "message": "must NOT have additional properties"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  "publicFixtureProbes": [
+    {
+      "url": "https://data-sandbox.openfinance-os.org/fixtures/v1/bundles/salaried_expat_mid/median/seed-4729/accounts.json",
+      "checkedAt": "2026-10-08T10:51:12.068Z",
+      "status": 200,
+      "contentType": "application/json",
+      "byteIdenticalToLocal": true,
+      "sha256": "5a5518fc9192c226bc7369b1c291eb56062dea55bd03e9e154a7170163ab46a6",
+      "rootKeys": [
+        "Data",
+        "Links",
+        "Meta",
+        "_watermark",
+        "_persona",
+        "_lfi",
+        "_seed",
+        "_specVersion",
+        "_specSha",
+        "_retrievedAt"
+      ],
+      "meta": {
+        "TotalPages": 1
+      }
+    },
+    {
+      "url": "https://data-sandbox.openfinance-os.org/fixtures/v1/bundles/emirati_takaful_multi/rich/seed-77115/motor-insurance-policies__754a198e-20d7-4c04-a53d-1342aed87f4a.json",
+      "checkedAt": "2026-10-08T10:51:12.092Z",
+      "status": 200,
+      "contentType": "application/json",
+      "byteIdenticalToLocal": true,
+      "sha256": "2ef8ee6935b58e286c339faee0742c4a67c4c447ea3b107a8c73bde1829158a7",
+      "rootKeys": [
+        "Data",
+        "Links",
+        "Meta",
+        "_watermark",
+        "_persona",
+        "_lfi",
+        "_seed",
+        "_domain",
+        "_specVersion",
+        "_specSha",
+        "_retrievedAt"
+      ],
+      "meta": {
+        "TotalPages": 1
+      }
+    },
+    {
+      "url": "https://data-sandbox.openfinance-os.org/fixtures/v1/bundles/atm_directory/median/seed-47131/atms.json",
+      "checkedAt": "2026-10-08T10:51:12.333Z",
+      "status": 200,
+      "contentType": "application/json",
+      "byteIdenticalToLocal": true,
+      "sha256": "80f691c198a6225b2bed501b174843464ab5c50366b359580eb14cff8c8392cc",
+      "rootKeys": [
+        "Data",
+        "Meta",
+        "Links",
+        "_watermark",
+        "_persona",
+        "_lfi",
+        "_seed",
+        "_domain",
+        "_specVersion",
+        "_specSha",
+        "_retrievedAt"
+      ],
+      "meta": {
+        "LastUpdatedDateTime": "2026-05-01T00:00:00Z",
+        "TotalRecords": 43
+      }
+    }
+  ],
+  "interpretation": {
+    "scope": "5448 unique resolved endpoint files referenced by the fixture manifest; not every generated artifact",
+    "insuranceIndependentDefect": "Meta.TotalPages occurs in all 1116 failing insurance files and is not allowed by the applicable closed Meta schema",
+    "atmIndependentDefect": "Links occurs in all 3 ATM files and is not allowed by the closed AEReadAtms1 schema",
+    "upstreamIssue": "Insurance quote wrappers/branches also have schema-composition closure problems. Individual oneOf error patterns are not standalone evidence of a generator defect.",
+    "certification": "No Trust Framework/API Hub certification or released v2.2 baseline verified"
+  }
+}

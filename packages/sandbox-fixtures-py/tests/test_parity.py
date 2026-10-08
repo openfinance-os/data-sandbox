@@ -229,6 +229,14 @@ def test_pagination_constants_match_js():
     assert fx.PAGINATION_MAX_LIMIT == max_limit
 
 
+def test_atm_pagination_preserves_wire_shape():
+    page = fx.load_fixture_page("atm_directory", endpoint="/atms", limit=3)
+    assert "Links" not in page
+    assert "TotalPages" not in page["Meta"]
+    assert page["_paginationLinks"]["Next"]
+    assert len(page["Data"]) == 3
+
+
 def test_load_fixture_page_behaviour(npm_manifest):
     # Find a persona/endpoint with enough transactions to need paging.
     for pid in sorted(npm_manifest["personas"]):

@@ -1,3 +1,5 @@
+> Release candidate 0.1.0 is prepared locally and remains unpublished. Clean-install verification uses tarballs. Hosted production remains a separate revision until deployed and checked. Transaction retrieval now uses opaque `cursor` / `_filter.nextCursor`, bound to account/scenario/filters. Summary totals default to Booked, are separated by currency/status, and include paged source evidence rather than mixed totals.
+
 # @openfinance-os/sandbox-mcp
 
 MCP server that exposes the [Open Finance Data Sandbox](https://github.com/openfinance-os/data-sandbox) — synthetic UAE Open Finance v2.1 payloads across three domains (Bank Data Sharing, Insurance Data Sharing, and the ATM Locator) — as MCP tools, resources, and prompts.
@@ -196,7 +198,7 @@ Calling a tool for a line the active persona doesn't carry errors with a "switch
 ## Resources
 
 - `spec://uae-account-information-v2.1` — parsed banking v2.1 OpenAPI (pinned by SHA upstream).
-- `spec://uae-insurance-v2.1` — parsed insurance v2.1-errata1 OpenAPI (all 7 lines + Insurance Consents).
+- `spec://uae-insurance-v2.1` — parsed insurance v2.1-errata3 OpenAPI (all 7 lines + Insurance Consents).
 - `spec://uae-atm-v2.1` — parsed ATM Locator OpenAPI (`/atms`).
 - `recipe://schema` — full `RECIPE_DEFAULTS` object documenting every knob `build_persona` accepts.
 - `persona://<id>` — manifest for each curated persona (demographics, income, accounts, commitments, narrative).

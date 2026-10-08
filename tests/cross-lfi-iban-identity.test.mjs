@@ -1,3 +1,7 @@
+const equivalent = (a, b) => {
+  const rate = { AED: 1, USD: 3.6725, GBP: 4.6, EUR: 3.95 };
+  return Math.abs(Number(a.Amount) * rate[a.Currency] - Number(b.Amount) * rate[b.Currency]) < 0.05;
+};
 // T-08b — cross-LFI IBAN identity (APP_IMPROVEMENT_PLAN.md §3 T-08b).
 //
 // Two invariants that make the multi-LFI story reconcilable by a TPP:
@@ -116,7 +120,7 @@ describe('T-08b(b) — every _crossLfiPairId has exactly 2 members, equal Amount
       for (const [pairId, members] of byPair.entries()) {
         expect(members.length, `${pairId} must have exactly 2 members`).toBe(2);
         const [a, b] = members;
-        expect(a.Amount, `${pairId} Amount mismatch`).toEqual(b.Amount);
+        expect(equivalent(a.Amount, b.Amount), `${pairId} FX amount mismatch`).toBe(true);
         const indicators = new Set(members.map((m) => m.CreditDebitIndicator));
         expect(indicators, `${pairId} must have opposite indicators`).toEqual(
           new Set(['Debit', 'Credit']),
