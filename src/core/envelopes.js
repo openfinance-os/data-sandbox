@@ -369,13 +369,19 @@ export function csvBundleByResource(bundle, ctx) {
 }
 
 export function downloadJson(envelope, filename) {
-  const blob = new Blob([JSON.stringify(envelope, null, 2)], { type: 'application/json' });
-  triggerDownload(blob, filename);
+  if (!envelope) return { status: 'failed', reason: 'unavailable' };
+  try {
+    const blob = new Blob([JSON.stringify(envelope, null, 2)], { type: 'application/json' });
+    return triggerDownload(blob, filename);
+  } catch {
+    return { status: 'failed', reason: 'generation-failed' };
+  }
 }
 
 export function downloadCsv(csvText, filename) {
+  if (!csvText) return { status: 'failed', reason: 'unavailable' };
   const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8' });
-  triggerDownload(blob, filename);
+  return triggerDownload(blob, filename);
 }
 
 export function buildTar(files) {
@@ -429,17 +435,28 @@ function writeTarStr(buf, offset, str, len) {
 
 function triggerDownload(blob, filename) {
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => {
-    document.body.removeChild(a);
-    URL.revokeObjectURL(a.href);
-  }, 0);
+  let url;
+  const cleanup = () => {
+    a.remove();
+    if (url) URL.revokeObjectURL(url);
+  };
+  try {
+    url = URL.createObjectURL(blob);
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(cleanup, 0);
+    // Browser APIs expose initiation only, not a saved or subsequently used file.
+    return { status: 'download-initiated' };
+  } catch {
+    cleanup();
+    return { status: 'failed', reason: 'download-failed' };
+  }
 }
 
 export function downloadTarball(bundle, ctx, filename = 'sandbox-bundle.tar') {
+  if (!bundle) return { status: 'failed', reason: 'unavailable' };
   const envelopes = envelopesFromBundle(bundle, ctx);
   const csvByResource = csvBundleByResource(bundle, ctx);
   const files = [];
@@ -452,5 +469,5 @@ export function downloadTarball(bundle, ctx, filename = 'sandbox-bundle.tar') {
   }
   files.push({ name: 'WATERMARK.txt', contents: `${watermark(ctx)}\n` });
   const blob = buildTar(files);
-  triggerDownload(blob, filename);
+  return triggerDownload(blob, filename);
 }
