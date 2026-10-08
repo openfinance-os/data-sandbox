@@ -56,7 +56,7 @@ test.describe('Export popover (PR #6)', () => {
     await expect(pre).toContainText("persona='salaried_expat_mid'");
 
     await page.locator('.export-tab', { hasText: 'curl' }).click();
-    await expect(pre).toContainText('curl -s');
+    await expect(pre).toContainText('curl -fsS');
 
     await page.locator('.export-tab', { hasText: 'MCP' }).click();
     await expect(pre).toContainText("callTool('set_session'");
@@ -92,7 +92,7 @@ test.describe('Export popover (PR #6)', () => {
     await isolatedPage.locator('.export-tab', { hasText: 'curl' }).click();
     await isolatedPage.locator('.export-copy-btn', { hasText: 'Copy' }).click();
     const text = await isolatedPage.evaluate(() => navigator.clipboard.readText());
-    expect(text).toContain('curl -s');
+    expect(text).toContain('curl -fsS');
     await ctx.close();
   });
 
