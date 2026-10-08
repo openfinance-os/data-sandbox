@@ -48,7 +48,7 @@ import { createTxFilter } from './ui/tx-filter.js';
 // it, so keeping it off the cold-load path tightens the EXP-24
 // Lighthouse budget without affecting insurance-flow latency
 // (rebuildAndRender is already async work).
-import { envelopesFromBundle, createActiveExports } from './ui/export.js';
+import { envelopesFromBundle } from './ui/export.js';
 import { isPii, whyEmpty } from './shared/field-knowledge.js';
 import { createUnderwriting } from './ui/underwriting.js';
 import { createFieldCard } from './ui/field-card.js';
@@ -368,24 +368,18 @@ const { renderUnderwritingStrip, renderUnderwritingPanel } = createUnderwriting(
 // the keyboard / button handlers in attachEventHandlers don't change
 // shape. EXP-24 Lighthouse budget benefits because the popover code
 // is off the cold-load critical path.
-const {
-  activeEnvelopeKey,
-  buildActiveCsvString,
-  exportActiveJson,
-  exportActiveCsv,
-  exportTarball,
-} = createActiveExports({ state, exportContext });
 const exportPopover = (() => {
   let inner = null;
   let loading = null;
+  let actions = null;
   const deps = () => ({
     state,
     el,
     track,
     copyToClipboard,
-    exportActiveJson: () => exportActiveJson(),
-    exportActiveCsv: () => exportActiveCsv(),
-    exportTarball: () => exportTarball(),
+    exportActiveJson: () => actions.exportActiveJson(),
+    exportActiveCsv: () => actions.exportActiveCsv(),
+    exportTarball: () => actions.exportTarball(),
     embedIframeSnippet: () => buildEmbedSnippet(),
     activeFixtureUrl: () => {
       const origin = deploymentBase();
@@ -398,26 +392,30 @@ const exportPopover = (() => {
         endpoint:
           state.endpoint === OVERVIEW_PSEUDO || state.endpoint === UNDERWRITING_PSEUDO
             ? '/accounts'
-            : activeEnvelopeKey(),
+            : actions.activeEnvelopeKey(),
       });
     },
     activeJsonString: () => {
       if (!state.bundle) return '';
       const ctx = exportContext();
       const envelopes = envelopesFromBundle(state.bundle, ctx);
-      const key = activeEnvelopeKey();
+      const key = actions.activeEnvelopeKey();
       const env = envelopes[key] ?? envelopes[state.endpoint];
       return env ? JSON.stringify(env, null, 2) : '';
     },
     activeCsvString: () => {
       if (!state.bundle) return '';
-      return buildActiveCsvString();
+      return actions.buildActiveCsvString();
     },
   });
   function ensure() {
     if (inner) return inner;
     if (!loading) {
-      loading = import('./ui/export-popover.js').then(({ createExportPopover }) => {
+      loading = Promise.all([
+        import('./ui/export-popover.js'),
+        import('./ui/export-actions.js'),
+      ]).then(([{ createExportPopover }, { createActiveExports }]) => {
+        actions = createActiveExports({ state, exportContext });
         inner = createExportPopover(deps());
         return inner;
       });

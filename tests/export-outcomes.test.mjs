@@ -5,12 +5,8 @@ import { TextEncoder } from 'node:util';
 import { el } from '../src/shared/dom.js';
 import { copyToClipboard } from '../src/ui/clipboard.js';
 import { createExportPopover } from '../src/ui/export-popover.js';
-import {
-  createActiveExports,
-  downloadJson,
-  downloadCsv,
-  downloadTarball,
-} from '../src/ui/export.js';
+import { createActiveExports } from '../src/ui/export-actions.js';
+import { downloadJson, downloadCsv, downloadTarball } from '../src/ui/export.js';
 
 let popover;
 beforeEach(() => {
