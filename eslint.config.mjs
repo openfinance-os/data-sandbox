@@ -54,6 +54,7 @@ const jsdomTests = {
     'tests/ui-module-graph.test.mjs',
     'tests/i18n.test.mjs',
     'tests/ui-modules.test.mjs',
+    'tests/export-outcomes.test.mjs',
     'tests/monthly-summary-semantics.test.mjs',
   ],
   languageOptions: {

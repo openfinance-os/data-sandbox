@@ -21,6 +21,7 @@
 import { trapFocus } from '../shared/dom.js';
 // Aliased to `tr` because `t` is used as a tab loop variable below.
 import { t as tr } from '../shared/i18n.js';
+import { showActionToast } from './clipboard.js';
 
 export function createExportPopover(deps) {
   const {
@@ -283,9 +284,8 @@ export function createExportPopover(deps) {
         text: tr('export.downloadTarball', state.lang),
         attrs: { type: 'button' },
       });
-      dl.addEventListener('click', () => {
-        exportTarball();
-        track('export', { format: 'tarball' });
+      dl.addEventListener('click', async () => {
+        if (await startDownload(exportTarball)) track('export', { format: 'tarball' });
       });
       body.appendChild(dl);
       return;
@@ -300,15 +300,22 @@ export function createExportPopover(deps) {
       text: tr('export.copy', state.lang),
       attrs: { type: 'button', 'aria-label': tr('export.copyAria', state.lang) },
     });
-    copyBtn.addEventListener('click', () => {
-      const activeTab = TABS.find((t) => t.key === activeTabKey);
+    copyBtn.disabled = !snip.text;
+    copyBtn.addEventListener('click', async () => {
+      const tabKey = activeTabKey;
+      const activeTab = TABS.find((t) => t.key === tabKey);
       const label = activeTab ? tabLabel(activeTab) : 'Snippet';
-      copyToClipboard(snip.text, tr('export.copiedTpl', state.lang).replace('{label}', label));
+      const result = await copyToClipboard(
+        snip.text,
+        tr('export.copiedTpl', state.lang).replace('{label}', label),
+        { container: body },
+      );
+      if (result?.status !== 'confirmed-success') return;
       // Map tab key → existing analytics format allowlist where possible.
       // Permalink + Embed reuse the 'share' event; the rest fall under 'export'.
-      if (activeTabKey === 'permalink') track('share', { kind: 'permalink' });
-      else if (activeTabKey === 'embed') track('share', { kind: 'embed' });
-      else track('export', { format: activeTabKey });
+      if (tabKey === 'permalink') track('share', { kind: 'permalink' });
+      else if (tabKey === 'embed') track('share', { kind: 'embed' });
+      else track('export', { format: tabKey });
     });
     copyRow.appendChild(copyBtn);
     // Active-endpoint download shortcuts where available.
@@ -318,9 +325,9 @@ export function createExportPopover(deps) {
         text: tr('export.downloadJson', state.lang),
         attrs: { type: 'button' },
       });
-      dl.addEventListener('click', () => {
-        exportActiveJson();
-        track('export', { format: 'json' });
+      dl.disabled = !snip.text;
+      dl.addEventListener('click', async () => {
+        if (await startDownload(exportActiveJson)) track('export', { format: 'json' });
       });
       copyRow.appendChild(dl);
     } else if (activeTabKey === 'csv') {
@@ -329,13 +336,23 @@ export function createExportPopover(deps) {
         text: tr('export.downloadCsv', state.lang),
         attrs: { type: 'button' },
       });
-      dl.addEventListener('click', () => {
-        exportActiveCsv();
-        track('export', { format: 'csv' });
+      dl.disabled = !snip.text;
+      dl.addEventListener('click', async () => {
+        if (await startDownload(exportActiveCsv)) track('export', { format: 'csv' });
       });
       copyRow.appendChild(dl);
     }
     body.appendChild(copyRow);
+  }
+
+  async function startDownload(action) {
+    try {
+      if ((await action())?.status === 'download-initiated') return true;
+    } catch {
+      // Generation errors and unavailable fixtures must not become success events.
+    }
+    showActionToast('Download could not start. The fixture may be unavailable.');
+    return false;
   }
 
   // Esc routing is owned by app.js's global keydown handler via

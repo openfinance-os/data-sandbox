@@ -1,40 +1,68 @@
-// Best-effort clipboard write with a non-blocking toast on success.
-// Uses navigator.clipboard.writeText when available; falls back to a
-// hidden textarea + execCommand('copy') so the user can ⌘C / Ctrl+C
-// themselves if the browser blocks programmatic clipboard access.
-// Pure utility — no state, no DOM helper deps; consumers just call
-// copyToClipboard(text, label).
-
-export function copyToClipboard(text, doneLabel) {
+// Completion results stay local: EXP-21 permits success events only, with
+// the existing share/export properties. Manual selection is not a copy.
+export async function copyToClipboard(text, doneLabel, { container = document.body } = {}) {
+  document.querySelectorAll('.manual-copy-fallback').forEach((n) => n.remove());
+  if (!text) return { status: 'failed', reason: 'unavailable' };
   if (navigator.clipboard?.writeText) {
-    navigator.clipboard.writeText(text).then(
-      () => showCopyToast(doneLabel),
-      () => fallbackCopy(text, doneLabel),
-    );
-  } else {
-    fallbackCopy(text, doneLabel);
+    try {
+      await navigator.clipboard.writeText(text);
+      showActionToast(doneLabel);
+      return { status: 'confirmed-success', method: 'clipboard' };
+    } catch {
+      // Permission rejection and synchronous API errors both use the fallback.
+    }
   }
+  return fallbackCopy(text, doneLabel, container);
 }
 
-function fallbackCopy(text, doneLabel) {
+function fallbackCopy(text, doneLabel, container) {
+  const previousFocus = document.activeElement;
   const ta = document.createElement('textarea');
   ta.value = text;
+  ta.readOnly = true;
+  ta.setAttribute('aria-label', 'Snippet to copy manually');
   ta.style.position = 'fixed';
   ta.style.opacity = '0';
-  document.body.appendChild(ta);
+  if (!container?.isConnected) return { status: 'failed', reason: 'dismissed' };
+  container.appendChild(ta);
   ta.select();
+  let reason;
   try {
-    document.execCommand('copy');
-    showCopyToast(doneLabel);
+    if (document.execCommand('copy') === true) {
+      ta.remove();
+      showActionToast(doneLabel);
+      return { status: 'confirmed-success', method: 'execCommand' };
+    }
+    reason = 'copy-returned-false';
   } catch {
-    showCopyToast('Copy blocked — selecting snippet for ⌘C / Ctrl+C.');
-    ta.style.opacity = '1';
-    return;
+    reason = 'copy-threw';
   }
-  ta.remove();
+
+  // Keep the fallback inside the caller's dialog so its focus trap still
+  // lets the user select, copy and dismiss it. Replace it on the next attempt.
+  const panel = document.createElement('div');
+  panel.className = 'manual-copy-fallback';
+  const instructions = document.createElement('p');
+  instructions.textContent =
+    'Automatic copy blocked. Press ⌘C / Ctrl+C to copy the selected snippet.';
+  ta.style.position = 'static';
+  ta.style.opacity = '1';
+  const dismiss = document.createElement('button');
+  dismiss.type = 'button';
+  dismiss.textContent = 'Close manual copy';
+  dismiss.addEventListener('click', () => {
+    panel.remove();
+    if (previousFocus?.isConnected) previousFocus.focus();
+  });
+  panel.append(instructions, ta, dismiss);
+  container.appendChild(panel);
+  ta.focus();
+  ta.select();
+  showActionToast('Copy blocked — selecting snippet for ⌘C / Ctrl+C.');
+  return { status: 'manual-copy-pending', reason };
 }
 
-function showCopyToast(text) {
+export function showActionToast(text) {
   document.querySelectorAll('.copy-toast').forEach((n) => n.remove());
   const t = document.createElement('div');
   t.className = 'copy-toast';

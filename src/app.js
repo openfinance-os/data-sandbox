@@ -48,13 +48,7 @@ import { createTxFilter } from './ui/tx-filter.js';
 // it, so keeping it off the cold-load path tightens the EXP-24
 // Lighthouse budget without affecting insurance-flow latency
 // (rebuildAndRender is already async work).
-import {
-  envelopesFromBundle,
-  csvForResource,
-  downloadJson,
-  downloadCsv,
-  downloadTarball,
-} from './ui/export.js';
+import { envelopesFromBundle, createActiveExports } from './ui/export.js';
 import { isPii, whyEmpty } from './shared/field-knowledge.js';
 import { createUnderwriting } from './ui/underwriting.js';
 import { createFieldCard } from './ui/field-card.js';
@@ -374,6 +368,13 @@ const { renderUnderwritingStrip, renderUnderwritingPanel } = createUnderwriting(
 // the keyboard / button handlers in attachEventHandlers don't change
 // shape. EXP-24 Lighthouse budget benefits because the popover code
 // is off the cold-load critical path.
+const {
+  activeEnvelopeKey,
+  buildActiveCsvString,
+  exportActiveJson,
+  exportActiveCsv,
+  exportTarball,
+} = createActiveExports({ state, exportContext });
 const exportPopover = (() => {
   let inner = null;
   let loading = null;
@@ -1316,67 +1317,6 @@ function exportContext() {
     ),
     specProvenance: state.data.buildInfo.specProvenance,
   };
-}
-
-function activeEnvelopeKey() {
-  if (state.endpoint === '/accounts' || state.endpoint === '/parties') return state.endpoint;
-  if (state.selectedAccountId) {
-    const tail = state.endpoint.replace('{AccountId}', state.selectedAccountId);
-    return tail;
-  }
-  return state.endpoint;
-}
-
-function exportActiveJson() {
-  if (!state.bundle) return;
-  const ctx = exportContext();
-  const envelopes = envelopesFromBundle(state.bundle, ctx);
-  const key = activeEnvelopeKey();
-  const env = envelopes[key] ?? envelopes[state.endpoint];
-  if (!env) return;
-  const fname = `${state.personaId}-${state.lfi}-seed${state.seed}-${key.replace(/^\//, '').replace(/\//g, '__').replace(/[{}]/g, '') || 'root'}.json`;
-  downloadJson(env, fname);
-}
-
-// Picks the bundle key + filename suffix for the active endpoint's CSV.
-// Shared by exportActiveCsv (download) and buildActiveCsvString (popover).
-const RESOURCE_FOR_ENDPOINT = Object.freeze({
-  '/accounts': ['accounts', 'Account'],
-  '/accounts/{AccountId}': ['accounts', 'Account'],
-  '/accounts/{AccountId}/balances': ['balances', 'Balance'],
-  '/accounts/{AccountId}/transactions': ['transactions', 'Transaction'],
-  '/accounts/{AccountId}/standing-orders': ['standingOrders', 'StandingOrder'],
-  '/accounts/{AccountId}/direct-debits': ['directDebits', 'DirectDebit'],
-  '/accounts/{AccountId}/beneficiaries': ['beneficiaries', 'Beneficiary'],
-  '/accounts/{AccountId}/scheduled-payments': ['scheduledPayments', 'ScheduledPayment'],
-  '/accounts/{AccountId}/product': ['product', 'Product'],
-  '/accounts/{AccountId}/parties': ['parties', 'Party'],
-  '/parties': ['callingUserParty', 'Party'],
-  '/accounts/{AccountId}/statements': ['statements', 'Statements'],
-});
-function buildActiveCsvString() {
-  if (!state.bundle) return '';
-  const ctx = exportContext();
-  const [bundleKey] = RESOURCE_FOR_ENDPOINT[state.endpoint] ?? ['accounts', 'Account'];
-  let rows = state.bundle[bundleKey] ?? [];
-  if (state.selectedAccountId && Array.isArray(rows)) {
-    rows = rows.filter((r) => !r._accountId || r._accountId === state.selectedAccountId);
-  }
-  if (!Array.isArray(rows)) rows = [rows];
-  return csvForResource(rows, ctx);
-}
-function exportActiveCsv() {
-  if (!state.bundle) return;
-  const [, resourceLabel] = RESOURCE_FOR_ENDPOINT[state.endpoint] ?? ['accounts', 'Account'];
-  const csv = buildActiveCsvString();
-  const fname = `${state.personaId}-${state.lfi}-seed${state.seed}-${resourceLabel}.csv`;
-  downloadCsv(csv, fname);
-}
-
-function exportTarball() {
-  if (!state.bundle) return;
-  const ctx = exportContext();
-  downloadTarball(state.bundle, ctx, `${state.personaId}-${state.lfi}-seed${state.seed}.tar`);
 }
 
 // C-P1 — async because the lazy generator entry may dynamic-import a
@@ -2787,9 +2727,9 @@ curl -fsS '${curlUrl}'`;
       class: 'demo-row-copy',
       attrs: { type: 'button' },
       text: r.copyLabel,
-      onClick: () => {
-        copyToClipboard(r.snippet, r.doneLabel);
-        track('share', { kind: r.kind });
+      onClick: async () => {
+        const result = await copyToClipboard(r.snippet, r.doneLabel);
+        if (result?.status === 'confirmed-success') track('share', { kind: r.kind });
       },
     });
     row.appendChild(btn);

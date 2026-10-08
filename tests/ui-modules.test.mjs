@@ -174,9 +174,9 @@ describe('clipboard — copyToClipboard', () => {
   it('uses navigator.clipboard.writeText and shows a role=status toast', async () => {
     const writeText = vi.fn().mockResolvedValue();
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
-    copyToClipboard('hello', 'Copied!');
+    const result = await copyToClipboard('hello', 'Copied!');
     expect(writeText).toHaveBeenCalledWith('hello');
-    await Promise.resolve(); // let the .then() callback run
+    expect(result).toEqual({ status: 'confirmed-success', method: 'clipboard' });
     const toast = document.querySelector('.copy-toast');
     expect(toast).toBeTruthy();
     expect(toast.getAttribute('role')).toBe('status');
@@ -187,21 +187,21 @@ describe('clipboard — copyToClipboard', () => {
     const writeText = vi.fn().mockRejectedValue(new Error('blocked'));
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
     document.execCommand = vi.fn().mockReturnValue(true);
-    copyToClipboard('fallback-text', 'Done');
-    await Promise.resolve();
-    await Promise.resolve(); // writeText rejection → fallbackCopy
+    const result = await copyToClipboard('fallback-text', 'Done');
+    expect(result).toEqual({ status: 'confirmed-success', method: 'execCommand' });
     expect(document.execCommand).toHaveBeenCalledWith('copy');
     // The fallback textarea cleans itself up on success.
     expect(document.querySelector('textarea')).toBeNull();
     expect(document.querySelector('.copy-toast')?.textContent).toBe('Done');
   });
 
-  it('keeps the textarea visible for manual copy when execCommand throws', () => {
+  it('keeps the textarea visible for manual copy when execCommand throws', async () => {
     Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true });
     document.execCommand = vi.fn(() => {
       throw new Error('denied');
     });
-    copyToClipboard('manual', 'Done');
+    const result = await copyToClipboard('manual', 'Done');
+    expect(result).toEqual({ status: 'manual-copy-pending', reason: 'copy-threw' });
     const ta = document.querySelector('textarea');
     expect(ta).toBeTruthy();
     expect(ta.style.opacity).toBe('1');
@@ -211,10 +211,8 @@ describe('clipboard — copyToClipboard', () => {
   it('replaces an existing toast instead of stacking', async () => {
     const writeText = vi.fn().mockResolvedValue();
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
-    copyToClipboard('a', 'first');
-    await Promise.resolve();
-    copyToClipboard('b', 'second');
-    await Promise.resolve();
+    await copyToClipboard('a', 'first');
+    await copyToClipboard('b', 'second');
     const toasts = document.querySelectorAll('.copy-toast');
     expect(toasts).toHaveLength(1);
     expect(toasts[0].textContent).toBe('second');
