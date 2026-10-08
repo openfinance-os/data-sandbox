@@ -28,6 +28,7 @@ import { loadPersona, loadAllPools, repoRoot } from '../tools/load-fixtures.mjs'
 // wrapAtm() in src/ui/export.js (EXP-19 / §6.5).
 const ENVELOPE_METADATA_KEYS = new Set([
   '_watermark',
+  '_scenario',
   '_persona',
   '_lfi',
   '_seed',
@@ -40,7 +41,7 @@ const ENVELOPE_METADATA_KEYS = new Set([
 // Read RECORD_LEVEL_METADATA_KEEP straight out of src/ui/export.js so this
 // contract can never silently diverge from the implementation's allowlist.
 function readRecordLevelKeep() {
-  const src = fs.readFileSync(path.join(repoRoot, 'src/ui/export.js'), 'utf8');
+  const src = fs.readFileSync(path.join(repoRoot, 'src/core/envelopes.js'), 'utf8');
   const m = src.match(/RECORD_LEVEL_METADATA_KEEP\s*=\s*new Set\(\[([^\]]*)\]\)/);
   if (!m) throw new Error('RECORD_LEVEL_METADATA_KEEP not found in src/ui/export.js');
   const keys = [...m[1].matchAll(/'([^']+)'|"([^"]+)"/g)].map((x) => x[1] ?? x[2]);

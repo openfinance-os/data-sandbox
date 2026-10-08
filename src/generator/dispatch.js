@@ -12,7 +12,8 @@
 // Bundle time anchor (EXP-05 / §8.3): the bundle is a pure function of
 // (persona, lfi, seed, now); `now` defaults to this build-time anchor so two
 // visitors hitting the same URL on different days see byte-identical bundles.
-export const DEFAULT_NOW = new Date(Date.UTC(2026, 3, 1, 0, 0, 0));
+import { REFERENCE_DATE } from '../core/scenario.js';
+export const DEFAULT_NOW = new Date(REFERENCE_DATE);
 
 // Canonical merge order for multi-domain bundles (banking → insurance → atm),
 // NOT persona declaration order: merge order decides which side's scalars win

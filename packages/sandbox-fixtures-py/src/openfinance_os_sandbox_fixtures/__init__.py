@@ -393,7 +393,7 @@ def paginate_envelope(
     key = _find_list_key(envelope)
     if key is None:
         # Non-paginatable — refresh Self if a request_url was supplied.
-        if request_url:
+        if request_url and envelope.get("Links") is not None:
             out = dict(envelope)
             out["Links"] = {**(envelope.get("Links") or {}), "Self": request_url}
             return out
@@ -415,8 +415,10 @@ def paginate_envelope(
     return {
         **envelope,
         "Data": new_data,
-        "Links": _build_links(self_url, off, lim, total),
-        "Meta": {**(envelope.get("Meta") or {}), "TotalPages": total_pages},
+        **({"Links": _build_links(self_url, off, lim, total),
+            "Meta": {**(envelope.get("Meta") or {}), "TotalPages": total_pages}}
+           if envelope.get("Links") is not None else
+           {"_paginationLinks": _build_links(self_url, off, lim, total)}),
         "_pagination": {
             "offset": off,
             "limit": lim,

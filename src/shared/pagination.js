@@ -75,15 +75,16 @@ function toInt(s, fallback) {
 
 // Paginate a v2.1 envelope. When `requested` is false, returns a shallow
 // copy with Links.Self refreshed to `requestUrl` (so static fixtures pulled
-// over the SW still report the real URL the client asked for) and the
+// through a local adapter still report the requested URL) and the
 // envelope is otherwise untouched. When `requested` is true, the array
 // under Data is sliced and Links.First/Last/Next/Previous + Meta.TotalPages
-// are populated.
+// are populated where the source contract permits them. ATM navigation
+// remains in underscore annotations; the wire response has no Links.
 export function paginateEnvelope(envelope, { offset, limit, requested, requestUrl }) {
   if (!envelope || typeof envelope !== 'object') return envelope;
   const key = findListKey(envelope);
   if (!requested || key === null) {
-    if (!requestUrl) return envelope;
+    if (!requestUrl || !envelope.Links) return envelope;
     return {
       ...envelope,
       Links: { ...(envelope.Links || {}), Self: String(requestUrl) },
@@ -92,7 +93,7 @@ export function paginateEnvelope(envelope, { offset, limit, requested, requestUr
   const arr = key === ROOT_ARRAY_SENTINEL ? envelope.Data : envelope.Data[key];
   const total = arr.length;
   const off = total === 0 ? 0 : Math.max(0, offset);
-  const lim = Math.max(1, limit);
+  const lim = Math.min(PAGINATION_DEFAULTS.maxLimit, Math.max(1, limit));
   const slice = arr.slice(off, off + lim);
   const newData = key === ROOT_ARRAY_SENTINEL ? slice : { ...envelope.Data, [key]: slice };
   const totalPages = total === 0 ? 1 : Math.ceil(total / lim);
@@ -106,11 +107,15 @@ export function paginateEnvelope(envelope, { offset, limit, requested, requestUr
   return {
     ...envelope,
     Data: newData,
-    Links: links,
-    Meta: {
-      ...(envelope.Meta || {}),
-      TotalPages: totalPages,
-    },
+    ...(envelope.Links
+      ? {
+          Links: links,
+          Meta: {
+            ...(envelope.Meta || {}),
+            TotalPages: totalPages,
+          },
+        }
+      : { _paginationLinks: links }),
     _pagination: {
       offset: off,
       limit: lim,

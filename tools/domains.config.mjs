@@ -48,10 +48,10 @@ export const DOMAINS = [
     bandsPath: 'spec/lfi-bands.insurance.yaml',
     outPath: 'dist/SPEC.insurance.json',
     upstreamRepo: 'Nebras-Open-Finance/api-specs',
-    upstreamPath: 'dist/standards/v2.1-errata1/uae-insurance-openapi.yaml',
+    upstreamPath: 'dist/standards/v2.1-errata3/uae-insurance-openapi.yaml',
     defaultEndpoint: '/motor-insurance-policies',
     // Phase 2.1 full GET coverage — every read-only insurance endpoint
-    // the v2.1-errata1 spec exposes. POST/PATCH on bare quote paths and
+    // the v2.1-errata3 spec exposes. POST/PATCH on bare quote paths and
     // PATCH /insurance-consents/{ConsentId} are TPP→LFI write ops,
     // outside the read-only sandbox surface.
     inScopePaths: [

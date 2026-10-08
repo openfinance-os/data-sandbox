@@ -13,9 +13,9 @@ import { test, expect, loadPersona } from './_fixtures.mjs';
 
 // Press Tab until document.activeElement matches `selector` (evaluated in the
 // page). Returns true when reached; false when maxTabs presses weren't enough.
-async function tabUntilFocused(page, selector, maxTabs = 80) {
+async function tabUntilFocused(page, selector, maxTabs = 80, key = 'Tab') {
   for (let i = 0; i < maxTabs; i += 1) {
-    await page.keyboard.press('Tab');
+    await page.keyboard.press(key);
     const matched = await page.evaluate(
       (sel) => document.activeElement?.matches?.(sel) ?? false,
       selector,
@@ -25,12 +25,22 @@ async function tabUntilFocused(page, selector, maxTabs = 80) {
   return false;
 }
 
-test('persona card is reachable by Tab and activates with Enter — C-A1', async ({ page }) => {
+test('persona card is reachable by Tab and activates with Enter — C-A1', async ({
+  page,
+  browserName,
+}) => {
   await loadPersona(page);
 
   // Tab from the top of the page until focus lands on the activation button
   // of a card that is NOT already active.
-  const reached = await tabUntilFocused(page, '.persona-card:not(.active) button.persona-name');
+  // Safari's Option-Tab mode traverses all controls rather than only text
+  // inputs and summaries. Verify the same reachable activation button.
+  const reached = await tabUntilFocused(
+    page,
+    '.persona-card:not(.active) button.persona-name',
+    80,
+    browserName === 'webkit' ? 'Alt+Tab' : 'Tab',
+  );
   expect(reached, 'Tab never reached an inactive persona card').toBe(true);
 
   const targetId = await page.evaluate(

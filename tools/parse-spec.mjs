@@ -13,6 +13,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import yaml from 'js-yaml';
+import { createValidators } from './schema-validator.mjs';
 import { DOMAINS } from './domains.config.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -78,8 +79,27 @@ function walkSchema(spec, schema, pathParts, parentRequired, seen, out, depth = 
   }
   if (Array.isArray(schema.oneOf) || Array.isArray(schema.anyOf)) {
     const variants = schema.oneOf || schema.anyOf;
-    if (variants.length > 0) {
-      walkSchema(spec, variants[0], pathParts, parentRequired, seen, out, depth + 1);
+    const branchFields = variants.map((variant) => {
+      const fields = [];
+      walkSchema(spec, variant, pathParts, parentRequired, new Set(seen), fields, depth + 1);
+      return fields;
+    });
+    const paths = [...new Set(branchFields.flatMap((fields) => fields.map((f) => f.path)))];
+    for (const path of paths) {
+      const matches = branchFields.map((fields) => fields.find((f) => f.path === path));
+      const first = matches.find(Boolean);
+      const status = matches.every((f) => f?.status === 'mandatory')
+        ? 'mandatory'
+        : matches.some((f) => f?.status === 'mandatory')
+          ? 'conditional'
+          : 'optional';
+      out.push({
+        ...first,
+        status,
+        ...(status === 'conditional'
+          ? { conditionalReason: 'Required only in some schema alternatives' }
+          : {}),
+      });
     }
     return;
   }
@@ -215,7 +235,10 @@ export function parseDomain(config) {
   }
 
   const yamlText = fs.readFileSync(specPath, 'utf8');
-  const spec = yaml.load(yamlText);
+  const spec =
+    config.id === 'insurance'
+      ? createValidators(yamlText, { normalization: true }).spec
+      : yaml.load(yamlText);
   const schemaLines = buildSchemaLineIndex(yamlText);
 
   const pinSha = fs.existsSync(pinPath) ? fs.readFileSync(pinPath, 'utf8').trim() : 'unknown';

@@ -6,9 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
-import yaml from 'js-yaml';
-import Ajv from 'ajv';
-import addFormats from 'ajv-formats';
+import { createValidators, stripAnnotations } from '../tools/schema-validator.mjs';
 import { repoRoot } from '../tools/load-fixtures.mjs';
 
 const PKG_DIR = path.join(repoRoot, 'packages/sandbox-fixtures');
@@ -214,7 +212,8 @@ if (!FIXTURES_BUILT) {
           const fp = path.join(PKG_DIR, rel);
           const env = JSON.parse(fs.readFileSync(fp, 'utf8'));
           expect(env.Data, `${endpoint}`).toBeDefined();
-          expect(env.Links?.Self, `${endpoint}`).toBeDefined();
+          if (endpoint !== '/atms') expect(env.Links?.Self, `${endpoint}`).toBeDefined();
+          else expect(env.Links).toBeUndefined();
           expect(env.Meta, `${endpoint}`).toBeDefined();
           expect(env._watermark, `${endpoint}`).toMatch(/SYNTHETIC/);
           validated += 1;
@@ -224,8 +223,9 @@ if (!FIXTURES_BUILT) {
     });
 
     it('a sampled fixture validates against the v2.1 OpenAPI schema', async () => {
-      const spec = yaml.load(
-        fs.readFileSync(path.join(repoRoot, 'spec/uae-account-information-openapi.yaml'), 'utf8'),
+      const raw = fs.readFileSync(
+        path.join(repoRoot, 'spec/uae-account-information-openapi.yaml'),
+        'utf8',
       );
       const m = await import(path.join(PKG_DIR, 'index.mjs'));
       const fixture = m.loadFixture({
@@ -234,43 +234,8 @@ if (!FIXTURES_BUILT) {
         endpoint: '/accounts',
       });
 
-      const ajv = new Ajv({ strict: false, allErrors: true, allowUnionTypes: true });
-      addFormats(ajv);
-      const definitions = JSON.parse(JSON.stringify(spec.components.schemas));
-      const rewrite = (node) => {
-        if (Array.isArray(node)) return node.forEach(rewrite);
-        if (node && typeof node === 'object') {
-          if (typeof node.$ref === 'string' && node.$ref.startsWith('#/components/schemas/')) {
-            node.$ref = `#/definitions/${node.$ref.slice('#/components/schemas/'.length)}`;
-          }
-          if (node.nullable === true && typeof node.type === 'string')
-            node.type = [node.type, 'null'];
-          delete node.nullable;
-          if (node.exclusiveMinimum === true && typeof node.minimum === 'number') {
-            node.exclusiveMinimum = node.minimum;
-            delete node.minimum;
-          }
-          if (node.exclusiveMaximum === true && typeof node.maximum === 'number') {
-            node.exclusiveMaximum = node.maximum;
-            delete node.maximum;
-          }
-          if (node.exclusiveMinimum === false) delete node.exclusiveMinimum;
-          if (node.exclusiveMaximum === false) delete node.exclusiveMaximum;
-          if (node.additionalProperties === false) delete node.additionalProperties;
-          for (const k of Object.keys(node)) rewrite(node[k]);
-        }
-      };
-      rewrite(definitions);
-      const validate = ajv.compile({
-        $schema: 'http://json-schema.org/draft-07/schema#',
-        definitions,
-        $ref: '#/definitions/AEReadAccount',
-      });
-      // Strip our watermark fields before validation.
-      const stripped = { Data: fixture.Data, Links: fixture.Links, Meta: fixture.Meta };
-      const ok = validate(stripped);
-      if (!ok) console.error(validate.errors?.slice(0, 3));
-      expect(ok).toBe(true);
+      const validate = createValidators(raw).forEndpoint('/accounts');
+      expect(validate(stripAnnotations(fixture)), JSON.stringify(validate.errors)).toBe(true);
     });
 
     it('determinism — the package is reproducible across builds', () => {

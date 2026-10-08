@@ -8,6 +8,8 @@ import { buildBundle } from '../src/generator/index.js';
 import {
   computeUnderwriting,
   computeImpliedIncome,
+  computeFixedCommitments,
+  computeDBR,
   lowVolumeGuard,
 } from '../src/shared/underwriting.js';
 import { loadAllPersonas, loadAllPools } from '../tools/load-fixtures.mjs';
@@ -15,6 +17,25 @@ import { loadAllPersonas, loadAllPools } from '../tools/load-fixtures.mjs';
 const NOW = new Date(Date.UTC(2026, 3, 1));
 
 describe('underwriting calculator — EXP-18', () => {
+  it('normalizes observed monthly intervals and abstains on missing commitment evidence', () => {
+    const order = {
+      StandingOrderId: 'rent',
+      StandingOrderStatusCode: 'Active',
+      Frequency: 'IntervalMonthDay:6:1',
+      NextPaymentAmount: { Amount: '600.00', Currency: 'AED' },
+    };
+    expect(computeFixedCommitments([order], []).value).toBe(100);
+    expect(
+      computeFixedCommitments([{ ...order, NextPaymentAmount: undefined }], []).value,
+    ).toBeNull();
+    expect(computeFixedCommitments([{ ...order, Frequency: 'NotKnown' }], []).value).toBeNull();
+    expect(
+      computeDBR(
+        { value: 1000 },
+        computeFixedCommitments([{ ...order, Frequency: 'NotKnown' }], []),
+      ).value,
+    ).toBeNull();
+  });
   const personas = loadAllPersonas();
   const pools = loadAllPools();
 

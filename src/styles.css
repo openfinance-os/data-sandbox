@@ -277,6 +277,9 @@ input:focus,
   }
 }
 @media (max-width: 760px) {
+  .topbar-persona {
+    min-block-size: 52px;
+  }
   .topbar-persona-tagline {
     white-space: normal;
     -webkit-line-clamp: 2;
@@ -455,6 +458,7 @@ input:focus,
 }
 
 .version-pin {
+  min-inline-size: 160px;
   font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   font-size: 11px;
   color: var(--text-muted);

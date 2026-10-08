@@ -35,6 +35,7 @@ export function derivePrimaryAnchor(sourcePersona) {
   const idx = filtered.findIndex((s) => s.type === 'CurrentAccount');
   if (idx < 0) return null;
   return {
+    currency: filtered[idx].currency ?? 'AED',
     accountId: makeAccountId(sourcePersona.persona_id, idx),
     iban: derivePrimaryAccountIban(sourcePersona.persona_id, idx),
   };

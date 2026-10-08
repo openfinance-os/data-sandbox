@@ -89,7 +89,7 @@ registry = load_brand_registry()
 ## Pagination
 
 `load_fixture_page(persona, endpoint=..., offset=..., limit=...)` returns one
-page of a listing endpoint with spec-correct `Links` / `Meta.TotalPages` and a
+page of a listing endpoint with domain-specific `Links` / `Meta.TotalPages` and a
 `_pagination` sidecar; `paginate_envelope` works on an envelope already in
 memory. Defaults match the npm package (`limit=25`, max 500).
 
@@ -117,3 +117,5 @@ at the SHA recorded in `manifest()["specSha"]`.
 ## Reporting issues
 
 [github.com/openfinance-os/data-sandbox/issues](https://github.com/openfinance-os/data-sandbox/issues)
+
+ATM pagination preserves Data/Meta without Links or TotalPages; navigation is in `_paginationLinks`. Replay uses the scenario identity inside each fixture. This 0.1.0 candidate is unpublished; clean wheels can be verified with `npm run test:install`.

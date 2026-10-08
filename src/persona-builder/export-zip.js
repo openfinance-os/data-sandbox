@@ -10,6 +10,7 @@ import { recipeHash } from './recipe.js';
 import { buildBundle } from '../generator/index.js';
 import { envelopesFromBundle } from '../ui/export.js';
 import { buildZip } from './zip-writer.js';
+import { REFERENCE_DATE, CORPUS_VERSION } from '../core/scenario.js';
 
 const LFIS = ['rich', 'median', 'sparse'];
 
@@ -20,7 +21,13 @@ function safeName(s) {
 // Pure function — returns { bytes: Uint8Array, filename, manifest }. The
 // caller (UI button or test) decides what to do with the bytes (Blob +
 // URL.createObjectURL for the browser, fs.writeFileSync for Node).
-export function buildCustomFixtureZip({ recipe, pools, seed = 1, now }) {
+export function buildCustomFixtureZip({
+  recipe,
+  pools,
+  seed = 1,
+  now = new Date(REFERENCE_DATE),
+  context = {},
+}) {
   const persona = expandRecipe(recipe, pools);
   const hash = recipeHash(recipe);
   const personaSlug = persona.persona_id; // already `custom_<hash>`
@@ -31,20 +38,23 @@ export function buildCustomFixtureZip({ recipe, pools, seed = 1, now }) {
     package: '@openfinance-os/sandbox-fixtures-custom',
     persona: personaSlug,
     recipeHash: hash,
+    corpusVersion: CORPUS_VERSION,
     specVersion: 'v2.1',
-    generatedAt: now ? new Date(now).toISOString() : new Date().toISOString(),
+    generatedAt: new Date(now).toISOString(),
     fixtures: {},
   };
 
   for (const lfi of LFIS) {
     const bundle = buildBundle({ persona, lfi, seed, pools, now });
     const envelopes = envelopesFromBundle(bundle, {
+      ...context,
+      recipeHash: hash,
+      referenceDate: new Date(now).toISOString(),
       personaId: personaSlug,
       lfi,
       seed,
-      specVersion: 'v2.1',
-      specSha: 'live',
-      retrievedAt: now ? new Date(now).toISOString() : new Date().toISOString(),
+      specVersion: context.specVersion ?? 'v2.1',
+      specSha: context.specSha ?? null,
     });
 
     const endpointFiles = {};

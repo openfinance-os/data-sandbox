@@ -56,7 +56,8 @@ import {
 import { findInsuranceCrossDomainLink, pickFootprintSlotBank } from '../multi-lfi.js';
 import { mod97IbanCheck } from '../identity.js';
 
-const DEFAULT_NOW = new Date(Date.UTC(2026, 3, 1, 0, 0, 0));
+import { REFERENCE_DATE } from '../../core/scenario.js';
+const DEFAULT_NOW = new Date(REFERENCE_DATE);
 
 const DEFAULT_BANKS_POOL = 'counterparty_banks_uae_real';
 

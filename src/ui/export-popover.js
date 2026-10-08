@@ -46,6 +46,12 @@ export function createExportPopover(deps) {
   let releaseTrap = null;
 
   function snippetForTab(key) {
+    const staticAvailable = Boolean(activeFixtureUrl());
+    if (['npm', 'python', 'mcp'].includes(key) && !staticAvailable)
+      return {
+        lang: 'note',
+        text: 'This scenario is generated locally. Download JSON or use the local mock with the same recipe and seed: npm run mock. Curated package loaders accept only manifest-listed seeds.',
+      };
     const ctx = {
       personaId: state.personaId,
       lfi: state.lfi,
@@ -97,7 +103,9 @@ export function createExportPopover(deps) {
           lang: 'bash',
           text:
             `# Active endpoint as v2.1-shaped JSON envelope\n` +
-            `curl -s '${activeFixtureUrl()}' | jq .`,
+            (staticAvailable
+              ? `curl -fsS '${activeFixtureUrl()}' | jq .`
+              : '# This seed/recipe has no static URL. Download JSON or use npm run mock.'),
         };
       case 'mcp':
         return {
@@ -135,7 +143,7 @@ export function createExportPopover(deps) {
   // key exists, otherwise the English proper-noun label.
   const tabLabel = (tab) => (tab.i18nKey ? tr(tab.i18nKey, state.lang) : tab.label);
 
-  function open() {
+  function open(trigger = document.activeElement) {
     if (overlay) {
       closeOverlay();
       return;
@@ -143,7 +151,7 @@ export function createExportPopover(deps) {
     // PR-13 (Greptile P2) — remember who opened us so we can return
     // focus on close. Falls back gracefully if document.activeElement
     // is null or body (e.g. ⌘E from outside any focused element).
-    triggerElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    triggerElement = trigger instanceof HTMLElement ? trigger : null;
     overlay = el('div', {
       class: 'export-overlay',
       attrs: { role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'export-title' },

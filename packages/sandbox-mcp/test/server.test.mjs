@@ -605,7 +605,7 @@ describe('sandbox-mcp server', () => {
     expect(env._filter.kept).toBe(50);
     expect(env._filter.total).toBeGreaterThan(50);
     expect(env.Data.Transaction).toHaveLength(50);
-    expect(env._filter._paginationHint).toMatch(/until=/);
+    expect(env._filter._paginationHint).toMatch(/nextCursor/);
   });
 
   it('get_transactions with explicit limit truncates to that count and slices the most recent items', async () => {
@@ -617,7 +617,7 @@ describe('sandbox-mcp server', () => {
       arguments: { accountId: 'salaried-expat-mid-acct-01', summary: true },
     });
     const summaryEnv = parseEnvelope(textOf(summary));
-    const total = summaryEnv._summary.count;
+    const total = summaryEnv._filter.total;
 
     const all = await client.callTool({
       name: 'get_transactions',
@@ -654,17 +654,15 @@ describe('sandbox-mcp server', () => {
     expect(env.Data.Summary).toBeUndefined();
     expect(env._summary).toBeDefined();
     expect(env._summary.count).toBeGreaterThan(0);
-    expect(env._summary.byDirection.Credit).toMatchObject({
-      count: expect.any(Number),
-      total: expect.any(Number),
-    });
-    expect(env._summary.byDirection.Debit).toMatchObject({
-      count: expect.any(Number),
-      total: expect.any(Number),
-    });
-    expect(Array.isArray(env._summary.byMonth)).toBe(true);
-    expect(env._summary.byMonth.length).toBeGreaterThan(0);
-    expect(Array.isArray(env._summary.topCategories)).toBe(true);
+    expect(env._summary.scope.status).toBe('Booked');
+    expect(env._summary.scope.currenciesCombined).toBe(false);
+    expect(env._summary.byCurrencyAndStatus.length).toBeGreaterThan(0);
+    for (const g of env._summary.byCurrencyAndStatus) {
+      expect(g.status).toBe('Booked');
+      expect(g.sourceIds.length).toBe(Math.min(50, g.count));
+      expect(g.sourceEvidence.total).toBe(g.count);
+      expect(g.net).toMatch(/^-?\d+\.\d{2}$/);
+    }
     expect(env._filter.mode).toBe('summary');
     // Summary payload should be small enough to never trip a tool-result cap,
     // even for the highest-volume curated persona.
@@ -679,17 +677,10 @@ describe('sandbox-mcp server', () => {
     expect(textOf(r).length).toBeLessThan(200_000);
   });
 
-  it('get_transactions with limit=0 returns no rows but still reports total', async () => {
+  it('get_transactions rejects a zero-length cursor page', async () => {
     await client.callTool({ name: 'set_session', arguments: { persona: 'salaried_expat_mid' } });
-    const r = await client.callTool({
-      name: 'get_transactions',
-      arguments: { accountId: 'salaried-expat-mid-acct-01', limit: 0 },
-    });
-    const env = parseEnvelope(textOf(r));
-    expect(env.Data.Transaction).toEqual([]);
-    expect(env._filter.kept).toBe(0);
-    expect(env._filter.truncated).toBe(true);
-    expect(env._filter.total).toBeGreaterThan(0);
+    const r = await client.callTool({ name: 'get_transactions', arguments: { limit: 0 } });
+    expect(r.isError).toBe(true);
   });
 
   it('get_transactions rejects limit above the hard cap', async () => {

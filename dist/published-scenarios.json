@@ -1,0 +1,296 @@
+{
+  "corpusVersion": "0.1.0",
+  "published": {
+    "corporate_treasury_listed": [
+      "primary|rich|7142",
+      "primary|median|7142",
+      "primary|sparse|7142"
+    ],
+    "domestic_worker": [
+      "primary|rich|18327",
+      "primary|median|18327",
+      "primary|sparse|18327"
+    ],
+    "emirati_takaful_multi": [
+      "primary|rich|77115",
+      "primary|median|77115",
+      "primary|sparse|77115",
+      "islamic-deposit|rich|77115",
+      "everyday-card|rich|77115",
+      "mortgage-lender|rich|77115",
+      "islamic-deposit|median|77115",
+      "everyday-card|median|77115",
+      "mortgage-lender|median|77115",
+      "islamic-deposit|sparse|77115",
+      "everyday-card|sparse|77115",
+      "mortgage-lender|sparse|77115"
+    ],
+    "gcc_commuter_multi": [
+      "primary|rich|71956",
+      "primary|median|71956",
+      "primary|sparse|71956",
+      "offshore|rich|71956",
+      "digital|rich|71956",
+      "everyday-card|rich|71956",
+      "offshore|median|71956",
+      "digital|median|71956",
+      "everyday-card|median|71956",
+      "offshore|sparse|71956",
+      "digital|sparse|71956",
+      "everyday-card|sparse|71956"
+    ],
+    "gig_variable_income": [
+      "primary|rich|5523",
+      "primary|median|5523",
+      "primary|sparse|5523"
+    ],
+    "healthcare_multi": [
+      "primary|rich|53842",
+      "primary|median|53842",
+      "primary|sparse|53842",
+      "digital|rich|53842",
+      "mortgage-lender|rich|53842",
+      "digital|median|53842",
+      "mortgage-lender|median|53842",
+      "digital|sparse|53842",
+      "mortgage-lender|sparse|53842"
+    ],
+    "hnw_intl_multi": [
+      "primary|rich|33108",
+      "primary|median|33108",
+      "primary|sparse|33108",
+      "offshore|rich|33108",
+      "digital|rich|33108",
+      "mortgage-lender|rich|33108",
+      "offshore|median|33108",
+      "digital|median|33108",
+      "mortgage-lender|median|33108",
+      "offshore|sparse|33108",
+      "digital|sparse|33108",
+      "mortgage-lender|sparse|33108"
+    ],
+    "hnw_multicurrency": [
+      "primary|rich|2046",
+      "primary|median|2046",
+      "primary|sparse|2046"
+    ],
+    "joint_account_family": [
+      "primary|rich|6612",
+      "primary|median|6612",
+      "primary|sparse|6612"
+    ],
+    "mortgage_dbr_heavy": [
+      "primary|rich|9203",
+      "primary|median|9203",
+      "primary|sparse|9203"
+    ],
+    "nsf_distressed": [
+      "primary|rich|4407",
+      "primary|median|4407",
+      "primary|sparse|4407"
+    ],
+    "pep_flagged": [
+      "primary|rich|28419",
+      "primary|median|28419",
+      "primary|sparse|28419"
+    ],
+    "recent_expat_multi": [
+      "primary|rich|41039",
+      "primary|median|41039",
+      "primary|sparse|41039",
+      "salary|rich|41039",
+      "digital|rich|41039",
+      "salary|median|41039",
+      "digital|median|41039",
+      "salary|sparse|41039",
+      "digital|sparse|41039"
+    ],
+    "recent_graduate_thin_file": [
+      "primary|rich|1117",
+      "primary|median|1117",
+      "primary|sparse|1117"
+    ],
+    "retail_multi_banker": [
+      "primary|rich|99072",
+      "primary|median|99072",
+      "primary|sparse|99072",
+      "everyday-card|rich|99072",
+      "digital|rich|99072",
+      "mortgage-lender|rich|99072",
+      "everyday-card|median|99072",
+      "digital|median|99072",
+      "mortgage-lender|median|99072",
+      "everyday-card|sparse|99072",
+      "digital|sparse|99072",
+      "mortgage-lender|sparse|99072"
+    ],
+    "retired_multi": [
+      "primary|rich|60284",
+      "primary|median|60284",
+      "primary|sparse|60284",
+      "islamic-deposit|rich|60284",
+      "everyday-card|rich|60284",
+      "international|rich|60284",
+      "islamic-deposit|median|60284",
+      "everyday-card|median|60284",
+      "international|median|60284",
+      "islamic-deposit|sparse|60284",
+      "everyday-card|sparse|60284",
+      "international|sparse|60284"
+    ],
+    "returning_expat": [
+      "primary|rich|35691",
+      "primary|median|35691",
+      "primary|sparse|35691"
+    ],
+    "salaried_emirati_affluent": [
+      "primary|rich|8821",
+      "primary|median|8821",
+      "primary|sparse|8821"
+    ],
+    "salaried_expat_mid": [
+      "primary|rich|4729",
+      "primary|median|4729",
+      "primary|sparse|4729"
+    ],
+    "senior_retiree": [
+      "primary|rich|7134",
+      "primary|median|7134",
+      "primary|sparse|7134"
+    ],
+    "sme_cash_heavy": [
+      "primary|rich|6308",
+      "primary|median|6308",
+      "primary|sparse|6308"
+    ],
+    "sme_clinic_receivables": [
+      "primary|rich|2864",
+      "primary|median|2864",
+      "primary|sparse|2864",
+      "secondary|rich|2864",
+      "tertiary|rich|2864",
+      "secondary|median|2864",
+      "tertiary|median|2864",
+      "secondary|sparse|2864",
+      "tertiary|sparse|2864"
+    ],
+    "sme_construction_pdc": [
+      "primary|rich|6431",
+      "primary|median|6431",
+      "primary|sparse|6431",
+      "secondary|rich|6431",
+      "secondary|median|6431",
+      "secondary|sparse|6431"
+    ],
+    "sme_ecommerce_marketplace": [
+      "primary|rich|8294",
+      "primary|median|8294",
+      "primary|sparse|8294",
+      "secondary|rich|8294",
+      "tertiary|rich|8294",
+      "secondary|median|8294",
+      "tertiary|median|8294",
+      "secondary|sparse|8294",
+      "tertiary|sparse|8294"
+    ],
+    "sme_fnb_multi_outlet": [
+      "primary|rich|5172",
+      "primary|median|5172",
+      "primary|sparse|5172",
+      "secondary|rich|5172",
+      "tertiary|rich|5172",
+      "secondary|median|5172",
+      "tertiary|median|5172",
+      "secondary|sparse|5172",
+      "tertiary|sparse|5172"
+    ],
+    "sme_rak_trading_emirati": [
+      "primary|rich|4106",
+      "primary|median|4106",
+      "primary|sparse|4106",
+      "secondary|rich|4106",
+      "tertiary|rich|4106",
+      "secondary|median|4106",
+      "tertiary|median|4106",
+      "secondary|sparse|4106",
+      "tertiary|sparse|4106"
+    ],
+    "sme_saas_freezone": [
+      "primary|rich|3957",
+      "primary|median|3957",
+      "primary|sparse|3957",
+      "secondary|rich|3957",
+      "tertiary|rich|3957",
+      "secondary|median|3957",
+      "tertiary|median|3957",
+      "secondary|sparse|3957",
+      "tertiary|sparse|3957"
+    ],
+    "sme_trading_business": [
+      "primary|rich|4821",
+      "primary|median|4821",
+      "primary|sparse|4821"
+    ],
+    "tech_pro_multi": [
+      "primary|rich|22417",
+      "primary|median|22417",
+      "primary|sparse|22417",
+      "digital|rich|22417",
+      "everyday-card|rich|22417",
+      "digital|median|22417",
+      "everyday-card|median|22417",
+      "digital|sparse|22417",
+      "everyday-card|sparse|22417"
+    ],
+    "employment_iloe_private": [
+      "primary|rich|9072",
+      "primary|median|9072",
+      "primary|sparse|9072"
+    ],
+    "health_family_comprehensive": [
+      "primary|rich|8431",
+      "primary|median|8431",
+      "primary|sparse|8431"
+    ],
+    "home_mortgage_villa": [
+      "primary|rich|7321",
+      "primary|median|7321",
+      "primary|sparse|7321"
+    ],
+    "life_mortgage_protection": [
+      "primary|rich|5102",
+      "primary|median|5102",
+      "primary|sparse|5102"
+    ],
+    "motor_comprehensive_mid": [
+      "primary|rich|4729",
+      "primary|median|4729",
+      "primary|sparse|4729"
+    ],
+    "motor_high_claim_multi_driver": [
+      "primary|rich|5614",
+      "primary|median|5614",
+      "primary|sparse|5614"
+    ],
+    "motor_takaful_third_party_expat": [
+      "primary|rich|8113",
+      "primary|median|8113",
+      "primary|sparse|8113"
+    ],
+    "renters_apartment_tenant": [
+      "primary|rich|8190",
+      "primary|median|8190",
+      "primary|sparse|8190"
+    ],
+    "travel_annual_multitrip_expat": [
+      "primary|rich|6240",
+      "primary|median|6240",
+      "primary|sparse|6240"
+    ],
+    "atm_directory": [
+      "primary|rich|47131",
+      "primary|median|47131",
+      "primary|sparse|47131"
+    ]
+  }
+}
