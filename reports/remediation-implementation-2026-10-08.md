@@ -1,6 +1,6 @@
 # Data Sandbox remediation implementation
 
-**8 October 2026 — unpublished candidate.** Application source and local distributables are at `46b4138cf4eeb2cc11c71bae485cd8698a1d0c3b`, on `codex/sandbox-remediation`. [Draft PR #118](https://github.com/openfinance-os/data-sandbox/pull/118) contains the changes. The original review, specification audit and approved plan remain historical baseline documents.
+**8 October 2026 — unpublished candidate.** Local corpus distributables are pinned to reviewed source `46b4138cf4eeb2cc11c71bae485cd8698a1d0c3b`. The `codex/sandbox-remediation` review branch also includes subsequent navigation, test and documentation refinements; the PR shows the current application head. [Draft PR #118](https://github.com/openfinance-os/data-sandbox/pull/118) contains the changes. The original review, specification audit and approved plan remain historical baseline documents.
 
 The sandbox now provides a coherent synthetic corpus and useful application-testing tasks. The implementation fixes wire-envelope errors, posted-money calculations, competing clocks, fixture discovery, and incomplete numerical retrieval. It adds a portable mock, four labs, evidence-aware comparisons, evaluation inputs, tables and types. Public publication and deployment have not occurred. Real-user task completion and production performance are still unverified.
 
@@ -21,7 +21,7 @@ The sandbox now provides a coherent synthetic corpus and useful application-test
 
 The stable baseline remains v2.1 with applicable [official consolidated Errata 4](https://openfinanceuae.atlassian.net/wiki/spaces/OF/pages/1366294554/Standards+V2.1+API+Hub+V8+-+Consolidated+Errata), dated 18 September 2026, page revision 7. Canonical API files at upstream commit `a3c8b8bf22e080046a8e0fbd9933f57431604155` resolve to banking errata2, insurance errata3, and the unchanged base ATM file. The folder name alone is not the correction baseline. Documentation's v2.2-rc2 and the repository's rc1 are recorded as a preview disagreement; neither is adopted as stable.
 
-Exact evidence is in [provenance](/Users/michartmann/Documents/GitHub/data-sandbox/spec/provenance.json) and the [conformance matrix](/Users/michartmann/Documents/GitHub/data-sandbox/docs/standards-conformance.md). Corrections include unsigned adjustments with string Credit/Debit direction, non-UUID insurance resource identifiers, generic ratios above 100 where allowed, valid endpoint envelopes, and monthly standing-order frequency semantics.
+Retrieval pins retain day precision; their midnight UTC suffix denotes a date marker, not a measured download time. The unchanged ATM file retains its original retrieval marker and was checked again against upstream. Exact evidence is in [provenance](/Users/michartmann/Documents/GitHub/data-sandbox/spec/provenance.json) and the [conformance matrix](/Users/michartmann/Documents/GitHub/data-sandbox/docs/standards-conformance.md). Corrections include unsigned adjustments with string Credit/Debit direction, non-UUID insurance resource identifiers, generic ratios above 100 where allowed, valid endpoint envelopes, and monthly standing-order frequency semantics.
 
 The insurance adapter is keyed to the exact source hash. It addresses only the diagnosed closed `allOf`/`oneOf` quote compositions, preserves mandatory/status/allowed fields, and rejects injected unknown properties. Tests exercise all 24 generic/health quote-status alternatives, required-field removals, unknown fields and changed-source-hash refusal. The exact [proposed patch](/Users/michartmann/Documents/GitHub/data-sandbox/docs/insurance-quote-normalization.patch.json) and generated normalized schema are saved. The raw vendored YAML remains byte-identical to upstream, including its trailing whitespace; hand-authored changes pass whitespace checks separately.
 
@@ -39,7 +39,7 @@ The installed [Open Finance skill](/Users/michartmann/.agents/skills/open-financ
 - CSV exports for the trading SME and combined Takaful persona were read back and their account joins checked. Tables include accounts, transactions, balances, statements, commitments and policies; unknown cells stay blank and amounts retain currency/direction.
 - All domain/full archive manifests carry the same candidate revision and all referenced files are present. Changed canonical bytes under an existing corpus version are rejected. Checksum inventories are retained.
 
-The first Linux PR CI run passed core tests, workflow lint, CodeQL, Lighthouse and all 330 functional browser cases. Five old screenshots differed because of corrected dates/calculations, new comparison copy, and the Labs link. The images were inspected individually against their old baselines. The Labs link is being integrated into the existing menu to preserve pane space; reviewed Linux baselines and a final CI rerun are pending. Local macOS functional checks do not replace Linux visual acceptance.
+The first Linux PR CI run passed core tests, workflow lint, CodeQL, Lighthouse and all 330 functional browser cases. Five old screenshots differed. Individual before/after inspection identified the intended corrected dates/calculations, evidence-aware comparison and disclaimer changes, plus an avoidable Labs link that reduced pane space. Labs now uses the existing More menu, with an Arabic label. Forty menu/RTL browser cases pass. The repository's Linux refresh workflow produced three changed baselines (comparison, underwriting, embed), which were inspected and incorporated through child PR #119. The original accounts, transactions and field-card baselines remain in place; the 1% visual tolerance is unchanged. The normal full CI run validates the incorporated images and final source; its current status is on PR #118, and its completed job evidence is saved in `artifacts/validation/linux-ci-final.json`.
 
 ## Performance and distribution cost
 
@@ -49,7 +49,7 @@ Final local mobile-simulation scores across three runs:
 
 | Page | Performance | Layout shift | LCP |
 | --- | --- | --- | --- |
-| Explorer | 0.81–0.82 | 0.173 | 3.18–3.31 s |
+| Explorer (final navigation) | 0.80–0.82 | 0–0.173 | 3.18–3.33 s |
 | About | 1.00 | 0 | 1.505–1.506 s |
 | Embed | 0.95–0.97 | 0.071 | 2.28–2.72 s |
 

@@ -17,7 +17,9 @@ test('published links return JSON and unsupported paths return 404', async ({ pa
   ).toBe(404);
 });
 test('guided labs expose tasks and source-backed answers', async ({ page }) => {
-  await page.goto('/src/labs.html');
+  await page.goto('/src/index.html?persona=salaried_expat_mid');
+  await page.locator('#topbar-more > summary').click();
+  await page.getByRole('menuitem', { name: 'Guided labs' }).click();
   await expect(page.getByRole('heading', { name: 'Income and fixed commitments' })).toBeVisible();
   await page.getByRole('button', { name: 'Inspect answer key' }).first().click();
   await expect(page.locator('#labs pre').nth(1)).toContainText('incomeIds');

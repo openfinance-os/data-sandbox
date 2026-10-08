@@ -16,7 +16,8 @@
       "readJourneys": 4,
       "expectedRevisionVerified": true
     },
-    "labExecutionsPassed": 7
+    "labExecutionsPassed": 7,
+    "menuAndRtlAdditionalPassed": 40
   },
   "coverage": {
     "uniqueManifestEnvelopes": 6399,
@@ -33,7 +34,8 @@
     "core": "success",
     "actionlint": "success",
     "lighthouse": "success",
-    "visual": "failure-under-review"
+    "visual": "initial failure reviewed; three regenerated Linux baselines incorporated",
+    "finalJobEvidence": "artifacts/validation/linux-ci-final.json"
   },
   "performance": {
     "localMobile": {
@@ -104,6 +106,26 @@
           "fcpMs": 2342.742000000001,
           "lcpMs": 3187.8496000000023,
           "report": "artifacts/lighthouse-final/127_0_0_1-src_index_html-2026_10_08_12_47_06.report.json"
+        }
+      ],
+      "index-final-navigation": [
+        {
+          "score": 0.81,
+          "cls": 0,
+          "lcpMs": 3177.722999999998,
+          "report": "artifacts/lighthouse-menu-final/127_0_0_1-src_index_html-2026_10_08_13_07_21.report.json"
+        },
+        {
+          "score": 0.8,
+          "cls": 0.1731583828396267,
+          "lcpMs": 3326.108799999999,
+          "report": "artifacts/lighthouse-menu-final/127_0_0_1-src_index_html-2026_10_08_13_07_10.report.json"
+        },
+        {
+          "score": 0.82,
+          "cls": 0.1731583828396267,
+          "lcpMs": 3196.4208,
+          "report": "artifacts/lighthouse-menu-final/127_0_0_1-src_index_html-2026_10_08_13_07_39.report.json"
         }
       ]
     },
@@ -313,7 +335,6 @@
   },
   "openGates": [
     "upstream literal insurance quote composition",
-    "Linux visual result pending",
     "npm/PyPI ownership and publisher setup",
     "final release review and trusted main CI",
     "registry/deployed-origin end-to-end parity",
@@ -322,5 +343,14 @@
     "observed first useful result and lab completion",
     "publication-stage noindex review"
   ],
-  "logs": "artifacts/validation/"
+  "logs": "artifacts/validation/",
+  "sourceRevisionMeaning": "Reviewed corpus/distribution source; subsequent UI/test/doc changes are on the PR. Final checked application head is in artifacts/validation/linux-ci-final.json.",
+  "linuxBaselineRefresh": {
+    "run": "https://github.com/openfinance-os/data-sandbox/actions/runs/37781483749",
+    "pr": "https://github.com/openfinance-os/data-sandbox/pull/119",
+    "generatedCommit": "e4139f57b56b9ecd8eef9ff11382f57a6c66af4d",
+    "reviewed": true,
+    "changedImages": ["compare-mode", "underwriting-panel", "embed-chromeless"],
+    "toleranceUnchanged": true
+  }
 }
