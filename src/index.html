@@ -27,10 +27,7 @@
 <link rel="modulepreload" href="generator/product.js" />
 <link rel="modulepreload" href="generator/lfi-profile-shared.js" />
 <link rel="modulepreload" href="generator/banking/lfi-profile.js" />
-<!-- C-P1 — insurance generator modules are no longer preloaded: the lazy
-     generator entry dynamic-imports the insurance/ATM pipelines only when a
-     persona declares those domains, keeping them off the banking cold path
-     (EXP-24). -->
+
 <link rel="modulepreload" href="shared/spec-helpers.js" />
 <link rel="modulepreload" href="shared/watermark.js" />
 <link rel="modulepreload" href="shared/banner.js" />
@@ -50,11 +47,7 @@
 
 <header class="topbar" role="banner">
   <nav class="controls" aria-label="Persona controls">
-    <!-- PR-11 — the persona dropdown is removed; the persona library on
-         the left pane is the canonical switcher. The persona showcase
-         (avatar + name + tagline + inline OF-OS attribution) now sits
-         inside the bordered .controls-scenario pill alongside LFI,
-         Compare-with, and Seed so the cluster reads as one unit. -->
+    
     <div class="controls-scenario" aria-label="Scenario">
       <div class="topbar-persona is-empty" id="topbar-persona" aria-label="Active persona">
         <div class="topbar-persona-avatar" id="topbar-persona-avatar" aria-hidden="true"></div>
@@ -94,20 +87,14 @@
           <button type="button" id="compare-close" class="lfi-compare-close" aria-label="Close compare mode" title="Close compare">×</button>
         </div>
       </div>
-      <!-- PR #9 — seed lever hoisted out of the Advanced details. Determinism
-           (persona, lfi, seed → byte-identical bundle, EXP-05) is a
-           first-class feature; the lever sits inline next to LFI.
-           PR-15 — info popover from main (PR #51) preserved alongside. -->
+      
       <label class="control-group control-seed">
         <span class="control-label" data-i18n="controls.seed">Seed</span>
         <input id="seed-input" type="number" value="4729" min="0" step="1" aria-label="Seed (reshuffles deterministic RNG; structure stays, details re-roll)" title="Seed reshuffles the deterministic RNG. Same (persona, lfi, seed) → byte-identical bundle (EXP-05)." />
         <button type="button" class="info-trigger" popovertarget="seed-help" aria-expanded="false" aria-label="What does Seed do?">ⓘ</button>
         <button type="button" id="seed-reset" class="seed-reset" aria-label="Reset seed to persona default" title="Reset to the persona's default seed." data-i18n="controls.seedReset">Reset</button>
       </label>
-      <!-- D-10 — Arabic / RTL i18n. Language flips <html lang/dir> + swaps the
-           app-shell chrome; the numeral toggle switches Western 0-9 ↔
-           Arabic-Indic ٠-٩ independently of language. English + Western
-           numerals are the defaults, kept implicit in the URL. -->
+      
       <div class="control-group control-lang">
         <span class="control-label" data-i18n="controls.language">Language</span>
         <div class="lfi-seg" id="lang-seg" role="radiogroup" aria-label="UI language">
