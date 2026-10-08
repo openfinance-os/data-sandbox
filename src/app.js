@@ -891,7 +891,11 @@ function buildPersonaList() {
       { class: 'persona-card-body' },
       el(
         'button',
-        { class: 'persona-name', attrs: { type: 'button' }, onClick: activatePersona },
+        {
+          class: 'persona-name',
+          attrs: { type: 'button', tabindex: '0' },
+          onClick: activatePersona,
+        },
         document.createTextNode(localizedName(p)),
         isCustom
           ? el('span', {
