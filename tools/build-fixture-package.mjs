@@ -28,6 +28,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PKG_VERSION = readPackageVersion() || '0.0.0';
+// Capture before replacing tracked generated files; our own rebuild is not a
+// user working-tree modification. Include this identity in the build cache.
+const BUILD_REVISION = readBuildRevision();
 const OUT = path.join(repoRoot, 'packages/sandbox-fixtures');
 
 // ── Build cache ──────────────────────────────────────────────────────
@@ -61,7 +64,7 @@ const CACHE_INPUT_ROOTS = [
 // otherwise truncate the hash and return it as if complete.
 function corpusInputHash() {
   const h = crypto.createHash('sha256');
-  h.update(readBuildRevision());
+  h.update(BUILD_REVISION);
 
   const hashFile = (p) => {
     // Hash path + content, never mtime — a `touch` must not invalidate.
@@ -198,7 +201,7 @@ const manifest = {
   package: '@openfinance-os/sandbox-fixtures',
   version: PKG_VERSION,
   corpusVersion: CORPUS_VERSION,
-  revision: readBuildRevision(),
+  revision: BUILD_REVISION,
   specProvenance: SPEC_PROVENANCE,
   // Banking is the primary domain of the npm/PyPI bundle — keep the
   // back-compat string field on the banking spec. `specVersions` carries

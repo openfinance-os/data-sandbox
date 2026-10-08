@@ -41,7 +41,7 @@
     "test:perf": "lhci autorun --config=lighthouserc.json",
     "validate:spec-conformance": "npm run lint:persona-spec-conformance && vitest run tests/spec-validation.test.mjs tests/spec-validation.insurance.test.mjs tests/rendered-fixture-spec-validation.test.mjs",
     "serve": "node tools/gzip-static-server.mjs 8000 _site",
-    "ci": "npm run verify:spec-shape && npm run build:spec && npm run build:data && npm run build:avatars && npm run build:fixtures:pkgs && node tools/build-labs.mjs && npm run check:dist-clean && npm run lint && npm run audit:realism && npm test && npm run test:mcp && npm run test:py",
+    "ci": "npm run verify:spec-shape && npm run build:spec && npm run build:data && npm run build:avatars && npm run build:fixtures:pkgs && node tools/build-labs.mjs && npm run check:dist-clean && node tools/stage-site.mjs && npm run lint && npm run audit:realism && npm test && npm run test:mcp && npm run test:py",
     "ci:full": "npm run ci && npm run build:site && npm run test:e2e && npm run test:perf",
     "prepare": "husky || true",
     "release:bump": "node tools/release-bump.mjs",

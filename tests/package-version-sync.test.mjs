@@ -10,6 +10,7 @@
 // for the same fixture data — this suite fails the build before that ships.
 
 import { describe, it, expect } from 'vitest';
+import { readBuildRevision } from '../tools/build-shared.mjs';
 import { CORPUS_VERSION } from '../src/core/scenario.js';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -25,6 +26,12 @@ function readJsonVersion(rel) {
 const rootVersion = readJsonVersion('package.json');
 
 describe('distribution package version sync', () => {
+  it('built manifest identifies the reviewed source revision', () => {
+    const manifest = JSON.parse(
+      fs.readFileSync(path.join(repoRoot, 'packages/sandbox-fixtures/manifest.json'), 'utf8'),
+    );
+    expect(manifest.revision).toBe(readBuildRevision());
+  });
   it('corpus replay identity follows the release version', () =>
     expect(CORPUS_VERSION).toBe(rootVersion));
   it('root package.json declares a version', () => {
