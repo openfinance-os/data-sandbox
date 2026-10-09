@@ -560,4 +560,119 @@ describe('HTTP transport — OAuth simulation (simulateOauth: true)', () => {
     expect(res.status).toBe(401);
     expect(res.headers.get('www-authenticate')).toMatch(/^Bearer /);
   });
+
+  // ── E-03(g): RFC 7591 stub Dynamic Client Registration ────────────────────
+
+  it('advertises registration_endpoint in the RFC 8414 metadata', async () => {
+    const res = await fetch(`${origin()}/.well-known/oauth-authorization-server`);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.registration_endpoint).toBe(`${body.issuer}/register`);
+  });
+
+  it('POST /register echoes back a synthetic client_id (RFC 7591 stub)', async () => {
+    const res = await fetch(`${origin()}/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_name: 'Claude',
+        redirect_uris: ['https://claude.ai/api/mcp/auth_callback'],
+      }),
+    });
+    expect(res.status).toBe(201);
+    expect(res.headers.get('cache-control')).toBe('no-store');
+    const body = await res.json();
+    expect(body.client_id).toMatch(/^sandbox-/);
+    expect(body.client_id_issued_at).toBeGreaterThan(0);
+    expect(body.client_name).toBe('Claude');
+    expect(body.redirect_uris).toEqual(['https://claude.ai/api/mcp/auth_callback']);
+    expect(body.token_endpoint_auth_method).toBe('none'); // public client — no secret
+    expect(body.client_secret).toBeUndefined();
+    expect(body.grant_types).toEqual(['authorization_code']);
+    expect(body.response_types).toEqual(['code']);
+  });
+
+  it('POST /register with an empty body still registers (all-default metadata)', async () => {
+    const res = await fetch(`${origin()}/register`, { method: 'POST' });
+    expect(res.status).toBe(201);
+    const body = await res.json();
+    expect(body.client_id).toMatch(/^sandbox-/);
+    expect(body.redirect_uris).toEqual([]);
+  });
+
+  it('POST /register rejects malformed JSON with invalid_client_metadata', async () => {
+    const res = await fetch(`${origin()}/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{not json',
+    });
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toBe('invalid_client_metadata');
+  });
+
+  // ── E-03(f): CORS wildcard must not blanket the OAuth endpoints ──────────
+
+  it('does not apply Access-Control-Allow-Origin: * to the OAuth endpoints', async () => {
+    const oauthPaths = [
+      '/.well-known/oauth-protected-resource',
+      '/.well-known/oauth-authorization-server',
+    ];
+    for (const p of oauthPaths) {
+      const res = await fetch(`${origin()}${p}`, { headers: { Origin: 'https://evil.example' } });
+      expect(res.status, p).toBe(200);
+      expect(res.headers.get('access-control-allow-origin'), p).toBeNull();
+    }
+    // /register (POST) — no CORS either.
+    const reg = await fetch(`${origin()}/register`, {
+      method: 'POST',
+      headers: { Origin: 'https://evil.example' },
+    });
+    expect(reg.headers.get('access-control-allow-origin')).toBeNull();
+    // /mcp keeps the wildcard (anonymous synthetic data, browser clients).
+    const mcp = await fetch(server.url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json, text/event-stream',
+        Origin: 'https://claude.ai',
+      },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} }),
+    });
+    expect(mcp.headers.get('access-control-allow-origin')).toBe('*');
+  });
+});
+
+describe('HTTP transport — public URL issuer (E-03g)', () => {
+  let server;
+  beforeAll(async () => {
+    server = await startHttp({
+      port: 0,
+      host: '127.0.0.1',
+      log: () => {},
+      simulateOauth: true,
+      publicUrl: 'https://mcp.example.org',
+      // The public host must be reachable through the Host allowlist; the
+      // test talks to 127.0.0.1 so both are in play.
+    });
+  });
+  afterAll(async () => {
+    await server.close();
+  });
+
+  it('surfaces the validated public origin on the handle', () => {
+    expect(server.publicUrl).toBe('https://mcp.example.org');
+    expect(server.allowedHosts).toContain('mcp.example.org');
+  });
+
+  it('uses the public https origin as the OAuth issuer instead of http://host:port', async () => {
+    const u = new URL(server.url);
+    const res = await fetch(`${u.origin}/.well-known/oauth-authorization-server`);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.issuer).toBe('https://mcp.example.org');
+    expect(body.authorization_endpoint).toBe('https://mcp.example.org/authorize');
+    expect(body.token_endpoint).toBe('https://mcp.example.org/token');
+    expect(body.registration_endpoint).toBe('https://mcp.example.org/register');
+  });
 });

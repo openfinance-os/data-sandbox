@@ -6,13 +6,11 @@
 // Emits the mandatory AEInsuranceQuoteProperties fields plus a coherent
 // Premium / PlanName / LevelOfCover so the quote reflects the issued policy.
 
-import { aed } from './motor-policy.js';
-import { isoDate, genUuid } from './identity.js';
+import { aed, refNumber } from './_shared.js';
+import { genUuid } from './identity.js';
 import { MS_PER_DAY } from '../constants.js';
 
-function quoteReference(rng) {
-  return `MTRQ-${String(Math.floor(rng() * 1_000_000_000)).padStart(9, '0')}`;
-}
+const quoteReference = (rng) => refNumber('MTRQ', rng);
 
 // Spec multiplier: AEInsuranceServiceRatingRateOrRatio is "decimal, 1 dp,
 // max 100". Pinned values keep the bundle deterministic and avoid floating

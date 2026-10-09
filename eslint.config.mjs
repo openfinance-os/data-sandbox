@@ -49,9 +49,34 @@ const e2eTests = {
 // Vitest suites that opt into the jsdom environment (`// @vitest-environment
 // jsdom`) exercise real DOM nodes, so `document` / `window` are legal there.
 const jsdomTests = {
-  files: ['tests/dom-helpers.test.mjs', 'tests/ui-module-graph.test.mjs', 'tests/i18n.test.mjs'],
+  files: [
+    'tests/dom-helpers.test.mjs',
+    'tests/ui-module-graph.test.mjs',
+    'tests/i18n.test.mjs',
+    'tests/ui-modules.test.mjs',
+    'tests/export-outcomes.test.mjs',
+    'tests/monthly-summary-semantics.test.mjs',
+  ],
   languageOptions: {
     globals: { ...globals.node, ...globals.browser },
+  },
+};
+
+// The generator's output must be byte-identical across runtimes (EXP-05).
+// localeCompare's result depends on the process locale + ICU build, so it is
+// banned anywhere it could decide generated ordering. Use ordinal comparison
+// ((a < b ? -1 : a > b ? 1 : 0)) instead.
+const generatorDeterminism = {
+  files: ['src/generator/**/*.{js,mjs,cjs}', 'src/prng.js'],
+  rules: {
+    'no-restricted-syntax': [
+      'error',
+      {
+        selector: "CallExpression[callee.property.name='localeCompare']",
+        message:
+          'localeCompare is locale/ICU-dependent and breaks deterministic generation (EXP-05). Use ordinal comparison.',
+      },
+    ],
   },
 };
 
@@ -99,5 +124,14 @@ export default [
   nodeFiles,
   e2eTests,
   jsdomTests,
+  generatorDeterminism,
   sharedRules,
+  // src/ is kept at zero unused-vars; error (not warn) so dead code can't
+  // re-accumulate silently (C-07).
+  {
+    files: ['src/**/*.{js,mjs,cjs}'],
+    rules: {
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+    },
+  },
 ];

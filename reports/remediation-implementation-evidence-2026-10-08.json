@@ -1,0 +1,356 @@
+{
+  "date": "2026-10-08",
+  "sourceRevision": "46b4138cf4eeb2cc11c71bae485cd8698a1d0c3b",
+  "publicationStatus": "local-unpublished-candidate",
+  "pr": "https://github.com/openfinance-os/data-sandbox/pull/118",
+  "planPhasesImplementedLocally": [1, 2, 3, 4, 5, 6, 7, 8],
+  "tests": {
+    "corePassed": 2206,
+    "mcpPassed": 120,
+    "pythonPassed": 20,
+    "browserPassed": 330,
+    "browserExistingSkips": 10,
+    "externalTarballWheelClients": "passed",
+    "httpMcpSmoke": {
+      "requiredTools": 51,
+      "readJourneys": 4,
+      "expectedRevisionVerified": true
+    },
+    "labExecutionsPassed": 7,
+    "menuAndRtlAdditionalPassed": 40
+  },
+  "coverage": {
+    "uniqueManifestEnvelopes": 6399,
+    "banking": 3936,
+    "insurance": 2460,
+    "atm": 3,
+    "emittedFilesStrictlyChecked": 6428,
+    "primaryScenarios": 117,
+    "roleScenarios": 96
+  },
+  "linuxCI": {
+    "run": "https://github.com/openfinance-os/data-sandbox/actions/runs/37779470860",
+    "status": "completed",
+    "core": "success",
+    "actionlint": "success",
+    "lighthouse": "success",
+    "visual": "initial failure reviewed; three regenerated Linux baselines incorporated",
+    "finalJobEvidence": "artifacts/validation/linux-ci-final.json"
+  },
+  "performance": {
+    "localMobile": {
+      "about.html": [
+        {
+          "score": 1,
+          "cls": 0,
+          "fcpMs": 903.8293000000001,
+          "lcpMs": 1505.74395,
+          "report": "artifacts/lighthouse-final/127_0_0_1-src_about_html-2026_10_08_12_47_26.report.json"
+        },
+        {
+          "score": 1,
+          "cls": 0,
+          "fcpMs": 927.3130000000001,
+          "lcpMs": 1506.4695000000002,
+          "report": "artifacts/lighthouse-final/127_0_0_1-src_about_html-2026_10_08_12_47_36.report.json"
+        },
+        {
+          "score": 1,
+          "cls": 0,
+          "fcpMs": 928.1155000000001,
+          "lcpMs": 1504.67325,
+          "report": "artifacts/lighthouse-final/127_0_0_1-src_about_html-2026_10_08_12_47_16.report.json"
+        }
+      ],
+      "embed.html": [
+        {
+          "score": 0.95,
+          "cls": 0.07121971638997396,
+          "fcpMs": 1585.8125999999997,
+          "lcpMs": 2718.020999999999,
+          "report": "artifacts/lighthouse-final/127_0_0_1-src_embed_html-2026_10_08_12_47_46.report.json"
+        },
+        {
+          "score": 0.97,
+          "cls": 0.07121971638997396,
+          "fcpMs": 1591.1163,
+          "lcpMs": 2276.8605,
+          "report": "artifacts/lighthouse-final/127_0_0_1-src_embed_html-2026_10_08_12_47_56.report.json"
+        },
+        {
+          "score": 0.95,
+          "cls": 0.07121971638997396,
+          "fcpMs": 1586.5860000000002,
+          "lcpMs": 2713.517000000001,
+          "report": "artifacts/lighthouse-final/127_0_0_1-src_embed_html-2026_10_08_12_48_06.report.json"
+        }
+      ],
+      "index.html": [
+        {
+          "score": 0.81,
+          "cls": 0.1731583828396267,
+          "fcpMs": 2320.842775,
+          "lcpMs": 3311.069200000001,
+          "report": "artifacts/lighthouse-final/127_0_0_1-src_index_html-2026_10_08_12_46_45.report.json"
+        },
+        {
+          "score": 0.82,
+          "cls": 0.1731583828396267,
+          "fcpMs": 2340.981750000001,
+          "lcpMs": 3184.0944000000027,
+          "report": "artifacts/lighthouse-final/127_0_0_1-src_index_html-2026_10_08_12_46_55.report.json"
+        },
+        {
+          "score": 0.82,
+          "cls": 0.1731583828396267,
+          "fcpMs": 2342.742000000001,
+          "lcpMs": 3187.8496000000023,
+          "report": "artifacts/lighthouse-final/127_0_0_1-src_index_html-2026_10_08_12_47_06.report.json"
+        }
+      ],
+      "index-final-navigation": [
+        {
+          "score": 0.81,
+          "cls": 0,
+          "lcpMs": 3177.722999999998,
+          "report": "artifacts/lighthouse-menu-final/127_0_0_1-src_index_html-2026_10_08_13_07_21.report.json"
+        },
+        {
+          "score": 0.8,
+          "cls": 0.1731583828396267,
+          "lcpMs": 3326.108799999999,
+          "report": "artifacts/lighthouse-menu-final/127_0_0_1-src_index_html-2026_10_08_13_07_10.report.json"
+        },
+        {
+          "score": 0.82,
+          "cls": 0.1731583828396267,
+          "lcpMs": 3196.4208,
+          "report": "artifacts/lighthouse-menu-final/127_0_0_1-src_index_html-2026_10_08_13_07_39.report.json"
+        }
+      ]
+    },
+    "productTarget": 0.9,
+    "productionVerified": false
+  },
+  "skill": {
+    "status": "VERIFIED_WITH_SOURCE_DISAGREEMENT",
+    "changed": [],
+    "errors": [],
+    "sourceDisagreement": [
+      "Official document errata 4; repository highest errata folder 3. Resolve corrections per file, not by inventing an errata4 YAML.",
+      "Community register may lag official errata; documentation previews and repository previews must be reconciled before adoption"
+    ],
+    "official": {
+      "pageId": "1366294554",
+      "pageVersion": 7,
+      "modifiedAt": "2026-09-18T07:27:39.506Z",
+      "substantiveSha256": "6fa8a1a7ec37eb29447ca392705f545be8420fe9d77c5a059471a86dfefb0bd5"
+    },
+    "skill_states": "v2.1-errata4",
+    "repo_latest": "v2.1-errata3",
+    "stableLines": [
+      "v1.2",
+      "v1.2-errata1",
+      "v2.0",
+      "v2.0-errata1",
+      "v2.1",
+      "v2.1-errata1",
+      "v2.1-errata2",
+      "v2.1-errata3"
+    ],
+    "repositoryPreviews": ["v2.2-rc1"],
+    "treeSha": "a3c8b8bf22e080046a8e0fbd9933f57431604155",
+    "wireFiles": {
+      "uae-account-information-openapi.yaml": {
+        "path": "dist/standards/v2.1-errata2/uae-account-information-openapi.yaml",
+        "sha256": "8332adf44d606cc013febf83b248c33257536e719a35bef8eda58c2cb0b88126"
+      },
+      "uae-insurance-openapi.yaml": {
+        "path": "dist/standards/v2.1-errata3/uae-insurance-openapi.yaml",
+        "sha256": "1191bba351eefd29aff91f461ba8bda2d8bb2e554adba4d4f89718d9987a1818"
+      },
+      "uae-atm-openapi.yaml": {
+        "path": "dist/standards/v2.1/uae-atm-openapi.yaml",
+        "sha256": "f4b65f710b17d8eb89a56e8e3b4173d75c5fb94eac33aeffa7be5af7a4b751a0"
+      }
+    },
+    "communityPublished": [2, 1, 3],
+    "documentationPreviews": ["v2.2-rc2"]
+  },
+  "archiveInventory": {
+    "corpusVersion": "0.1.0",
+    "corpusHash": "ed4ea78f2f4350a4a06899847617472f22aa56b31fa6dc1cf8de60524f4821d9",
+    "referenceDate": "2026-05-01T00:00:00.000Z",
+    "specProvenance": {
+      "banking": {
+        "version": "v2.1-errata2",
+        "commit": "a3c8b8bf22e080046a8e0fbd9933f57431604155",
+        "path": "dist/standards/v2.1-errata2/uae-account-information-openapi.yaml",
+        "sha256": "8332adf44d606cc013febf83b248c33257536e719a35bef8eda58c2cb0b88126",
+        "normalization": null,
+        "retrievedAt": "2026-10-08T00:00:00Z"
+      },
+      "insurance": {
+        "version": "v2.1-errata3",
+        "commit": "a3c8b8bf22e080046a8e0fbd9933f57431604155",
+        "path": "dist/standards/v2.1-errata3/uae-insurance-openapi.yaml",
+        "sha256": "1191bba351eefd29aff91f461ba8bda2d8bb2e554adba4d4f89718d9987a1818",
+        "normalization": "quote-composition-v1",
+        "retrievedAt": "2026-10-08T00:00:00Z"
+      },
+      "atm": {
+        "version": "v2.1",
+        "commit": "ebde95804d9bf2a13d065804ea64334b673223ca",
+        "path": "dist/standards/v2.1/uae-atm-openapi.yaml",
+        "sha256": "f4b65f710b17d8eb89a56e8e3b4173d75c5fb94eac33aeffa7be5af7a4b751a0",
+        "normalization": null,
+        "retrievedAt": "2026-05-20T00:00:00Z"
+      }
+    },
+    "revision": "46b4138cf4eeb2cc11c71bae485cd8698a1d0c3b",
+    "immutable": true,
+    "archives": {
+      "banking": {
+        "file": "corpus-0.1.0-banking.tar.gz",
+        "bytes": 9279502,
+        "sha256": "c37d2d7b573a708013d71bbff32089d0709c85d88de39a68d2f4efca02ba12ec"
+      },
+      "insurance": {
+        "file": "corpus-0.1.0-insurance.tar.gz",
+        "bytes": 856412,
+        "sha256": "c1c2f3ec9455a7cf3cf37f6048e561b670439bc5e1fdbfc9d729b4bb4da4c8bb"
+      },
+      "atm": {
+        "file": "corpus-0.1.0-atm.tar.gz",
+        "bytes": 31119,
+        "sha256": "9da6124f224935a264f5b40d0c441512c63dd48d11ba8752a6759332a303bcf3"
+      },
+      "full": {
+        "file": "corpus-0.1.0-full.tar.gz",
+        "bytes": 11760968,
+        "sha256": "8bc9572975d1b6d67f59d206a596de69f2ee5bf497d81a53878a497249e13d76"
+      },
+      "evaluation": {
+        "file": "evaluation-0.1.0.tar.gz",
+        "bytes": 6549284,
+        "sha256": "966ed17ff05a0d4c5f1d8bb019312edbfd93ffcc8da16dbad0c47b67f10971de"
+      }
+    }
+  },
+  "distributionInventory": {
+    "revision": "46b4138cf4eeb2cc11c71bae485cd8698a1d0c3b",
+    "cleanInstallPassed": true,
+    "files": {
+      "openfinance-os-sandbox-mcp-0.1.0.tgz": {
+        "bytes": 44817,
+        "sha256": "17addf658f19a25757f53e8c30cd7d5fc0d90c3bbdfffe80212237a992dd7787"
+      },
+      "openfinance-os-sandbox-fixtures-0.1.0.tgz": {
+        "bytes": 9384131,
+        "sha256": "05844036e5219ff81e1f3df2e207174337b51c02101f186d8725d9c6d79b9325"
+      },
+      "openfinance_os_sandbox_fixtures-0.1.0-py3-none-any.whl": {
+        "bytes": 18328411,
+        "sha256": "447a1feee4ea5c927a75c3013ae2ada9eb5d6696715ea5b3bd73073faff199fa"
+      }
+    }
+  },
+  "archiveChecks": {
+    "validations": {
+      "banking": {
+        "context": true,
+        "fixtures": 3936
+      },
+      "insurance": {
+        "context": true,
+        "fixtures": 2460
+      },
+      "atm": {
+        "context": true,
+        "fixtures": 3
+      },
+      "full": {
+        "context": true,
+        "fixtures": 6399
+      }
+    },
+    "changedVersionReuseRefused": true
+  },
+  "rollback": {
+    "revision": "47873dd591b8263c5e95c7a17a912d149c0fa4de",
+    "description": "Locally built reviewed baseline; actual previous production artifact not verified.",
+    "file": "baseline-47873dd-site.tar.gz",
+    "bytes": 11398889,
+    "sha256": "833a1641eb8a26105fe1239cf3da4a2c17df7c344093a96754f217bdb4ae613d"
+  },
+  "evaluation": {
+    "corpusVersion": "0.1.0",
+    "syntheticOnly": true,
+    "referenceDate": "2026-05-01T00:00:00.000Z",
+    "observedIncludesLabels": false,
+    "splitUnit": "persona family and merchant entity",
+    "holdoutPersonas": [
+      "domestic_worker",
+      "hnw_intl_multi",
+      "hnw_multicurrency",
+      "sme_rak_trading_emirati",
+      "sme_trading_business"
+    ],
+    "holdoutEntities": [
+      "beacon-fuel-co",
+      "crescent-boutique-hotel",
+      "crescent24-atm",
+      "desertsky-events",
+      "duneretreat-lodge",
+      "gulftutors",
+      "marina-wellness-pharmacy",
+      "miragebox-video",
+      "oasis-diagnostic-lab",
+      "oasislink-parking",
+      "palm-learning-centre",
+      "palmfare",
+      "saffron-dental",
+      "saffron-theatre",
+      "spice-route-cafe"
+    ],
+    "counts": {
+      "train": 98625,
+      "holdout": 6213
+    },
+    "limitations": [
+      "Synthetic scores do not estimate real-world accuracy.",
+      "IDs and generator-specific narrative conventions may allow shortcuts.",
+      "Seed variants are correlated, and must remain in the same split."
+    ]
+  },
+  "releasePrerequisites": {
+    "npmPublicFixtureLookup": 404,
+    "npmPublicMcpLookup": 404,
+    "pypiPublicLookup": 404,
+    "localNpmAuthentication": "ENEEDAUTH",
+    "ownershipAndTrustedPublisherVerified": false,
+    "published": false,
+    "deployed": false,
+    "actualProductionParityVerified": false
+  },
+  "openGates": [
+    "upstream literal insurance quote composition",
+    "npm/PyPI ownership and publisher setup",
+    "final release review and trusted main CI",
+    "registry/deployed-origin end-to-end parity",
+    "actual previous production rollback artifact",
+    "explorer performance target",
+    "observed first useful result and lab completion",
+    "publication-stage noindex review"
+  ],
+  "logs": "artifacts/validation/",
+  "sourceRevisionMeaning": "Reviewed corpus/distribution source; subsequent UI/test/doc changes are on the PR. Final checked application head is in artifacts/validation/linux-ci-final.json.",
+  "linuxBaselineRefresh": {
+    "run": "https://github.com/openfinance-os/data-sandbox/actions/runs/37781483749",
+    "pr": "https://github.com/openfinance-os/data-sandbox/pull/119",
+    "generatedCommit": "e4139f57b56b9ecd8eef9ff11382f57a6c66af4d",
+    "reviewed": true,
+    "changedImages": ["compare-mode", "underwriting-panel", "embed-chromeless"],
+    "toleranceUnchanged": true
+  }
+}

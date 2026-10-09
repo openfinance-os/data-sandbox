@@ -6,7 +6,7 @@
 import { rngInt, rngPick } from '../prng.js';
 import { drawIban, drawCounterpartyBank, drawName } from './identity.js';
 
-export function generateBeneficiaries({ persona, accounts, rng, pools, excludeBankNames }) {
+export function generateBeneficiaries({ accounts, rng, pools, excludeBankNames }) {
   const out = [];
   // Phase D-lite coordination (D-14): if cross-LFI self-beneficiaries
   // are about to be appended for `multi_lfi_footprint` personas, the

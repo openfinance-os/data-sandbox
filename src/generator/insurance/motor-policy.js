@@ -6,11 +6,7 @@
 
 import { drawName } from '../identity.js';
 import { isoDate } from './identity.js';
-
-export function aed(amount) {
-  const num = typeof amount === 'number' ? amount : Number(amount);
-  return { Currency: 'AED', Amount: num.toFixed(2) };
-}
+import { aed, refNumber, channelMap } from './_shared.js';
 
 // Persona body_type → spec BodyType enum.
 const BODY_TYPE_MAP = {
@@ -23,17 +19,9 @@ const BODY_TYPE_MAP = {
 };
 
 // Persona policy.channel → spec PolicyPurchaseChannelType enum.
-const CHANNEL_MAP = {
-  Direct: 'Direct',
-  Broker: 'Broker',
-  Aggregator: 'Aggregation',
-  Bank: 'Bank',
-  Agent: 'Agent',
-};
+const CHANNEL_MAP = channelMap();
 
-function policyNumber(rng) {
-  return `MTR-${String(Math.floor(rng() * 1_000_000_000)).padStart(9, '0')}`;
-}
+const policyNumber = (rng) => refNumber('MTR', rng);
 
 function drivingLicenseNumber(rng) {
   return String(Math.floor(rng() * 10_000_000)).padStart(7, '0');

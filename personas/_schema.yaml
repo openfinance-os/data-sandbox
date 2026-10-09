@@ -52,10 +52,13 @@
 #                                  (Retail|SME|Corporate). Defaults to persona.segment.
 #   default_seed                   shipped default seed for stable persona-permalink (§6.8)
 #
-# This file is documentation, not enforced (yet). The test that validates
-# manifests against this shape lives in tests/persona-manifest.test.mjs.
-# Spec-conformance of segment/AccountType/PartyType/AccountRole values is
-# enforced by tools/lint-persona-spec-conformance.mjs (EXP-01).
+# This file is the human-readable reference. The ENFORCED structural
+# contract lives in personas/_schema.machine.yaml (JSON Schema, draft-07),
+# validated by AJV inside tools/lint-persona-spec-conformance.mjs on every
+# `npm run lint` (T-08e). Additional shape checks live in
+# tests/persona-manifest.test.mjs. Spec-conformance of
+# segment/AccountType/PartyType/AccountRole values is enforced by
+# tools/lint-persona-spec-conformance.mjs (EXP-01).
 
 persona_id: <slug>
 domain: <enum: banking|insurance>

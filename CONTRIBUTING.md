@@ -112,3 +112,11 @@ By submitting a PR you agree your contribution is licensed under MIT
 
 The OpenFinance-OS Commons code of conduct applies (link TBD on Commons
 launch). Be kind, be specific, be patient — the maintainer is one person.
+
+## Correctness and corpus releases (October 2026)
+
+Use Node 22, stage `_site/`, and preserve `spec/provenance.json`. Never relax unknown-field rejection to make a fixture pass. Strict tests use the shared validator; insurance quote normalization is allowed only for the reviewed source hash and is reported separately from literal upstream conformance. Required/conditional field metadata is derived from schema alternatives.
+
+Financial changes must reconcile the posted ledger and completed statement periods in integer currency minor units. Scenario changes get a new corpus version; retain prior release archives/packages. Test loopback HTTP, clean tarball/wheel installs, MCP cursor exhaustion and source-backed numerical results. `npm run ci` includes the committed-output check; regenerate and commit artifacts along with their sources. The release workflow only deploys an exact successful trusted main CI revision, and MCP publishing follows its fixture dependency.
+
+Guided labs and evaluation packs use observed payload inputs, with answer labels separate. Changes to inference must include insufficient-evidence examples. Product targets require voluntary user observation, not synthetic score claims.

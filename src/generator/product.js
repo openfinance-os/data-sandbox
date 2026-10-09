@@ -1,56 +1,40 @@
 // /accounts/{AccountId}/product generation.
-// AEProduct1 has many deeply-nested mandatory fields under Charges /
-// FinanceRates / DepositRates / AssetBacked / RewardsBenefits, but each of
-// these is conditional on the parent block being populated. Phase 1 emits
-// minimal product records: ProductName + ProductType + Currency, with the
-// optional blocks left out (the per-leaf "mandatory" applies only when the
-// containing array is non-empty). This satisfies the spec for the v1 use
-// case (read the product reference data of the active account).
+//
+// Emits records shaped to the vendored v2.1 `AEProduct` schema: every
+// property is optional but `additionalProperties: false`, so ONLY the
+// spec's vocabulary may appear (ShariaStructure / Charges / FinanceRates /
+// DepositRates / IsSecured / IsSalaryTransferRequired / Tenor /
+// AssetBacked / RewardsBenefits). An earlier version of this module
+// emitted a ProductId/ProductType/ProductName shape from a pre-v2.1 draft
+// — every key of which the pinned schema rejects; it shipped unvalidated
+// for as long as the rendered-fixture suite silently skipped this
+// endpoint (see APP_IMPROVEMENT_PLAN.md §3 T-06).
+//
+// Determinism note: this generator deliberately draws NOTHING from the
+// PRNG — all values derive from the account's kind — so it can change
+// shape without shifting any other module's fingerprint (EXP-05).
 
 export function generateProducts({ accounts }) {
   const out = [];
   for (const acc of accounts) {
-    out.push({
+    const kind = acc._meta.kind;
+    const record = {
       _accountId: acc.AccountId,
-      ProductId: `${acc.AccountId}-product`,
-      ProductType: productTypeFor(acc._meta.kind),
-      ProductSubType: acc.AccountSubType,
-      ProductName: productNameFor(acc),
-      Currency: acc.Currency,
-      Description: descriptionFor(acc._meta.kind),
-    });
+      // Secured lending products (mortgage, auto/personal finance) vs
+      // unsecured transactional products.
+      IsSecured: kind === 'Mortgage' || kind === 'Finance',
+      // Salary-assignment is the common UAE eligibility condition on
+      // consumer finance; illustrative synthetic value only.
+      IsSalaryTransferRequired: kind === 'Finance',
+    };
+    // Tenor only makes sense for term products. AEDuration pattern:
+    // ^P(\d+Y)?(\d+M)?$ — fixed illustrative tenors, deterministic by kind.
+    if (kind === 'Mortgage') {
+      record.Tenor = { OriginalTenor: 'P25Y', RemainingTenor: 'P18Y' };
+    } else if (kind === 'Finance') {
+      record.Tenor = { OriginalTenor: 'P4Y', RemainingTenor: 'P2Y6M' };
+    }
+    out.push(record);
   }
   return out;
-}
-
-function productTypeFor(kind) {
-  switch (kind) {
-    case 'CreditCard':
-      return 'CreditCard';
-    case 'Mortgage':
-      return 'Mortgage';
-    case 'Savings':
-      return 'Savings';
-    case 'Finance':
-      return 'Finance';
-    default:
-      return 'CurrentAccount';
-  }
-}
-
-function productNameFor(acc) {
-  return `Synthetic ${acc.AccountSubType} (${acc.Currency})`;
-}
-
-function descriptionFor(kind) {
-  switch (kind) {
-    case 'CreditCard':
-      return 'Synthetic credit-card product reference. Not a real product.';
-    case 'Mortgage':
-      return 'Synthetic mortgage product reference. Not a real product.';
-    case 'Savings':
-      return 'Synthetic savings product reference. Not a real product.';
-    default:
-      return 'Synthetic current-account product reference. Not a real product.';
-  }
 }

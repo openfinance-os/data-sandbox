@@ -26,6 +26,10 @@ function cprf(src, dst) {
 
 rmrf(out);
 fs.mkdirSync(out, { recursive: true });
+fs.writeFileSync(
+  path.join(out, '404.html'),
+  '<!doctype html><html lang="en"><meta charset="utf-8"><title>Fixture not found</title><h1>Fixture not found</h1><p>Use manifest-listed seeds and paths, or run the local mock for generated scenarios.</p></html>',
+);
 
 cprf(path.join(repoRoot, 'src'), path.join(out, 'src'));
 cprf(path.join(repoRoot, 'dist'), path.join(out, 'dist'));
@@ -131,7 +135,8 @@ if (fs.existsSync(examplesSrc)) {
 // /fixtures/v1/ so TPP integrations not on Node/Python (Swift, Kotlin,
 // Postman, Flutter, .NET, plain curl) can consume the same dataset the
 // npm/PyPI packages ship. Path slot `/v1/` is the major-version boundary
-// (PRD §13 D-11). Within v1, evolution is additive only.
+// (PRD §13 D-11). This is a mutable current alias; corrected corpora receive
+// a new immutable package/archive version (the approved D-11 extension).
 const fixtureSrc = path.join(repoRoot, 'packages/sandbox-fixtures');
 if (fs.existsSync(path.join(fixtureSrc, 'manifest.json'))) {
   const fixtureDst = path.join(out, 'fixtures/v1');
@@ -242,6 +247,22 @@ const headers = `/dist/*
   Access-Control-Allow-Methods: GET, HEAD, OPTIONS
 `;
 fs.writeFileSync(path.join(out, '_headers'), headers);
+const releaseManifest = JSON.parse(
+  fs.readFileSync(path.join(repoRoot, 'packages/sandbox-fixtures/manifest.json'), 'utf8'),
+);
+fs.writeFileSync(
+  path.join(out, 'dist/release.json'),
+  JSON.stringify(
+    {
+      revision: releaseManifest.revision,
+      corpusVersion: releaseManifest.corpusVersion,
+      referenceDate: releaseManifest.nowAnchor,
+      specProvenance: releaseManifest.specProvenance,
+    },
+    null,
+    2,
+  ),
+);
 
 const totalBytes = walkSize(out);
 console.log(`staged → ${path.relative(repoRoot, out)} (${(totalBytes / 1024).toFixed(1)} KB)`);

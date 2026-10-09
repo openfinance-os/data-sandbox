@@ -72,7 +72,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `python3 -m http.server ${PORT} --bind ${HOST}`,
+    command: `node tools/gzip-static-server.mjs ${PORT} _site`,
     url: `${ORIGIN}/src/index.html`,
     timeout: 10_000,
     reuseExistingServer: true,

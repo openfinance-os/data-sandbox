@@ -33,6 +33,8 @@ export const ALLOWED_EVENTS = Object.freeze([
   'raw_json_toggle',
   'export',
   'share',
+  'lab_complete',
+  'lab_answer_view',
 ]);
 
 const ALLOWED_EVENT_SET = new Set(ALLOWED_EVENTS);
@@ -58,6 +60,7 @@ export const ALLOWED_PROP_KEYS = Object.freeze([
   'format',
   // share
   'kind',
+  'lab_id',
 ]);
 
 const ALLOWED_PROP_KEY_SET = new Set(ALLOWED_PROP_KEYS);

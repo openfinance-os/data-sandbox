@@ -4,13 +4,11 @@
 // Premium uses AEInsuranceDataSharingPremiumProperties (shared with
 // motor/home, distinct from health's AEHealthInsurancePremium).
 
-import { aed } from './motor-policy.js';
+import { aed, refNumber } from './_shared.js';
 import { genUuid } from './identity.js';
 import { MS_PER_DAY } from '../constants.js';
 
-function quoteReference(rng) {
-  return `LIFQ-${String(Math.floor(rng() * 1_000_000_000)).padStart(9, '0')}`;
-}
+const quoteReference = (rng) => refNumber('LIFQ', rng);
 
 function serviceRating() {
   return {

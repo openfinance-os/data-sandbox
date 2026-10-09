@@ -5,6 +5,8 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { REFERENCE_DATE, CORPUS_VERSION } from '../src/core/scenario.js';
+import { readSpecProvenance } from './build-shared.mjs';
 import { loadAllPersonas, loadAllPools, repoRoot } from './load-fixtures.mjs';
 
 const OUT = `${repoRoot}/dist/data.json`;
@@ -35,15 +37,11 @@ for (const [personaId, persona] of Object.entries(personas)) {
   if (Object.keys(fields).length) localeData.ar[personaId] = fields;
 }
 
-const buildInfo = { nowIso: deriveNow() };
-
-function deriveNow() {
-  const f = `${repoRoot}/spec/SPEC_PIN.retrieved`;
-  if (!fs.existsSync(f)) return new Date(Date.UTC(2026, 3, 1)).toISOString();
-  const ts = fs.readFileSync(f, 'utf8').trim();
-  const d = new Date(ts);
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)).toISOString();
-}
+const buildInfo = {
+  nowIso: REFERENCE_DATE,
+  corpusVersion: CORPUS_VERSION,
+  specProvenance: readSpecProvenance(),
+};
 
 const out = { personas, pools, buildInfo };
 

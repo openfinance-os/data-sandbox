@@ -3,7 +3,7 @@ name: Deploy
 # Production deploys are gated on a green CI run: this workflow fires only
 # after the `CI` workflow completes, and the build job below additionally
 # requires conclusion == success on a push to main. workflow_dispatch stays
-# available for manual (re)deploys regardless of CI state.
+# available only for a main revision with successful CI.
 on:
   workflow_run:
     workflows: [CI]
@@ -11,6 +11,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: read
   contents: read
   pages: write
   id-token: write
@@ -24,29 +25,31 @@ concurrency:
 
 jobs:
   build:
-    # Only deploy a commit that CI actually passed. For workflow_dispatch
-    # (manual) the workflow_run context is empty, so the guard short-circuits
-    # to true and we deploy the dispatched ref.
+    # The trusted selector enforces successful same-repository main CI for
+    # automatic and manual releases, then checks out that exact revision.
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' &&
        github.event.workflow_run.head_branch == 'main' &&
-       github.event.workflow_run.event == 'push')
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      # Check out the trusted default branch. We deliberately do NOT check out
-      # github.event.workflow_run.head_sha: this is a privileged job (Pages
-      # write + id-token + POSTHOG_KEY) and checking out the event's head SHA
-      # is the "pwn-request" pattern CodeQL flags. The `if` guard already
-      # restricts this workflow to push-to-main, and a default checkout
-      # resolves to that same trusted main tip (worst case it deploys a
-      # slightly newer main commit, which self-corrects on its own run).
+      # Trusted code validates the successful main CI revision before release credentials.
       - uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: 'npm'
+      - name: Select exact validated main revision
+        id: revision
+        run: node tools/verify-release-revision.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}
       - run: npm ci
       - run: npm run verify:spec-shape
       - run: npm run build:site
@@ -67,6 +70,7 @@ jobs:
           # and don't see GitHub Actions secrets. Set POSTHOG_KEY in each
           # platform's own dashboard. tools/stage-site.mjs has the full
           # rundown of where to add it per platform.
+          SANDBOX_REVISION: ${{ steps.revision.outputs.revision }}
           POSTHOG_KEY: ${{ secrets.POSTHOG_KEY }}
       - uses: actions/upload-pages-artifact@v5
         with:

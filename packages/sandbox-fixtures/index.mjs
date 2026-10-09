@@ -40,7 +40,7 @@ export function listEndpoints(personaId, lfi = 'median') {
 // is the package-level entry point for TPPs that want to simulate paging
 // through a listing endpoint (transactions, standing orders, etc.) the
 // way they would against a real LFI. Internally it loads the full fixture
-// envelope and slices its Data array — the same engine the Service Worker
+// envelope and slices its Data array — the same portable pagination engine
 // uses for the staged `/fixtures/v1/bundles/.../*.json?offset=&limit=` URL.
 //
 // `requestUrl` is optional; supply it to make Links.{Self,First,Next,Last}
@@ -211,6 +211,9 @@ export function getPools() {
   return _poolsCache;
 }
 export { buildBundle } from './lib/generator/index.js';
+export { queryTransactions, summarizeTransactions } from './lib/core/transaction-query.js';
+export { minorUnits, formatMinor, postedTransactions, movement } from './lib/core/ledger.js';
+export { scenarioDescriptor, CORPUS_VERSION, REFERENCE_DATE } from './lib/core/scenario.js';
 export { expandRecipe } from './lib/persona-builder/expand.js';
 export {
   RECIPE_DEFAULTS,

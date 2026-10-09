@@ -4,8 +4,11 @@
 // Query params: persona, lfi, endpoint, seed, height. Falls back to safe
 // defaults for any missing parameter.
 
-import { buildBundle } from './generator/index.js';
+// C-P1 perf — async lazy generator entry: banking is static, insurance/ATM
+// pipelines dynamic-import only when the embed targets those domains.
+import { buildBundle } from './generator/lazy.js';
 import { leafFields, statusBadge } from './shared/spec-helpers.js';
+import { personaInDomain } from './shared/domains.js';
 import { decodeFromUrl, CUSTOM_PERSONA_SLUG } from './url.js';
 import { expandRecipe } from './persona-builder/expand.js';
 import { decodeRecipe } from './persona-builder/recipe.js';
@@ -22,6 +25,11 @@ async function init() {
   ]);
   const domainsManifest = await domainsRes.json();
   const data = await dataRes.json();
+  if (url.corpus && url.corpus !== data.buildInfo.corpusVersion) {
+    document.getElementById('embed-body').textContent =
+      'This embed requests a different corpus version. Replay it from its pinned package or archive.';
+    return;
+  }
   let avatars = {};
   if (avatarsRes && avatarsRes.ok) {
     try {
@@ -39,7 +47,7 @@ async function init() {
   // Filter the persona pool to the active domain so the default fallback
   // can't bleed an insurance persona into a banking embed (or vice versa).
   const activePersonas = Object.fromEntries(
-    Object.entries(data.personas).filter(([, p]) => (p.domain ?? 'banking') === domain),
+    Object.entries(data.personas).filter(([, p]) => personaInDomain(p, domain)),
   );
 
   // Workstream B — materialise a custom persona from the URL recipe param.
@@ -59,7 +67,9 @@ async function init() {
   const persona = activePersonas[personaId];
   const endpoint = url.endpoint || domainEntry.defaultEndpoint || '/accounts';
   const lfi = url.lfi;
-  const seed = url.seed;
+  const seed = new URL(window.location.href).searchParams.has('seed')
+    ? url.seed
+    : persona.default_seed;
   const height = url.height;
 
   if (Number.isFinite(height)) {
@@ -84,10 +94,11 @@ async function init() {
 
   const fullPath = window.location.pathname.replace(/embed\.html$/, 'index.html');
   const linkParams = new URLSearchParams({ persona: personaId, lfi, seed: String(seed) });
+  linkParams.set('corpus', data.buildInfo.corpusVersion);
   if (domain !== 'banking') linkParams.set('domain', domain);
   document.getElementById('embed-link').href = `${fullPath}?${linkParams.toString()}`;
 
-  const bundle = buildBundle({
+  const bundle = await buildBundle({
     persona,
     lfi,
     seed,
@@ -182,6 +193,7 @@ function renderTable(rows, fieldsByName) {
   const headRow = document.createElement('tr');
   for (const k of allKeys) {
     const th = document.createElement('th');
+    th.setAttribute('scope', 'col'); // C-A2 — column-header semantics
     const f = fieldsByName.get(k);
     if (f) {
       const badge = statusBadge(f.status);

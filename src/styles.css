@@ -277,6 +277,9 @@ input:focus,
   }
 }
 @media (max-width: 760px) {
+  .topbar-persona {
+    min-block-size: 52px;
+  }
   .topbar-persona-tagline {
     white-space: normal;
     -webkit-line-clamp: 2;
@@ -455,6 +458,7 @@ input:focus,
 }
 
 .version-pin {
+  min-inline-size: 160px;
   font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   font-size: 11px;
   color: var(--text-muted);
@@ -1388,6 +1392,22 @@ input:focus,
   font-weight: 600;
   font-size: 13px;
   line-height: 1.2;
+}
+/* C-A1 — the persona name is now a real <button> (keyboard-activatable card
+   entry point). Reset UA button chrome so it renders exactly like the old
+   <div>; the card keeps its own hover/active affordances. */
+button.persona-name {
+  display: block;
+  width: 100%;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  font-weight: 600;
+  color: inherit;
+  text-align: inherit;
+  cursor: pointer;
 }
 .persona-archetype {
   font-size: 10px;
@@ -2755,6 +2775,20 @@ details.nav-account > summary.nav-account-header:focus-visible {
 }
 
 /* Toast for "Embed snippet copied" confirmation. */
+.manual-copy-fallback {
+  padding: 12px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-card);
+}
+.manual-copy-fallback textarea {
+  display: block;
+  width: 100%;
+  min-height: 100px;
+  margin-bottom: 8px;
+}
+.manual-copy-fallback > p {
+  margin-top: 0;
+}
 .copy-toast {
   position: fixed;
   bottom: 24px;

@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const repoRoot = path.resolve(__dirname, '..');
+const repoRoot = path.resolve(__dirname, '..', process.argv[3] ?? '.');
 const port = parseInt(process.argv[2] ?? '8000', 10);
 
 const MIME = {
@@ -32,7 +32,7 @@ const GZIP_TYPES = new Set(['.html', '.css', '.js', '.mjs', '.json', '.svg', '.t
 
 function safeJoin(rel) {
   const resolved = path.resolve(repoRoot, '.' + rel);
-  if (!resolved.startsWith(repoRoot)) return null;
+  if (resolved !== repoRoot && !resolved.startsWith(repoRoot + path.sep)) return null;
   return resolved;
 }
 
