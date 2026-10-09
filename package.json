@@ -6,7 +6,8 @@
   "description": "Open Finance Data Sandbox — interactive client-side explorer for UAE Open Finance Bank Data Sharing payloads. Synthetic data, narratively realistic personas, spec-driven badges. OF-OS Commons contribution.",
   "license": "MIT",
   "engines": {
-    "node": ">=22.0.0"
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0",
+    "npm": ">=10"
   },
   "workspaces": [
     "packages/sandbox-fixtures",
@@ -73,7 +74,7 @@
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
     "lint-staged": "^17.0.7",
-    "npm-run-all2": "^7.0.2",
+    "npm-run-all2": "^9.0.1",
     "posthog-js": "^1.376.6",
     "prettier": "^3.4.2",
     "vitest": "^4.1.8",
