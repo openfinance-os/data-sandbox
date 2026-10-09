@@ -58,7 +58,7 @@ jobs:
       deploy: ${{ steps.filter.outputs.deploy }}
       revision: ${{ steps.revision.outputs.revision }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: main
           fetch-depth: 0
@@ -93,7 +93,7 @@ jobs:
     timeout-minutes: 15
     environment: fly.io
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.changes.outputs.revision }}
       - uses: superfly/flyctl-actions/setup-flyctl@v1
@@ -111,7 +111,7 @@ jobs:
     # tools/list roundtrip returns at least the documented tool floor
     # (EXPECTED_TOOL_COUNT in scripts/smoke.mjs).
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.changes.outputs.revision }}
       - uses: actions/setup-node@v6
