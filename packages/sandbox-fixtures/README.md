@@ -1,3 +1,5 @@
+> Generated distribution candidate. Registry publication must be verified before using registry install commands. Static seeds/roles are manifest-listed; raw current URLs are not immutable snapshots. Enrichment sidecars are synthetic answer labels for evaluation.
+
 # @openfinance-os/sandbox-fixtures
 
 Deterministic, v2.1-shaped UAE Open Finance synthetic fixtures from the
@@ -55,7 +57,7 @@ const { loadFixture } = require('@openfinance-os/sandbox-fixtures');
 
 ## What's in the box
 
-- `bundles/<persona>/<lfi>/seed-<n>/<endpoint>.json` — 6,428 fixture files across three domains (banking · insurance across all 7 lines — motor, home, health, life, travel, renters, employment · ATM Locator). Banking: 29 personas (incl. 8 multi-domain). Insurance: 17 personas (incl. the same 8 multi-domain). Each is a v2.1-correct `{ Data, Links, Meta }` envelope plus watermark fields (`_persona`, `_lfi`, `_seed`, `_specSha`).
+- `bundles/<persona>/<lfi>/seed-<n>/<endpoint>.json` — 6,428 fixture files across three domains (banking · insurance across all 7 lines — motor, home, health, life, travel, renters, employment · ATM Locator). Banking: 29 personas (incl. 8 multi-domain). Insurance: 17 personas (incl. the same 8 multi-domain). Each follows its reviewed domain contract (ATM has Data/Meta without Links; insurance quotes use the documented composition adapter) plus watermark fields (`_persona`, `_lfi`, `_seed`, `_specSha`).
 - `personas/<persona>.json` — persona manifest (demographics, fixed commitments, stress coverage, narrative).
 - `spec.json` / `spec.insurance.json` / `spec.atm.json` — the parsed UAE Open Finance v2.1 specs, keyed by endpoint with field metadata. Load via `loadSpec()` / `loadSpec({ domain: 'insurance' })` / `loadSpec({ domain: 'atm' })`.
 - `enrichment/<persona>/seed-<n>.json` + `brand-registry.json` + `brands/*.svg` — enrichment sidecars and the slug-keyed brand registry (see below).
@@ -73,7 +75,7 @@ All data files are also importable as subpaths, e.g.
 `loadFixturePage({ persona, endpoint, lfi, seed, offset, limit })` returns one
 page of a listing endpoint the way a real LFI would: the array under `Data`
 is sliced, `Links.{Self,First,Next,Prev,Last}` and `Meta.TotalPages` are
-populated, and a `_pagination` sidecar exposes the resolved page state.
+populated where the domain schema declares them, and a `_pagination` sidecar exposes the resolved page state. ATM navigation remains in `_paginationLinks` rather than invented wire fields.
 Pure helpers are exported too: `paginateEnvelope`, `parsePaginationParams`,
 `isPaginatableEnvelope`, `findListKey`, and `PAGINATION_DEFAULTS`
 (default limit 25, max 500). Note: on the CommonJS entry `loadFixturePage`

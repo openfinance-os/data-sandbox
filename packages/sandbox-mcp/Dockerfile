@@ -7,7 +7,7 @@
 # Run:    docker run --rm -p 8787:8787 sandbox-mcp
 # Probe:  curl http://127.0.0.1:8787/health
 
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
 
 # Copy only the manifests first so the dep layer caches independently of source
@@ -23,10 +23,12 @@ RUN npm ci --include-workspace-root --workspaces
 # fixtures package. The MCP server reads the corpus at runtime, so it must be
 # present in the final image.
 COPY . .
+ARG SANDBOX_REVISION=local
+ENV SANDBOX_REVISION=$SANDBOX_REVISION
 RUN npm run build:fixtures
 
 # ── Runtime image ──────────────────────────────────────────────────────────
-FROM node:20-alpine
+FROM node:22-alpine
 WORKDIR /app
 ENV NODE_ENV=production \
     PORT=8787 \
@@ -41,6 +43,9 @@ COPY --from=builder /app/package-lock.json ./package-lock.json
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages/sandbox-fixtures ./packages/sandbox-fixtures
 COPY --from=builder /app/packages/sandbox-mcp ./packages/sandbox-mcp
+
+ARG SANDBOX_REVISION=local
+ENV SANDBOX_REVISION=$SANDBOX_REVISION
 
 EXPOSE 8787
 

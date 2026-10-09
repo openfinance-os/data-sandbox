@@ -1,6 +1,6 @@
 {
   "name": "@openfinance-os/sandbox-fixtures",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Deterministic, v2.1-shaped UAE Open Finance synthetic fixtures from the Open Finance Data Sandbox. 39 personas (21 banking + 9 insurance + 8 multi-domain + 1 ATM directory) × 3 LFI profiles × every in-scope endpoint. CC0 data, MIT loader code.",
   "keywords": [
     "open-finance",
@@ -30,6 +30,20 @@
       "require": "./index.cjs",
       "default": "./index.mjs"
     },
+    "./validation": {
+      "types": "./validation.d.ts",
+      "import": "./lib/validation/schema-validator.mjs"
+    },
+    "./payloads/banking": {
+      "types": "./payloads.banking.d.ts"
+    },
+    "./payloads/insurance": {
+      "types": "./payloads.insurance.d.ts"
+    },
+    "./payloads/atm": {
+      "types": "./payloads.atm.d.ts"
+    },
+    "./schemas/*": "./schemas/*",
     "./package.json": "./package.json",
     "./manifest.json": "./manifest.json",
     "./spec.json": "./spec.json",
@@ -47,6 +61,8 @@
     "index.mjs",
     "index.cjs",
     "index.d.ts",
+    "core-types.d.ts",
+    "validation.d.ts",
     "manifest.json",
     "spec.json",
     "spec.insurance.json",
@@ -58,8 +74,17 @@
     "brands/",
     "brand-registry.json",
     "lib/",
+    "schemas/",
+    "payloads.banking.d.ts",
+    "payloads.insurance.d.ts",
+    "payloads.atm.d.ts",
     "README.md"
   ],
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "js-yaml": "^4.2.0"
+  },
   "publishConfig": {
     "access": "public"
   }

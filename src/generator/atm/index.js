@@ -21,7 +21,8 @@ import { applyAtmLfiProfile } from './lfi-profile.js';
 // Bundle time anchor. MUST match the banking/insurance DEFAULT_NOW so a
 // caller that omits `now` still gets byte-identical output across machines
 // (EXP-05) — never fall back to wall-clock.
-const DEFAULT_NOW = new Date(Date.UTC(2026, 3, 1, 0, 0, 0));
+import { REFERENCE_DATE } from '../../core/scenario.js';
+const DEFAULT_NOW = new Date(REFERENCE_DATE);
 
 // Fleet sizes per LFI profile. The number of ATMs an LFI exposes on its
 // directory is a function of its branch network depth — Tier-1 retail

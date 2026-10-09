@@ -1,3 +1,4 @@
+import { CORPUS_VERSION } from './core/scenario.js';
 // URL state encoder/decoder — EXP-17 + §6.8.
 // Three URL shapes: persona permalink, share (= permalink), embed.
 //
@@ -32,6 +33,7 @@ export function encodePermalink({
 }) {
   if (!personaId) throw new Error('personaId required');
   const params = new URLSearchParams();
+  params.set('corpus', CORPUS_VERSION);
   params.set('lfi', VALID_LFI.has(lfi) ? lfi : DEFAULTS.lfi);
   params.set('seed', String(Number.isFinite(seed) ? seed : DEFAULTS.seed));
   // domain only emitted when it differs from default (keeps banking permalinks unchanged).
@@ -59,6 +61,7 @@ export function encodeEmbed({
   recipe,
 }) {
   const params = new URLSearchParams();
+  params.set('corpus', CORPUS_VERSION);
   if (personaId) params.set('persona', personaId);
   if (lfi) params.set('lfi', VALID_LFI.has(lfi) ? lfi : DEFAULTS.lfi);
   if (endpoint) params.set('endpoint', endpoint);
@@ -129,7 +132,20 @@ export function decodeFromUrl(url) {
   // Domain-scoped — ignored unless `?domain=atm`.
   const atmId = domain === 'atm' ? params.get('atm') : null;
 
-  return { personaId, lfi, seed, endpoint, height, domain, preview, recipe, enriched, atmId, lang };
+  return {
+    personaId,
+    lfi,
+    seed,
+    endpoint,
+    height,
+    domain,
+    preview,
+    recipe,
+    enriched,
+    atmId,
+    lang,
+    corpus: params.get('corpus'),
+  };
 }
 
 // Update window.location without full reload. Browser-only; safely no-ops in tests.

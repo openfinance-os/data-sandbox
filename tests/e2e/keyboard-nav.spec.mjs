@@ -28,6 +28,10 @@ async function tabUntilFocused(page, selector, maxTabs = 80) {
 test('persona card is reachable by Tab and activates with Enter — C-A1', async ({ page }) => {
   await loadPersona(page);
 
+  for (const button of await page.locator('button.persona-name').all()) {
+    await expect(button).toHaveAttribute('tabindex', '0');
+  }
+
   // Tab from the top of the page until focus lands on the activation button
   // of a card that is NOT already active.
   const reached = await tabUntilFocused(page, '.persona-card:not(.active) button.persona-name');
@@ -42,6 +46,18 @@ test('persona card is reachable by Tab and activates with Enter — C-A1', async
   await page.keyboard.press('Enter');
 
   // The activated card becomes the active persona (card highlight + topbar).
+  await expect(page.locator(`.persona-card[data-persona-id="${targetId}"]`)).toHaveClass(/active/);
+  await expect(page.locator('.persona-card.active')).toHaveCount(1);
+});
+
+test('persona activation remains a native Space-key action — C-A1', async ({ page }) => {
+  await loadPersona(page);
+  const reached = await tabUntilFocused(page, '.persona-card:not(.active) button.persona-name');
+  expect(reached, 'Tab never reached an inactive persona card').toBe(true);
+  const targetId = await page.evaluate(
+    () => document.activeElement.closest('.persona-card')?.dataset.personaId,
+  );
+  await page.keyboard.press('Space');
   await expect(page.locator(`.persona-card[data-persona-id="${targetId}"]`)).toHaveClass(/active/);
   await expect(page.locator('.persona-card.active')).toHaveCount(1);
 });

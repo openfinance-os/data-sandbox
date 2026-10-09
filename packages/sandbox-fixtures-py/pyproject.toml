@@ -1,6 +1,6 @@
 [project]
 name = "openfinance-os-sandbox-fixtures"
-version = "0.0.1"
+version = "0.1.0"
 description = "Deterministic, v2.1-shaped UAE Open Finance synthetic fixtures from the Open Finance Data Sandbox. Python wrapper around @openfinance-os/sandbox-fixtures (npm)."
 readme = "README.md"
 requires-python = ">=3.9"

@@ -58,6 +58,7 @@ jobs:
       # which is generated, not checked in. Use the :pkgs variant since
       # build:spec already ran above.
       - run: npm run build:fixtures:pkgs
+      - run: node tools/build-labs.mjs
       # Fail fast if dist/ artifacts are stale relative to sources, so a
       # contributor who forgot to re-bake them sees a clear signal here
       # rather than a downstream test surprise. MUST run after
@@ -226,8 +227,8 @@ jobs:
         with:
           name: built-artefacts
       - run: npm run test:perf
-      # Note: lhci uploads each run's report to temporary-public-storage
-      # (URLs printed in the job log). No local artifact upload needed —
-      # the previous `actions/upload-artifact` step warned about a missing
-      # .lighthouseci/ directory because lhci doesn't write one when the
-      # target is the public-storage cloud.
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: lighthouse-report
+          path: artifacts/lighthouse/

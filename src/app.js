@@ -1,3 +1,5 @@
+import { deploymentBase, publishedScenario } from './core/fixture-url.js';
+import { CORPUS_VERSION, REFERENCE_DATE } from './core/scenario.js';
 // Sandbox UI entry — wires the three-pane layout to the deterministic
 // generator and the parsed SPEC.json. The browser fetches both as static
 // JSON (no build chain). State lives in a single object updated by select-
@@ -41,19 +43,12 @@ import { createTour } from './ui/tour.js';
 // median to 0.57. Static import + modulepreload is the right shape.
 import { createCompareView } from './ui/compare-view.js';
 import { createTxFilter } from './ui/tx-filter.js';
-import { createMonthlySummary } from './ui/monthly-summary.js';
 // PR-15 perf — insurance module is dynamic-imported when the active
 // domain shifts to insurance. The banking default landing never needs
 // it, so keeping it off the cold-load path tightens the EXP-24
 // Lighthouse budget without affecting insurance-flow latency
 // (rebuildAndRender is already async work).
-import {
-  envelopesFromBundle,
-  csvForResource,
-  downloadJson,
-  downloadCsv,
-  downloadTarball,
-} from './ui/export.js';
+import { envelopesFromBundle } from './ui/export.js';
 import { isPii, whyEmpty } from './shared/field-knowledge.js';
 import { createUnderwriting } from './ui/underwriting.js';
 import { createFieldCard } from './ui/field-card.js';
@@ -277,7 +272,23 @@ const { renderTxFilterBar, applyFilter, applySort, toggleSort } = createTxFilter
   emptyTxFilter,
   updateUrl: pushPermalink,
 });
-const { renderMonthlySummary } = createMonthlySummary({ el, formatAmount });
+// Load the monthly calculation when a transaction view is opened.
+let monthlySummaryFactory;
+function renderMonthlySummary(rows) {
+  const host = el('div');
+  monthlySummaryFactory ??= import('./ui/monthly-summary.js').then(({ createMonthlySummary }) =>
+    createMonthlySummary({ el, formatAmount }),
+  );
+  monthlySummaryFactory
+    .then(({ renderMonthlySummary: render }) => {
+      host.replaceChildren(render(rows));
+    })
+    .catch((err) => {
+      host.textContent = 'Monthly summary could not load.';
+      console.error('Monthly summary failed', err);
+    });
+  return host;
+}
 // PR-15 — lazy insurance wrapper. The factory loads on the first
 // renderInsuranceBundle() call; subsequent calls reuse the cached
 // instance. Banking flow never triggers the import.
@@ -360,19 +371,19 @@ const { renderUnderwritingStrip, renderUnderwritingPanel } = createUnderwriting(
 const exportPopover = (() => {
   let inner = null;
   let loading = null;
+  let actions = null;
   const deps = () => ({
     state,
     el,
     track,
     copyToClipboard,
-    exportActiveJson: () => exportActiveJson(),
-    exportActiveCsv: () => exportActiveCsv(),
-    exportTarball: () => exportTarball(),
+    exportActiveJson: () => actions.exportActiveJson(),
+    exportActiveCsv: () => actions.exportActiveCsv(),
+    exportTarball: () => actions.exportTarball(),
     embedIframeSnippet: () => buildEmbedSnippet(),
     activeFixtureUrl: () => {
-      const origin =
-        window.location.origin +
-        window.location.pathname.replace(/\/index\.html$/, '').replace(/\/$/, '');
+      const origin = deploymentBase();
+      if (!publishedScenario(state.fixtureManifest, state)) return null;
       return encodeFixtureUrl({
         origin,
         personaId: state.personaId,
@@ -381,26 +392,30 @@ const exportPopover = (() => {
         endpoint:
           state.endpoint === OVERVIEW_PSEUDO || state.endpoint === UNDERWRITING_PSEUDO
             ? '/accounts'
-            : state.endpoint,
+            : actions.activeEnvelopeKey(),
       });
     },
     activeJsonString: () => {
       if (!state.bundle) return '';
       const ctx = exportContext();
       const envelopes = envelopesFromBundle(state.bundle, ctx);
-      const key = activeEnvelopeKey();
+      const key = actions.activeEnvelopeKey();
       const env = envelopes[key] ?? envelopes[state.endpoint];
       return env ? JSON.stringify(env, null, 2) : '';
     },
     activeCsvString: () => {
       if (!state.bundle) return '';
-      return buildActiveCsvString();
+      return actions.buildActiveCsvString();
     },
   });
   function ensure() {
     if (inner) return inner;
     if (!loading) {
-      loading = import('./ui/export-popover.js').then(({ createExportPopover }) => {
+      loading = Promise.all([
+        import('./ui/export-popover.js'),
+        import('./ui/export-actions.js'),
+      ]).then(([{ createExportPopover }, { createActiveExports }]) => {
+        actions = createActiveExports({ state, exportContext });
         inner = createExportPopover(deps());
         return inner;
       });
@@ -412,12 +427,12 @@ const exportPopover = (() => {
   // at src/ui/export-popover.js:126 is itself a toggle, so a real
   // dblclick still opens-then-closes by design.
   return {
-    open() {
+    open(trigger = document.activeElement) {
       if (inner) {
-        inner.open();
+        inner.open(trigger);
         return;
       }
-      ensure().then((p) => p.open());
+      ensure().then((p) => p.open(trigger));
     },
     close() {
       inner?.close();
@@ -513,13 +528,21 @@ async function init() {
   // network blip must not block the rest of init (the fallback initials
   // path covers any missing avatar). data / domains are load-bearing and
   // stay strict.
-  const [domainsRes, dataRes, avatarsRes] = await Promise.all([
+  const [domainsRes, dataRes, avatarsRes, published] = await Promise.all([
     fetch('../dist/domains.json'),
     fetch('../dist/data.json'),
     fetch('../dist/avatars.json').catch(() => null),
+    fetch('../dist/published-scenarios.json')
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null),
   ]);
   const domainsManifest = await domainsRes.json();
   state.data = await dataRes.json();
+  state.fixtureManifest = published;
+  if (url.corpus && url.corpus !== CORPUS_VERSION)
+    throw new Error(
+      `Corpus ${url.corpus} requires its archived package. This explorer serves ${CORPUS_VERSION}.`,
+    );
   // D-10 — on a non-default initial locale, merge the lazy Arabic content
   // before first paint so persona names render localized. The default English
   // path skips the extra fetch entirely (the overlay is opt-in, not preloaded).
@@ -574,7 +597,9 @@ async function init() {
       ? url.personaId
       : Object.keys(state.activePersonas)[0];
   state.lfi = url.lfi;
-  state.seed = url.seed;
+  state.seed = new URL(window.location.href).searchParams.has('seed')
+    ? url.seed
+    : state.activePersonas[state.personaId].default_seed;
   // EXP-17: honour the URL's pinned endpoint when it's recognised by the
   // active domain's spec or one of the two banking pseudo-endpoints
   // (overview, underwriting). Falls back to the domain default otherwise.
@@ -604,12 +629,6 @@ async function init() {
   syncControls();
   attachEventHandlers();
   attachBuilderHandlers();
-  // Workstream C plug-point 1 (Service Worker fixture mock) is implemented
-  // and unit-tested under tests/fixture-handler.test.mjs; live registration
-  // is gated on a deployment-time `Service-Worker-Allowed: /` header that
-  // requires sandbox-host configuration outside this commit's scope. Until
-  // that lands, custom-persona bundles are accessible via the npm engine
-  // (plug-point 2) and the static-fixture zip download (plug-point 3).
   // C-P1 — awaited so state.bundle exists before the tour (which reads
   // bundle.accounts in its step setups) can auto-launch below.
   await rebuildAndRender();
@@ -654,6 +673,7 @@ function attachBuilderHandlers() {
       // ATM trees) stays off the cold-load critical path.
       const { mountPersonaBuilder } = await import('./ui/persona-builder-ui.js');
       builderInstance = mountPersonaBuilder({
+        exportContext,
         pools: state.data.pools,
         currentRecipe: state.recipe,
         onApply: ({ recipe, persona }) => {
@@ -869,7 +889,11 @@ function buildPersonaList() {
       { class: 'persona-card-body' },
       el(
         'button',
-        { class: 'persona-name', attrs: { type: 'button' }, onClick: activatePersona },
+        {
+          class: 'persona-name',
+          attrs: { type: 'button', tabindex: '0' },
+          onClick: activatePersona,
+        },
         document.createTextNode(localizedName(p)),
         isCustom
           ? el('span', {
@@ -1247,8 +1271,8 @@ function attachEventHandlers() {
   });
   // PR #6 — unified Export popover replaces the JSON / CSV / Tarball /
   // Embed button row and the toolbar Share button.
-  document.getElementById('export-toggle')?.addEventListener('click', () => {
-    exportPopover.open();
+  document.getElementById('export-toggle')?.addEventListener('click', (e) => {
+    exportPopover.open(e.currentTarget);
   });
   document.getElementById('tour-btn')?.addEventListener('click', () => startTour());
   document.getElementById('find-btn')?.addEventListener('click', openFind);
@@ -1279,74 +1303,22 @@ function setPersona(personaId, lfi) {
 
 function exportContext() {
   return {
-    personaId: state.personaId,
+    personaId:
+      state.bundle?.personaId ??
+      state.data.personas[state.personaId]?.persona_id ??
+      state.personaId,
+    recipeHash: state.data.personas[state.personaId]?._custom?.recipeHash ?? null,
     lfi: state.lfi,
     seed: state.seed,
     specVersion: state.spec?.specVersion,
     specSha: state.spec?.pinSha,
-    retrievedAt: new Date().toISOString(),
+    retrievedAt: state.spec?.retrievedAt,
+    referenceDate: REFERENCE_DATE,
+    specVersions: Object.fromEntries(
+      Object.entries(state.data.buildInfo.specProvenance).map(([d, p]) => [d, p.version]),
+    ),
+    specProvenance: state.data.buildInfo.specProvenance,
   };
-}
-
-function activeEnvelopeKey() {
-  if (state.endpoint === '/accounts' || state.endpoint === '/parties') return state.endpoint;
-  if (state.selectedAccountId) {
-    const tail = state.endpoint.replace('{AccountId}', state.selectedAccountId);
-    return tail;
-  }
-  return state.endpoint;
-}
-
-function exportActiveJson() {
-  if (!state.bundle) return;
-  const ctx = exportContext();
-  const envelopes = envelopesFromBundle(state.bundle, ctx);
-  const key = activeEnvelopeKey();
-  const env = envelopes[key] ?? envelopes[state.endpoint];
-  if (!env) return;
-  const fname = `${state.personaId}-${state.lfi}-seed${state.seed}-${key.replace(/^\//, '').replace(/\//g, '__').replace(/[{}]/g, '') || 'root'}.json`;
-  downloadJson(env, fname);
-}
-
-// Picks the bundle key + filename suffix for the active endpoint's CSV.
-// Shared by exportActiveCsv (download) and buildActiveCsvString (popover).
-const RESOURCE_FOR_ENDPOINT = Object.freeze({
-  '/accounts': ['accounts', 'Account'],
-  '/accounts/{AccountId}': ['accounts', 'Account'],
-  '/accounts/{AccountId}/balances': ['balances', 'Balance'],
-  '/accounts/{AccountId}/transactions': ['transactions', 'Transaction'],
-  '/accounts/{AccountId}/standing-orders': ['standingOrders', 'StandingOrder'],
-  '/accounts/{AccountId}/direct-debits': ['directDebits', 'DirectDebit'],
-  '/accounts/{AccountId}/beneficiaries': ['beneficiaries', 'Beneficiary'],
-  '/accounts/{AccountId}/scheduled-payments': ['scheduledPayments', 'ScheduledPayment'],
-  '/accounts/{AccountId}/product': ['product', 'Product'],
-  '/accounts/{AccountId}/parties': ['parties', 'Party'],
-  '/parties': ['callingUserParty', 'Party'],
-  '/accounts/{AccountId}/statements': ['statements', 'Statements'],
-});
-function buildActiveCsvString() {
-  if (!state.bundle) return '';
-  const ctx = exportContext();
-  const [bundleKey] = RESOURCE_FOR_ENDPOINT[state.endpoint] ?? ['accounts', 'Account'];
-  let rows = state.bundle[bundleKey] ?? [];
-  if (state.selectedAccountId && Array.isArray(rows)) {
-    rows = rows.filter((r) => !r._accountId || r._accountId === state.selectedAccountId);
-  }
-  if (!Array.isArray(rows)) rows = [rows];
-  return csvForResource(rows, ctx);
-}
-function exportActiveCsv() {
-  if (!state.bundle) return;
-  const [, resourceLabel] = RESOURCE_FOR_ENDPOINT[state.endpoint] ?? ['accounts', 'Account'];
-  const csv = buildActiveCsvString();
-  const fname = `${state.personaId}-${state.lfi}-seed${state.seed}-${resourceLabel}.csv`;
-  downloadCsv(csv, fname);
-}
-
-function exportTarball() {
-  if (!state.bundle) return;
-  const ctx = exportContext();
-  downloadTarball(state.bundle, ctx, `${state.personaId}-${state.lfi}-seed${state.seed}.tar`);
 }
 
 // C-P1 — async because the lazy generator entry may dynamic-import a
@@ -1653,6 +1625,7 @@ function pushPermalink() {
   params.set('persona', state.personaId);
   params.set('lfi', state.lfi);
   params.set('seed', String(state.seed));
+  params.set('corpus', CORPUS_VERSION);
   // Slice 8: domain + preview round-trip. Banking is the default and stays
   // implicit so existing permalinks remain unchanged.
   if (state.domain && state.domain !== 'banking') params.set('domain', state.domain);
@@ -2644,7 +2617,7 @@ function renderUseInDemoPanel() {
   const personaId = state.personaId;
   const lfi = state.lfi;
   const seed = state.seed;
-  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const origin = typeof window !== 'undefined' ? deploymentBase() : '';
   const slugBase =
     typeof window !== 'undefined'
       ? (
@@ -2680,7 +2653,9 @@ j = load_journey('${personaId}', lfi='${lfi}', seed=${seed})
 # j['endpoints']['/accounts'], j['endpoints']['/parties'],
 # j['endpoints']['/accounts/{AccountId}/transactions'], ...`;
 
-  const curlSnippet = `curl -fsS '${manifestUrl}'   # discover personas, LFIs, endpoints, version pin
+  const curlSnippet = !publishedScenario(state.fixtureManifest, state)
+    ? 'This seed is generated locally. Download JSON, or run npm run mock and use its local HTTP endpoint.'
+    : `curl -fsS '${manifestUrl}'   # discover personas, LFIs, endpoints, version pin
 curl -fsS '${curlUrl}'`;
 
   const details = el('details', {
@@ -2735,7 +2710,7 @@ curl -fsS '${curlUrl}'`;
     },
     {
       eyebrow: 'Path 4 · raw HTTPS — Swift / Kotlin / Postman / curl / .NET',
-      hint: 'Static JSON, CORS-permissive. Pin manifest.json.version for stability.',
+      hint: 'Static JSON for published seeds. Archive/package versions support reproducible replay; current URLs may change.',
       snippet: curlSnippet,
       copyLabel: 'Copy curl',
       doneLabel: 'curl snippet copied.',
@@ -2754,9 +2729,9 @@ curl -fsS '${curlUrl}'`;
       class: 'demo-row-copy',
       attrs: { type: 'button' },
       text: r.copyLabel,
-      onClick: () => {
-        copyToClipboard(r.snippet, r.doneLabel);
-        track('share', { kind: r.kind });
+      onClick: async () => {
+        const result = await copyToClipboard(r.snippet, r.doneLabel);
+        if (result?.status === 'confirmed-success') track('share', { kind: r.kind });
       },
     });
     row.appendChild(btn);

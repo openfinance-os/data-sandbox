@@ -223,7 +223,7 @@
     persona page to copy a pre-filled snippet, or build the URL yourself:
   </p>
   <pre><code>&lt;iframe
-  src="https://openfinance-os.org/commons/data-sandbox/embed.html?persona=salaried_expat_mid&amp;lfi=median&amp;endpoint=/accounts/%7BAccountId%7D/transactions&amp;seed=4729&amp;height=600"
+  src="https://data-sandbox.openfinance-os.org/embed.html?persona=salaried_expat_mid&amp;lfi=median&amp;endpoint=/accounts/%7BAccountId%7D/transactions&amp;seed=4729&amp;height=600"
   width="100%" height="600" loading="lazy"
   title="Open Finance Data Sandbox — Sara · median"
   referrerpolicy="no-referrer"
@@ -309,11 +309,11 @@ def parties():
     Flutter, .NET, Postman, plain <code>curl</code>.
   </p>
   <h3>URL contract</h3>
-  <pre><code>https://openfinance-os.org/commons/data-sandbox/fixtures/v1/manifest.json
-https://openfinance-os.org/commons/data-sandbox/fixtures/v1/spec.json
-https://openfinance-os.org/commons/data-sandbox/fixtures/v1/index.json
-https://openfinance-os.org/commons/data-sandbox/fixtures/v1/personas/&lt;persona&gt;.json
-https://openfinance-os.org/commons/data-sandbox/fixtures/v1/bundles/&lt;persona&gt;/&lt;lfi&gt;/seed-&lt;n&gt;/&lt;endpoint&gt;.json</code></pre>
+  <pre><code>https://data-sandbox.openfinance-os.org/fixtures/v1/manifest.json
+https://data-sandbox.openfinance-os.org/fixtures/v1/spec.json
+https://data-sandbox.openfinance-os.org/fixtures/v1/index.json
+https://data-sandbox.openfinance-os.org/fixtures/v1/personas/&lt;persona&gt;.json
+https://data-sandbox.openfinance-os.org/fixtures/v1/bundles/&lt;persona&gt;/&lt;lfi&gt;/seed-&lt;n&gt;/&lt;endpoint&gt;.json</code></pre>
   <p>
     Endpoint filenames replace <code>/</code> with <code>__</code> and strip
     <code>{</code>/<code>}</code>. Examples:
@@ -328,7 +328,7 @@ https://openfinance-os.org/commons/data-sandbox/fixtures/v1/bundles/&lt;persona&
     Start with <code>index.json</code> — a TPP-friendly summary of which
     personas, LFIs, endpoints, and version are live, plus the path contract:
   </p>
-  <pre><code>curl -fsS https://openfinance-os.org/commons/data-sandbox/fixtures/v1/index.json</code></pre>
+  <pre><code>curl -fsS https://data-sandbox.openfinance-os.org/fixtures/v1/index.json</code></pre>
   <h3>Postman walk-through</h3>
   <ol>
     <li><code>GET .../fixtures/v1/manifest.json</code> — capture
@@ -480,7 +480,7 @@ https://openfinance-os.org/commons/data-sandbox/fixtures/v1/bundles/&lt;persona&
   <p>
     For every <code>(persona, lfi, seed)</code> with
     <code>multi_lfi_footprint</code>, the primary bundle's transaction
-    stream carries 12 monthly self-sweep outflows per declared
+    stream carries 24 monthly self-sweep outflows per declared
     non-primary slot, byte-mirrored as inflows in the corresponding role
     bundle's <code>/accounts/{AccountId}/transactions</code>. Each pair
     shares <code>TransactionDateTime</code>, <code>Amount</code>,
@@ -626,5 +626,6 @@ https://openfinance-os.org/commons/data-sandbox/fixtures/v1/bundles/&lt;persona&
 </footer>
 
 <script type="module" src="integrate.js"></script>
+<p style="padding:1rem">Candidate 0.1.0: verify registry publication before installing by name. Static files ignore query pagination; use the local HTTP mock for generated scenarios and cursor retrieval. Current URLs are mutable aliases; retain a versioned package/archive for replay. <a href="labs.html">Guided labs</a></p>
 </body>
 </html>

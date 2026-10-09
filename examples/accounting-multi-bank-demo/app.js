@@ -20,8 +20,10 @@
 const params = new URLSearchParams(window.location.search);
 const ORIGIN = (
   params.get('origin') ||
-  (window.location.origin && window.location.origin !== 'null' ? window.location.origin : '') ||
-  'https://openfinance-os.org/commons/data-sandbox'
+  (window.location.origin && window.location.origin !== 'null'
+    ? new URL('../../', import.meta.url).href.replace(/\/$/, '')
+    : '') ||
+  'https://data-sandbox.openfinance-os.org'
 ).replace(/\/$/, '');
 const FX = `${ORIGIN}/fixtures/v1`;
 
@@ -272,7 +274,7 @@ function renderLedger(personaId, info, primaryAccounts, roleBundles) {
     let bal = '—';
     if (rb.balances?.Data?.Balance?.length) {
       const b = rb.balances.Data.Balance[0];
-      bal = `${b.Amount?.Amount ?? '—'} ${b.Amount?.Currency ?? ''}`;
+      bal = `${b.CreditDebitIndicator === 'Debit' ? '-' : ''}${b.Amount?.Amount ?? '—'} ${b.Amount?.Currency ?? ''}`;
     }
     addLedgerRow(
       tbody,

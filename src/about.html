@@ -10,6 +10,9 @@
   body { background: var(--bg); }
   .about-shell {
     max-width: 720px;
+    width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
     margin: 0 auto;
     padding: 24px 18px 80px;
   }
@@ -36,7 +39,7 @@
   .about-shell a:hover { text-decoration: underline; }
   .meta-grid {
     display: grid;
-    grid-template-columns: 140px 1fr;
+    grid-template-columns: minmax(0, 140px) minmax(0, 1fr);
     gap: 4px 16px;
     font-size: 13px;
     margin-top: 8px;
@@ -249,5 +252,6 @@
 </footer>
 
 <script type="module" src="about.js"></script>
+<p style="padding:1rem">Corrected corpus 0.1.0 uses 24 completed months ending April 2026. Official v2.1 Errata 4 is recorded alongside independently pinned wire schemas. Insurance quote conformance uses a documented source-hash scoped adapter. Guided labs provide observed calculations and unknowns. This local candidate awaits publication and real user validation.</p>
 </body>
 </html>

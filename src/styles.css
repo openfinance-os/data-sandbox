@@ -277,6 +277,9 @@ input:focus,
   }
 }
 @media (max-width: 760px) {
+  .topbar-persona {
+    min-block-size: 52px;
+  }
   .topbar-persona-tagline {
     white-space: normal;
     -webkit-line-clamp: 2;
@@ -455,6 +458,7 @@ input:focus,
 }
 
 .version-pin {
+  min-inline-size: 160px;
   font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   font-size: 11px;
   color: var(--text-muted);
@@ -2771,6 +2775,20 @@ details.nav-account > summary.nav-account-header:focus-visible {
 }
 
 /* Toast for "Embed snippet copied" confirmation. */
+.manual-copy-fallback {
+  padding: 12px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-card);
+}
+.manual-copy-fallback textarea {
+  display: block;
+  width: 100%;
+  min-height: 100px;
+  margin-bottom: 8px;
+}
+.manual-copy-fallback > p {
+  margin-top: 0;
+}
 .copy-toast {
   position: fixed;
   bottom: 24px;

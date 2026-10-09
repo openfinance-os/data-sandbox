@@ -18,7 +18,7 @@
 //     transport + server, clears the sweep timer.
 
 import http from 'node:http';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -267,6 +267,13 @@ export function createHttpHandler({
       sendJson(res, 200, {
         ok: true,
         version: _pkg.version,
+        revision: process.env.SANDBOX_REVISION ?? 'local',
+        corpusVersion: manifest.corpusVersion,
+        referenceDate: manifest.nowAnchor,
+        specProvenance: manifest.specProvenance,
+        toolCatalogueHash: createHash('sha256')
+          .update(Object.keys(createServer()._registeredTools).sort().join('\n'))
+          .digest('hex'),
         specVersion: manifest.specVersion ?? null,
         specSha: manifest.specSha ?? null,
         personaCount: Object.keys(manifest.personas ?? {}).length,

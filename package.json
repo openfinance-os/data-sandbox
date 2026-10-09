@@ -1,12 +1,12 @@
 {
   "name": "@openfinance-os/data-sandbox",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "description": "Open Finance Data Sandbox — interactive client-side explorer for UAE Open Finance Bank Data Sharing payloads. Synthetic data, narratively realistic personas, spec-driven badges. OF-OS Commons contribution.",
   "license": "MIT",
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=22.0.0"
   },
   "workspaces": [
     "packages/sandbox-fixtures",
@@ -17,9 +17,9 @@
     "build:data": "node tools/build-data.mjs",
     "build:avatars": "node tools/build-avatars.mjs",
     "build:brand-registry": "node tools/build-brand-registry.mjs",
-    "build:site": "npm run build:spec && npm run build:data && npm run build:avatars && node tools/build-fixture-package.mjs && node tools/build-brand-registry.mjs && node tools/build-fixture-package-py.mjs && node tools/stage-site.mjs",
+    "build:site": "npm run build:spec && npm run build:data && npm run build:avatars && node tools/build-fixture-package.mjs && node tools/build-payload-types.mjs && node tools/build-brand-registry.mjs && node tools/build-fixture-package-py.mjs && node tools/build-labs.mjs && node tools/stage-site.mjs",
     "build:fixtures": "npm run build:spec && npm run build:fixtures:pkgs",
-    "build:fixtures:pkgs": "node tools/build-fixture-package.mjs && node tools/build-brand-registry.mjs && node tools/build-fixture-package-py.mjs",
+    "build:fixtures:pkgs": "node tools/build-fixture-package.mjs && node tools/build-payload-types.mjs && node tools/build-brand-registry.mjs && node tools/build-fixture-package-py.mjs",
     "test:mcp": "npm run build:fixtures --silent && npm test --workspace @openfinance-os/sandbox-mcp --silent",
     "verify:spec-shape": "node tools/verify-spec-shape.mjs",
     "check:dist-clean": "node tools/check-dist-clean.mjs",
@@ -40,12 +40,17 @@
     "test:e2e": "playwright test",
     "test:perf": "lhci autorun --config=lighthouserc.json",
     "validate:spec-conformance": "npm run lint:persona-spec-conformance && vitest run tests/spec-validation.test.mjs tests/spec-validation.insurance.test.mjs tests/rendered-fixture-spec-validation.test.mjs",
-    "serve": "python3 -m http.server 8000 --directory src",
-    "ci": "npm run verify:spec-shape && npm run build:spec && npm run build:data && npm run build:avatars && npm run build:fixtures:pkgs && npm run check:dist-clean && npm run lint && npm run audit:realism && npm test && npm run test:mcp && npm run test:py",
+    "serve": "node tools/gzip-static-server.mjs 8000 _site",
+    "ci": "npm run verify:spec-shape && npm run build:spec && npm run build:data && npm run build:avatars && npm run build:fixtures:pkgs && node tools/build-labs.mjs && npm run check:dist-clean && node tools/stage-site.mjs && npm run lint && npm run audit:realism && npm test && npm run test:mcp && npm run test:py",
     "ci:full": "npm run ci && npm run build:site && npm run test:e2e && npm run test:perf",
     "prepare": "husky || true",
     "release:bump": "node tools/release-bump.mjs",
-    "test:py": "python3 -m pytest packages/sandbox-fixtures-py/tests/ -q"
+    "test:py": "python3 -m pytest packages/sandbox-fixtures-py/tests/ -q",
+    "mock": "node tools/mock-server.mjs",
+    "build:evaluation": "node tools/build-evaluation.mjs",
+    "export:tables": "node tools/export-tables.mjs",
+    "test:install": "node tools/clean-install.mjs",
+    "build:archives": "node tools/build-release-archives.mjs"
   },
   "lint-staged": {
     "*.{js,mjs,cjs}": [

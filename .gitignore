@@ -36,3 +36,7 @@ packages/sandbox-fixtures-py/dist/
 packages/sandbox-fixtures-py/build/
 *.egg-info/
 __pycache__/
+
+# Local release snapshots and opt-in analytical/evaluation artifacts
+artifacts/
+packages/sandbox-fixtures/schemas/

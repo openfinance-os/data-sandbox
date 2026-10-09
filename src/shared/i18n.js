@@ -64,6 +64,7 @@ export const STRINGS = {
     'topbar.tour': 'Tour',
     'banner.synthetic': 'SYNTHETIC',
     'menu.more': 'More',
+    'menu.labs': 'Guided labs',
     'menu.integrate': 'Integrate',
     'menu.about': 'About',
     'pane.personaLibrary': 'Persona library',
@@ -133,7 +134,7 @@ export const STRINGS = {
     'txFilter.mcc': 'MCC',
     'txFilter.mccLabel': 'Merchant category code (MCC)',
     'txFilter.humanDates': 'Humanise dates',
-    'txFilter.showEnriched': 'Show enriched',
+    'txFilter.showEnriched': 'Show synthetic answer labels',
     // Export popover. Format names (JSON/CSV/Tarball/npm/Python/curl/MCP) and
     // the code snippets themselves stay English by design — only chrome,
     // actions, and the tarball note are localised.
@@ -167,6 +168,7 @@ export const STRINGS = {
     'topbar.tour': 'جولة',
     'banner.synthetic': 'اصطناعي',
     'menu.more': 'المزيد',
+    'menu.labs': 'تمارين إرشادية',
     'menu.integrate': 'التكامل',
     'menu.about': 'حول',
     'pane.personaLibrary': 'مكتبة الشخصيات',
