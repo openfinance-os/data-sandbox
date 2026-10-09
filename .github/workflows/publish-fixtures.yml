@@ -33,7 +33,7 @@ jobs:
     outputs:
       revision: ${{ steps.revision.outputs.revision }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: main
           fetch-depth: 0
@@ -79,7 +79,7 @@ jobs:
     timeout-minutes: 10
     needs: validate
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.validate.outputs.revision }}
       - uses: actions/setup-node@v6
@@ -100,7 +100,7 @@ jobs:
     timeout-minutes: 10
     needs: [validate, publish-npm]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.validate.outputs.revision }}
       - uses: actions/setup-node@v6

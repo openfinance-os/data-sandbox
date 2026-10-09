@@ -28,7 +28,7 @@ jobs:
     outputs:
       revision: ${{ steps.revision.outputs.revision }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: main
           fetch-depth: 0
@@ -77,7 +77,7 @@ jobs:
     timeout-minutes: 30
     needs: publish-npm
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.publish-npm.outputs.revision }}
 
