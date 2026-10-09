@@ -1,188 +1,86 @@
 # Open Finance Data Sandbox
 
-> Interactive, client-side static explorer for UAE Open Finance payloads —
-> Bank Data Sharing, Insurance Data Sharing (7 lines, GA), and the ATM
-> Locator directory. Synthetic data, narratively realistic personas,
-> spec-driven mandatory/optional/conditional badges. Contributed to the
-> [OpenFinance-OS Commons](https://openfinance-os.org/commons/).
+A synthetic UAE Open Finance corpus, explorer, and local testing harness for developers, analysts and educators. It helps teams see realistic payloads, calculate a useful result, and understand how missing fields affect that result.
 
-**[→ Live demo](https://openfinance-os.github.io/data-sandbox/src/index.html)**
-&nbsp; · &nbsp;
-**[→ /about](https://openfinance-os.github.io/data-sandbox/src/about.html)**
-&nbsp; · &nbsp;
-**[→ Embed mode](https://openfinance-os.github.io/data-sandbox/src/embed.html?persona=salaried_expat_mid&lfi=median&endpoint=/accounts/%7BAccountId%7D/transactions&seed=4729&height=600)**
+The working tree prepares **corpus 0.1.0**, referenced to **1 May 2026 UTC**, with **24 completed calendar months** of transaction/statement history. This corrected release has not been published. The existing public site and hosted MCP remain separate deployments until their revision and synthetic journeys are verified.
 
-## Why
+## Start locally
 
-UAE Open Finance is moving from spec-on-paper to data-flowing-through-pipes.
-Every TPP team — banks, Hub71/ADGM fintechs, Al Tareq cohorts, independent
-developers — faces the same first-day problem: **the spec tells you the
-schema, but not what the data actually looks like in practice.**
+Use Node 22 and Python 3.11+:
 
-This sandbox is the show-don't-tell answer: load a synthetic UAE persona and
-read every UAE Open Finance v2.1 payload they would receive — Bank Data
-Sharing (accounts, balances, transactions, standing orders, direct debits,
-beneficiaries, scheduled payments, product, parties, statements), Insurance
-Data Sharing across all 7 lines, and the ATM Locator directory — with
-mandatory / optional / conditional treatment derived live from the published
-OpenAPI spec. Toggle an LFI population profile (Rich / Median / Sparse) to
-stress-test downstream design decisions against worst-case and best-case
-field shapes.
-
-## What's in the box
-
-- **38 synthetic UAE personas** — 21 banking-only (retail, SME, corporate) +
-  9 insurance-only (motor / home / health / life / travel / renters /
-  employment) + 8 multi-domain personas whose `domains: [banking, insurance]`
-  declaration emits both endpoint families at the same persona path. The
-  sandbox banking tab renders 29 personas (21 + 8 multi-domain); the
-  insurance tab renders 17 (9 + 8). Together they cover 30+ globally-unique
-  stress-coverage terms. The banking set spans salaried expat / Emirati, gig,
-  senior, thin-file, mortgage DBR-heavy, NSF / distressed, HNW
-  multi-currency, joint family, corporate treasury, and 8 SME archetypes
-  (cash-heavy retail, F&B multi-outlet, e-commerce marketplace, free-zone
-  SaaS, construction sub-contractor, healthcare clinic, RAK Emirati-owned
-  trading, general trading). Most SME personas declare a
-  `multi_lfi_footprint` so role bundles can be fetched independently and
-  reconciled by IBAN; the flagship multi-domain `retail-multi-banker` adds
-  N-slot multi-LFI (4 banks × multiple products) + multi-insurer coverage.
-  A 39th manifest (`atm-directory`) is the infrastructure anchor for the ATM
-  Locator domain — it emits a public directory of LFI-operated cash machines
-  rather than customer data.
-- **All 12 v2.1 Account Information endpoints** for banking + **30 Insurance
-  Data Sharing endpoints** (GA — motor / home / health / life / travel /
-  renters / employment, 4 endpoints each, plus 2 Insurance Consents
-  endpoints) + the **ATM Locator** `GET /atms` directory — all generated and
-  validated against the v2.1 OpenAPI schema (1500+ spec-validation tests
-  across persona × LFI × endpoint after `npm run build:site`).
-- **Three LFI populate-rate profiles** — Rich (every populate-band field
-  populated) · Median (Commons-curated v1 calibration: Universal=1.0,
-  Common=0.7, Variable=0.4, Rare=0.1) · Sparse (Universal-only worst case).
-- **EXP-16 Compare-LFIs** — side-by-side render of the same persona under
-  two LFI profiles with cell-level diff highlighting.
-- **EXP-18 Underwriting Scenario panel** — illustrative pinned formulas:
-  Implied monthly net income (Payroll → Fallback A → Fallback B → `—`),
-  Total fixed commitments (frequency-normalised, multi-currency converted
-  to AED at the pinned snapshot rate), Implied DBR, NSF / distress count.
-  Low-volume guard for the Senior persona (PRD §4.4).
-- **Spec-wide find** (⌘K) — search field names, paths, enums, persona
-  narratives.
-- **Tour** — 5-step walkthrough of Sara's bundle.
-- **Export** — JSON per endpoint, CSV per resource, tarball — all watermarked.
-- **Embed mode** — chrome-less variant for iframe consumption (slide decks,
-  blog posts, LMS modules).
-
-The full set of v1 EXP-NN PRD requirements is implemented. Phase 2.0 added
-SME multi-LFI footprints, role-keyed bundles, mod-97-valid IBANs, and an MCP
-server (`packages/sandbox-mcp/`); Phase 2.1 took Insurance Data Sharing to GA
-across all 7 lines; Phase 2.2 added N-slot multi-LFI and multi-domain
-personas; Phase 2.3 added the ATM Locator domain.
-
-## Architecture
-
-- **Vanilla HTML/CSS/JS, no build chain.** ES modules served as-is. Production
-  CDN handles gzip + HTTP/2 multiplexing.
-- **Spec source.** `uae-account-information-openapi.yaml` v2.1 vendored from
-  [Nebras-Open-Finance/api-specs](https://github.com/Nebras-Open-Finance/api-specs)
-  on the `ozone` branch, pinned by commit SHA. Build-time tooling
-  (`tools/parse-spec.mjs`) parses the YAML and emits the JSON `SPEC` object
-  the frontend consumes — every status badge, enum value, and mandatory/
-  optional flag flows from the spec, never hand-authored. Linter rule
-  enforces this invariant.
-- **Synthetic generator.** Runs entirely in the browser. Deterministic seeded
-  PRNG (mulberry32 + FNV-mixed seed). `(persona_id, lfi_profile, seed)` →
-  bundle is a pure function. Same URL on different machines, different
-  caches, different days produces byte-identical output.
-- **No backend, no database, no auth.** Static deployment. Anonymous PostHog
-  analytics only.
-- **Old-core-banking realism in transaction shapes** —
-  `TransactionInformation` reads `SAL/PAYROLL/HELIXDATA` not "Salary credit
-  — Helix Data Group", reference numbers vary by channel
-  (`IPP9444186899`, `BRN149202505058032`, `UTIL2025051124`), POS amounts
-  carry fils precision, ValueDateTime drifts T+1 to T+3 for FX / cross-bank,
-  `Status=Pending` for transactions in the last 24-48h, NSF events emit
-  paired Rejected debit + Booked bounce-fee.
-
-## Quick start
-
-```bash
-git clone https://github.com/openfinance-os/data-sandbox.git
-cd data-sandbox
-npm install
-npm run build:spec       # parse the vendored YAML into dist/SPEC.json
-node tools/build-data.mjs   # bundle personas + pools as dist/data.json
-npm run serve            # http://localhost:8000/index.html
+```sh
+npm ci
+npm run build:site
+npm run serve
 ```
 
-## CI
+Open `http://localhost:8000/src/index.html`. `serve` uses the staged `_site/` directory. The staged examples are at `/examples/tpp-budgeting-demo/` and `/examples/accounting-multi-bank-demo/`; guided tasks are at `/src/labs.html`.
 
-```bash
-npm test            # full Vitest suite (~3.4k tests after build:fixtures) —
-                    # replay determinism, spec validation across the full
-                    # persona × LFI × endpoint matrix (banking + insurance),
-                    # LFI mechanics, underwriting calculator, exports,
-                    # identity posture
-npm run lint        # 7 invariant lints — no-handauthored-fields (EXP-01),
-                    # no-institution-leak (NG5), pii-leak (EXP-07/22),
-                    # no-glyph-only (EXP-23), persona-spec-conformance,
-                    # stress-coverage-uniqueness (EXP-25),
-                    # brand-registry-coverage — plus eslint + prettier
-npm run test:e2e    # Playwright e2e + axe-core a11y (EXP-23)
-npm run test:perf   # Lighthouse-CI mobile profile (EXP-24)
-npm run ci          # full suite (verify → build → lint → test → MCP tests)
+```sh
+node examples/labs/run.mjs income
+node examples/labs/run.mjs reconciliation
+node examples/labs/run.mjs cover
+npm run export:tables -- salaried_expat_mid rich
 ```
 
-## TPP integration
+A five-minute first useful result is a product target that still needs observed user sessions.
 
-If you are wiring sandbox personas into a TPP demo journey to overcome the
-intentionally-thin mock data in the Nebras-operated regulatory sandbox,
-the [integration guide](./src/integrate.html) walks through five plug
-points (iframe, npm `loadJourney()`, PyPI `load_journey()`, raw HTTPS
-fixtures at `/fixtures/v1/`, and the `@openfinance-os/sandbox-mcp` MCP
-server). Worked examples live in
-[`examples/tpp-budgeting-demo/`](./examples/tpp-budgeting-demo/) and
-[`examples/accounting-multi-bank-demo/`](./examples/accounting-multi-bank-demo/).
+## Data and purpose
 
-## MCP server
+There are **38 customer personas and one ATM directory manifest**: 21 banking-only, 9 insurance-only, 8 combined banking/insurance, plus ATM. The banking filter includes 29 personas and insurance includes 17. There are 12 banking GET paths, 30 insurance GET paths across seven lines and consents, and `GET /atms`.
 
-[`@openfinance-os/sandbox-mcp`](./packages/sandbox-mcp/) exposes the whole
-corpus as MCP tools, resources, and prompts so an AI agent (Claude or any
-MCP client) can act as a dynamic PFM over a synthetic customer — pick a
-curated persona with `set_session` (or compose one with `build_persona`)
-and answer balance / spend / obligation / coverage questions over
-deterministic v2.1 JSON. It backs the bank-direct (J1) connection journey.
+Rich, Median and Sparse are anonymous synthetic field-population profiles. They are not measurements of named institutions. Outputs contain synthetic identities and narratives; every export carries a watermark. Integer minor units, booking status and currency determine balances and completed-period statements. Failed attempts remain available as signals but do not move booked balances.
 
-- **Hosted (no install):** add the live endpoint
-  `https://data-sandbox.fly.dev/mcp` as a custom connector in
-  **Claude.ai → Settings → Connectors**. Anonymous — no auth, no API key.
-- **Local:** `npx -y @openfinance-os/sandbox-mcp` (stdio transport for
-  Claude Desktop / Claude Code).
+The explorer supports schema inspection, profile comparison, source-backed income/commitment comparison, JSON/CSV downloads, and embeds. Labs cover income/fixed payments, multi-bank reconciliation, consent-aware reads, and combined banking/insurance information. Missing data is unknown, never a fabricated zero or underwriting conclusion.
 
-## Docs
+## Standards evidence
 
-- **PRD** — [`PRD_OF_Data_Explorer.md`](./PRD_OF_Data_Explorer.md) (v0.9)
-- **Implementation plan** — [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
-- **Methodology, citation guidance, stewardship** — [/about](./src/about.html)
-- **TPP integration guide** — [/integrate](./src/integrate.html)
+The stable baseline remains **v2.1 with official consolidated Errata 4**, dated 18 September 2026. Effective wire files resolve independently: banking `v2.1-errata2`, insurance `v2.1-errata3`, ATM base `v2.1`. Exact paths, commits, hashes and official document revision are in [spec/provenance.json](spec/provenance.json).
 
-## Licensing
+The [official consolidated corrections](https://openfinanceuae.atlassian.net/wiki/spaces/OF/pages/1366294554/Standards+V2.1+API+Hub+V8+-+Consolidated+Errata) lead the community register, which still lists errata3. Documentation advertises v2.2-rc2 while canonical api-specs main has rc1. Neither preview was adopted as a released stable replacement.
 
-- **Code:** [MIT](./LICENSE)
-- **Synthetic data + fixtures:** [CC0](./LICENSE-DATA) — public domain
-- **Vendored OpenAPI YAML:** inherits the upstream
-  [Nebras-Open-Finance/api-specs](https://github.com/Nebras-Open-Finance/api-specs)
-  licence.
+Strict validation preserves unknown-field rejection. The upstream insurance quote `oneOf`/`allOf` compositions are defective under literal JSON Schema. A reviewed, source-hash keyed adapter flattens only those named compositions; tests report literal rejection separately from normalized acceptance. This is not certification or an upstream correction. See [docs/standards-conformance.md](docs/standards-conformance.md).
 
-## Stewardship
+## Integrations and reproducibility
 
-Maintained as part of the OpenFinance-OS Commons. Quarterly populate-rate
-band recalibration. Spec-pin updates within 30 days of upstream Nebras
-v2.x releases. Issue triage within 14 days. Persona library reviewed
-quarterly. 24-month minimum maintenance window from launch with a public
-EOL clause if the maintainer can no longer continue.
+Static JSON exposes **only manifest-listed seeds/roles**. Fetch the manifest first, then use the listed endpoint file. Custom recipes and arbitrary seeds use a downloaded envelope, the Node runtime generator, or the local mock. A static file ignores query parameters; it does not provide server pagination.
 
-## Reporting issues
+```sh
+curl -fsS http://localhost:8000/fixtures/v1/manifest.json
+curl -fsS http://localhost:8000/fixtures/v1/bundles/salaried_expat_mid/median/seed-4729/accounts.json
+npm run mock
+curl -fsS http://localhost:8788/scenarios/salaried_expat_mid/accounts
+```
 
-Every field card carries a "Report an issue" link with a pre-filled
-GitHub issue body — field name + path + status + persona + LFI + seed +
-pinned spec SHA + a 5-checkbox triage set.
+The mock exposes curated/custom/role scenarios, cursor pagination, empty/short history, optional absence, simulated API Hub permission loss/expiry/revocation, latency, 429 and temporary failures. These are labelled transport simulations. No real token or consent authority is issued.
+
+The full npm/Python distributions share the same generated fixture corpus. Registry availability must be verified at release time; local tarballs/wheels are the supported way to inspect this unpublished candidate:
+
+```sh
+npm run test:install
+npm run build:evaluation
+npm run build:archives
+```
+
+Archives under `artifacts/releases/<corpus-version>/` include full, banking, insurance, ATM and optional evaluation packs with SHA-256 checksums. Reusing a corpus version for changed canonical bytes fails. `/fixtures/v1/` is a current alias, not an immutable historical URL; old citations use retained release packages/archives. A share URL includes its corpus version and declines replay of a different version on the current explorer.
+
+Generated payload types are available under `@openfinance-os/sandbox-fixtures/payloads/<domain>`. The `./validation` export exposes the strict validator and documented insurance adapter; raw schemas ship under `schemas/`. Algorithms receive wire payloads. The opt-in evaluation pack keeps observed inputs and synthetic labels in separate directories, with persona-family and merchant-entity holdouts. Existing enrichment sidecars are **synthetic answer labels**, not observed bank data.
+
+MCP supports every domain, including ATM. Transaction cursors are tied to the complete scenario and filters. Numerical summaries use the reference cutoff, default to Booked, separate currencies/status, and expose a small source-ID page plus a cursor to the remaining evidence. No mixed-currency total is implied.
+
+## Verification and release
+
+```sh
+npm run ci
+npm run build:site
+npm run test:e2e
+npm run test:perf
+npm run test:install
+node tools/check-spec-drift.mjs
+```
+
+`check:dist-clean` requires generated outputs to have been committed. Do not weaken checks to accommodate an uncommitted working tree. Releases validate the exact trusted main revision; dependent MCP publication requires its matching fixture version already in npm. Health metadata carries revision, corpus date/version, domain pins and tool catalogue hash. The post-deploy smoke performs actual synthetic banking, insurance, secondary-bank and ATM reads.
+
+Public publication is pending credentials/configuration and review of this candidate. The site remains `noindex` until the public experience has been verified. Analytics stay anonymous and allowlisted; optional lab completion is self-reported within a session and does not establish retention or user success. No outreach or user research has been performed by this change.
+
+Code and loader license: MIT. Synthetic fixture data: CC0. Not endorsed by CBUAE, Nebras or any named institution.

@@ -13,10 +13,9 @@ test('renders Sara, switches endpoints, no console errors, axe-clean', async ({ 
 
   // PR #2 — tour auto-launches on cold landing; dismiss it so the rest
   // of the test interacts with the navigator unobstructed.
-  if ((await page.locator('#tour-overlay .tour-skip').count()) > 0) {
-    await page.locator('#tour-overlay .tour-skip').click();
-    await expect(page.locator('#tour-overlay')).toHaveCount(0);
-  }
+  await expect(page.locator('#tour-overlay .tour-skip')).toBeVisible();
+  await page.locator('#tour-overlay .tour-skip').click();
+  await expect(page.locator('#tour-overlay')).toHaveCount(0);
 
   // Persona list rendered.
   await expect(page.locator('.persona-card').first()).toBeVisible();
@@ -133,7 +132,11 @@ test('identity posture — no cookies / localStorage writes / non-static fetches
   // /src or /dist (no analytics calls in Phase 1; PostHog wiring lands later).
   for (const url of fetchedUrls) {
     if (!url.startsWith('http://127.0.0.1:8765')) continue;
-    const ok = url.includes('/src/') || url.includes('/dist/') || url.includes('favicon.ico');
+    const ok =
+      url.includes('/src/') ||
+      url.includes('/dist/') ||
+      url.includes('favicon.ico') ||
+      url.endsWith('/fixtures/v1/manifest.json');
     expect(ok, `unexpected same-origin fetch: ${url}`).toBe(true);
   }
 });

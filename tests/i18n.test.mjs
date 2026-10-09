@@ -7,6 +7,9 @@
 // depends on.
 
 import { describe, it, expect, afterEach } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   LOCALES,
   STRINGS,
@@ -110,6 +113,61 @@ describe('string catalog', () => {
     const en = Object.keys(STRINGS.en).sort();
     const ar = Object.keys(STRINGS.ar).sort();
     expect(ar).toEqual(en);
+  });
+});
+
+describe('data-i18n key coverage — the HTML ↔ catalog contract', () => {
+  // Every data-i18n / data-i18n-attr key referenced in the app-shell HTML
+  // must exist in STRINGS for BOTH locales — a missing key silently renders
+  // the raw key (or stale English) with no other signal.
+  const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+  function keysInHtml(relPath) {
+    const html = fs.readFileSync(path.join(repoRoot, relPath), 'utf8');
+    const keys = new Set();
+    let m;
+    const textRe = /data-i18n="([^"]+)"/g;
+    while ((m = textRe.exec(html))) keys.add(m[1]);
+    const attrRe = /data-i18n-attr="([^"]+)"/g;
+    while ((m = attrRe.exec(html))) {
+      for (const pair of m[1].split(';')) {
+        const [, key] = pair.split(':').map((s) => s && s.trim());
+        if (key) keys.add(key);
+      }
+    }
+    return [...keys];
+  }
+
+  it('every data-i18n key in src/index.html exists in STRINGS for both locales', () => {
+    const keys = keysInHtml('src/index.html');
+    expect(keys.length).toBeGreaterThan(0);
+    for (const locale of LOCALES) {
+      const missing = keys.filter((k) => STRINGS[locale][k] === undefined);
+      expect(missing, `keys missing from STRINGS.${locale}`).toEqual([]);
+    }
+  });
+
+  it('the English catalog values match the literal HTML text (first-paint no-op contract)', () => {
+    // Re-applying the 'en' locale must be a visual no-op (keeps the LTR
+    // visual baselines valid): each element's data-i18n key must resolve to
+    // exactly the text the HTML already carries.
+    const html = fs.readFileSync(path.join(repoRoot, 'src/index.html'), 'utf8');
+    const re = /data-i18n="([^"]+)"[^>]*>([^<]*)</g;
+    let m;
+    let checked = 0;
+    while ((m = re.exec(html))) {
+      const [, key, literal] = m;
+      const trimmed = literal
+        .replace(/\s+/g, ' ')
+        .trim()
+        // Decode the basic entities the static HTML uses — single pass so
+        // sequences like `&amp;lt;` can never be double-unescaped.
+        .replace(/&(amp|lt|gt);/g, (_, e) => ({ amp: '&', lt: '<', gt: '>' })[e]);
+      if (!trimmed) continue; // element whose text is populated at runtime
+      expect(STRINGS.en[key], `STRINGS.en['${key}'] vs literal HTML`).toBe(trimmed);
+      checked += 1;
+    }
+    expect(checked).toBeGreaterThan(5);
   });
 });
 

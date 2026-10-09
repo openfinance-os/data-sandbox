@@ -3,7 +3,7 @@
 // many concurrent MCP sessions) both stay isolated.
 //
 // Two modes:
-//   curated → persona id resolves to one of the 12 baked-in fixture bundles
+//   curated → persona id resolves to one of the 39 baked-in fixture bundles
 //   custom  → an in-memory journey produced by build_persona at runtime
 //             (recipe → expandRecipe → buildBundle → envelopesFromBundle).
 // All get_* tools call `getEndpointEnvelope(session, endpoint)` which routes
@@ -19,13 +19,14 @@ import {
   loadFixture,
   listRoleBundles,
   manifest,
+  scenarioDescriptor,
 } from '@openfinance-os/sandbox-fixtures';
 
 const LFI_PROFILES = new Set(['rich', 'median', 'sparse']);
-// 'primary' is always valid; any non-primary role must have an emitted role
-// bundle (discovered per-persona via listRoleBundles, which covers both the
-// legacy secondary/tertiary triad and Phase 2.2 N-slot keys).
-const LFI_ROLES = new Set(['primary', 'secondary', 'tertiary']);
+// Note: there is deliberately no static lfi_role allowlist — 'primary' is
+// always valid, and any non-primary role is validated against the emitted
+// role bundles (listRoleBundles), which covers both the legacy
+// secondary/tertiary triad and Phase 2.2 N-slot keys.
 
 export function createSessionStore() {
   let active = null;
@@ -52,6 +53,14 @@ export function createSessionStore() {
     }
     active = {
       kind: 'curated',
+      scenario: scenarioDescriptor({
+        personaId: persona,
+        role: lfi_role,
+        lfi,
+        seed: seed ?? info.default_seed,
+        referenceDate: manifest.nowAnchor,
+        specProvenance: manifest.specProvenance,
+      }),
       domain: info.domain ?? 'banking',
       persona,
       lfi,
@@ -68,6 +77,14 @@ export function createSessionStore() {
     }
     active = {
       kind: 'custom',
+      scenario: scenarioDescriptor({
+        personaId: persona,
+        recipeHash,
+        lfi,
+        seed,
+        referenceDate: manifest.nowAnchor,
+        specProvenance: manifest.specProvenance,
+      }),
       // Custom personas are banking-only — the recipe schema in this package
       // covers retail/SME/corporate banking knobs, with no insurance shape.
       domain: 'banking',
@@ -86,7 +103,7 @@ export function createSessionStore() {
   function get() {
     if (!active) {
       throw new Error(
-        'no active session — call set_session (curated) or build_persona (custom) first. Use list_personas to see the 38 curated personas (21 banking + 9 insurance + 8 multi-domain), or get_recipe_defaults to compose a custom one.',
+        'no active session — call set_session (curated) or build_persona (custom) first. Use list_personas to see the 39 curated personas (21 banking-only + 9 insurance-only + 8 multi-domain + 1 ATM directory), or get_recipe_defaults to compose a custom one.',
       );
     }
     return active;
@@ -143,4 +160,4 @@ export function fixtureEntry(session) {
   return manifest.fixtures[fxKey] ?? null;
 }
 
-export { LFI_PROFILES, LFI_ROLES };
+export { LFI_PROFILES };

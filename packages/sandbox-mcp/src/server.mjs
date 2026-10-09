@@ -1,5 +1,10 @@
+import { queryTransactions } from '@openfinance-os/sandbox-fixtures';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import {
+  loadFixture,
   loadJourney,
   loadPersonaManifest,
   loadSpec,
@@ -27,17 +32,24 @@ import {
 } from './session.mjs';
 import { registerPrompts } from './prompts.mjs';
 
-const PKG_NAME = '@openfinance-os/sandbox-mcp';
-const PKG_VERSION = '0.0.1';
+// Read name/version from package.json (same pattern as src/index.mjs) so the
+// MCP `initialize` handshake and version-stamped payloads can never drift
+// from the published package version.
+const _here = path.dirname(fileURLToPath(import.meta.url));
+const _pkg = JSON.parse(readFileSync(path.join(_here, '..', 'package.json'), 'utf8'));
+const PKG_NAME = _pkg.name;
+const PKG_VERSION = _pkg.version;
 
 const PFM_INSTRUCTIONS = [
-  'You are wired to a sandbox of synthetic UAE Open Finance v2.1 payloads across two domains:',
+  'You are wired to a sandbox of synthetic UAE Open Finance v2.1 payloads across three domains:',
   '  • Bank Data Sharing (29 personas in the banking domain: 21 banking-only + 8 multi-domain) —',
   '    accounts, balances, transactions, parties, etc.',
   '  • Insurance Data Sharing (17 personas in the insurance domain: 9 insurance-only + 8 multi-domain',
   '    across 7 lines: motor, home, health, life, travel, renters, employment). Per-line MCP tools —',
   '    `get_<line>_policies`, `get_<line>_policy`, `get_<line>_payment_details`, `get_<line>_quote` —',
   '    cover every line. Multi-domain personas (e.g. `retail_multi_banker`) accept tools from both sides.',
+  '  • ATM Locator (the `atm_directory` infrastructure persona) — call `get_atms` for the public',
+  '    ATM directory (locations, services, fees, accessibility). No session required.',
   'All data is fictional — no real customer, no real institution. Every response carries a `_watermark`',
   'field; preserve it in any user-visible summary, table, or export.',
   '',
@@ -211,140 +223,6 @@ function fetchPerAccount(session, suffix, accountId) {
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 500;
 
-function summariseTransactions(txs) {
-  const byDirection = { Credit: { count: 0, total: 0 }, Debit: { count: 0, total: 0 } };
-  const byCategory = new Map();
-  const byMonth = new Map();
-  let earliest = null;
-  let latest = null;
-  for (const t of txs) {
-    const amt = Number(t?.Amount?.Amount) || 0;
-    const dir = t?.CreditDebitIndicator === 'Credit' ? 'Credit' : 'Debit';
-    byDirection[dir].count += 1;
-    byDirection[dir].total = +(byDirection[dir].total + amt).toFixed(2);
-    const code = (t?.MerchantDetails?.MerchantCategoryCode ?? 'uncategorised').toString();
-    const cat = byCategory.get(code) ?? { MerchantCategoryCode: code, count: 0, total: 0 };
-    cat.count += 1;
-    cat.total = +(cat.total + (dir === 'Debit' ? -amt : amt)).toFixed(2);
-    byCategory.set(code, cat);
-    if (t?.BookingDateTime) {
-      const month = String(t.BookingDateTime).slice(0, 7);
-      const m = byMonth.get(month) ?? { month, count: 0, credit: 0, debit: 0 };
-      m.count += 1;
-      if (dir === 'Credit') m.credit = +(m.credit + amt).toFixed(2);
-      else m.debit = +(m.debit + amt).toFixed(2);
-      byMonth.set(month, m);
-      const ts = Date.parse(t.BookingDateTime);
-      if (Number.isFinite(ts)) {
-        if (earliest == null || ts < earliest) earliest = ts;
-        if (latest == null || ts > latest) latest = ts;
-      }
-    }
-  }
-  const topCategories = [...byCategory.values()]
-    .sort((a, b) => Math.abs(b.total) - Math.abs(a.total))
-    .slice(0, 10);
-  const months = [...byMonth.values()].sort((a, b) => a.month.localeCompare(b.month));
-  return {
-    count: txs.length,
-    byDirection,
-    byMonth: months,
-    topCategories,
-    earliest: earliest != null ? new Date(earliest).toISOString() : null,
-    latest: latest != null ? new Date(latest).toISOString() : null,
-  };
-}
-
-function filterTransactions(
-  envelopeJson,
-  { since, until, minAmount, maxAmount, category, limit, summary },
-) {
-  const txs = envelopeJson?.Data?.Transaction;
-  if (!Array.isArray(txs)) return envelopeJson;
-  const sinceTs = since ? Date.parse(since) : null;
-  const untilTs = until ? Date.parse(until) : null;
-  const matches = (t) => {
-    const ts = t.BookingDateTime ? Date.parse(t.BookingDateTime) : null;
-    if (sinceTs && ts && ts < sinceTs) return false;
-    if (untilTs && ts && ts > untilTs) return false;
-    const amt = Number(t?.Amount?.Amount);
-    if (Number.isFinite(amt)) {
-      if (minAmount != null && amt < minAmount) return false;
-      if (maxAmount != null && amt > maxAmount) return false;
-    }
-    if (category) {
-      const code = (t?.MerchantDetails?.MerchantCategoryCode ?? '').toString();
-      const name = (t?.TransactionInformation ?? '').toString().toLowerCase();
-      const wanted = category.toLowerCase();
-      if (!code.toLowerCase().includes(wanted) && !name.includes(wanted)) return false;
-    }
-    return true;
-  };
-  const filtered = txs.filter(matches);
-
-  if (summary) {
-    const summaryBlock = summariseTransactions(filtered);
-    // The v2.1 spec defines `Data` with `additionalProperties: false` and
-    // requires `Transaction` to be present (AEReadTransaction). Aggregates
-    // therefore live at the envelope root with an underscore prefix — the
-    // same convention the codebase already uses for `_filter`, `_watermark`,
-    // `_specSha`, etc. — so a strict TPP consumer can strip them and still
-    // get a spec-conformant envelope. `Data.Transaction` stays as an empty
-    // array so the required field is present.
-    return {
-      ...envelopeJson,
-      Data: { ...envelopeJson.Data, Transaction: [] },
-      _filter: {
-        since,
-        until,
-        minAmount,
-        maxAmount,
-        category,
-        mode: 'summary',
-        total: txs.length,
-        matched: filtered.length,
-      },
-      _summary: summaryBlock,
-    };
-  }
-
-  const effLimit = Math.max(0, Math.min(MAX_LIMIT, limit ?? DEFAULT_LIMIT));
-  // Generator emits transactions in ascending BookingDateTime order. PFM use
-  // cases want recent activity, so when we cap, we keep the *tail* (most
-  // recent) and preserve ascending order in the output.
-  const truncated = filtered.length > effLimit;
-  const kept = truncated ? filtered.slice(filtered.length - effLimit) : filtered;
-  const filterBlock = {
-    since,
-    until,
-    minAmount,
-    maxAmount,
-    category,
-    limit: effLimit,
-    total: txs.length,
-    matched: filtered.length,
-    kept: kept.length,
-    truncated,
-  };
-  if (truncated) {
-    const oldestKept = kept[0]?.BookingDateTime ?? null;
-    filterBlock._paginationHint = [
-      `Returned the ${kept.length} most recent transactions (of ${filtered.length} matching, ${txs.length} total).`,
-      oldestKept
-        ? `For older items: re-call with until="${oldestKept}" (and optionally a smaller limit) to walk backwards in time.`
-        : 'For older items: re-call with a tighter since/until window or a higher limit (max ' +
-          MAX_LIMIT +
-          ').',
-      'For aggregate analysis (category/month buckets) call with summary=true instead — single small response.',
-    ].join(' ');
-  }
-  return {
-    ...envelopeJson,
-    Data: { ...envelopeJson.Data, Transaction: kept },
-    _filter: filterBlock,
-  };
-}
-
 // LFI populate-rate profiles. The wording mirrors PFM_INSTRUCTIONS so consumers
 // see the same description whether they read the server-level instructions or
 // call `lfi_profiles` directly.
@@ -385,6 +263,7 @@ function inferDomain(endpoint) {
   if (typeof endpoint !== 'string') return 'banking';
   if (INSURANCE_ENDPOINT_RE.test(endpoint)) return 'insurance';
   if (endpoint.startsWith('/insurance-consents')) return 'insurance';
+  if (endpoint === '/atms' || endpoint.startsWith('/atms/')) return 'atm';
   return 'banking';
 }
 
@@ -568,10 +447,10 @@ export function createServer() {
     {
       title: 'List synthetic personas',
       description:
-        'List the curated synthetic UAE personas in this sandbox: 21 banking-only + 9 insurance-only + 8 multi-domain = 38 personas (the 9 insurance personas cover all 7 lines — 3 motor, 1 home, 1 health, 1 life, 1 travel, 1 renters, 1 employment). Returns id, display name, archetype, default seed, domain (`"banking"` / `"insurance"` / `"multi"`), stress-coverage tags, and `multi_lfi_footprint` / `multi_insurer_footprint` slot arrays declaring the persona\'s plausible multi-LFI / multi-insurer reality (each slot with named real-UAE candidates — D-14 allow-site). Pass { domain: "banking" } or { domain: "insurance" } to filter; multi-domain personas appear under both filters. Omit to get all 38.',
+        'List the curated synthetic UAE personas in this sandbox: 21 banking-only + 9 insurance-only + 8 multi-domain + 1 ATM-directory infrastructure persona = 39 personas (the 9 insurance personas cover all 7 lines — 3 motor, 1 home, 1 health, 1 life, 1 travel, 1 renters, 1 employment). Returns id, display name, archetype, default seed, domain (`"banking"` / `"insurance"` / `"multi"` / `"atm"`), stress-coverage tags, and `multi_lfi_footprint` / `multi_insurer_footprint` slot arrays declaring the persona\'s plausible multi-LFI / multi-insurer reality (each slot with named real-UAE candidates — D-14 allow-site). Pass { domain: "banking" }, { domain: "insurance" }, or { domain: "atm" } to filter; multi-domain personas appear under both banking and insurance filters. Omit to get all 39.',
       inputSchema: {
         domain: z
-          .enum(['banking', 'insurance'])
+          .enum(['banking', 'insurance', 'atm'])
           .optional()
           .describe('Optional domain filter. Omit to list every curated persona across domains.'),
       },
@@ -609,17 +488,43 @@ export function createServer() {
           // discover the persona's plausible multi-bank reality without
           // a separate persona://<id> resource fetch. `multi_lfi_footprint`
           // is null for personas without a declared footprint.
-          multi_lfi_footprint: fp
-            ? {
-                roles: ['primary', 'secondary', 'tertiary']
-                  .filter((r) => fp[r])
-                  .map((r) => ({
-                    slot: r,
-                    role: fp[r].role,
-                    plausible_lfi_candidates: fp[r].plausible_lfi_candidates ?? [],
-                  })),
-              }
-            : null,
+          multi_lfi_footprint: (() => {
+            // Handle both footprint shapes: the legacy triad AND the
+            // Phase 2.2 N-slot `slots: []` array. The previous triad-only
+            // walk reported `roles: []` for every N-slot persona —
+            // including the flagship retail_multi_banker — while
+            // available_lfi_roles in the same payload listed their
+            // real slots.
+            const slots = Array.isArray(fp?.slots)
+              ? fp.slots.filter((s) => s != null)
+              : ['primary', 'secondary', 'tertiary']
+                  .filter((r) => fp?.[r])
+                  .map((r) => ({ ...fp[r], key: r }));
+            if (slots.length === 0) return null;
+            return {
+              roles: slots.map((s, i) => ({
+                slot: s.key ?? (i === 0 ? 'primary' : `slot-${i + 1}`),
+                role: s.role,
+                plausible_lfi_candidates: s.plausible_lfi_candidates ?? [],
+              })),
+            };
+          })(),
+          // Phase 2.2: the insurance mirror of the banking footprint. Slot
+          // arrays only (no legacy triad shape ever existed for insurers).
+          // Null for personas without a declared multi-insurer reality.
+          multi_insurer_footprint: (() => {
+            const ifp = info?.multi_insurer_footprint ?? null;
+            const slots = Array.isArray(ifp?.slots) ? ifp.slots.filter((s) => s != null) : [];
+            if (slots.length === 0) return null;
+            return {
+              slots: slots.map((s, i) => ({
+                slot: s.key ?? `slot-${i + 1}`,
+                line: s.line ?? null,
+                plausible_insurer_candidates: s.plausible_insurer_candidates ?? [],
+                ...(s.cross_domain_link ? { cross_domain_link: s.cross_domain_link } : {}),
+              })),
+            };
+          })(),
           available_lfi_roles: availableRoles,
         };
       });
@@ -738,13 +643,17 @@ export function createServer() {
       // nowAnchor so two calls with the same (recipe, lfi, seed) produce
       // byte-identical envelopes — same determinism guarantee EXP-05 gives
       // curated personas. specSha + specVersion follow the corpus.
-      const nowAnchor = manifest.nowAnchor ?? '2026-04-01T00:00:00.000Z';
+      const nowAnchor = manifest.nowAnchor;
       const now = new Date(nowAnchor);
       const bundle = buildBundle({ persona: expanded, lfi, seed, pools, now });
       const ctx = {
         personaId: expanded.persona_id,
         lfi,
         seed,
+        recipeHash: recipeHash(merged),
+        referenceDate: manifest.nowAnchor,
+        specVersions: manifest.specVersions,
+        specProvenance: manifest.specProvenance,
         specVersion: manifest.specVersion ?? 'v2.1',
         specSha: manifest.specSha ?? 'unknown',
         retrievedAt: nowAnchor,
@@ -770,7 +679,7 @@ export function createServer() {
         seed,
         journey,
         recipe: merged,
-        recipeHash: hash,
+        recipeHash: recipeHash(merged),
         personaName: expanded.name ?? `Custom (${hash})`,
       });
       return textResult(
@@ -994,7 +903,7 @@ export function createServer() {
       title: 'Get transactions',
       description:
         'Return /accounts/{AccountId}/transactions. Server-side filters: since/until (ISO8601), minAmount/maxAmount (numeric), category (substring match against MerchantCategoryCode + TransactionInformation). Filters run after the deterministic generator — they never alter the underlying synthetic data.\n\n' +
-        "High-volume personas (HNW, Corporate, SME) can hold hundreds of transactions per account; full-list responses can exceed the host MCP client's tool-result size cap. To stay safely under it, output is capped at `limit` (default 50, max 500) — the most recent N matching transactions are returned, in ascending BookingDateTime order, with `_filter.truncated=true` and a `_paginationHint` when truncation occurs. For aggregate analysis (top categories, monthly buckets, credit/debit totals) pass `summary=true` to skip the per-row payload entirely.",
+        "High-volume personas (HNW, Corporate, SME) can hold hundreds of transactions per account; full-list responses can exceed the host MCP client's tool-result size cap. To stay safely under it, output is capped at `limit` (default 50, max 500) — the most recent N matching transactions are returned, in ascending BookingDateTime order, with `_filter.nextCursor` for complete retrieval without duplicate timestamps. For aggregate analysis (top categories, monthly buckets, credit/debit totals) pass `summary=true` to skip the per-row payload entirely.",
       inputSchema: {
         ...accountIdOptional,
         since: z
@@ -1017,10 +926,22 @@ export function createServer() {
           .string()
           .optional()
           .describe('Substring filter against MerchantCategoryCode or TransactionInformation.'),
+        currency: z
+          .string()
+          .optional()
+          .describe('ISO currency filter; currencies are never combined in summaries.'),
+        status: z.enum(['Booked', 'Pending', 'Rejected']).optional(),
+        cursor: z
+          .string()
+          .max(32768)
+          .optional()
+          .describe(
+            'Opaque nextCursor from the previous page; preserve accountId and all filters.',
+          ),
         limit: z
           .number()
           .int()
-          .min(0)
+          .min(1)
           .max(MAX_LIMIT)
           .optional()
           .describe(
@@ -1030,23 +951,40 @@ export function createServer() {
           .boolean()
           .optional()
           .describe(
-            'Return aggregates (count, byDirection totals, byMonth buckets, top MerchantCategoryCode buckets) instead of individual transactions. Use this for monthly-summary / category-breakdown style questions — a single small response per account regardless of volume.',
+            'Return exact booked totals by currency and status, with source transaction IDs and the scenario cutoff instead of individual transactions. Use this for monthly-summary / category-breakdown style questions — a single small response per account regardless of volume.',
           ),
       },
     },
-    async ({ accountId, since, until, minAmount, maxAmount, category, limit, summary }) => {
+    async ({
+      accountId,
+      since,
+      until,
+      minAmount,
+      maxAmount,
+      category,
+      currency,
+      status,
+      cursor,
+      limit,
+      summary,
+    }) => {
       const s = session.get();
       requireDomain(s, 'banking', 'get_transactions');
+      if (cursor && !accountId) throw new Error('Cursor retrieval requires accountId');
       const id = resolveAccountId(s, accountId);
       const results = fetchPerAccount(s, '/transactions', id);
       const text = results
         .map((r) => {
-          const filtered = filterTransactions(r.envelope, {
+          const filtered = queryTransactions(r.envelope, {
             since,
             until,
             minAmount,
             maxAmount,
             category,
+            currency,
+            status,
+            cursor,
+            scenario: s.scenario,
             limit,
             summary,
           });
@@ -1155,6 +1093,94 @@ export function createServer() {
     },
   );
 
+  // ── ATM Locator domain (Phase 2.3 GA) ─────────────────────────────────────
+  // The ATM directory is an *infrastructure* persona (atm_directory), not a
+  // customer — so unlike the other get_* tools, get_atms works without a
+  // session. When the active session IS an ATM session (set_session with
+  // persona "atm_directory"), its lfi/seed are used as defaults, so an ATM
+  // session is no longer a dead-end.
+
+  server.registerTool(
+    'get_atms',
+    {
+      title: 'Get the ATM directory',
+      description:
+        'Return the /atms envelope from the UAE ATM Locator domain — the synthetic public ATM directory (per-ATM location, services, fees, accessibility, supported currencies/languages) emitted by the `atm_directory` infrastructure persona. Works without a session: lfi defaults to the active ATM session\'s profile (else "median") and seed to the directory\'s default seed. The rich-profile directory is large, so output is capped at `limit` entries (default 25, max 500) with `_filter.truncated=true` when the cap bites; `city` filters by TownName / CountrySubDivision substring.',
+      inputSchema: {
+        lfi: z
+          .enum(['rich', 'median', 'sparse'])
+          .optional()
+          .describe(
+            'LFI populate-rate profile for the directory. Default: the active ATM session\'s profile, else "median".',
+          ),
+        seed: z
+          .number()
+          .int()
+          .optional()
+          .describe("RNG seed. Default: the atm_directory persona's default_seed."),
+        city: z
+          .string()
+          .optional()
+          .describe(
+            'Case-insensitive substring filter against Location.PostalAddress TownName / CountrySubDivision (e.g. "Dubai", "Abu Dhabi").',
+          ),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(MAX_LIMIT)
+          .optional()
+          .describe(
+            `Max ATM entries in the response. Default 25, hard cap ${MAX_LIMIT}. When the matching set exceeds this, \`_filter.truncated\` is set.`,
+          ),
+      },
+    },
+    async ({ lfi, seed, city, limit }) => {
+      const info = getPersonaInfo('atm_directory');
+      if (!info) throw new Error('atm_directory persona missing from the fixture corpus');
+      const s = session.peek();
+      const isAtmSession = s && s.kind === 'curated' && s.persona === 'atm_directory';
+      const effLfi = lfi ?? (isAtmSession ? s.lfi : 'median');
+      const effSeed = seed ?? (isAtmSession ? s.seed : info.default_seed);
+      const env = loadFixture({
+        persona: 'atm_directory',
+        lfi: effLfi,
+        seed: effSeed,
+        endpoint: '/atms',
+      });
+      const atms = Array.isArray(env?.Data) ? env.Data : [];
+      const q = city ? String(city).toLowerCase() : null;
+      const matched = q
+        ? atms.filter((a) => {
+            const addr = a?.Location?.PostalAddress ?? {};
+            return (
+              String(addr.TownName ?? '')
+                .toLowerCase()
+                .includes(q) ||
+              String(addr.CountrySubDivision ?? '')
+                .toLowerCase()
+                .includes(q)
+            );
+          })
+        : atms;
+      const cap = Math.max(0, Math.min(MAX_LIMIT, limit ?? 25));
+      const kept = matched.slice(0, cap);
+      const filtered = {
+        ...env,
+        Data: kept,
+        _filter: {
+          city: city ?? null,
+          limit: cap,
+          total: atms.length,
+          matched: matched.length,
+          kept: kept.length,
+          truncated: matched.length > kept.length,
+        },
+      };
+      return envelope('atm_directory', effLfi, effSeed, '/atms', filtered);
+    },
+  );
+
   // ── Insurance endpoint wrappers (Phase 2.0 motor full-coverage) ───────────
 
   server.registerTool(
@@ -1162,7 +1188,7 @@ export function createServer() {
     {
       title: 'List motor insurance policies',
       description:
-        'Return the v2.1-errata1 /motor-insurance-policies envelope (list of policy summaries) for the active insurance persona. Errors if the active session is a banking persona.',
+        'Return the v2.1-errata3 /motor-insurance-policies envelope (list of policy summaries) for the active insurance persona. Errors if the active session is a banking persona.',
       inputSchema: {},
     },
     async () => {
@@ -1187,7 +1213,7 @@ export function createServer() {
     {
       title: 'Get motor insurance policy detail',
       description:
-        'Return the v2.1-errata1 /motor-insurance-policies/{InsurancePolicyId} envelope — the full policy detail (PolicyHolder, Identity, Product, Claims, Premium). Errors if the active session is a banking persona.',
+        'Return the v2.1-errata3 /motor-insurance-policies/{InsurancePolicyId} envelope — the full policy detail (PolicyHolder, Identity, Product, Claims, Premium). Errors if the active session is a banking persona.',
       inputSchema: policyIdOptional,
     },
     async ({ policyId }) => {
@@ -1205,7 +1231,7 @@ export function createServer() {
     {
       title: 'Get motor insurance payment details',
       description:
-        "Return the v2.1-errata1 /motor-insurance-policies/{InsurancePolicyId}/payment-details envelope — IBAN-keyed payment account + bank for the policy's premium-payment instruction. Errors if the active session is a banking persona.",
+        "Return the v2.1-errata3 /motor-insurance-policies/{InsurancePolicyId}/payment-details envelope — IBAN-keyed payment account + bank for the policy's premium-payment instruction. Errors if the active session is a banking persona.",
       inputSchema: policyIdOptional,
     },
     async ({ policyId }) => {
@@ -1229,7 +1255,7 @@ export function createServer() {
     {
       title: 'Get motor insurance quote',
       description:
-        'Return the v2.1-errata1 /motor-insurance-quotes/{QuoteId} envelope — the quote-read response (QuoteStatus=PolicyIssued for personas who already have an issued policy), with ServiceRating, Premium, and PolicyIssuanceAllowed sub-objects. Errors if the active session is a banking persona.',
+        'Return the v2.1-errata3 /motor-insurance-quotes/{QuoteId} envelope — the quote-read response (QuoteStatus=PolicyIssued for personas who already have an issued policy), with ServiceRating, Premium, and PolicyIssuanceAllowed sub-objects. Errors if the active session is a banking persona.',
       inputSchema: {
         quoteId: z.string().optional().describe("Quote id; omit to use the persona's only quote."),
       },
@@ -1303,7 +1329,7 @@ export function createServer() {
       `get_${line}_policies`,
       {
         title: `List ${title} policies`,
-        description: `Return the v2.1-errata1 ${basePath} envelope (list of policy summaries) for the active insurance persona on the ${line} line. Errors if the active session is a banking persona or an insurance persona on a different line.`,
+        description: `Return the v2.1-errata3 ${basePath} envelope (list of policy summaries) for the active insurance persona on the ${line} line. Errors if the active session is a banking persona or an insurance persona on a different line.`,
         inputSchema: {},
       },
       async () => {
@@ -1318,7 +1344,7 @@ export function createServer() {
       `get_${line}_policy`,
       {
         title: `Get ${title} policy detail`,
-        description: `Return the v2.1-errata1 ${basePath}/{InsurancePolicyId} envelope — the full policy detail (${detailBlocks}). Errors against a banking session or a different-line insurance session.`,
+        description: `Return the v2.1-errata3 ${basePath}/{InsurancePolicyId} envelope — the full policy detail (${detailBlocks}). Errors against a banking session or a different-line insurance session.`,
         inputSchema: lineIdSchema,
       },
       async ({ policyId }) => {
@@ -1335,7 +1361,7 @@ export function createServer() {
       `get_${line}_payment_details`,
       {
         title: `Get ${title} payment details`,
-        description: `Return the v2.1-errata1 ${basePath}/{InsurancePolicyId}/payment-details envelope — IBAN-keyed payment account + bank for the policy's premium-payment instruction. Errors against a banking session or a different-line insurance session.`,
+        description: `Return the v2.1-errata3 ${basePath}/{InsurancePolicyId}/payment-details envelope — IBAN-keyed payment account + bank for the policy's premium-payment instruction. Errors against a banking session or a different-line insurance session.`,
         inputSchema: lineIdSchema,
       },
       async ({ policyId }) => {
@@ -1352,7 +1378,7 @@ export function createServer() {
       `get_${line}_quote`,
       {
         title: `Get ${title} quote`,
-        description: `Return the v2.1-errata1 ${quotesPath}/{QuoteId} envelope — the quote-read response (QuoteStatus=PolicyIssued for personas who already have an issued policy). Errors against a banking session or a different-line insurance session.`,
+        description: `Return the v2.1-errata3 ${quotesPath}/{QuoteId} envelope — the quote-read response (QuoteStatus=PolicyIssued for personas who already have an issued policy). Errors against a banking session or a different-line insurance session.`,
         inputSchema: {
           quoteId: z
             .string()
@@ -1448,7 +1474,7 @@ export function createServer() {
             'Field name or dotted path to filter on (e.g. "Currency" or "Data.Account[].Currency"). Omit to return every field on the endpoint.',
           ),
         domain: z
-          .enum(['banking', 'insurance'])
+          .enum(['banking', 'insurance', 'atm'])
           .optional()
           .describe('Optional domain override. Auto-detected from endpoint prefix when omitted.'),
         limit: z
@@ -1521,13 +1547,36 @@ export function createServer() {
     'spec-insurance',
     'spec://uae-insurance-v2.1',
     {
-      title: 'UAE Open Finance Insurance Data Sharing v2.1-errata1 (parsed, all lines)',
+      title: 'UAE Open Finance Insurance Data Sharing v2.1-errata3 (parsed, all lines)',
       description:
         'Parsed insurance OpenAPI spec from the pinned upstream commit. Covers every read-only insurance GET across all 7 lines (motor + home + health + life + travel + renters + employment) plus Insurance Consents — list, detail, payment-details, and quote-read for each line. Use to ground field-level answers about the insurance domain ("is Takaful mandatory on a motor policy?", "what blocks live under Product on a home policy?").',
       mimeType: 'application/json',
     },
     async (uri) => {
       const spec = loadSpec({ domain: 'insurance' });
+      return {
+        contents: [
+          {
+            uri: uri.href,
+            mimeType: 'application/json',
+            text: JSON.stringify(spec),
+          },
+        ],
+      };
+    },
+  );
+
+  server.registerResource(
+    'spec-atm',
+    'spec://uae-atm-v2.1',
+    {
+      title: 'UAE Open Finance ATM Locator v2.1 (parsed)',
+      description:
+        'Parsed ATM Locator OpenAPI spec from the pinned upstream commit. Covers the /atms directory endpoint (per-ATM location, services, fees, accessibility). Use to ground field-level answers about the ATM domain ("is GeoLocation mandatory on an ATM entry?").',
+      mimeType: 'application/json',
+    },
+    async (uri) => {
+      const spec = loadSpec({ domain: 'atm' });
       return {
         contents: [
           {

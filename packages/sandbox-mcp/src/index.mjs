@@ -44,9 +44,14 @@ if (args.help) {
       '                                                        simulation (off by default;',
       '                                                        synthetic data is anonymous',
       '                                                        per PRD D-13)',
+      '              [--public-url https://mcp.example.org]    Public https:// origin of a',
+      '                                                        hosted deployment; used as',
+      '                                                        the OAuth issuer instead of',
+      '                                                        http://host:port',
       '',
       '  MCP_ALLOWED_HOSTS=a,b env var feeds the same allowlist as --allowed-host.',
       '  MCP_SIMULATE_OAUTH=1 enables the OAuth simulation (same as --simulate-oauth).',
+      '  MCP_PUBLIC_URL=https://… is equivalent to --public-url.',
       '',
       'Wire into Claude Desktop (stdio) by adding to claude_desktop_config.json:',
       '  {',
@@ -72,10 +77,12 @@ if (args.transport === 'stdio') {
     allowedHosts: args.allowedHosts,
     enableDnsRebindingProtection: args.enableDnsRebindingProtection,
     simulateOauth: args.simulateOauth,
+    publicUrl: args.publicUrl,
   });
   process.stderr.write(
     [
       `${pkg.name} ${pkg.version} listening on ${handle.url}`,
+      ...(handle.publicUrl ? [`public URL (OAuth issuer): ${handle.publicUrl}`] : []),
       `allowed Host headers: ${handle.allowedHosts.join(', ')}`,
       `DNS rebinding protection: ${args.enableDnsRebindingProtection ? 'on' : 'off'}`,
       `OAuth simulation: ${args.simulateOauth ? 'on (start the flow at /authorize)' : 'off (anonymous per PRD D-13)'}`,

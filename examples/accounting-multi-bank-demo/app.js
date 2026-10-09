@@ -20,8 +20,10 @@
 const params = new URLSearchParams(window.location.search);
 const ORIGIN = (
   params.get('origin') ||
-  (window.location.origin && window.location.origin !== 'null' ? window.location.origin : '') ||
-  'https://openfinance-os.org/commons/data-sandbox'
+  (window.location.origin && window.location.origin !== 'null'
+    ? new URL('../../', import.meta.url).href.replace(/\/$/, '')
+    : '') ||
+  'https://data-sandbox.openfinance-os.org'
 ).replace(/\/$/, '');
 const FX = `${ORIGIN}/fixtures/v1`;
 
@@ -38,6 +40,30 @@ async function getJSON(url) {
 }
 
 let manifest;
+
+// Mirror of normalizeFootprint() in src/generator/multi-lfi.js — the demo is
+// a standalone page fetching a remote manifest, so it carries its own copy.
+// Handles both the legacy primary/secondary/tertiary triad and the Phase 2.2
+// N-slot `slots: []` shape. slots[0] is the bundle-emitting (primary) LFI;
+// role bundles are staged under the remaining slots' `key` directories.
+function normalizeFootprint(footprint) {
+  if (!footprint) return null;
+  let raw;
+  if (Array.isArray(footprint.slots)) {
+    raw = footprint.slots.filter((s) => s != null);
+  } else {
+    raw = [];
+    for (const k of ['primary', 'secondary', 'tertiary']) {
+      const v = footprint[k];
+      if (v == null) continue;
+      raw.push({ ...v, key: k });
+    }
+  }
+  if (raw.length === 0) return null;
+  return {
+    slots: raw.map((s, i) => ({ ...s, key: s.key ?? (i === 0 ? 'primary' : `slot-${i + 1}`) })),
+  };
+}
 
 async function init() {
   try {
@@ -101,8 +127,10 @@ async function fetchPrimaryAndRoles(personaId, lfi, seed, info) {
   const primaryBeneficiariesUrl = `${FX}/bundles/${personaId}/${lfi}/seed-${seed}/accounts__${firstAccount.AccountId}__beneficiaries.json`;
   const primaryBeneficiaries = await getJSON(primaryBeneficiariesUrl);
 
-  // Role bundles in parallel.
-  const declaredSlots = ['secondary', 'tertiary'].filter((s) => info.multi_lfi_footprint?.[s]);
+  // Role bundles in parallel — every declared slot beyond the primary
+  // (slots[0]), whichever footprint shape the persona uses.
+  const fp = normalizeFootprint(info.multi_lfi_footprint);
+  const declaredSlots = (fp?.slots ?? []).slice(1).map((s) => s.key);
   const roleFetches = declaredSlots.map(async (slot) => {
     const url = `${FX}/bundles/${personaId}/${slot}/${lfi}/seed-${seed}/accounts.json`;
     try {
@@ -139,13 +167,12 @@ async function fetchPrimaryAndRoles(personaId, lfi, seed, info) {
 function renderFootprint(info) {
   const tbody = $('footprint-table').querySelector('tbody');
   tbody.innerHTML = '';
-  const fp = info.multi_lfi_footprint;
-  for (const slot of ['primary', 'secondary', 'tertiary']) {
-    const v = fp[slot];
-    if (!v) continue;
+  const fp = normalizeFootprint(info.multi_lfi_footprint);
+  for (const [i, v] of (fp?.slots ?? []).entries()) {
+    const slot = i === 0 ? 'primary' : v.key;
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><span class="lfi-pill role-${slot}">${slot}</span></td>
+      <td><span class="lfi-pill role-${i === 0 ? 'primary' : 'secondary'}">${slot}</span></td>
       <td>${v.role}</td>
       <td>${(v.plausible_lfi_candidates ?? []).join(', ')}</td>
       <td>${v.lfi_default ?? '—'}</td>
@@ -247,7 +274,7 @@ function renderLedger(personaId, info, primaryAccounts, roleBundles) {
     let bal = '—';
     if (rb.balances?.Data?.Balance?.length) {
       const b = rb.balances.Data.Balance[0];
-      bal = `${b.Amount?.Amount ?? '—'} ${b.Amount?.Currency ?? ''}`;
+      bal = `${b.CreditDebitIndicator === 'Debit' ? '-' : ''}${b.Amount?.Amount ?? '—'} ${b.Amount?.Currency ?? ''}`;
     }
     addLedgerRow(
       tbody,

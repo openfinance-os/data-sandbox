@@ -51,7 +51,7 @@ export function generateStandingOrders({ persona, accounts, rng, pools, now }) {
         // uses on this resource) is locked to {SchemeName, Identification}
         // and disallows Name.
         AccountHolderName: prettyPurpose(c.purpose),
-        Frequency: 'EvryDay:01:01',
+        Frequency: `IntervalMonthDay:1:${day}`,
         FirstPaymentDateTime: isoOf(firstPayment),
         NextPaymentDateTime: isoOf(nextPayment),
         StandingOrderStatusCode: 'Active',

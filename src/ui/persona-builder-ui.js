@@ -94,7 +94,7 @@ function poolOptionsFromIndex(indexed) {
   return Object.keys(indexed ?? {}).sort();
 }
 
-export function mountPersonaBuilder({ pools, currentRecipe, onApply }) {
+export function mountPersonaBuilder({ pools, currentRecipe, onApply, exportContext = () => ({}) }) {
   const dialog = document.getElementById('builder-dialog');
   if (!dialog) return null;
 
@@ -368,7 +368,7 @@ export function mountPersonaBuilder({ pools, currentRecipe, onApply }) {
         return;
       }
       try {
-        downloadCustomFixtureZip({ recipe, pools, seed: 1 });
+        downloadCustomFixtureZip({ recipe, pools, seed: 1, context: exportContext() });
       } catch (err) {
         validation.textContent = `download failed: ${String(err.message ?? err)}`;
         validation.classList.add('has-error');

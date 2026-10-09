@@ -6,15 +6,75 @@
 
 import { t } from '../shared/i18n.js';
 
+// C-P3 — debounce window for text-ish filter inputs. Each keystroke updates
+// state immediately but the (full-table) re-render waits for a typing pause.
+const FILTER_DEBOUNCE_MS = 150;
+
 export function createTxFilter(deps) {
   const { state, el, renderPayload, emptyTxFilter, updateUrl } = deps;
+
+  // C-P3 — debounced re-render with caret preservation. renderPayload()
+  // rebuilds the whole filter bar, so the focused input is destroyed on every
+  // render; we re-focus its successor and restore the recorded caret range
+  // (the old setTimeout+focus() jumped the caret to end-of-input).
+  let debounceTimer = null;
+  let pendingFocus = null; // { name, start, end }
+
+  function scheduleFilterRender(target) {
+    pendingFocus = {
+      name: target.name,
+      // selectionStart/End throw or return null on date/number inputs —
+      // capture defensively, restore only when we got real offsets.
+      start: safeSelection(target, 'selectionStart'),
+      end: safeSelection(target, 'selectionEnd'),
+    };
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      debounceTimer = null;
+      renderPayload();
+      const focusInfo = pendingFocus;
+      pendingFocus = null;
+      if (!focusInfo) return;
+      const next = document.querySelector(`.tx-filter-bar [name="${focusInfo.name}"]`);
+      if (!next) return;
+      next.focus();
+      if (
+        focusInfo.start != null &&
+        focusInfo.end != null &&
+        typeof next.setSelectionRange === 'function'
+      ) {
+        try {
+          next.setSelectionRange(focusInfo.start, focusInfo.end);
+        } catch {
+          // Input types without selection support (date/number) — focus alone
+          // is the best we can restore.
+        }
+      }
+    }, FILTER_DEBOUNCE_MS);
+  }
+
+  function safeSelection(target, prop) {
+    try {
+      return target[prop];
+    } catch {
+      return null;
+    }
+  }
 
   function renderTxFilterBar(_allRows) {
     const f = state.txFilter;
     const bar = el('div', { class: 'tx-filter-bar', attrs: { role: 'search' } });
-    bar.appendChild(filterInput('search', 'search', f.search, 'Search TransactionInformation…'));
     bar.appendChild(
-      filterSelect('type', f.type, [
+      filterInput(
+        'search',
+        'search',
+        f.search,
+        t('txFilter.searchPlaceholder', state.lang),
+        t('txFilter.searchLabel', state.lang),
+      ),
+    );
+    bar.appendChild(
+      filterSelect('type', f.type, t('txFilter.typeLabel', state.lang), [
         ['', 'TransactionType: any'],
         ['POS', 'POS'],
         ['ECommerce', 'ECommerce'],
@@ -29,7 +89,7 @@ export function createTxFilter(deps) {
       ]),
     );
     bar.appendChild(
-      filterSelect('subType', f.subType, [
+      filterSelect('subType', f.subType, t('txFilter.subTypeLabel', state.lang), [
         ['', 'SubTransactionType: any'],
         ['Purchase', 'Purchase'],
         ['Reversal', 'Reversal'],
@@ -43,17 +103,43 @@ export function createTxFilter(deps) {
       ]),
     );
     bar.appendChild(
-      filterSelect('debitCredit', f.debitCredit, [
+      filterSelect('debitCredit', f.debitCredit, t('txFilter.debitCreditLabel', state.lang), [
         ['', 'Debit/Credit: any'],
         ['Debit', 'Debit only'],
         ['Credit', 'Credit only'],
       ]),
     );
-    bar.appendChild(filterInput('dateFrom', 'date', f.dateFrom, '', 'From'));
-    bar.appendChild(filterInput('dateTo', 'date', f.dateTo, '', 'To'));
-    bar.appendChild(filterInput('amountFrom', 'number', f.amountFrom, 'AED ≥'));
-    bar.appendChild(filterInput('amountTo', 'number', f.amountTo, 'AED ≤'));
-    bar.appendChild(filterInput('mcc', 'text', f.mcc, 'MCC'));
+    bar.appendChild(
+      filterInput('dateFrom', 'date', f.dateFrom, '', t('txFilter.dateFrom', state.lang)),
+    );
+    bar.appendChild(filterInput('dateTo', 'date', f.dateTo, '', t('txFilter.dateTo', state.lang)));
+    bar.appendChild(
+      filterInput(
+        'amountFrom',
+        'number',
+        f.amountFrom,
+        t('txFilter.amountFromPlaceholder', state.lang),
+        t('txFilter.amountFromLabel', state.lang),
+      ),
+    );
+    bar.appendChild(
+      filterInput(
+        'amountTo',
+        'number',
+        f.amountTo,
+        t('txFilter.amountToPlaceholder', state.lang),
+        t('txFilter.amountToLabel', state.lang),
+      ),
+    );
+    bar.appendChild(
+      filterInput(
+        'mcc',
+        'text',
+        f.mcc,
+        t('txFilter.mcc', state.lang),
+        t('txFilter.mccLabel', state.lang),
+      ),
+    );
     // Date humanise toggle — flips ISO datetimes to human format.
     const humanLabel = el('label', { class: 'filter-toggle' });
     const humanCheckbox = el('input', { attrs: { type: 'checkbox' } });
@@ -63,7 +149,7 @@ export function createTxFilter(deps) {
       renderPayload();
     });
     humanLabel.appendChild(humanCheckbox);
-    humanLabel.appendChild(document.createTextNode(' Humanise dates'));
+    humanLabel.appendChild(document.createTextNode(` ${t('txFilter.humanDates', state.lang)}`));
     bar.appendChild(humanLabel);
 
     // Phase R1.5 — "Show enriched" toggle. OFF (default) renders the raw
@@ -86,7 +172,7 @@ export function createTxFilter(deps) {
       renderPayload();
     });
     enrichLabel.appendChild(enrichCheckbox);
-    enrichLabel.appendChild(document.createTextNode(' Show enriched'));
+    enrichLabel.appendChild(document.createTextNode(` ${t('txFilter.showEnriched', state.lang)}`));
     bar.appendChild(enrichLabel);
 
     const clear = el('button', {
@@ -113,14 +199,16 @@ export function createTxFilter(deps) {
     });
     input.addEventListener('input', (e) => {
       state.txFilter[name] = e.target.value;
-      renderPayload();
-      setTimeout(() => document.querySelector(`.tx-filter-bar [name="${name}"]`)?.focus(), 0);
+      // C-P3 — state updates per keystroke; the table re-render (which
+      // destroys and rebuilds this input) is debounced, and the caret is
+      // restored on the rebuilt input.
+      scheduleFilterRender(e.target);
     });
     return input;
   }
 
-  function filterSelect(name, value, options) {
-    const select = el('select', { attrs: { name, 'aria-label': name } });
+  function filterSelect(name, value, ariaLabel, options) {
+    const select = el('select', { attrs: { name, 'aria-label': ariaLabel ?? name } });
     for (const [v, label] of options) {
       const opt = el('option', { text: label, attrs: { value: v } });
       if (v === value) opt.selected = true;

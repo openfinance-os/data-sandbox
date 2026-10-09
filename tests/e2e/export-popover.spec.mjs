@@ -56,7 +56,7 @@ test.describe('Export popover (PR #6)', () => {
     await expect(pre).toContainText("persona='salaried_expat_mid'");
 
     await page.locator('.export-tab', { hasText: 'curl' }).click();
-    await expect(pre).toContainText('curl -s');
+    await expect(pre).toContainText('curl -fsS');
 
     await page.locator('.export-tab', { hasText: 'MCP' }).click();
     await expect(pre).toContainText("callTool('set_session'");
@@ -92,7 +92,7 @@ test.describe('Export popover (PR #6)', () => {
     await isolatedPage.locator('.export-tab', { hasText: 'curl' }).click();
     await isolatedPage.locator('.export-copy-btn', { hasText: 'Copy' }).click();
     const text = await isolatedPage.evaluate(() => navigator.clipboard.readText());
-    expect(text).toContain('curl -s');
+    expect(text).toContain('curl -fsS');
     await ctx.close();
   });
 
@@ -121,14 +121,30 @@ test.describe('Export popover (PR #6)', () => {
 
   test('Esc returns focus to the trigger (PR-13 Greptile P2)', async ({ page }) => {
     await loadPersona(page);
-    // Open via the button so the trigger is well-defined.
-    await page.locator('#export-toggle').focus();
-    await page.locator('#export-toggle').click();
-    await expect(page.locator('.export-overlay')).toBeVisible();
-    await page.keyboard.press('Escape');
-    await expect(page.locator('.export-overlay')).toHaveCount(0);
-    const focused = await page.evaluate(() => document.activeElement?.id ?? '');
-    expect(focused).toBe('export-toggle');
+    // Exercise both cold lazy loading and the cached path without relying
+    // on mouse clicks focusing buttons (WebKit does not do that by default).
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      await page.locator('#export-toggle').click();
+      await expect(page.locator('.export-overlay')).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(page.locator('.export-overlay')).toHaveCount(0);
+      await expect(page.locator('#export-toggle')).toBeFocused();
+    }
+  });
+
+  test('keyboard shortcut restores the invoking control on cold and cached opens', async ({
+    page,
+  }) => {
+    await loadPersona(page);
+    const invokingControl = page.locator('.nav-endpoint').first();
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      await invokingControl.focus();
+      await page.keyboard.press('ControlOrMeta+E');
+      await expect(page.locator('.export-overlay')).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(page.locator('.export-overlay')).toHaveCount(0);
+      await expect(invokingControl).toBeFocused();
+    }
   });
 
   test('Arrow keys navigate between tabs (PR-13 ARIA tab pattern)', async ({ page }) => {

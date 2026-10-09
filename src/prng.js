@@ -34,6 +34,15 @@ export function seedFromTuple(personaId, lfiProfile, seed) {
 
 // Convenience wrappers used throughout the generator.
 export function makePrng(personaId, lfiProfile, seed) {
+  // Extra arguments are silently ignored by JS — which is exactly how the
+  // insurance ConsentId once lost its seed dimension (a 4-arg call put the
+  // disambiguator in the seed slot and dropped the real seed). Fail loudly.
+  if (arguments.length > 3) {
+    throw new Error(
+      `makePrng expects (personaId, lfiProfile, seed) — got ${arguments.length} args. ` +
+        'Fold extra disambiguators into the lfiProfile string instead.',
+    );
+  }
   return mulberry32(seedFromTuple(personaId, lfiProfile, seed));
 }
 

@@ -48,6 +48,27 @@ const posthog = {
 export default posthog;
 `;
 
+async function configureClipboard(page, mode = 'success') {
+  await page.addInitScript((mode) => {
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText() {
+          if (mode === 'pending')
+            return new Promise((resolve) => {
+              window.__resolveCopy = resolve;
+            });
+          return mode === 'success' ? Promise.resolve() : Promise.reject(new Error('blocked'));
+        },
+      },
+    });
+    document.execCommand = () => {
+      if (mode === 'throw') throw new Error('denied');
+      return mode === 'fallback';
+    };
+  }, mode);
+}
+
 async function configurePosthogStub(page, { withKey = true } = {}) {
   if (withKey) {
     await page.addInitScript(
@@ -160,6 +181,7 @@ test.describe('EXP-21 / EXP-22 analytics wire-up', () => {
     test.skip(isMobile, 'view-raw / Export controls not exposed in the mobile-viewport layout');
 
     await configurePosthogStub(page);
+    await configureClipboard(page);
     await page.goto('/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729');
     await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
 
@@ -170,6 +192,10 @@ test.describe('EXP-21 / EXP-22 analytics wire-up', () => {
     // Export popover's Permalink-tab Copy button (default-active tab).
     await page.locator('#export-toggle').click();
     await page.locator('.export-overlay .export-copy-btn', { hasText: 'Copy' }).first().click();
+
+    await expect
+      .poll(() => page.evaluate(() => window.__phStub.captures.some((c) => c.name === 'share')))
+      .toBe(true);
 
     const captures = await page.evaluate(() => window.__phStub.captures);
     const eventNames = captures.map((c) => c.name);
@@ -186,6 +212,126 @@ test.describe('EXP-21 / EXP-22 analytics wire-up', () => {
         expect(banned.test(k), `event ${c.name}: prop '${k}' looks PII-shaped`).toBe(false);
       }
     }
+  });
+
+  test('copy events wait for completion and retain the clicked tab', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'Export controls not exposed in the mobile layout');
+    await configurePosthogStub(page);
+    await configureClipboard(page, 'pending');
+    await page.goto('/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729');
+    await page.waitForFunction(() =>
+      window.__phStub?.captures.some((c) => c.name === 'persona_load'),
+    );
+    await page.locator('#export-toggle').click();
+    await page.locator('.export-copy-btn').first().click();
+    expect(
+      await page.evaluate(() =>
+        window.__phStub.captures.filter((c) => ['share', 'export'].includes(c.name)),
+      ),
+    ).toEqual([]);
+    await page.locator('#export-tab-json').click();
+    await page.evaluate(() => window.__resolveCopy());
+    await expect
+      .poll(() => page.evaluate(() => window.__phStub.captures.filter((c) => c.name === 'share')))
+      .toEqual([{ name: 'share', props: { kind: 'permalink' } }]);
+  });
+
+  for (const mode of ['fallback', 'false', 'throw']) {
+    test(`clipboard ${mode} distinguishes confirmed fallback from manual copy`, async ({
+      page,
+      isMobile,
+    }) => {
+      test.skip(isMobile, 'Export controls not exposed in the mobile layout');
+      await configurePosthogStub(page);
+      await configureClipboard(page, mode);
+      await page.goto('/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729');
+      await page.waitForFunction(() =>
+        window.__phStub?.captures.some((c) => c.name === 'persona_load'),
+      );
+      await page.locator('#export-toggle').click();
+      await page.locator('.export-copy-btn').first().click();
+      if (mode === 'fallback') {
+        await expect(page.locator('.copy-toast')).toContainText('copied');
+        await expect
+          .poll(() =>
+            page.evaluate(() => window.__phStub.captures.filter((c) => c.name === 'share')),
+          )
+          .toEqual([{ name: 'share', props: { kind: 'permalink' } }]);
+      } else {
+        const manual = page.locator('#export-body .manual-copy-fallback textarea');
+        await expect(manual).toBeVisible();
+        await expect(manual).toBeFocused();
+        await expect(page.locator('.copy-toast')).toContainText('Copy blocked');
+        expect(
+          await page.evaluate(() =>
+            window.__phStub.captures.filter((c) => ['share', 'export'].includes(c.name)),
+          ),
+        ).toEqual([]);
+        await page.getByRole('button', { name: 'Close manual copy' }).click();
+        await expect(manual).toHaveCount(0);
+      }
+    });
+  }
+
+  for (const format of ['json', 'csv', 'tarball']) {
+    test(`${format} creates a watermarked browser download before the export event`, async ({
+      page,
+      isMobile,
+    }) => {
+      test.skip(isMobile, 'Export controls not exposed in the mobile layout');
+      await configurePosthogStub(page);
+      await page.goto(
+        '/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729&endpoint=%2Faccounts',
+      );
+      await page.waitForFunction(() =>
+        window.__phStub?.captures.some((c) => c.name === 'persona_load'),
+      );
+      await page.locator('#export-toggle').click();
+      await page.locator(`#export-tab-${format}`).click();
+      const pendingDownload = page.waitForEvent('download');
+      await page
+        .getByRole('button', {
+          name: `Download ${format === 'tarball' ? 'tarball' : `.${format}`}`,
+          exact: true,
+        })
+        .click();
+      const download = await pendingDownload;
+      expect(await download.failure()).toBeNull();
+      const stream = await download.createReadStream();
+      const chunks = [];
+      for await (const chunk of stream) chunks.push(chunk);
+      expect(Buffer.concat(chunks).toString('utf8')).toContain(
+        'SYNTHETIC — Open Finance Data Sandbox',
+      );
+      await expect
+        .poll(() =>
+          page.evaluate(() => window.__phStub.captures.filter((c) => c.name === 'export')),
+        )
+        .toEqual([{ name: 'export', props: { format } }]);
+    });
+  }
+
+  test('demo snippet share events also wait for confirmed copying', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'Demo panel tested in desktop layout');
+    await configurePosthogStub(page);
+    await configureClipboard(page, 'pending');
+    await page.goto(
+      '/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729&endpoint=%2F(overview)',
+    );
+    await page.waitForFunction(() =>
+      window.__phStub?.captures.some((c) => c.name === 'persona_load'),
+    );
+    await page.locator('.demo-panel-summary').click();
+    await page.locator('.demo-row-copy').first().click();
+    expect(
+      await page.evaluate(() => window.__phStub.captures.filter((c) => c.name === 'share')),
+    ).toEqual([]);
+    await page.evaluate(() => window.__resolveCopy());
+    await expect
+      .poll(() =>
+        page.evaluate(() => window.__phStub.captures.filter((c) => c.name === 'share').length),
+      )
+      .toBe(1);
   });
 
   test('EXP-22 — analytics writes no cookies and no PostHog localStorage keys', async ({
