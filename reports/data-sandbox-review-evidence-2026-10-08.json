@@ -1,0 +1,460 @@
+{
+  "reviewedAt": "2026-10-08T10:41:49.793Z",
+  "baseline": {
+    "commit": "47873dd591b8263c5e95c7a17a912d149c0fa4de",
+    "branch": "main",
+    "cleanBeforeReview": true,
+    "applicationCodeChanged": false,
+    "disposableCheckout": "/private/tmp/data-sandbox-review-ynOMyp"
+  },
+  "checks": {
+    "siteBuild": "passed",
+    "generatedFixtureFiles": 6428,
+    "personaManifests": 39,
+    "mainVitest": {
+      "files": 52,
+      "passed": 3583
+    },
+    "mcpVitest": {
+      "files": 7,
+      "passed": 119
+    },
+    "pythonPytest": {
+      "passed": 19
+    },
+    "focusedChromium": {
+      "passed": 25,
+      "suites": ["smoke", "connect", "rtl"],
+      "server": "repository gzip-static-server"
+    },
+    "lint": {
+      "passed": true,
+      "eslintWarnings": 8,
+      "eslintErrors": 0
+    },
+    "specShape": "passed",
+    "realism": {
+      "passed": true,
+      "mccs": 26,
+      "merchantDisplayForms": 130,
+      "narrativeShapes": 62
+    },
+    "fixturePackageDryRun": {
+      "compressedBytes": 8852998,
+      "unpackedBytes": 205174813,
+      "entries": 6643
+    }
+  },
+  "semanticReproduction": {
+    "persona": "nsf_distressed",
+    "profile": "rich",
+    "seed": 4407,
+    "referenceDate": "2026-05-01T00:00:00.000Z",
+    "rejectedTransactionsPrimaryAccount": 10,
+    "rejectedNetDebitAED": 8374,
+    "generatedSignedBookedBalanceAED": -174968.43,
+    "balanceExcludingRejectedAED": -166594.43,
+    "latestStatementClosingDate": "2026-05-31",
+    "generatorDefaultDate": "2026-04-01T00:00:00.000Z",
+    "corpusDate": "2026-05-01T00:00:00.000Z"
+  },
+  "liveSite": [
+    {
+      "url": "https://data-sandbox.openfinance-os.org/dist/data.json",
+      "status": 200,
+      "details": {
+        "personas": 39,
+        "buildInfo": {
+          "nowIso": "2026-05-01T00:00:00.000Z"
+        }
+      }
+    },
+    {
+      "url": "https://data-sandbox.openfinance-os.org/dist/domains.json",
+      "status": 200,
+      "details": {
+        "domains": [
+          {
+            "id": "banking",
+            "label": "Bank Data Sharing",
+            "status": "ga",
+            "pinSha": "52caa147fa754f6b898757e4c39976574b755d66",
+            "retrievedAt": "2026-05-20T02:41:46Z",
+            "specVersion": "v2.1-errata2",
+            "openapiVersion": "3.0.0",
+            "parsedJsonUrl": "/dist/SPEC.json",
+            "defaultEndpoint": "/accounts",
+            "endpoints": [
+              "/accounts",
+              "/accounts/{AccountId}",
+              "/accounts/{AccountId}/balances",
+              "/accounts/{AccountId}/transactions",
+              "/accounts/{AccountId}/standing-orders",
+              "/accounts/{AccountId}/direct-debits",
+              "/accounts/{AccountId}/beneficiaries",
+              "/accounts/{AccountId}/scheduled-payments",
+              "/accounts/{AccountId}/product",
+              "/accounts/{AccountId}/parties",
+              "/parties",
+              "/accounts/{AccountId}/statements"
+            ]
+          },
+          {
+            "id": "insurance",
+            "label": "Insurance Data Sharing",
+            "status": "ga",
+            "pinSha": "bc1cd976956d97195c5000235125cb65aca6aec8",
+            "retrievedAt": "2026-04-30T04:03:31Z",
+            "specVersion": "v2.1-errata1",
+            "openapiVersion": "3.0.0",
+            "parsedJsonUrl": "/dist/SPEC.insurance.json",
+            "defaultEndpoint": "/motor-insurance-policies",
+            "endpoints": [
+              "/motor-insurance-policies",
+              "/motor-insurance-policies/{InsurancePolicyId}",
+              "/motor-insurance-policies/{InsurancePolicyId}/payment-details",
+              "/motor-insurance-quotes/{QuoteId}",
+              "/home-insurance-policies",
+              "/home-insurance-policies/{InsurancePolicyId}",
+              "/home-insurance-policies/{InsurancePolicyId}/payment-details",
+              "/home-insurance-quotes/{QuoteId}",
+              "/health-insurance-policies",
+              "/health-insurance-policies/{InsurancePolicyId}",
+              "/health-insurance-policies/{InsurancePolicyId}/payment-details",
+              "/health-insurance-quotes/{QuoteId}",
+              "/life-insurance-policies",
+              "/life-insurance-policies/{InsurancePolicyId}",
+              "/life-insurance-policies/{InsurancePolicyId}/payment-details",
+              "/life-insurance-quotes/{QuoteId}",
+              "/travel-insurance-policies",
+              "/travel-insurance-policies/{InsurancePolicyId}",
+              "/travel-insurance-policies/{InsurancePolicyId}/payment-details",
+              "/travel-insurance-quotes/{QuoteId}",
+              "/renters-insurance-policies",
+              "/renters-insurance-policies/{InsurancePolicyId}",
+              "/renters-insurance-policies/{InsurancePolicyId}/payment-details",
+              "/renters-insurance-quotes/{QuoteId}",
+              "/employment-insurance-policies",
+              "/employment-insurance-policies/{InsurancePolicyId}",
+              "/employment-insurance-policies/{InsurancePolicyId}/payment-details",
+              "/employment-insurance-quotes/{QuoteId}",
+              "/insurance-consents",
+              "/insurance-consents/{ConsentId}"
+            ]
+          },
+          {
+            "id": "atm",
+            "label": "ATM Locator",
+            "status": "ga",
+            "pinSha": "ebde95804d9bf2a13d065804ea64334b673223ca",
+            "retrievedAt": "2026-05-20T18:59:03Z",
+            "specVersion": "v2.1",
+            "openapiVersion": "3.0.0",
+            "parsedJsonUrl": "/dist/SPEC.atm.json",
+            "defaultEndpoint": "/atms",
+            "endpoints": ["/atms"]
+          }
+        ]
+      }
+    },
+    {
+      "url": "https://data-sandbox.openfinance-os.org/fixtures/v1/manifest.json",
+      "status": 200,
+      "details": {
+        "version": "0.0.1",
+        "personas": 39,
+        "specSha": "52caa147fa754f6b898757e4c39976574b755d66",
+        "nowAnchor": "2026-05-01T00:00:00.000Z"
+      }
+    },
+    {
+      "url": "https://data-sandbox.openfinance-os.org/src/app.js",
+      "status": 200,
+      "details": {
+        "bytes": 115572,
+        "identicalToLocal": true,
+        "liveHash": "eb49b4c92d75"
+      }
+    },
+    {
+      "url": "https://data-sandbox.openfinance-os.org/src/index.html",
+      "status": 200,
+      "details": {
+        "noindex": true,
+        "analyticsConfig": true
+      }
+    },
+    {
+      "url": "https://data-sandbox.openfinance-os.org/commons/data-sandbox/fixtures/v1/manifest.json",
+      "error": "Unexpected token '<', \"<!doctype \"... is not valid JSON"
+    }
+  ],
+  "httpChecks": [
+    {
+      "url": "https://registry.npmjs.org/@openfinance-os%2fsandbox-fixtures/latest",
+      "checkedAt": "2026-10-08T10:41:48.986Z",
+      "status": 404,
+      "contentType": "application/json",
+      "parsedJson": true,
+      "bytes": 11,
+      "sha256": "57aefd8046010e86f09187427e21bad3376b25a2f9a46ce20452ac7d5448298d",
+      "prefix": "\"Not Found\""
+    },
+    {
+      "url": "https://registry.npmjs.org/@openfinance-os%2fsandbox-mcp/latest",
+      "checkedAt": "2026-10-08T10:41:49.018Z",
+      "status": 404,
+      "contentType": "application/json",
+      "parsedJson": true,
+      "bytes": 11,
+      "sha256": "57aefd8046010e86f09187427e21bad3376b25a2f9a46ce20452ac7d5448298d",
+      "prefix": "\"Not Found\""
+    },
+    {
+      "url": "https://pypi.org/pypi/openfinance-os-sandbox-fixtures/json",
+      "checkedAt": "2026-10-08T10:41:49.019Z",
+      "status": 404,
+      "contentType": "application/json",
+      "parsedJson": true,
+      "bytes": 24,
+      "sha256": "b82014934f66beeb9e05a37f65357c4b50db0349d25d68d818ed0319dd4feb40",
+      "prefix": "{\"message\": \"Not Found\"}"
+    },
+    {
+      "url": "https://data-sandbox.openfinance-os.org/src/fixtures/v1/bundles/salaried_expat_mid/median/seed-1/accounts.json",
+      "checkedAt": "2026-10-08T10:41:49.019Z",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "parsedJson": false,
+      "bytes": 293,
+      "sha256": "c720e8dc1d12bb1603f43eb44463a17618204f60c4aaed3f95b353f6cc6fb6e8",
+      "prefix": "<!doctype html>\n<html><head><meta charset=\"utf-8\"/>\n<title>Open Finance Data Sandbox</titl"
+    },
+    {
+      "url": "https://data-sandbox.openfinance-os.org/fixtures/v1/bundles/salaried_expat_mid/median/seed-1/accounts.json",
+      "checkedAt": "2026-10-08T10:41:49.020Z",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "parsedJson": false,
+      "bytes": 293,
+      "sha256": "c720e8dc1d12bb1603f43eb44463a17618204f60c4aaed3f95b353f6cc6fb6e8",
+      "prefix": "<!doctype html>\n<html><head><meta charset=\"utf-8\"/>\n<title>Open Finance Data Sandbox</titl"
+    },
+    {
+      "url": "https://data-sandbox.openfinance-os.org/fixtures/v1/bundles/salaried_expat_mid/median/seed-4729/accounts.json",
+      "checkedAt": "2026-10-08T10:41:49.020Z",
+      "status": 200,
+      "contentType": "application/json",
+      "parsedJson": true,
+      "bytes": 1804,
+      "sha256": "5a5518fc9192c226bc7369b1c291eb56062dea55bd03e9e154a7170163ab46a6",
+      "prefix": "{\n  \"Data\": {\n    \"Account\": [\n      {\n        \"AccountId\": \"salaried-expat-mid-acct-01\",\n"
+    },
+    {
+      "url": "https://openfinance-os.org/commons/data-sandbox/fixtures/v1/manifest.json",
+      "checkedAt": "2026-10-08T10:41:49.020Z",
+      "status": 404,
+      "contentType": "text/html; charset=utf-8",
+      "parsedJson": false,
+      "bytes": 67030,
+      "sha256": "7b3f5950d76875e8981aa954bec180607ac65e4aa5bf707fbc1b5c0f0038523d",
+      "prefix": "<!DOCTYPE html><html lang=\"en\"> <head><meta charset=\"UTF-8\"><meta name=\"viewport\" content="
+    }
+  ],
+  "upstream": {
+    "treeSha": "a3c8b8bf22e080046a8e0fbd9933f57431604155",
+    "files": [
+      {
+        "name": "uae-account-information-openapi.yaml",
+        "paths": [
+          "dist/standards/v2.1/uae-account-information-openapi.yaml",
+          "dist/standards/v2.1-errata2/uae-account-information-openapi.yaml"
+        ],
+        "latest": "dist/standards/v2.1-errata2/uae-account-information-openapi.yaml",
+        "status": 200,
+        "byteIdentical": false,
+        "localHash": "adbb04d20b08",
+        "upstreamHash": "8332adf44d60"
+      },
+      {
+        "name": "uae-insurance-openapi.yaml",
+        "paths": [
+          "dist/standards/v2.1/uae-insurance-openapi.yaml",
+          "dist/standards/v2.1-errata1/uae-insurance-openapi.yaml",
+          "dist/standards/v2.1-errata3/uae-insurance-openapi.yaml"
+        ],
+        "latest": "dist/standards/v2.1-errata3/uae-insurance-openapi.yaml",
+        "status": 200,
+        "byteIdentical": false,
+        "localHash": "0d28c5d5496f",
+        "upstreamHash": "1191bba351ee"
+      },
+      {
+        "name": "uae-atm-openapi.yaml",
+        "paths": ["dist/standards/v2.1/uae-atm-openapi.yaml"],
+        "latest": "dist/standards/v2.1/uae-atm-openapi.yaml",
+        "status": 200,
+        "byteIdentical": true,
+        "localHash": "f4b65f710b17",
+        "upstreamHash": "f4b65f710b17"
+      }
+    ],
+    "bankingPinnedFileByteIdentical": true
+  },
+  "hostedMcp": {
+    "checkedAt": "2026-10-08T10:40:25.702Z",
+    "baseUrl": "https://data-sandbox.fly.dev",
+    "health": {
+      "status": 200,
+      "body": {
+        "ok": true,
+        "sessions": 0
+      }
+    },
+    "server": {
+      "name": "@openfinance-os/sandbox-mcp",
+      "version": "0.0.1"
+    },
+    "toolCount": 50,
+    "tools": [
+      "build_persona",
+      "decode_recipe",
+      "encode_recipe",
+      "field_status",
+      "get_accounts",
+      "get_balances",
+      "get_beneficiaries",
+      "get_direct_debits",
+      "get_employment_payment_details",
+      "get_employment_policies",
+      "get_employment_policy",
+      "get_employment_quote",
+      "get_health_payment_details",
+      "get_health_policies",
+      "get_health_policy",
+      "get_health_quote",
+      "get_home_payment_details",
+      "get_home_policies",
+      "get_home_policy",
+      "get_home_quote",
+      "get_life_payment_details",
+      "get_life_policies",
+      "get_life_policy",
+      "get_life_quote",
+      "get_motor_payment_details",
+      "get_motor_policies",
+      "get_motor_policy",
+      "get_motor_quote",
+      "get_party",
+      "get_product",
+      "get_recipe_defaults",
+      "get_renters_payment_details",
+      "get_renters_policies",
+      "get_renters_policy",
+      "get_renters_quote",
+      "get_scheduled_payments",
+      "get_session",
+      "get_standing_orders",
+      "get_statements",
+      "get_transactions",
+      "get_travel_payment_details",
+      "get_travel_policies",
+      "get_travel_policy",
+      "get_travel_quote",
+      "lfi_profiles",
+      "list_endpoints",
+      "list_personas",
+      "list_pool_values",
+      "load_journey",
+      "set_session"
+    ],
+    "expectedLocalToolCount": 51,
+    "missingTools": ["get_atms"],
+    "personaCount": 39,
+    "personaDomainFilter": ["banking", "insurance"],
+    "samples": [
+      {
+        "label": "banking",
+        "persona": "salaried_expat_mid",
+        "role": "primary",
+        "tool": "get_accounts",
+        "sessionText": "session set → persona:salaried_expat_mid (Sara — Salaried Expat (Mid Tier)) lfi:median role:primary seed:4729",
+        "isError": false,
+        "responseHeader": "[/accounts] persona:salaried_expat_mid lfi:median seed:4729\n# SYNTHETIC — Open Finance Data Sandbox · OpenFinance-OS Commons · persona:salaried_expat_mid lfi:median seed:4729 retrieved:2026-05-01T00:00:00.000Z",
+        "dataCollections": {
+          "Account": 2
+        }
+      },
+      {
+        "label": "insurance",
+        "persona": "motor_comprehensive_mid",
+        "role": "primary",
+        "tool": "get_motor_policies",
+        "sessionText": "session set → persona:motor_comprehensive_mid (Omar — Motor Comprehensive (Mid Tier)) lfi:median role:primary seed:4729",
+        "isError": false,
+        "responseHeader": "[/motor-insurance-policies] persona:motor_comprehensive_mid lfi:median seed:4729\n# SYNTHETIC — Open Finance Data Sandbox · OpenFinance-OS Commons · persona:motor_comprehensive_mid lfi:median seed:4729 retrieved:2026-05-01T00:00:00.000Z",
+        "dataCollections": {
+          "Policies": 1
+        }
+      },
+      {
+        "label": "SME secondary bank",
+        "persona": "sme_fnb_multi_outlet",
+        "role": "secondary",
+        "tool": "get_accounts",
+        "sessionText": "session set → persona:sme_fnb_multi_outlet (Saffron Plate Group LLC — F&B Multi-Outlet Operator) lfi:median role:secondary seed:5172",
+        "isError": false,
+        "responseHeader": "[/accounts] persona:sme_fnb_multi_outlet lfi:median seed:5172\n# SYNTHETIC — Open Finance Data Sandbox · OpenFinance-OS Commons · persona:sme_fnb_multi_outlet lfi:median seed:5172 retrieved:2026-05-01T00:00:00.000Z",
+        "dataCollections": {
+          "Account": 1
+        }
+      }
+    ],
+    "exactDeployedRevision": "unverified"
+  },
+  "limitations": [
+    "No user interviews or telemetry dashboard",
+    "No full cross-browser or visual-baseline run",
+    "No Lighthouse performance run",
+    "No certification or production financial-data testing",
+    "Public checks are a dated snapshot"
+  ],
+  "openFinanceFollowup": {
+    "checkedAt": "2026-10-08T10:56:42.727Z",
+    "officialErrata": {
+      "id": "1366294554",
+      "title": "Standards V2.1 & API Hub V8 - Consolidated Errata",
+      "pageVersion": 7,
+      "pageModified": "2026-09-18T07:27:39.506Z",
+      "errata4Date": "2026-09-18",
+      "publicClassification": true,
+      "url": "https://openfinanceuae.atlassian.net/wiki/spaces/OF/pages/1366294554/Standards+V2.1+API+Hub+V8+-+Consolidated+Errata"
+    },
+    "skillManualAssessment": "Stale published errata claim; automated FRESH misses official Errata 4 and newer release-candidate documentation",
+    "strictFixtureResults": {
+      "banking": {
+        "version": "v2.1-errata2",
+        "sha256": "8332adf44d606cc013febf83b248c33257536e719a35bef8eda58c2cb0b88126",
+        "checked": 3936,
+        "failed": 0,
+        "unmapped": 0
+      },
+      "insurance": {
+        "version": "v2.1-errata3",
+        "sha256": "1191bba351eefd29aff91f461ba8bda2d8bb2e554adba4d4f89718d9987a1818",
+        "checked": 1509,
+        "failed": 1116,
+        "unmapped": 0
+      },
+      "atm": {
+        "version": "v2.1",
+        "sha256": "f4b65f710b17d8eb89a56e8e3b4173d75c5fb94eac33aeffa7be5af7a4b751a0",
+        "checked": 3,
+        "failed": 3,
+        "unmapped": 0
+      }
+    },
+    "evidenceFile": "open-finance-spec-audit-evidence-2026-10-08.json",
+    "correctsPriorInference": "Original tests pass, but strict rendered-file conformance was only established for banking"
+  }
+}

@@ -21,6 +21,11 @@
 //   GET  /authorize?...                           (HTML consent screen)
 //   POST /authorize                               (302 → redirect_uri with code)
 //   POST /token                                   (PKCE-validated exchange)
+//   POST /register                                (RFC 7591 stub — synthetic
+//                                                  client_id echo so real MCP
+//                                                  clients attempting DCR,
+//                                                  e.g. Claude.ai / VS Code,
+//                                                  can complete the flow)
 //
 // Plus a verifyBearer(token) hook the HTTP transport uses to gate /mcp.
 //
@@ -117,6 +122,34 @@ function redirectWithError(res, redirectUri, error, errorDescription, state) {
   res.statusCode = 302;
   res.setHeader('Location', url);
   res.end();
+}
+
+function readJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    let total = 0;
+    const chunks = [];
+    req.on('data', (chunk) => {
+      total += chunk.length;
+      if (total > 100_000) {
+        reject(new Error('body too large'));
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on('end', () => {
+      if (total === 0) {
+        resolve({});
+        return;
+      }
+      try {
+        resolve(JSON.parse(Buffer.concat(chunks).toString('utf8')));
+      } catch (err) {
+        reject(err);
+      }
+    });
+    req.on('error', reject);
+  });
 }
 
 function readFormBody(req) {
@@ -332,7 +365,8 @@ export function createOAuthSimulation({ issuer, resource, allowedHosts } = {}) {
       p === '/.well-known/oauth-protected-resource' ||
       p === '/.well-known/oauth-authorization-server' ||
       p === '/authorize' ||
-      p === '/token'
+      p === '/token' ||
+      p === '/register'
     ) {
       if (!hostIsAllowed(req)) {
         sendJson(res, 400, {
@@ -361,12 +395,50 @@ export function createOAuthSimulation({ issuer, resource, allowedHosts } = {}) {
         issuer: iss,
         authorization_endpoint: `${iss}/authorize`,
         token_endpoint: `${iss}/token`,
+        registration_endpoint: `${iss}/register`, // RFC 7591 stub (DCR)
         response_types_supported: ['code'],
         grant_types_supported: ['authorization_code'],
         code_challenge_methods_supported: ['S256'],
         scopes_supported: SUPPORTED_SCOPES,
         token_endpoint_auth_methods_supported: ['none'], // public client (PKCE)
       });
+      return true;
+    }
+
+    // RFC 7591 stub Dynamic Client Registration. The simulation accepts any
+    // client_id at /authorize, so registration is pure theatre — but real MCP
+    // clients (Claude.ai, VS Code) attempt DCR when the metadata advertises
+    // it or when they hold no pre-registered client, and would otherwise
+    // stall. Echo the requested metadata back with a synthetic client_id.
+    // Nothing is stored; public client (PKCE), no secret issued.
+    if (req.method === 'POST' && p === '/register') {
+      let body;
+      try {
+        body = await readJsonBody(req);
+      } catch (err) {
+        sendJson(res, 400, {
+          error: 'invalid_client_metadata',
+          error_description: `could not parse registration request: ${err?.message ?? err}`,
+        });
+        return true;
+      }
+      const clientId = `sandbox-${newId(12)}`;
+      sendJson(
+        res,
+        201,
+        {
+          client_id: clientId,
+          client_id_issued_at: Math.floor(Date.now() / 1000),
+          client_name:
+            typeof body.client_name === 'string' ? body.client_name : 'mcp-client (unregistered)',
+          redirect_uris: Array.isArray(body.redirect_uris) ? body.redirect_uris : [],
+          token_endpoint_auth_method: 'none', // public client — PKCE only, no secret
+          grant_types: ['authorization_code'],
+          response_types: ['code'],
+          scope: typeof body.scope === 'string' ? body.scope : DEFAULT_SCOPE,
+        },
+        { 'Cache-Control': 'no-store', Pragma: 'no-cache' },
+      );
       return true;
     }
 

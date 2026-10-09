@@ -9,7 +9,7 @@
 // caller's `txState` object so two buildBundle invocations don't collide.
 
 import { makePrng, rngInt, rngPick } from '../prng.js';
-import { drawMerchant, drawEmployer, drawCounterparty } from './identity.js';
+import { drawMerchant, drawEmployer, drawCounterparty, mod97IbanCheck } from './identity.js';
 import {
   bankishNarrative,
   weekdayBias,
@@ -96,7 +96,7 @@ export function generateTransactions({
   const today = new Date(now.getTime());
   today.setUTCHours(0, 0, 0, 0);
 
-  for (let m = HISTORY_MONTHS - 1; m >= 0; m--) {
+  for (let m = HISTORY_MONTHS; m >= 1; m--) {
     const monthStart = new Date(today);
     monthStart.setUTCDate(1);
     monthStart.setUTCMonth(monthStart.getUTCMonth() - m);
@@ -521,10 +521,16 @@ export function generateTransactions({
 
   // TransactionId is the stable tiebreaker so same-timestamp transactions
   // keep a deterministic order independent of generation-loop ordering.
+  // Ordinal (code-unit) comparison, NOT localeCompare: this sort fixes the
+  // final byte order of every transaction array, and localeCompare's result
+  // depends on the runtime's locale + ICU build — a cross-environment
+  // determinism hazard (EXP-05). Both comparands are structurally uniform
+  // ASCII (ISO-8601 timestamps, hyphenated ids), so ordinal order is
+  // exactly the intended chronological/stable order.
+  const ordinal = (x, y) => (x < y ? -1 : x > y ? 1 : 0);
   out.sort(
     (a, b) =>
-      a.BookingDateTime.localeCompare(b.BookingDateTime) ||
-      a.TransactionId.localeCompare(b.TransactionId),
+      ordinal(a.BookingDateTime, b.BookingDateTime) || ordinal(a.TransactionId, b.TransactionId),
   );
   return out;
 }
@@ -1051,7 +1057,7 @@ function synthEmployerIbanFor(accountId, posted) {
   let account = '';
   for (let i = 0; i < 16; i++) account += rngInt(sideRng, 0, 10);
   const bban = '999' + account;
-  return `AE${b2bIbanCheck(bban)}${bban}`;
+  return `AE${mod97IbanCheck('AE', bban)}${bban}`;
 }
 
 function synthCounterpartyIban(rng) {
@@ -1060,15 +1066,5 @@ function synthCounterpartyIban(rng) {
   let account = '';
   for (let i = 0; i < 16; i++) account += rngInt(rng, 0, 10);
   const bban = '999' + account;
-  return `AE${b2bIbanCheck(bban)}${bban}`;
-}
-
-function b2bIbanCheck(bban) {
-  // Inline mod-97 to avoid an extra import. Same logic as
-  // identity.js#mod97IbanCheck for the AE country case.
-  // AE expanded: A=10, E=14 → "1014".
-  const concat = bban + '1014' + '00';
-  let r = 0;
-  for (const ch of concat) r = (r * 10 + (ch.charCodeAt(0) - 48)) % 97;
-  return (98 - r).toString().padStart(2, '0');
+  return `AE${mod97IbanCheck('AE', bban)}${bban}`;
 }

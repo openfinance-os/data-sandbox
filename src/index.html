@@ -10,7 +10,10 @@
 <link rel="modulepreload" href="app.js" />
 <link rel="modulepreload" href="prng.js" />
 <link rel="modulepreload" href="url.js" />
-<link rel="modulepreload" href="generator/index.js" />
+<link rel="modulepreload" href="generator/lazy.js" />
+<link rel="modulepreload" href="generator/dispatch.js" />
+<link rel="modulepreload" href="generator/pipelines/banking.js" />
+<link rel="modulepreload" href="generator/banking/index.js" />
 <link rel="modulepreload" href="generator/identity.js" />
 <link rel="modulepreload" href="generator/accounts.js" />
 <link rel="modulepreload" href="generator/balances.js" />
@@ -22,11 +25,9 @@
 <link rel="modulepreload" href="generator/parties.js" />
 <link rel="modulepreload" href="generator/statements.js" />
 <link rel="modulepreload" href="generator/product.js" />
+<link rel="modulepreload" href="generator/lfi-profile-shared.js" />
 <link rel="modulepreload" href="generator/banking/lfi-profile.js" />
-<link rel="modulepreload" href="generator/insurance/index.js" />
-<link rel="modulepreload" href="generator/insurance/identity.js" />
-<link rel="modulepreload" href="generator/insurance/motor-policy.js" />
-<link rel="modulepreload" href="generator/insurance/lfi-profile.js" />
+
 <link rel="modulepreload" href="shared/spec-helpers.js" />
 <link rel="modulepreload" href="shared/watermark.js" />
 <link rel="modulepreload" href="shared/banner.js" />
@@ -38,6 +39,7 @@
 <link rel="preload" href="../dist/SPEC.json" as="fetch" crossorigin="anonymous" />
 <link rel="preload" href="../dist/data.json" as="fetch" crossorigin="anonymous" />
 <link rel="preload" href="../dist/domains.json" as="fetch" crossorigin="anonymous" />
+<link rel="preload" href="../dist/published-scenarios.json" as="fetch" crossorigin="anonymous" />
 </head>
 <body>
 <div class="banner-stripe" role="presentation" aria-hidden="true"></div>
@@ -45,11 +47,7 @@
 
 <header class="topbar" role="banner">
   <nav class="controls" aria-label="Persona controls">
-    <!-- PR-11 — the persona dropdown is removed; the persona library on
-         the left pane is the canonical switcher. The persona showcase
-         (avatar + name + tagline + inline OF-OS attribution) now sits
-         inside the bordered .controls-scenario pill alongside LFI,
-         Compare-with, and Seed so the cluster reads as one unit. -->
+    
     <div class="controls-scenario" aria-label="Scenario">
       <div class="topbar-persona is-empty" id="topbar-persona" aria-label="Active persona">
         <div class="topbar-persona-avatar" id="topbar-persona-avatar" aria-hidden="true"></div>
@@ -72,7 +70,7 @@
           <button type="button" role="radio" data-lfi="sparse" aria-checked="false" data-i18n="lfi.sparse" title="Worst case. Mandatory + Universal-band only — every other optional field dropped. Stress-test downstream UI and decisioning logic.">Sparse</button>
           <button type="button" id="compare-toggle" class="lfi-compare" aria-pressed="false" data-i18n="lfi.compare" title="Compare two LFI profiles side-by-side (EXP-16). Click to add a comparison partner.">+ Compare</button>
         </div>
-        <span class="lfi-caption" id="lfi-caption"></span>
+        <span class="lfi-caption" id="lfi-caption">Median. Universal=1.0, Common=0.7, Variable=0.4, Rare=0.1 (v1 calibration).</span>
         <select id="lfi-select" aria-label="LFI profile (legacy)" hidden>
           <option value="rich">Rich</option>
           <option value="median" selected>Median</option>
@@ -89,20 +87,14 @@
           <button type="button" id="compare-close" class="lfi-compare-close" aria-label="Close compare mode" title="Close compare">×</button>
         </div>
       </div>
-      <!-- PR #9 — seed lever hoisted out of the Advanced details. Determinism
-           (persona, lfi, seed → byte-identical bundle, EXP-05) is a
-           first-class feature; the lever sits inline next to LFI.
-           PR-15 — info popover from main (PR #51) preserved alongside. -->
+      
       <label class="control-group control-seed">
         <span class="control-label" data-i18n="controls.seed">Seed</span>
         <input id="seed-input" type="number" value="4729" min="0" step="1" aria-label="Seed (reshuffles deterministic RNG; structure stays, details re-roll)" title="Seed reshuffles the deterministic RNG. Same (persona, lfi, seed) → byte-identical bundle (EXP-05)." />
         <button type="button" class="info-trigger" popovertarget="seed-help" aria-expanded="false" aria-label="What does Seed do?">ⓘ</button>
         <button type="button" id="seed-reset" class="seed-reset" aria-label="Reset seed to persona default" title="Reset to the persona's default seed." data-i18n="controls.seedReset">Reset</button>
       </label>
-      <!-- D-10 — Arabic / RTL i18n. Language flips <html lang/dir> + swaps the
-           app-shell chrome; the numeral toggle switches Western 0-9 ↔
-           Arabic-Indic ٠-٩ independently of language. English + Western
-           numerals are the defaults, kept implicit in the URL. -->
+      
       <div class="control-group control-lang">
         <span class="control-label" data-i18n="controls.language">Language</span>
         <div class="lfi-seg" id="lang-seg" role="radiogroup" aria-label="UI language">
@@ -122,8 +114,8 @@
       </div>
     </div>
     <div class="controls-runstate" aria-label="Run state">
-      <select class="domain-chip" id="domain-chip" hidden aria-label="Open Finance domain"></select>
-      <span class="version-pin" id="version-pin" title="Pinned spec SHA — hover for retrieval date"></span>
+      <select class="domain-chip" id="domain-chip" aria-label="Open Finance domain"><option value="banking">Bank Data Sharing</option><option value="insurance">Insurance Data Sharing</option><option value="atm">ATM Locator</option></select>
+      <span class="version-pin" id="version-pin" title="Pinned spec SHA — hover for retrieval date">Loading standards…</span>
       <button type="button" class="info-trigger" popovertarget="spec-help" aria-expanded="false" aria-label="What is the pinned spec SHA?">ⓘ</button>
       <button class="topbar-btn" id="find-btn" title="Search fields, enums, and persona narratives (⌘K)" aria-label="Open find box" data-i18n="topbar.find">Find</button>
       <button class="topbar-btn" id="tour-btn" title="Walk through Sara's bundle in 5 steps" aria-label="Start guided tour" data-i18n="topbar.tour">Tour</button>
@@ -134,6 +126,7 @@
       <details class="topbar-menu" id="topbar-more">
         <summary class="topbar-btn" aria-label="More" title="More — Integrate, About" data-i18n="menu.more">More</summary>
         <div class="topbar-menu-content" role="menu">
+          <a role="menuitem" href="labs.html" title="Reproduce a useful result with code and answer keys" data-i18n="menu.labs">Guided labs</a>
           <a role="menuitem" href="integrate.html" title="Integrate sandbox personas into a TPP demo journey — iframe / npm / pip / curl" data-i18n="menu.integrate">Integrate</a>
           <a role="menuitem" href="about.html" title="Methodology, citation guidance, stewardship" data-i18n="menu.about">About</a>
         </div>
@@ -214,18 +207,18 @@
         </span>
         <div class="toolbar-actions">
           <div class="toggle-group" role="tablist" aria-label="View toggle">
-            <button class="toggle active" id="view-rendered" role="tab" aria-selected="true">Rendered</button>
-            <button class="toggle" id="view-raw" role="tab" aria-selected="false">Raw JSON</button>
+            <button class="toggle active" id="view-rendered" role="tab" aria-selected="true" data-i18n="toolbar.rendered">Rendered</button>
+            <button class="toggle" id="view-raw" role="tab" aria-selected="false" data-i18n="toolbar.rawJson">Raw JSON</button>
           </div>
           <label class="toolbar-checkbox" title="Inline every column's type / format / enum cardinality under the header — useful for first reads of an endpoint without click-then-read field cards.">
             <input type="checkbox" id="toggle-expand-all" />
-            Expand fields
+            <span data-i18n="toolbar.expandFields">Expand fields</span>
           </label>
           <label class="toolbar-checkbox" title="Hide every non-PII column. PII allowlist follows the curated PDPL-relevant set; pairs with the per-card PII badge so a privacy/DPO audit can scope data-handling controls per endpoint.">
             <input type="checkbox" id="toggle-pii-only" />
-            PII only
+            <span data-i18n="toolbar.piiOnly">PII only</span>
           </label>
-          <button class="toggle export-btn" id="export-toggle" type="button" aria-haspopup="dialog" aria-label="Open export popover (⌘E)" title="Export the active bundle — Permalink · Embed iframe · JSON · CSV · Tarball · npm · Python · curl · MCP. (⌘E)">Export ▾</button>
+          <button class="toggle export-btn" id="export-toggle" type="button" aria-haspopup="dialog" aria-label="Open export popover (⌘E)" title="Export the active bundle — Permalink · Embed iframe · JSON · CSV · Tarball · npm · Python · curl · MCP. (⌘E)"><span data-i18n="toolbar.export">Export</span> ▾</button>
         </div>
       </div>
       <div class="payload-body" id="payload-body" tabindex="0"></div>

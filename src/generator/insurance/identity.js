@@ -10,7 +10,8 @@ import { MS_PER_DAY } from '../constants.js';
 
 // nationality_pool → ISO 3166-1 alpha-3 country code for Nationality field.
 // Picks a single representative country per pool (the spec only takes one).
-const NATIONALITY_BY_POOL = {
+// Exported — the health/life/travel policy builders share it.
+export const NATIONALITY_BY_POOL = {
   emirati: 'ARE',
   expat_arab: 'EGY',
   expat_indian: 'IND',
@@ -37,7 +38,7 @@ export function genUuid(rng) {
   return id;
 }
 
-function genEmiratesId(rng) {
+export function genEmiratesId(rng) {
   // Pattern: ^784-?[0-9]{4}-?[0-9]{7}-?[0-9]$ — emit dashed form.
   const year = 1960 + Math.floor(rng() * 50);
   const seq = Math.floor(rng() * 9_999_999);
@@ -51,17 +52,25 @@ function genMobileNumber(rng) {
   return `+9715${String(digits).padStart(8, '0')}`;
 }
 
-function genVisaNumber(rng) {
+export function genVisaNumber(rng) {
   return String(Math.floor(rng() * 1_000_000_000)).padStart(9, '0');
+}
+
+/**
+ * ISO date of birth for a known age — two PRNG draws (month, day), the
+ * exact body the health/life/travel builders used to carry locally.
+ */
+export function dobFromAge(age, rng, now) {
+  const year = now.getUTCFullYear() - age;
+  const month = 1 + Math.floor(rng() * 12);
+  const day = 1 + Math.floor(rng() * 28);
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
 function genDob(persona, rng, now) {
   const [lo, hi] = String(persona.demographics.age_band).split('-').map(Number);
   const age = lo + Math.floor(rng() * (hi - lo + 1));
-  const year = now.getUTCFullYear() - age;
-  const month = 1 + Math.floor(rng() * 12);
-  const day = 1 + Math.floor(rng() * 28);
-  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  return dobFromAge(age, rng, now);
 }
 
 function emailLocal(given, surname) {

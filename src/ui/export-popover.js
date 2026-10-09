@@ -21,6 +21,7 @@
 import { trapFocus } from '../shared/dom.js';
 // Aliased to `tr` because `t` is used as a tab loop variable below.
 import { t as tr } from '../shared/i18n.js';
+import { showActionToast } from './clipboard.js';
 
 export function createExportPopover(deps) {
   const {
@@ -46,6 +47,12 @@ export function createExportPopover(deps) {
   let releaseTrap = null;
 
   function snippetForTab(key) {
+    const staticAvailable = Boolean(activeFixtureUrl());
+    if (['npm', 'python', 'mcp'].includes(key) && !staticAvailable)
+      return {
+        lang: 'note',
+        text: 'This scenario is generated locally. Download JSON or use the local mock with the same recipe and seed: npm run mock. Curated package loaders accept only manifest-listed seeds.',
+      };
     const ctx = {
       personaId: state.personaId,
       lfi: state.lfi,
@@ -97,7 +104,9 @@ export function createExportPopover(deps) {
           lang: 'bash',
           text:
             `# Active endpoint as v2.1-shaped JSON envelope\n` +
-            `curl -s '${activeFixtureUrl()}' | jq .`,
+            (staticAvailable
+              ? `curl -fsS '${activeFixtureUrl()}' | jq .`
+              : '# This seed/recipe has no static URL. Download JSON or use npm run mock.'),
         };
       case 'mcp':
         return {
@@ -135,7 +144,7 @@ export function createExportPopover(deps) {
   // key exists, otherwise the English proper-noun label.
   const tabLabel = (tab) => (tab.i18nKey ? tr(tab.i18nKey, state.lang) : tab.label);
 
-  function open() {
+  function open(trigger = document.activeElement) {
     if (overlay) {
       closeOverlay();
       return;
@@ -143,7 +152,7 @@ export function createExportPopover(deps) {
     // PR-13 (Greptile P2) — remember who opened us so we can return
     // focus on close. Falls back gracefully if document.activeElement
     // is null or body (e.g. ⌘E from outside any focused element).
-    triggerElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    triggerElement = trigger instanceof HTMLElement ? trigger : null;
     overlay = el('div', {
       class: 'export-overlay',
       attrs: { role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'export-title' },
@@ -275,9 +284,8 @@ export function createExportPopover(deps) {
         text: tr('export.downloadTarball', state.lang),
         attrs: { type: 'button' },
       });
-      dl.addEventListener('click', () => {
-        exportTarball();
-        track('export', { format: 'tarball' });
+      dl.addEventListener('click', async () => {
+        if (await startDownload(exportTarball)) track('export', { format: 'tarball' });
       });
       body.appendChild(dl);
       return;
@@ -292,15 +300,22 @@ export function createExportPopover(deps) {
       text: tr('export.copy', state.lang),
       attrs: { type: 'button', 'aria-label': tr('export.copyAria', state.lang) },
     });
-    copyBtn.addEventListener('click', () => {
-      const activeTab = TABS.find((t) => t.key === activeTabKey);
+    copyBtn.disabled = !snip.text;
+    copyBtn.addEventListener('click', async () => {
+      const tabKey = activeTabKey;
+      const activeTab = TABS.find((t) => t.key === tabKey);
       const label = activeTab ? tabLabel(activeTab) : 'Snippet';
-      copyToClipboard(snip.text, tr('export.copiedTpl', state.lang).replace('{label}', label));
+      const result = await copyToClipboard(
+        snip.text,
+        tr('export.copiedTpl', state.lang).replace('{label}', label),
+        { container: body },
+      );
+      if (result?.status !== 'confirmed-success') return;
       // Map tab key → existing analytics format allowlist where possible.
       // Permalink + Embed reuse the 'share' event; the rest fall under 'export'.
-      if (activeTabKey === 'permalink') track('share', { kind: 'permalink' });
-      else if (activeTabKey === 'embed') track('share', { kind: 'embed' });
-      else track('export', { format: activeTabKey });
+      if (tabKey === 'permalink') track('share', { kind: 'permalink' });
+      else if (tabKey === 'embed') track('share', { kind: 'embed' });
+      else track('export', { format: tabKey });
     });
     copyRow.appendChild(copyBtn);
     // Active-endpoint download shortcuts where available.
@@ -310,9 +325,9 @@ export function createExportPopover(deps) {
         text: tr('export.downloadJson', state.lang),
         attrs: { type: 'button' },
       });
-      dl.addEventListener('click', () => {
-        exportActiveJson();
-        track('export', { format: 'json' });
+      dl.disabled = !snip.text;
+      dl.addEventListener('click', async () => {
+        if (await startDownload(exportActiveJson)) track('export', { format: 'json' });
       });
       copyRow.appendChild(dl);
     } else if (activeTabKey === 'csv') {
@@ -321,13 +336,23 @@ export function createExportPopover(deps) {
         text: tr('export.downloadCsv', state.lang),
         attrs: { type: 'button' },
       });
-      dl.addEventListener('click', () => {
-        exportActiveCsv();
-        track('export', { format: 'csv' });
+      dl.disabled = !snip.text;
+      dl.addEventListener('click', async () => {
+        if (await startDownload(exportActiveCsv)) track('export', { format: 'csv' });
       });
       copyRow.appendChild(dl);
     }
     body.appendChild(copyRow);
+  }
+
+  async function startDownload(action) {
+    try {
+      if ((await action())?.status === 'download-initiated') return true;
+    } catch {
+      // Generation errors and unavailable fixtures must not become success events.
+    }
+    showActionToast('Download could not start. The fixture may be unavailable.');
+    return false;
   }
 
   // Esc routing is owned by app.js's global keydown handler via

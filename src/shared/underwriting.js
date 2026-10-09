@@ -4,6 +4,7 @@
 // Phase 1.5 illustrative formulas — generic, not tied to any specific
 // institution's underwriting policy. Each signal exposes its source-field
 // contributors so a user can audit how the number was computed.
+import { REFERENCE_DATE } from '../core/scenario.js';
 
 // Spec-correct counterparty extraction: AETransaction has no top-level
 // CreditorName / DebtorName fields. The counterparty's legal name lives
@@ -45,7 +46,7 @@ const FX_TO_AED = {
 };
 
 function toAed(amount, currency) {
-  const rate = FX_TO_AED[currency] ?? 1;
+  const rate = FX_TO_AED[currency] ?? NaN;
   return amount * rate;
 }
 
@@ -199,11 +200,15 @@ export function computeImpliedIncome(transactions, now) {
 export function computeFixedCommitments(standingOrders, directDebits) {
   const contributors = [];
   let totalMonthlyAed = 0;
+  let unknownCount = 0;
   for (const so of standingOrders ?? []) {
     if (so.StandingOrderStatusCode && so.StandingOrderStatusCode !== 'Active') continue;
-    const amount = parseFloat(so.NextPaymentAmount?.Amount ?? '0');
-    const currency = so.NextPaymentAmount?.Currency ?? 'AED';
-    const frequencyToMonthly = FREQUENCY_TO_MONTHLY.Monthly;
+    const amount = parseFloat(so.NextPaymentAmount?.Amount ?? 'NaN');
+    const currency = so.NextPaymentAmount?.Currency;
+    const months = so.Frequency?.match(/^IntervalMonthDay:(\d+):(-?\d+)$/)?.[1];
+    const frequencyToMonthly = months
+      ? 1 / Number(months)
+      : (FREQUENCY_TO_MONTHLY[so.Frequency] ?? NaN);
     const monthlyAed = toAed(amount, currency) * frequencyToMonthly;
     if (Number.isFinite(monthlyAed)) {
       totalMonthlyAed += monthlyAed;
@@ -214,13 +219,13 @@ export function computeFixedCommitments(standingOrders, directDebits) {
         Amount: so.NextPaymentAmount,
         monthlyAed,
       });
-    }
+    } else unknownCount++;
   }
   for (const dd of directDebits ?? []) {
     if (dd.DirectDebitStatusCode && dd.DirectDebitStatusCode !== 'Active') continue;
-    const amount = parseFloat(dd.PreviousPaymentAmount?.Amount ?? '0');
-    const currency = dd.PreviousPaymentAmount?.Currency ?? 'AED';
-    const factor = FREQUENCY_TO_MONTHLY[dd.Frequency] ?? 1;
+    const amount = parseFloat(dd.PreviousPaymentAmount?.Amount ?? 'NaN');
+    const currency = dd.PreviousPaymentAmount?.Currency;
+    const factor = FREQUENCY_TO_MONTHLY[dd.Frequency] ?? NaN;
     const monthlyAed = toAed(amount, currency) * factor;
     if (Number.isFinite(monthlyAed)) {
       totalMonthlyAed += monthlyAed;
@@ -232,9 +237,14 @@ export function computeFixedCommitments(standingOrders, directDebits) {
         Amount: dd.PreviousPaymentAmount,
         monthlyAed,
       });
-    }
+    } else unknownCount++;
   }
-  return { value: totalMonthlyAed, currency: 'AED', contributors };
+  return {
+    value: unknownCount ? null : totalMonthlyAed,
+    currency: 'AED',
+    contributors,
+    unknownCount,
+  };
 }
 
 /**
@@ -242,6 +252,8 @@ export function computeFixedCommitments(standingOrders, directDebits) {
  * Undefined if income is null/zero/negative.
  */
 export function computeDBR(income, commitments) {
+  if (!Number.isFinite(commitments.value))
+    return { value: null, reason: 'Commitments have insufficient amount or currency evidence.' };
   if (!income.value || income.value <= 0) {
     return { value: null, reason: 'Implied monthly net income is null or non-positive.' };
   }
@@ -273,13 +285,18 @@ export function computeNsfCount(transactions, now) {
  * Compute all four signals. The low-volume guard wraps the result —
  * downstream UIs should suppress DBR display when triggered.
  */
-export function computeUnderwriting(bundle, now = new Date()) {
+export function computeUnderwriting(bundle, now = new Date(bundle.nowIso ?? REFERENCE_DATE)) {
   const guard = lowVolumeGuard(bundle.transactions ?? [], now);
   const income = computeImpliedIncome(bundle.transactions ?? [], now);
   const commitments = computeFixedCommitments(
     bundle.standingOrders ?? [],
     bundle.directDebits ?? [],
   );
+  for (const signal of [income, commitments])
+    if (signal.value !== null && !Number.isFinite(signal.value)) {
+      signal.value = null;
+      signal.sourceLabel = 'Insufficient currency or amount evidence';
+    }
   const dbr = guard.triggered
     ? { value: null, reason: 'Suppressed — low-volume guard triggered (see top of panel).' }
     : computeDBR(income, commitments);
@@ -288,4 +305,4 @@ export function computeUnderwriting(bundle, now = new Date()) {
 }
 
 export const UNDERWRITING_FOOTNOTE =
-  "Generic / illustrative. Not tied to any specific institution's underwriting policy. Adjust to your own policy when applying.";
+  "Generic / illustrative. AED conversion uses a synthetic fixed-rate snapshot, not current market rates. Missing information is unknown. Not tied to an institution's underwriting policy.";

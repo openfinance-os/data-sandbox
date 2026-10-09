@@ -29,6 +29,8 @@
 // was fabricated.
 
 import { trapFocus } from './shared/dom.js';
+import { domainLabel } from './shared/domains.js';
+import { fillSpecMeta } from './shared/spec-meta.js';
 
 // Three populate-rate profiles per PRD §8.3 / EXP-04. Anonymous-by-design
 // (NG5 / D-14) — these are never tied to a named real bank.
@@ -746,7 +748,11 @@ function toPersonaList(map) {
       id,
       name: v.name,
       archetype: v.archetype,
-      domain: v.domain,
+      // Normalise: the fixture manifest stamps domain:'multi' on
+      // multi-domain personas, but dist/data.json (the local-dev fallback)
+      // carries only `domains: []` with no singular key — which made this
+      // sort throw and the whole page fail on the `npm run serve` path.
+      domain: domainLabel(v),
       segment: v.segment || null,
       default_seed: v.default_seed || null,
       stress_coverage: v.stress_coverage || [],
@@ -2983,6 +2989,11 @@ function openConsentManager() {
   if (!modal) return;
   renderConsentManagerView();
   modal.hidden = false;
+  // Lock background scroll while the dialog owns the screen. Without this the
+  // long J2 wizard keeps scrolling behind the fixed-position modal on touch
+  // devices, which both reads as broken and drags the dialog out from under
+  // the user's tap.
+  document.body.style.overflow = 'hidden';
   // Stash the previously focused element so we can restore on close.
   modal.dataset.previousFocus = (document.activeElement && document.activeElement.id) || '';
   consentManagerReleaseTrap = trapFocus(modal);
@@ -2996,6 +3007,7 @@ function closeConsentManager() {
   consentManagerReleaseTrap?.();
   consentManagerReleaseTrap = null;
   modal.hidden = true;
+  document.body.style.overflow = '';
   // Trigger a refresh so any consents-dependent UI (J2 dashboard empty state)
   // picks up revocations made inside the modal.
   refresh();
@@ -3394,9 +3406,6 @@ function renderBfmDashboard(persona, perLfi) {
     const signed = t.CreditDebitIndicator === 'Credit' ? amt : -amt;
     byLfi.set(t._lfi, (byLfi.get(t._lfi) || 0) + signed);
   }
-  let netInflow30 = 0;
-  for (const v of byLfi.values()) netInflow30 += v;
-
   let inflow30 = 0,
     outflow30 = 0;
   for (const t of ins.recentTx) {
@@ -3942,36 +3951,6 @@ function wireControls() {
       refresh();
     });
   });
-}
-
-// ─── Live spec pin ─────────────────────────────────────────────────
-
-async function fillSpecMeta() {
-  let manifest = null;
-  try {
-    const res = await fetch('../fixtures/v1/manifest.json');
-    if (res.ok) manifest = await res.json();
-  } catch {
-    /* ignore */
-  }
-
-  let spec = null;
-  if (!manifest) {
-    try {
-      const res = await fetch('../dist/SPEC.json');
-      if (res.ok) spec = await res.json();
-    } catch {
-      /* ignore */
-    }
-  }
-
-  const sha = (manifest?.specSha ?? spec?.pinSha ?? 'unknown').slice(0, 7);
-  document.getElementById('footer-sha').textContent = sha;
-  document.getElementById('meta-sha').textContent = manifest?.specSha ?? spec?.pinSha ?? '—';
-  document.getElementById('meta-retrieved').textContent =
-    manifest?.nowAnchor ?? spec?.retrievedAt ?? '—';
-  document.getElementById('meta-version').textContent = manifest?.version ?? '—';
-  document.getElementById('meta-generated').textContent = manifest?.generatedAt ?? '—';
 }
 
 // ─── Boot ──────────────────────────────────────────────────────────

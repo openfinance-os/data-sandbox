@@ -7,13 +7,15 @@
 //   1. ?origin=... query param
 //   2. window.location.origin (works when this file is served from the
 //      same host as the staged sandbox under _site/)
-//   3. https://openfinance-os.org/commons/data-sandbox (production)
+//   3. https://data-sandbox.openfinance-os.org (production)
 
 const params = new URLSearchParams(window.location.search);
 const ORIGIN = (
   params.get('origin') ||
-  (window.location.origin && window.location.origin !== 'null' ? window.location.origin : '') ||
-  'https://openfinance-os.org/commons/data-sandbox'
+  (window.location.origin && window.location.origin !== 'null'
+    ? new URL('../../', import.meta.url).href.replace(/\/$/, '')
+    : '') ||
+  'https://data-sandbox.openfinance-os.org'
 ).replace(/\/$/, '');
 const FX = `${ORIGIN}/fixtures/v1`;
 
@@ -46,13 +48,10 @@ async function getJSON(url) {
 // Finance v2.1 endpoint. Walks Links.Next until it is absent, concatenating
 // the listable array under Data. `dataKey` names the array (Transaction,
 // StandingOrder, …) since v2.1 puts the list under a per-resource key.
-async function getJSONPaged(url, dataKey, { pageSize = 25, maxPages = 50 } = {}) {
-  // Engage pagination by setting ?offset=&limit= — the sandbox falls back
-  // to single-page mode without these params, matching the on-disk file.
-  const first = new URL(url, window.location.origin);
-  first.searchParams.set('offset', '0');
-  first.searchParams.set('limit', String(pageSize));
-  let next = first.toString();
+async function getJSONPaged(url, dataKey, { maxPages = 50 } = {}) {
+  // Static fixtures contain the complete list and ignore query parameters.
+  // A real HTTP adapter can expose Links.Next; follow it only when present.
+  let next = new URL(url, window.location.origin).toString();
   const out = [];
   let pages = 0;
   let envelope = null;
@@ -64,6 +63,7 @@ async function getJSONPaged(url, dataKey, { pageSize = 25, maxPages = 50 } = {})
     next = env?.Links?.Next ?? null;
     pages += 1;
   }
+  if (next) throw new Error('Pagination incomplete: page limit reached');
   // Splice the accumulated array back into the last envelope so callers get
   // a normal-looking Data section plus the original Links/Meta of the last
   // page (preserving spec shape).
@@ -80,7 +80,7 @@ async function init() {
     manifest = await getJSON(`${FX}/manifest.json`);
   } catch (err) {
     showErr(
-      `Could not fetch ${FX}/manifest.json — ${err.message}. If running locally, start a server in _site/ and open this file from there, or pass ?origin=https://openfinance-os.org/commons/data-sandbox.`,
+      `Could not fetch ${FX}/manifest.json — ${err.message}. If running locally, start a server in _site/ and open this file from there, or pass ?origin=https://data-sandbox.openfinance-os.org.`,
     );
     return;
   }
@@ -90,9 +90,14 @@ async function init() {
   // transactions + standing-orders, which only exist for banking personas.
   // Insurance personas live in the same manifest but have no banking bundle,
   // so listing them would 404 the moment the user picked one.
-  const bankingPersonaIds = Object.keys(manifest.personas).filter(
-    (id) => (manifest.personas[id].domain ?? 'banking') === 'banking',
-  );
+  // Multi-domain personas (`domain: 'multi'`, `domains: [...]`) DO have
+  // complete banking bundles — only pure-insurance/ATM personas would 404.
+  const bankingPersonaIds = Object.keys(manifest.personas).filter((id) => {
+    const p = manifest.personas[id];
+    const domains =
+      Array.isArray(p.domains) && p.domains.length ? p.domains : [p.domain ?? 'banking'];
+    return domains.includes('banking');
+  });
   for (const id of bankingPersonaIds) {
     const opt = document.createElement('option');
     opt.value = id;
@@ -173,21 +178,23 @@ function renderAccounts(rows) {
     const ident = a.AccountIdentifiers?.[0]?.Identification?.slice(0, 14) ?? a.AccountId;
     const balance =
       r.bal?.Data?.Balance?.find((b) => b.Type === 'ClosingAvailable') ?? r.bal?.Data?.Balance?.[0];
-    li.innerHTML = `<div class="row"><span>${escape(a.Nickname || a.AccountSubType || a.AccountId)}</span><span>${balance ? `${fmt(balance.Amount.Amount)} ${balance.Amount.Currency}` : '—'}</span></div><div class="stat-sub">${a.AccountSubType ?? ''} · ${ident}…</div>`;
+    li.innerHTML = `<div class="row"><span>${escape(a.Nickname || a.AccountSubType || a.AccountId)}</span><span>${balance ? `${balance.CreditDebitIndicator === 'Debit' ? '-' : ''}${fmt(balance.Amount.Amount)} ${balance.Amount.Currency}` : '—'}</span></div><div class="stat-sub">${a.AccountSubType ?? ''} · ${ident}…</div>`;
     ul.appendChild(li);
   }
 }
 
 function renderTotalBalance(rows) {
-  let aed = 0;
+  let aedMinor = 0;
   for (const r of rows) {
     const b =
       r.bal?.Data?.Balance?.find((x) => x.Type === 'ClosingAvailable') ?? r.bal?.Data?.Balance?.[0];
     if (!b) continue;
-    if (b.Amount.Currency === 'AED') aed += parseFloat(b.Amount.Amount);
+    if (b.Amount.Currency === 'AED')
+      aedMinor +=
+        Math.round(Number(b.Amount.Amount) * 100) * (b.CreditDebitIndicator === 'Debit' ? -1 : 1);
     // Non-AED skipped intentionally — a real TPP would FX-convert here.
   }
-  $('total-balance').textContent = `AED ${fmt(aed)}`;
+  $('total-balance').textContent = `AED ${fmt(aedMinor / 100)}`;
   const nonAed = rows.filter((r) => {
     const b = r.bal?.Data?.Balance?.[0];
     return b && b.Amount.Currency !== 'AED';

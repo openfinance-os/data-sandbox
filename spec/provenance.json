@@ -1,0 +1,44 @@
+{
+  "baseline": "v2.1",
+  "verifiedAt": "2026-10-08",
+  "officialErrata": {
+    "number": 4,
+    "date": "2026-09-18",
+    "pageId": "1366294554",
+    "pageVersion": 7,
+    "modifiedAt": "2026-09-18T07:27:39.506Z",
+    "url": "https://openfinanceuae.atlassian.net/wiki/spaces/OF/pages/1366294554/Standards+V2.1+API+Hub+V8+-+Consolidated+Errata",
+    "storageSha256": "1ad0b425e03c2b3e627273281ef5c5bb6792bf4f26c9e9673ab301037bd509d3"
+  },
+  "preview": {
+    "documentation": "v2.2-rc2",
+    "repository": "v2.2-rc1",
+    "adopted": false
+  },
+  "domains": {
+    "banking": {
+      "version": "v2.1-errata2",
+      "commit": "a3c8b8bf22e080046a8e0fbd9933f57431604155",
+      "path": "dist/standards/v2.1-errata2/uae-account-information-openapi.yaml",
+      "sha256": "8332adf44d606cc013febf83b248c33257536e719a35bef8eda58c2cb0b88126",
+      "normalization": null,
+      "retrievedAt": "2026-10-08T00:00:00Z"
+    },
+    "insurance": {
+      "version": "v2.1-errata3",
+      "commit": "a3c8b8bf22e080046a8e0fbd9933f57431604155",
+      "path": "dist/standards/v2.1-errata3/uae-insurance-openapi.yaml",
+      "sha256": "1191bba351eefd29aff91f461ba8bda2d8bb2e554adba4d4f89718d9987a1818",
+      "normalization": "quote-composition-v1",
+      "retrievedAt": "2026-10-08T00:00:00Z"
+    },
+    "atm": {
+      "version": "v2.1",
+      "commit": "ebde95804d9bf2a13d065804ea64334b673223ca",
+      "path": "dist/standards/v2.1/uae-atm-openapi.yaml",
+      "sha256": "f4b65f710b17d8eb89a56e8e3b4173d75c5fb94eac33aeffa7be5af7a4b751a0",
+      "normalization": null,
+      "retrievedAt": "2026-05-20T00:00:00Z"
+    }
+  }
+}

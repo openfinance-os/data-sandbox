@@ -29,8 +29,14 @@ packages/sandbox-fixtures/spec.insurance.json
 packages/sandbox-fixtures/spec.atm.json
 packages/sandbox-fixtures/pools.json
 packages/sandbox-fixtures/lib/
+# Build-cache stamp (content hash of the corpus inputs) — local-only.
+packages/sandbox-fixtures/.build-stamp
 packages/sandbox-fixtures-py/src/openfinance_os_sandbox_fixtures/data/
 packages/sandbox-fixtures-py/dist/
 packages/sandbox-fixtures-py/build/
 *.egg-info/
 __pycache__/
+
+# Local release snapshots and opt-in analytical/evaluation artifacts
+artifacts/
+packages/sandbox-fixtures/schemas/

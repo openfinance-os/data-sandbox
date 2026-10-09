@@ -111,6 +111,24 @@ describe('recipe codec — Workstream B', () => {
     expect(h1).toBe(h1again);
     expect(h1).toMatch(/^[0-9a-z]+$/);
   });
+
+  it('schema-version tag rides in the blob but never reaches hash or decoded shape', () => {
+    const recipe = { segment: 'SME', cash_flow_intensity: 'high' };
+    const encoded = encodeRecipe(recipe);
+    const blob = JSON.parse(Buffer.from(encoded, 'base64url').toString('utf8'));
+    expect(blob._v).toBe(1);
+    // The decoded recipe carries no _v — it must not perturb recipeHash
+    // via the defaults merge or canonicalise().
+    const decoded = decodeRecipe(encoded);
+    expect(decoded._v).toBeUndefined();
+    expect(recipeHash(decoded)).toBe(recipeHash(recipe));
+    // Pre-versioning blobs (no _v) — every custom-persona URL shared
+    // before the tag landed — decode to the identical recipe.
+    const legacy = Buffer.from(
+      JSON.stringify({ cash_flow_intensity: 'high', segment: 'SME' }),
+    ).toString('base64url');
+    expect(decodeRecipe(legacy)).toEqual(decoded);
+  });
 });
 
 describe('expandRecipe — Workstream B', () => {
