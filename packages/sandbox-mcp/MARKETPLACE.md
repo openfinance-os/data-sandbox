@@ -19,7 +19,7 @@ Alternates if the field caps differently:
 
 ## Long description
 
-> Plug Claude into a sandbox of synthetic UAE Open Finance v2.1 Bank Data Sharing payloads and use it as a dynamic Personal Financial Manager. Pick from twelve curated personas — salaried expat, gig worker, mortgage holder, SME owner, corporate treasury, and more — or describe your own customer in plain English and have Claude build one on the fly. Every tool response is a real v2.1-shaped envelope with mandatory/optional/conditional fields driven by the published OpenAPI spec.
+> Plug Claude into a sandbox of synthetic UAE Open Finance v2.1 payloads — Bank Data Sharing, Insurance Data Sharing (all 7 lines), and the ATM Locator — and use it as a dynamic Personal Financial Manager. Pick from 39 curated personas — salaried expat, gig worker, mortgage holder, SME owner, corporate treasury, motor/home/health/life/travel/renters/employment-insured, multi-bank multi-insurer flagships, and more — or describe your own customer in plain English and have Claude build one on the fly. Every tool response is a real v2.1-shaped envelope with mandatory/optional/conditional fields driven by the published OpenAPI spec.
 >
 > The data is fully fictional — no real customer, no real institution. Every response carries a `SYNTHETIC` watermark you can preserve in summaries and exports. Determinism (`(persona, lfi, seed)` → byte-identical bundle) and the pinned spec SHA make every conversation reproducible.
 >
@@ -32,10 +32,10 @@ Alternates if the field caps differently:
 ## Install URL (Streamable HTTP)
 
 ```
-https://mcp.openfinance-os.org/mcp
+https://data-sandbox.fly.dev/mcp
 ```
 
-(Plus the `data-sandbox.fly.dev/mcp` Fly URL as a fallback if the custom domain hasn't propagated yet.)
+(`https://mcp.openfinance-os.org/mcp` is the future canonical URL — it lands with the OF-OS Commons CNAME cutover per PRD D-13 and is not live yet. Re-point the listing when DNS goes live; re-listing is cheap.)
 
 ## Auth
 
@@ -75,8 +75,7 @@ A short note worth including in the listing description so users don't expect wh
 
 - **Not a connection to real banks.** No live API calls. No real customer data.
 - **Not a writeable surface.** Read-only — no payments, no Service Initiation, no account opening.
-- **UAE-specific.** Bank Data Sharing v2.1 only; insurance / wealth / payment-initiation are deferred.
-- **Banking only in v1.** The lone insurance persona in the wider sandbox is excluded from the MCP surface.
+- **UAE-specific.** Bank Data Sharing, Insurance Data Sharing (all 7 lines), and the ATM Locator on v2.1; Open Wealth and payment-initiation are deferred.
 
 ## Submission notes (internal)
 

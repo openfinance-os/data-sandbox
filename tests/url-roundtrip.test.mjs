@@ -10,7 +10,7 @@ import {
 describe('URL shapes — §6.8', () => {
   it('persona permalink encodes persona+lfi+seed', () => {
     const url = encodePermalink({ personaId: 'salaried_expat_mid', lfi: 'median', seed: 4729 });
-    expect(url).toBe('/commons/sandbox/p/salaried_expat_mid?lfi=median&seed=4729');
+    expect(url).toBe('/commons/sandbox/p/salaried_expat_mid?corpus=0.1.0&lfi=median&seed=4729');
   });
 
   it('persona permalink → decode round-trips', () => {

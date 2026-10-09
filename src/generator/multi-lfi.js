@@ -515,6 +515,7 @@ const ROLE_AMOUNT_BANDS_AED = {
 export function computeCrossLfiLedger({
   persona,
   primaryAccountId,
+  primaryCurrency = 'AED',
   primaryIban,
   counterpartyBanksPool,
   now,
@@ -543,7 +544,12 @@ export function computeCrossLfiLedger({
     const roleIban = deriveCrossLfiSelfIban(persona.persona_id, slotKey, slotBank);
     const roleAccountId = `${persona.persona_id.replace(/_/g, '-')}-acct-01`;
     const band = ROLE_AMOUNT_BANDS_AED[slot.role] ?? [3000, 9000];
-    const ccy = slot.role === 'trade_finance' ? 'USD' : 'AED';
+    const ccy =
+      (persona.accounts ?? []).find((a) => a.at_slot === slotKey)?.currency ??
+      (slot.role === 'trade_finance' ? 'USD' : 'AED');
+    const aedPerUnit = { AED: 1, USD: 3.6725, GBP: 4.6, EUR: 3.95 };
+    if (!aedPerUnit[ccy] || !aedPerUnit[primaryCurrency])
+      throw new Error('Unsupported sweep FX currency');
 
     for (let m = 0; m < CROSS_LFI_HISTORY_MONTHS; m++) {
       // Deterministic per (persona, slot, month). NOT seeded on the
@@ -553,7 +559,7 @@ export function computeCrossLfiLedger({
       const amount = rngInt(rng, band[0], band[1] + 1);
       const monthAnchor = new Date(now.getTime());
       monthAnchor.setUTCDate(1);
-      monthAnchor.setUTCMonth(monthAnchor.getUTCMonth() - (CROSS_LFI_HISTORY_MONTHS - 1 - m));
+      monthAnchor.setUTCMonth(monthAnchor.getUTCMonth() - (CROSS_LFI_HISTORY_MONTHS - m));
       // 28th at 11:00 UTC — mirrors the standing-order convention.
       monthAnchor.setUTCDate(28);
       monthAnchor.setUTCHours(11, 0, 0, 0);
@@ -573,7 +579,24 @@ export function computeCrossLfiLedger({
           TransactionDateTime: isoNoMs,
           ValueDateTime: isoNoMs,
           TransactionInformation: `XLFI SWEEP TO ${slotKey.toUpperCase()} ${reference}`,
-          Amount: { Amount: amount.toFixed(2), Currency: ccy },
+          Amount: {
+            Amount: (amount / aedPerUnit[primaryCurrency]).toFixed(2),
+            Currency: primaryCurrency,
+          },
+          ...(ccy !== primaryCurrency
+            ? {
+                CurrencyExchange: {
+                  SourceCurrency: primaryCurrency,
+                  TargetCurrency: ccy,
+                  UnitCurrency: ccy,
+                  ExchangeRate: aedPerUnit[ccy] / aedPerUnit[primaryCurrency],
+                  InstructedAmount: {
+                    Amount: (amount / aedPerUnit[ccy]).toFixed(2),
+                    Currency: ccy,
+                  },
+                },
+              }
+            : {}),
           TransactionType: 'LocalBankTransfer',
           SubTransactionType: 'MoneyTransfer',
           CreditorAgent: {
@@ -597,7 +620,7 @@ export function computeCrossLfiLedger({
           TransactionDateTime: isoNoMs,
           ValueDateTime: isoNoMs,
           TransactionInformation: `XLFI SWEEP FROM PRIMARY ${reference}`,
-          Amount: { Amount: amount.toFixed(2), Currency: ccy },
+          Amount: { Amount: (amount / aedPerUnit[ccy]).toFixed(2), Currency: ccy },
           TransactionType: 'LocalBankTransfer',
           SubTransactionType: 'MoneyTransfer',
           DebtorAgent: {

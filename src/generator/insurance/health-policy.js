@@ -173,7 +173,7 @@ export function generateHealthClaims({ persona }) {
       TotalGrossPaidAmount: aed(c.total_gross_aed ?? 0),
     },
   ];
-  return { Summary: summary, NoClaimsDiscountAvailable: (c.claims_in_period ?? 0) === 0 };
+  return { Summary: summary };
 }
 
 export function generateHealthPremium({ persona }) {
@@ -187,10 +187,8 @@ export function generateHealthPremium({ persona }) {
   const vat = Math.round(premiumExVat * 0.05);
   const total = premiumExVat + vat;
   return {
-    Status: 'Final',
-    PremiumAmountExcludingVAT: aed(premiumExVat),
-    VATAmount: aed(vat),
-    VATPercentage: 5.0,
+    PremiumAmount: aed(premiumExVat),
+    VatAmount: aed(vat),
     TotalPremiumAmount: aed(total),
     PaymentFrequency: 'Annually',
   };

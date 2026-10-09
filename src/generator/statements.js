@@ -1,3 +1,4 @@
+import { postedTransactions, minorUnits, formatMinor, signedMinor } from '../core/ledger.js';
 // /accounts/{AccountId}/statements generation.
 // AEStatements requires AccountId, AccountSubType, Statements[]. Each
 // statement requires StatementId, StatementDate, OpeningDate, ClosingDate,
@@ -13,11 +14,15 @@ import { HISTORY_MONTHS as STATEMENT_HISTORY_MONTHS } from './constants.js';
 export function generateStatements({ accounts, transactions, rng, now }) {
   const out = [];
   for (const acc of accounts) {
-    const accTx = transactions.filter((t) => t._accountId === acc.AccountId);
-    let opening = acc._meta.openingBalance;
+    const accTx = postedTransactions(transactions, {
+      accountId: acc.AccountId,
+      currency: acc.Currency,
+      now,
+    });
+    let opening = minorUnits(acc._meta.openingBalance, acc.Currency);
     // Walk backward STATEMENT_HISTORY_MONTHS calendar months, emitting one
     // statement per month.
-    for (let m = STATEMENT_HISTORY_MONTHS - 1; m >= 0; m--) {
+    for (let m = STATEMENT_HISTORY_MONTHS; m >= 1; m--) {
       const monthStart = new Date(now.getTime());
       // setDate(1) BEFORE setMonth so a month-end `now` can't overflow into
       // the wrong month (e.g. Mar 31 → Feb 31 → Mar 3).
@@ -37,7 +42,7 @@ export function generateStatements({ accounts, transactions, rng, now }) {
       let credits = 0;
       let debits = 0;
       for (const t of monthTx) {
-        const a = parseFloat(t.Amount.Amount);
+        const a = Math.abs(signedMinor(t));
         if (t.CreditDebitIndicator === 'Credit') {
           credits += a;
           closing += a;
@@ -51,7 +56,7 @@ export function generateStatements({ accounts, transactions, rng, now }) {
         summary.push({
           CreditDebitIndicator: 'Credit',
           SubTransactionType: 'Deposit',
-          Amount: { Amount: credits.toFixed(2), Currency: acc.Currency },
+          Amount: { Amount: formatMinor(credits, acc.Currency), Currency: acc.Currency },
           Count: monthTx.filter((t) => t.CreditDebitIndicator === 'Credit').length,
         });
       }
@@ -59,7 +64,7 @@ export function generateStatements({ accounts, transactions, rng, now }) {
         summary.push({
           CreditDebitIndicator: 'Debit',
           SubTransactionType: 'Purchase',
-          Amount: { Amount: debits.toFixed(2), Currency: acc.Currency },
+          Amount: { Amount: formatMinor(debits, acc.Currency), Currency: acc.Currency },
           Count: monthTx.filter((t) => t.CreditDebitIndicator === 'Debit').length,
         });
       }
@@ -83,7 +88,7 @@ export function generateStatements({ accounts, transactions, rng, now }) {
 function signedAmount(value, currency) {
   return {
     CreditDebitIndicator: value >= 0 ? 'Credit' : 'Debit',
-    Amount: { Amount: Math.abs(value).toFixed(2), Currency: currency },
+    Amount: { Amount: formatMinor(Math.abs(value), currency), Currency: currency },
   };
 }
 

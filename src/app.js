@@ -1,25 +1,34 @@
+import { deploymentBase, publishedScenario } from './core/fixture-url.js';
+import { CORPUS_VERSION, REFERENCE_DATE } from './core/scenario.js';
 // Sandbox UI entry — wires the three-pane layout to the deterministic
 // generator and the parsed SPEC.json. The browser fetches both as static
 // JSON (no build chain). State lives in a single object updated by select-
 // box and persona-card events; every change re-renders the active panes.
 
-import { buildBundle } from './generator/index.js';
+// C-P1 perf — browser pages build bundles through the async lazy entry:
+// banking is static (cold-landing default), insurance/ATM pipelines
+// dynamic-import on first use. Node tooling keeps the sync entry at
+// ./generator/index.js.
+import { buildBundle } from './generator/lazy.js';
 import { track } from './analytics.js';
 import {
   coverage,
   coverageByBand,
   coverageForEndpoint,
   leafFields,
-  specCitationUrl,
   realLfisGuidance,
   bandForFieldName,
 } from './shared/spec-helpers.js';
+import { personaInDomain } from './shared/domains.js';
 import { statusPill, syncViewTabs } from './shared/dom.js';
-import { setDocumentLocale, normalizeLocale, DEFAULT_LOCALE } from './shared/i18n.js';
+import { setDocumentLocale, normalizeLocale, DEFAULT_LOCALE, t } from './shared/i18n.js';
 import { decodeFromUrl, encodeEmbed, encodeFixtureUrl, CUSTOM_PERSONA_SLUG } from './url.js';
 import { expandRecipe } from './persona-builder/expand.js';
 import { decodeRecipe, encodeRecipe, RECIPE_DEFAULTS } from './persona-builder/recipe.js';
-import { mountPersonaBuilder } from './ui/persona-builder-ui.js';
+// C-P1 perf — the persona-builder UI (and its export-zip → generator chain)
+// is dynamic-imported on the first "+ Build a custom persona" click; see
+// attachBuilderHandlers. Keeping it off the cold path matters because
+// export-zip statically imports the FULL sync generator entry.
 // PR-14 perf — find-box module is dynamic-imported on first ⌘K /
 // button click. Like Export popover, the entry point is user-triggered
 // outside the cold-load measurement window, so the dynamic-import
@@ -34,20 +43,13 @@ import { createTour } from './ui/tour.js';
 // median to 0.57. Static import + modulepreload is the right shape.
 import { createCompareView } from './ui/compare-view.js';
 import { createTxFilter } from './ui/tx-filter.js';
-import { createMonthlySummary } from './ui/monthly-summary.js';
 // PR-15 perf — insurance module is dynamic-imported when the active
 // domain shifts to insurance. The banking default landing never needs
 // it, so keeping it off the cold-load path tightens the EXP-24
 // Lighthouse budget without affecting insurance-flow latency
 // (rebuildAndRender is already async work).
-import {
-  envelopesFromBundle,
-  csvForResource,
-  downloadJson,
-  downloadCsv,
-  downloadTarball,
-} from './ui/export.js';
-import { conditionalRule, isPii, whyEmpty } from './shared/field-knowledge.js';
+import { envelopesFromBundle } from './ui/export.js';
+import { isPii, whyEmpty } from './shared/field-knowledge.js';
 import { createUnderwriting } from './ui/underwriting.js';
 import { createFieldCard } from './ui/field-card.js';
 import { createHoverPreview } from './ui/hover-preview.js';
@@ -68,8 +70,6 @@ import {
   ENDPOINTS,
   ACCOUNT_SCOPED_PATHS,
   BUNDLE_SCOPED_PATHS,
-  JTBD_PRESETS,
-  INSURANCE_JTBD_PRESETS,
   getJtbdPresets,
   STRESS_BEST_FOR,
   LFI_CAPTIONS,
@@ -262,6 +262,8 @@ const { renderCompareView } = createCompareView({
   el,
   stripInternal,
   personaAvatarEl,
+  // D-10 — Arabic display names in the compare header.
+  localizedName: (p) => localizedName(p),
 });
 const { renderTxFilterBar, applyFilter, applySort, toggleSort } = createTxFilter({
   state,
@@ -270,7 +272,23 @@ const { renderTxFilterBar, applyFilter, applySort, toggleSort } = createTxFilter
   emptyTxFilter,
   updateUrl: pushPermalink,
 });
-const { renderMonthlySummary } = createMonthlySummary({ el, formatAmount });
+// Load the monthly calculation when a transaction view is opened.
+let monthlySummaryFactory;
+function renderMonthlySummary(rows) {
+  const host = el('div');
+  monthlySummaryFactory ??= import('./ui/monthly-summary.js').then(({ createMonthlySummary }) =>
+    createMonthlySummary({ el, formatAmount }),
+  );
+  monthlySummaryFactory
+    .then(({ renderMonthlySummary: render }) => {
+      host.replaceChildren(render(rows));
+    })
+    .catch((err) => {
+      host.textContent = 'Monthly summary could not load.';
+      console.error('Monthly summary failed', err);
+    });
+  return host;
+}
 // PR-15 — lazy insurance wrapper. The factory loads on the first
 // renderInsuranceBundle() call; subsequent calls reuse the cached
 // instance. Banking flow never triggers the import.
@@ -353,19 +371,19 @@ const { renderUnderwritingStrip, renderUnderwritingPanel } = createUnderwriting(
 const exportPopover = (() => {
   let inner = null;
   let loading = null;
+  let actions = null;
   const deps = () => ({
     state,
     el,
     track,
     copyToClipboard,
-    exportActiveJson: () => exportActiveJson(),
-    exportActiveCsv: () => exportActiveCsv(),
-    exportTarball: () => exportTarball(),
+    exportActiveJson: () => actions.exportActiveJson(),
+    exportActiveCsv: () => actions.exportActiveCsv(),
+    exportTarball: () => actions.exportTarball(),
     embedIframeSnippet: () => buildEmbedSnippet(),
     activeFixtureUrl: () => {
-      const origin =
-        window.location.origin +
-        window.location.pathname.replace(/\/index\.html$/, '').replace(/\/$/, '');
+      const origin = deploymentBase();
+      if (!publishedScenario(state.fixtureManifest, state)) return null;
       return encodeFixtureUrl({
         origin,
         personaId: state.personaId,
@@ -374,26 +392,30 @@ const exportPopover = (() => {
         endpoint:
           state.endpoint === OVERVIEW_PSEUDO || state.endpoint === UNDERWRITING_PSEUDO
             ? '/accounts'
-            : state.endpoint,
+            : actions.activeEnvelopeKey(),
       });
     },
     activeJsonString: () => {
       if (!state.bundle) return '';
       const ctx = exportContext();
       const envelopes = envelopesFromBundle(state.bundle, ctx);
-      const key = activeEnvelopeKey();
+      const key = actions.activeEnvelopeKey();
       const env = envelopes[key] ?? envelopes[state.endpoint];
       return env ? JSON.stringify(env, null, 2) : '';
     },
     activeCsvString: () => {
       if (!state.bundle) return '';
-      return buildActiveCsvString();
+      return actions.buildActiveCsvString();
     },
   });
   function ensure() {
     if (inner) return inner;
     if (!loading) {
-      loading = import('./ui/export-popover.js').then(({ createExportPopover }) => {
+      loading = Promise.all([
+        import('./ui/export-popover.js'),
+        import('./ui/export-actions.js'),
+      ]).then(([{ createExportPopover }, { createActiveExports }]) => {
+        actions = createActiveExports({ state, exportContext });
         inner = createExportPopover(deps());
         return inner;
       });
@@ -405,12 +427,12 @@ const exportPopover = (() => {
   // at src/ui/export-popover.js:126 is itself a toggle, so a real
   // dblclick still opens-then-closes by design.
   return {
-    open() {
+    open(trigger = document.activeElement) {
       if (inner) {
-        inner.open();
+        inner.open(trigger);
         return;
       }
-      ensure().then((p) => p.open());
+      ensure().then((p) => p.open(trigger));
     },
     close() {
       inner?.close();
@@ -506,13 +528,21 @@ async function init() {
   // network blip must not block the rest of init (the fallback initials
   // path covers any missing avatar). data / domains are load-bearing and
   // stay strict.
-  const [domainsRes, dataRes, avatarsRes] = await Promise.all([
+  const [domainsRes, dataRes, avatarsRes, published] = await Promise.all([
     fetch('../dist/domains.json'),
     fetch('../dist/data.json'),
     fetch('../dist/avatars.json').catch(() => null),
+    fetch('../dist/published-scenarios.json')
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null),
   ]);
   const domainsManifest = await domainsRes.json();
   state.data = await dataRes.json();
+  state.fixtureManifest = published;
+  if (url.corpus && url.corpus !== CORPUS_VERSION)
+    throw new Error(
+      `Corpus ${url.corpus} requires its archived package. This explorer serves ${CORPUS_VERSION}.`,
+    );
   // D-10 — on a non-default initial locale, merge the lazy Arabic content
   // before first paint so persona names render localized. The default English
   // path skips the extra fetch entirely (the overlay is opt-in, not preloaded).
@@ -541,7 +571,7 @@ async function init() {
   state.spec = await specRes.json();
 
   state.activePersonas = Object.fromEntries(
-    Object.entries(state.data.personas).filter(([, p]) => p.domain === state.domain),
+    Object.entries(state.data.personas).filter(([, p]) => personaInDomain(p, state.domain)),
   );
 
   // Workstream B — materialise a custom persona from the URL recipe param,
@@ -567,7 +597,9 @@ async function init() {
       ? url.personaId
       : Object.keys(state.activePersonas)[0];
   state.lfi = url.lfi;
-  state.seed = url.seed;
+  state.seed = new URL(window.location.href).searchParams.has('seed')
+    ? url.seed
+    : state.activePersonas[state.personaId].default_seed;
   // EXP-17: honour the URL's pinned endpoint when it's recognised by the
   // active domain's spec or one of the two banking pseudo-endpoints
   // (overview, underwriting). Falls back to the domain default otherwise.
@@ -597,13 +629,9 @@ async function init() {
   syncControls();
   attachEventHandlers();
   attachBuilderHandlers();
-  // Workstream C plug-point 1 (Service Worker fixture mock) is implemented
-  // and unit-tested under tests/fixture-handler.test.mjs; live registration
-  // is gated on a deployment-time `Service-Worker-Allowed: /` header that
-  // requires sandbox-host configuration outside this commit's scope. Until
-  // that lands, custom-persona bundles are accessible via the npm engine
-  // (plug-point 2) and the static-fixture zip download (plug-point 3).
-  rebuildAndRender();
+  // C-P1 — awaited so state.bundle exists before the tour (which reads
+  // bundle.accounts in its step setups) can auto-launch below.
+  await rebuildAndRender();
   emitPersonaLoad();
 
   // Auto-launch the 5-step tour on cold landing (URL with no query params)
@@ -638,9 +666,14 @@ let builderInstance = null;
 function attachBuilderHandlers() {
   const btn = document.getElementById('open-builder-btn');
   if (!btn) return;
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', async () => {
     if (!builderInstance) {
+      // C-P1 perf — first click pays the dynamic-import; the builder UI's
+      // transitive graph (export-zip → sync generator entry → insurance +
+      // ATM trees) stays off the cold-load critical path.
+      const { mountPersonaBuilder } = await import('./ui/persona-builder-ui.js');
       builderInstance = mountPersonaBuilder({
+        exportContext,
         pools: state.data.pools,
         currentRecipe: state.recipe,
         onApply: ({ recipe, persona }) => {
@@ -832,14 +865,42 @@ function buildPersonaList() {
     visibleCount += 1;
 
     const isCustom = id === CUSTOM_PERSONA_SLUG;
+    // C-A1 — the card's primary activation is a real <button> (the persona
+    // name), so the library is keyboard-reachable (Tab) and activatable
+    // (Enter/Space) with correct button semantics for screen readers. The
+    // card-level click stays as a larger mouse target; nested interactive
+    // children (JTBD chips, the disclosure) keep handling their own events.
+    const activatePersona = () => {
+      state.personaId = id;
+      state.navAccountCollapsed.clear();
+      // PR #5 — banking persona-switch now lands on the Underwriting
+      // Summary by default; insurance flow has its own per-domain
+      // default endpoint resolved in rebuildAndRender.
+      state.endpoint = UNDERWRITING_PSEUDO;
+      state.selectedAccountId = null;
+      rebuildAndRender();
+      // PR-11 — emit EXP-21 persona_load on every card activation
+      // (previously this fired from the persona-select change listener;
+      // the dropdown is gone).
+      emitPersonaLoad();
+    };
     const cardBody = el(
       'div',
       { class: 'persona-card-body' },
       el(
-        'div',
-        { class: 'persona-name' },
+        'button',
+        {
+          class: 'persona-name',
+          attrs: { type: 'button', tabindex: '0' },
+          onClick: activatePersona,
+        },
         document.createTextNode(localizedName(p)),
-        isCustom ? el('span', { class: 'custom-badge', text: 'Custom (not curated)' }) : null,
+        isCustom
+          ? el('span', {
+              class: 'custom-badge',
+              text: t('personaCard.customBadge', state.lang),
+            })
+          : null,
       ),
       el('div', { class: 'persona-archetype', text: humanArchetype(p.archetype) }),
     );
@@ -890,7 +951,7 @@ function buildPersonaList() {
     if (hasMore) {
       const details = el('details', { class: 'persona-more' });
       const summary = el('summary', { class: 'persona-more-summary' });
-      summary.appendChild(document.createTextNode('More about this persona'));
+      summary.appendChild(document.createTextNode(t('personaCard.more', state.lang)));
       details.appendChild(summary);
       if (bestFor) details.appendChild(el('div', { class: 'persona-best', text: bestFor }));
       if (p.narrative)
@@ -944,21 +1005,12 @@ function buildPersonaList() {
         attrs: { role: 'listitem' },
         dataset: { personaId: id },
         onClick: (e) => {
-          // Chips and the disclosure handle their own clicks. The card-level
-          // click only fires when the user clicks empty card chrome.
-          if (e.target.closest('.stress-chip, .persona-jtbd-chip, .persona-more')) return;
-          state.personaId = id;
-          state.navAccountCollapsed.clear();
-          // PR #5 — banking persona-switch now lands on the Underwriting
-          // Summary by default; insurance flow has its own per-domain
-          // default endpoint resolved in rebuildAndRender.
-          state.endpoint = UNDERWRITING_PSEUDO;
-          state.selectedAccountId = null;
-          rebuildAndRender();
-          // PR-11 — emit EXP-21 persona_load on every card-click activation
-          // (previously this fired from the persona-select change listener;
-          // the dropdown is gone).
-          emitPersonaLoad();
+          // Chips, the disclosure, and the name button handle their own
+          // clicks. The card-level click only fires when the user clicks
+          // empty card chrome (larger mouse target, C-A1).
+          if (e.target.closest('.stress-chip, .persona-jtbd-chip, .persona-more, .persona-name'))
+            return;
+          activatePersona();
         },
       },
       personaAvatarEl(id, p, 'sm'),
@@ -971,7 +1023,7 @@ function buildPersonaList() {
     list.appendChild(
       el('div', {
         class: 'persona-empty',
-        text: 'No personas cover this stress term yet. Clear the filter to see the full library.',
+        text: t('personaCard.emptyFiltered', state.lang),
       }),
     );
   }
@@ -1219,8 +1271,8 @@ function attachEventHandlers() {
   });
   // PR #6 — unified Export popover replaces the JSON / CSV / Tarball /
   // Embed button row and the toolbar Share button.
-  document.getElementById('export-toggle')?.addEventListener('click', () => {
-    exportPopover.open();
+  document.getElementById('export-toggle')?.addEventListener('click', (e) => {
+    exportPopover.open(e.currentTarget);
   });
   document.getElementById('tour-btn')?.addEventListener('click', () => startTour());
   document.getElementById('find-btn')?.addEventListener('click', openFind);
@@ -1251,77 +1303,29 @@ function setPersona(personaId, lfi) {
 
 function exportContext() {
   return {
-    personaId: state.personaId,
+    personaId:
+      state.bundle?.personaId ??
+      state.data.personas[state.personaId]?.persona_id ??
+      state.personaId,
+    recipeHash: state.data.personas[state.personaId]?._custom?.recipeHash ?? null,
     lfi: state.lfi,
     seed: state.seed,
     specVersion: state.spec?.specVersion,
     specSha: state.spec?.pinSha,
-    retrievedAt: new Date().toISOString(),
+    retrievedAt: state.spec?.retrievedAt,
+    referenceDate: REFERENCE_DATE,
+    specVersions: Object.fromEntries(
+      Object.entries(state.data.buildInfo.specProvenance).map(([d, p]) => [d, p.version]),
+    ),
+    specProvenance: state.data.buildInfo.specProvenance,
   };
 }
 
-function activeEnvelopeKey() {
-  if (state.endpoint === '/accounts' || state.endpoint === '/parties') return state.endpoint;
-  if (state.selectedAccountId) {
-    const tail = state.endpoint.replace('{AccountId}', state.selectedAccountId);
-    return tail;
-  }
-  return state.endpoint;
-}
-
-function exportActiveJson() {
-  if (!state.bundle) return;
-  const ctx = exportContext();
-  const envelopes = envelopesFromBundle(state.bundle, ctx);
-  const key = activeEnvelopeKey();
-  const env = envelopes[key] ?? envelopes[state.endpoint];
-  if (!env) return;
-  const fname = `${state.personaId}-${state.lfi}-seed${state.seed}-${key.replace(/^\//, '').replace(/\//g, '__').replace(/[{}]/g, '') || 'root'}.json`;
-  downloadJson(env, fname);
-}
-
-// Picks the bundle key + filename suffix for the active endpoint's CSV.
-// Shared by exportActiveCsv (download) and buildActiveCsvString (popover).
-const RESOURCE_FOR_ENDPOINT = Object.freeze({
-  '/accounts': ['accounts', 'Account'],
-  '/accounts/{AccountId}': ['accounts', 'Account'],
-  '/accounts/{AccountId}/balances': ['balances', 'Balance'],
-  '/accounts/{AccountId}/transactions': ['transactions', 'Transaction'],
-  '/accounts/{AccountId}/standing-orders': ['standingOrders', 'StandingOrder'],
-  '/accounts/{AccountId}/direct-debits': ['directDebits', 'DirectDebit'],
-  '/accounts/{AccountId}/beneficiaries': ['beneficiaries', 'Beneficiary'],
-  '/accounts/{AccountId}/scheduled-payments': ['scheduledPayments', 'ScheduledPayment'],
-  '/accounts/{AccountId}/product': ['product', 'Product'],
-  '/accounts/{AccountId}/parties': ['parties', 'Party'],
-  '/parties': ['callingUserParty', 'Party'],
-  '/accounts/{AccountId}/statements': ['statements', 'Statements'],
-});
-function buildActiveCsvString() {
-  if (!state.bundle) return '';
-  const ctx = exportContext();
-  const [bundleKey] = RESOURCE_FOR_ENDPOINT[state.endpoint] ?? ['accounts', 'Account'];
-  let rows = state.bundle[bundleKey] ?? [];
-  if (state.selectedAccountId && Array.isArray(rows)) {
-    rows = rows.filter((r) => !r._accountId || r._accountId === state.selectedAccountId);
-  }
-  if (!Array.isArray(rows)) rows = [rows];
-  return csvForResource(rows, ctx);
-}
-function exportActiveCsv() {
-  if (!state.bundle) return;
-  const [, resourceLabel] = RESOURCE_FOR_ENDPOINT[state.endpoint] ?? ['accounts', 'Account'];
-  const csv = buildActiveCsvString();
-  const fname = `${state.personaId}-${state.lfi}-seed${state.seed}-${resourceLabel}.csv`;
-  downloadCsv(csv, fname);
-}
-
-function exportTarball() {
-  if (!state.bundle) return;
-  const ctx = exportContext();
-  downloadTarball(state.bundle, ctx, `${state.personaId}-${state.lfi}-seed${state.seed}.tar`);
-}
-
-function rebuildAndRender() {
+// C-P1 — async because the lazy generator entry may dynamic-import a
+// non-banking pipeline on first use. Callers are fire-and-forget except
+// init() and switchDomain(), which await so state.bundle exists before
+// anything downstream reads it.
+async function rebuildAndRender() {
   // 120ms fade — visually confirms "the data just changed" when the user
   // switches persona / LFI / seed. Ignored when prefers-reduced-motion is set
   // (the CSS rule kills the transition).
@@ -1330,7 +1334,7 @@ function rebuildAndRender() {
 
   const persona = state.data.personas[state.personaId];
   try {
-    state.bundle = buildBundle({
+    state.bundle = await buildBundle({
       persona,
       lfi: state.lfi,
       seed: state.seed,
@@ -1585,7 +1589,7 @@ async function switchDomain(newDomain) {
   const leavingAtm = state.domain === 'atm' && newDomain !== 'atm';
   state.domain = newDomain;
   state.activePersonas = Object.fromEntries(
-    Object.entries(state.data.personas).filter(([, p]) => p.domain === newDomain),
+    Object.entries(state.data.personas).filter(([, p]) => personaInDomain(p, newDomain)),
   );
   state.personaId = Object.keys(state.activePersonas)[0];
   state.navAccountCollapsed.clear();
@@ -1609,7 +1613,7 @@ async function switchDomain(newDomain) {
   buildJtbdRail();
   buildPersonaList();
   renderDomainChip();
-  rebuildAndRender();
+  await rebuildAndRender();
   emitPersonaLoad();
 }
 
@@ -1621,6 +1625,7 @@ function pushPermalink() {
   params.set('persona', state.personaId);
   params.set('lfi', state.lfi);
   params.set('seed', String(state.seed));
+  params.set('corpus', CORPUS_VERSION);
   // Slice 8: domain + preview round-trip. Banking is the default and stays
   // implicit so existing permalinks remain unchanged.
   if (state.domain && state.domain !== 'banking') params.set('domain', state.domain);
@@ -1966,7 +1971,12 @@ function renderPayloadUnsafe() {
   // (orthogonal to state.view: representation × cardinality). Either
   // branch can be re-entered without losing the other axis.
   if (state.compareMode) {
-    renderCompareView(body);
+    // C-P1/C-P2 — async: compare bundles come from the lazy generator entry
+    // with a small memo cache. The surrounding try/catch can't see async
+    // failures, so surface them explicitly.
+    renderCompareView(body).catch((err) => {
+      console.error('renderCompareView failed', err);
+    });
     return;
   }
 
@@ -2083,15 +2093,39 @@ function renderPayloadUnsafe() {
 
   // Cross-link match counts (EXP-12) — pre-computed per row so the header
   // affordance reads "→ N matching transactions" instead of a quiet hover.
+  // C-P4 — instead of running the raw match() predicate over every
+  // (visible row × account transaction) pair (~600k regex/lowercase calls
+  // per render on /standing-orders for HNW personas), pre-lowercase each
+  // transaction's text ONCE and bucket by TransactionType; each row then
+  // compiles its needle once and scans only its type bucket.
   const jumpFrom = jumpFromForActiveEndpoint();
   const linkedColumn = jumpFrom != null;
   const matchCountByRow = new Map();
   if (linkedColumn) {
-    const accTx = (state.bundle.transactions ?? []).filter(
-      (t) => t._accountId === state.selectedAccountId,
-    );
+    const prepared = [];
+    for (const tx of state.bundle.transactions ?? []) {
+      if (tx._accountId !== state.selectedAccountId) continue;
+      prepared.push({
+        type: tx.TransactionType,
+        ref: tx.TransactionReference ?? '',
+        info: (tx.TransactionInformation ?? '').toLowerCase(),
+      });
+    }
+    const byType = new Map();
+    for (const p of prepared) {
+      let bucket = byType.get(p.type);
+      if (!bucket) byType.set(p.type, (bucket = []));
+      bucket.push(p);
+    }
     for (const r of visible) {
-      const n = accTx.filter((t) => jumpFrom.match(t, r)).length;
+      const predicate = jumpFrom.prepare(r);
+      if (!predicate) {
+        matchCountByRow.set(r, 0);
+        continue;
+      }
+      const pool = jumpFrom.txType ? (byType.get(jumpFrom.txType) ?? []) : prepared;
+      let n = 0;
+      for (const p of pool) if (predicate(p)) n += 1;
       matchCountByRow.set(r, n);
     }
   }
@@ -2105,13 +2139,31 @@ function renderPayloadUnsafe() {
   const table = el('table');
   const headRow = el('tr');
   for (const k of allKeys) {
-    const th = el('th');
+    // C-A2 — column-header semantics for screen-reader table navigation.
+    const th = el('th', { attrs: { scope: 'col' }, dataset: { col: k } });
     const f = fieldsByName.get(k);
     if (f) th.dataset.status = f.status; // drives the status-stripe colour
     if (isTransactions) {
+      // C-A2 — keyboard-accessible sort: the header is focusable, Enter /
+      // Space toggles, and aria-sort reflects the active sort state (set
+      // only on the sorted column per the ARIA authoring guidance).
       th.classList.add('sortable');
-      if (state.txSort.column === k) th.classList.add(`sort-${state.txSort.dir}`);
+      th.setAttribute('tabindex', '0');
+      if (state.txSort.column === k) {
+        th.classList.add(`sort-${state.txSort.dir}`);
+        th.setAttribute('aria-sort', state.txSort.dir === 'asc' ? 'ascending' : 'descending');
+      }
       th.addEventListener('click', () => toggleSort(k));
+      th.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter' || ev.key === ' ') {
+          ev.preventDefault();
+          toggleSort(k);
+          // toggleSort re-renders the table (destroying this th) — restore
+          // focus to the same column's rebuilt header so keyboard flow
+          // continues where it was.
+          document.querySelector(`.payload-rendered th[data-col="${CSS.escape(k)}"]`)?.focus();
+        }
+      });
     }
     if (f) {
       th.appendChild(statusPill(f.status));
@@ -2565,7 +2617,7 @@ function renderUseInDemoPanel() {
   const personaId = state.personaId;
   const lfi = state.lfi;
   const seed = state.seed;
-  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const origin = typeof window !== 'undefined' ? deploymentBase() : '';
   const slugBase =
     typeof window !== 'undefined'
       ? (
@@ -2601,7 +2653,9 @@ j = load_journey('${personaId}', lfi='${lfi}', seed=${seed})
 # j['endpoints']['/accounts'], j['endpoints']['/parties'],
 # j['endpoints']['/accounts/{AccountId}/transactions'], ...`;
 
-  const curlSnippet = `curl -fsS '${manifestUrl}'   # discover personas, LFIs, endpoints, version pin
+  const curlSnippet = !publishedScenario(state.fixtureManifest, state)
+    ? 'This seed is generated locally. Download JSON, or run npm run mock and use its local HTTP endpoint.'
+    : `curl -fsS '${manifestUrl}'   # discover personas, LFIs, endpoints, version pin
 curl -fsS '${curlUrl}'`;
 
   const details = el('details', {
@@ -2656,7 +2710,7 @@ curl -fsS '${curlUrl}'`;
     },
     {
       eyebrow: 'Path 4 · raw HTTPS — Swift / Kotlin / Postman / curl / .NET',
-      hint: 'Static JSON, CORS-permissive. Pin manifest.json.version for stability.',
+      hint: 'Static JSON for published seeds. Archive/package versions support reproducible replay; current URLs may change.',
       snippet: curlSnippet,
       copyLabel: 'Copy curl',
       doneLabel: 'curl snippet copied.',
@@ -2675,9 +2729,9 @@ curl -fsS '${curlUrl}'`;
       class: 'demo-row-copy',
       attrs: { type: 'button' },
       text: r.copyLabel,
-      onClick: () => {
-        copyToClipboard(r.snippet, r.doneLabel);
-        track('share', { kind: r.kind });
+      onClick: async () => {
+        const result = await copyToClipboard(r.snippet, r.doneLabel);
+        if (result?.status === 'confirmed-success') track('share', { kind: r.kind });
       },
     });
     row.appendChild(btn);
@@ -2689,12 +2743,27 @@ curl -fsS '${curlUrl}'`;
 
 // ---- EXP-12 bidirectional links ----------------------------------------------------------
 
+// Each descriptor carries two match paths with identical semantics:
+//   - match(tx, record): the raw per-pair predicate, used by the click-through
+//     (crossLinkToTransactions) where only one record is evaluated.
+//   - txType + prepare(record): the indexed path (C-P4) used by the visible-row
+//     count loop — `prepare` compiles the record's needle(s) once and returns a
+//     predicate over pre-lowercased {type, ref, info} entries (or null when the
+//     record can never match); `txType` names the TransactionType bucket to
+//     scan (null = all).
 function jumpFromForActiveEndpoint() {
   switch (state.endpoint) {
     case '/accounts/{AccountId}/standing-orders':
       return {
         kind: 'standing-order',
         label: (so) => `standing order "${so.Reference || so.StandingOrderId}"`,
+        txType: 'LocalBankTransfer',
+        prepare: (so) => {
+          if (!so.Reference) return null;
+          const ref = String(so.Reference).toUpperCase().slice(0, 6);
+          const needle = String(so.Reference).replace(/_/g, ' ').toLowerCase();
+          return (p) => p.ref.startsWith(ref) || p.info.includes(needle);
+        },
         match: (tx, so) => {
           if (!so.Reference) return false;
           const ref = String(so.Reference).toUpperCase().slice(0, 6);
@@ -2711,6 +2780,11 @@ function jumpFromForActiveEndpoint() {
       return {
         kind: 'direct-debit',
         label: (dd) => `direct debit "${dd.Name || dd.DirectDebitId}"`,
+        txType: 'BillPayments',
+        prepare: (dd) => {
+          const purpose = String(dd.Name || '').toLowerCase();
+          return (p) => p.info.includes(purpose);
+        },
         match: (tx, dd) => {
           const purpose = String(dd.Name || '').toLowerCase();
           return (
@@ -2723,6 +2797,12 @@ function jumpFromForActiveEndpoint() {
       return {
         kind: 'beneficiary',
         label: (b) => `beneficiary "${b.CreditorAccount?.[0]?.Name || b.BeneficiaryId}"`,
+        txType: null,
+        prepare: (b) => {
+          const ben = b.CreditorAccount?.[0]?.Name?.toLowerCase();
+          if (!ben) return null;
+          return (p) => p.info.includes(ben);
+        },
         match: (tx, b) => {
           const ben = b.CreditorAccount?.[0]?.Name?.toLowerCase();
           if (!ben) return false;

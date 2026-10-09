@@ -116,18 +116,23 @@ export function createFindBox(deps) {
 
   function openFind() {
     if (document.getElementById('find-overlay')) return;
+    const lang = state.lang;
     const overlay = el('div', {
       class: 'find-overlay',
-      attrs: { id: 'find-overlay', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Find' },
+      attrs: {
+        id: 'find-overlay',
+        role: 'dialog',
+        'aria-modal': 'true',
+        'aria-label': t('find.dialogLabel', lang),
+      },
     });
     const card = el('div', { class: 'find-card' });
-    const lang = state.lang;
     const input = el('input', {
       class: 'find-input',
       attrs: {
         type: 'search',
         placeholder: t('find.placeholder', lang),
-        'aria-label': 'Find input',
+        'aria-label': t('find.inputLabel', lang),
         autocomplete: 'off',
       },
     });
@@ -142,7 +147,7 @@ export function createFindBox(deps) {
     const right = el('span');
     right.appendChild(document.createTextNode(t('find.openWith', lang)));
     right.appendChild(el('kbd', { text: '⌘K' }));
-    right.appendChild(document.createTextNode(' · close with '));
+    right.appendChild(document.createTextNode(t('find.closeWith', lang)));
     right.appendChild(el('kbd', { text: 'Esc' }));
     hint.appendChild(left);
     hint.appendChild(right);
@@ -168,9 +173,7 @@ export function createFindBox(deps) {
         const empty = el('li', {
           class: 'find-empty',
           text:
-            input.value.trim().length === 0
-              ? 'Try: TransactionType · Payroll · MerchantCategoryCode · Sara · multi_currency · expat'
-              : t('find.noMatches', lang),
+            input.value.trim().length === 0 ? t('find.tryHint', lang) : t('find.noMatches', lang),
         });
         ul.appendChild(empty);
         return;

@@ -10,41 +10,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import yaml from 'js-yaml';
 import Ajv from 'ajv';
-import addFormats from 'ajv-formats';
+import { createValidators, stripAnnotations } from '../tools/schema-validator.mjs';
 import { buildBundle } from '../src/generator/index.js';
 import { envelopesFromBundle } from '../src/ui/export.js';
 import { loadPersonasByDomain, loadAllPools, repoRoot } from '../tools/load-fixtures.mjs';
 
 const SPEC_PATH = path.join(repoRoot, 'spec/uae-atm-openapi.yaml');
 const PARSED_PATH = path.join(repoRoot, 'dist/SPEC.atm.json');
-
-function compileSchema(spec, refPath) {
-  const ajv = new Ajv({ strict: false, allErrors: true, allowUnionTypes: true });
-  addFormats(ajv);
-  const definitions = JSON.parse(JSON.stringify(spec.components.schemas));
-  const rewrite = (node) => {
-    if (Array.isArray(node)) return node.forEach(rewrite);
-    if (node && typeof node === 'object') {
-      if (typeof node.$ref === 'string' && node.$ref.startsWith('#/components/schemas/')) {
-        node.$ref = `#/definitions/${node.$ref.slice('#/components/schemas/'.length)}`;
-      }
-      // Strip OAS additionalProperties:false so the sandbox's envelope
-      // wrapping (Links/Meta + _watermark, _persona, _lfi, etc.) doesn't
-      // trip strict-object validation — same convention as the banking
-      // and insurance spec-validation suites.
-      if (node.additionalProperties === false) delete node.additionalProperties;
-      for (const k of Object.keys(node)) rewrite(node[k]);
-    }
-  };
-  rewrite(definitions);
-
-  const targetName = refPath.replace('#/components/schemas/', '');
-  return ajv.compile({
-    $schema: 'http://json-schema.org/draft-07/schema#',
-    definitions,
-    $ref: `#/definitions/${targetName}`,
-  });
-}
 
 const PROFILES = ['rich', 'median', 'sparse'];
 
@@ -54,9 +26,7 @@ describe('atm spec validation — /atms × persona × LFI', () => {
   const personas = loadPersonasByDomain('atm');
   const pools = loadAllPools();
   const now = new Date(Date.UTC(2026, 3, 1, 0, 0, 0));
-  const validators = Object.fromEntries(
-    Object.entries(parsed.endpoints).map(([p, e]) => [p, compileSchema(spec, e.schemaRef)]),
-  );
+  const validators = createValidators(fs.readFileSync(SPEC_PATH, 'utf8'));
 
   // Sanity — at least one ATM persona is loaded.
   it('atm domain has at least one persona', () => {
@@ -82,12 +52,12 @@ describe('atm spec validation — /atms × persona × LFI', () => {
         // same convention as the banking / insurance suites. `Data`
         // + `Meta` are the only spec-required keys.
         const { Data, Meta } = env;
-        const wireOnly = { Data, Meta };
-        const ok = validators['/atms'](wireOnly);
+        const wireOnly = stripAnnotations(env);
+        const ok = validators.forEndpoint('/atms')(wireOnly);
         if (!ok) {
           throw new Error(
             `AJV failures for ${personaId} × ${lfi}: ` +
-              JSON.stringify(validators['/atms'].errors, null, 2),
+              JSON.stringify(validators.forEndpoint('/atms').errors, null, 2),
           );
         }
 

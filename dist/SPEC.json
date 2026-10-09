@@ -1,10 +1,10 @@
 {
   "specVersion": "v2.1-errata2",
   "openapiVersion": "3.0.0",
-  "pinSha": "52caa147fa754f6b898757e4c39976574b755d66",
-  "retrievedAt": "2026-05-20T02:41:46Z",
+  "pinSha": "a3c8b8bf22e080046a8e0fbd9933f57431604155",
+  "retrievedAt": "2026-10-08T00:00:00Z",
   "upstreamRepo": "Nebras-Open-Finance/api-specs",
-  "upstreamPath": "dist/standards/v2.1/uae-account-information-openapi.yaml",
+  "upstreamPath": "dist/standards/v2.1-errata2/uae-account-information-openapi.yaml",
   "inScopePaths": [
     "/accounts",
     "/accounts/{AccountId}",
@@ -117,7 +117,7 @@
     "BookingDateTime": 2230,
     "ValueDateTime": 2242,
     "TransactionInformation": 2262,
-    "AccountId": 6144,
+    "AccountId": 6142,
     "StatusUpdateDateTime": 2274,
     "AEAccountStatusCode": 2284,
     "ActiveOrHistoricCurrencyCode_0": 2322,
@@ -159,124 +159,124 @@
     "AEReadTransaction": 3155,
     "AETransactionCardInstrument": 3182,
     "AESupplementaryData": 3223,
-    "AEBranchAndFinancialInstitutionIdentification6_2": 3228,
-    "AETransaction": 3254,
-    "AEAccountId": 3347,
-    "AEAccountArrayId": 3392,
-    "AEPatchConsentSigned": 3441,
-    "AEPatchConsent": 3451,
-    "AEConsentsByBaseConsentIdResponse": 3469,
-    "AEReadBalance": 3473,
-    "AEBalance": 3501,
-    "AEReadScheduledPayment": 3582,
-    "AEScheduledPayment": 3609,
-    "TerminalId": 3641,
-    "BillDetails": 3646,
-    "PatchConsentStatus": 3687,
-    "AERevokedBy": 3694,
-    "AEGeoLocation": 3710,
-    "AEPaymentPurposeCode": 3724,
-    "AEProductCharges": 3732,
-    "AEExternalAccountRoleCode": 3813,
-    "AEExternalPartyTypeCode": 3863,
-    "AEPartyCalendarType": 3875,
-    "AEPartyIdentityAssurance2": 3886,
-    "AEPartyIdentityAssurance4": 3929,
-    "AEPartyIdentityCheckDetail": 3966,
-    "AEPartyIdentityEvidenceAttachment": 3997,
-    "AEPartyIdentityEvidenceAttachments": 4022,
-    "AEPartyIdentityEvidenceTypeDocument": 4036,
-    "AEPartyIdentityEvidenceTypeElectronicRecord": 4060,
-    "AEReadParty2": 4082,
-    "AEReadParty2Data": 4097,
-    "AEReadParty2Signed": 4111,
-    "AEReadParty4": 4139,
-    "AEReadParty4Data": 4154,
-    "AEReadParty4Signed": 4162,
-    "AssuranceDetails": 4190,
-    "AssuranceProcess": 4209,
-    "Claims": 4234,
-    "CorporateClaims": 4323,
-    "CountryCode": 4365,
-    "DocumentEvidenceDetails": 4375,
-    "DocumentEvidenceDetailsIssuer": 4404,
-    "DocumentEvidenceDetailsType": 4427,
-    "DocumentEvidenceType": 4439,
-    "DocumentEvidenceVerifier": 4443,
-    "ElectronicRecordEvidenceType": 4461,
-    "ElectronicRecordProperties": 4465,
-    "ElectronicRecordSourceProperties": 4494,
-    "ElectronicRecordType": 4518,
-    "EvidenceMetadata": 4526,
-    "EvidenceRef": 4537,
-    "LinksResource": 4550,
-    "TrustFrameworkCode": 4567,
-    "VerifiedClaim": 4589,
-    "VerifiedClaimVerification": 4620,
-    "AESubTransactionType": 4667,
-    "AEBalanceCategory": 4689,
-    "AEShariaFlag": 4698,
-    "AEAmountWithCategorization": 4702,
-    "AEBalanceWithCategorization": 4721,
-    "AEStatements": 4744,
-    "AEDuration": 4922,
-    "AEProductAssetBackedProducts": 4929,
-    "AEProductRewardsBenefitsBaseProperties": 5111,
-    "AEProductRewardsBenefitsCashbackProperties": 5124,
-    "AEProductRewardsBenefitsPointsProperties": 5159,
-    "AEProductRewardsBenefitsComplimentaryServicesProperties": 5189,
-    "AEProductRewardsBenefitsDiscountsProperties": 5209,
-    "AEProductRewardsBenefitsLifestyleProperties": 5229,
-    "AEProductRewardsBenefitsProtectionProperties": 5249,
-    "AEProductRewardsBenefitsOtherProperties": 5269,
-    "AEProductBenefitRewardsTypes": 5289,
-    "AEProductRewardsBenefitsProperties": 5309,
-    "AEProductInterestCalculationMethod": 5316,
-    "AEProductRateFrequencyCodes": 5324,
-    "AEProductCalculationFrequency": 5332,
-    "AEProductApplicationFrequency": 5337,
-    "AEProductInterestCalculationMethodProperties": 5343,
-    "AEProductProfitCalculationMethodProperties": 5349,
-    "AEProductFinanceRateProperties": 5355,
-    "AEProductVariableRateProperties": 5473,
-    "AEProductFixedRateProperties": 5503,
-    "AEProductVariableInterestRateProperties": 5522,
-    "AEProductVariableProfitRateProperties": 5538,
-    "AEProductFixedInterestRateProperties": 5554,
-    "AEProductFixedProfitRateProperties": 5570,
-    "AEProductFixedRateEndProperties": 5586,
-    "AEProductVariableTermProperties": 5593,
-    "AEProductHybridInterestRateProperties": 5601,
-    "AEProductHybridProfitRateProperties": 5627,
-    "AEProductFinanceRates": 5653,
-    "AEProductDepositRates": 5672,
-    "AEBankDataSharingRichAuthorizationRequests.AEBankDataSharingFromDate": 5781,
-    "AEBankDataSharingRichAuthorizationRequests.AEBankDataSharingToDate": 5793,
-    "AEConsentStatus.AEBankDataSharingOpenFinanceBilling": 5806,
-    "AEBankDataSharingRichAuthorizationRequests.OnBehalfOf": 5838,
-    "AEConsentStatus.AEBankDataSharingConsentPropertiesV21": 5858,
-    "AEConsentStatus.AECreationDateTime": 5929,
-    "AEPushedAuthorizationRequests.AEBaseConsentId": 5938,
-    "AEPushedAuthorizationRequests.AEConsentExpirationDateTime": 5949,
-    "AEPushedAuthorizationRequests.AEConsentId": 5958,
-    "AEConsentStatus.AEConsentStatusCodes": 5963,
-    "AEConsentStatus.AEStatusUpdateDateTime": 5985,
-    "AEBankDataSharingConsentPermissionCodes": 5994,
-    "AEBankDataSharing.AEExternalAccountSubTypeCode": 6019,
-    "AEBankDataSharing.AEExternalAccountTypeCode": 6039,
-    "AEConsentStatus.AERevokedByCodes": 6046,
-    "AEStandardModels.AEEventNotification": 6062,
-    "AEStandardModels.AELinksSelf": 6078,
-    "AEStandardModels.AEMeta": 6087,
-    "AEStandardModels.AESelfLink": 6091,
-    "Authorization": 6096,
-    "ConsentId": 6137,
-    "FromBookingDateTimeParam": 6151,
-    "ToBookingDateTimeParam": 6161,
-    "baseConsentId": 6171,
-    "TPPOAuth2Security": 6185,
-    "UserOAuth2Security": 6200,
-    "LFIWebhookSecurity": 6217
+    "AEBranchAndFinancialInstitutionIdentification6_2": 3226,
+    "AETransaction": 3252,
+    "AEAccountId": 3345,
+    "AEAccountArrayId": 3390,
+    "AEPatchConsentSigned": 3439,
+    "AEPatchConsent": 3449,
+    "AEConsentsByBaseConsentIdResponse": 3467,
+    "AEReadBalance": 3471,
+    "AEBalance": 3499,
+    "AEReadScheduledPayment": 3580,
+    "AEScheduledPayment": 3607,
+    "TerminalId": 3639,
+    "BillDetails": 3644,
+    "PatchConsentStatus": 3685,
+    "AERevokedBy": 3692,
+    "AEGeoLocation": 3708,
+    "AEPaymentPurposeCode": 3722,
+    "AEProductCharges": 3730,
+    "AEExternalAccountRoleCode": 3811,
+    "AEExternalPartyTypeCode": 3861,
+    "AEPartyCalendarType": 3873,
+    "AEPartyIdentityAssurance2": 3884,
+    "AEPartyIdentityAssurance4": 3927,
+    "AEPartyIdentityCheckDetail": 3964,
+    "AEPartyIdentityEvidenceAttachment": 3995,
+    "AEPartyIdentityEvidenceAttachments": 4020,
+    "AEPartyIdentityEvidenceTypeDocument": 4034,
+    "AEPartyIdentityEvidenceTypeElectronicRecord": 4058,
+    "AEReadParty2": 4080,
+    "AEReadParty2Data": 4095,
+    "AEReadParty2Signed": 4109,
+    "AEReadParty4": 4137,
+    "AEReadParty4Data": 4152,
+    "AEReadParty4Signed": 4160,
+    "AssuranceDetails": 4188,
+    "AssuranceProcess": 4207,
+    "Claims": 4232,
+    "CorporateClaims": 4321,
+    "CountryCode": 4363,
+    "DocumentEvidenceDetails": 4373,
+    "DocumentEvidenceDetailsIssuer": 4402,
+    "DocumentEvidenceDetailsType": 4425,
+    "DocumentEvidenceType": 4437,
+    "DocumentEvidenceVerifier": 4441,
+    "ElectronicRecordEvidenceType": 4459,
+    "ElectronicRecordProperties": 4463,
+    "ElectronicRecordSourceProperties": 4492,
+    "ElectronicRecordType": 4516,
+    "EvidenceMetadata": 4524,
+    "EvidenceRef": 4535,
+    "LinksResource": 4548,
+    "TrustFrameworkCode": 4565,
+    "VerifiedClaim": 4587,
+    "VerifiedClaimVerification": 4618,
+    "AESubTransactionType": 4665,
+    "AEBalanceCategory": 4687,
+    "AEShariaFlag": 4696,
+    "AEAmountWithCategorization": 4700,
+    "AEBalanceWithCategorization": 4719,
+    "AEStatements": 4742,
+    "AEDuration": 4920,
+    "AEProductAssetBackedProducts": 4927,
+    "AEProductRewardsBenefitsBaseProperties": 5109,
+    "AEProductRewardsBenefitsCashbackProperties": 5122,
+    "AEProductRewardsBenefitsPointsProperties": 5157,
+    "AEProductRewardsBenefitsComplimentaryServicesProperties": 5187,
+    "AEProductRewardsBenefitsDiscountsProperties": 5207,
+    "AEProductRewardsBenefitsLifestyleProperties": 5227,
+    "AEProductRewardsBenefitsProtectionProperties": 5247,
+    "AEProductRewardsBenefitsOtherProperties": 5267,
+    "AEProductBenefitRewardsTypes": 5287,
+    "AEProductRewardsBenefitsProperties": 5307,
+    "AEProductInterestCalculationMethod": 5314,
+    "AEProductRateFrequencyCodes": 5322,
+    "AEProductCalculationFrequency": 5330,
+    "AEProductApplicationFrequency": 5335,
+    "AEProductInterestCalculationMethodProperties": 5341,
+    "AEProductProfitCalculationMethodProperties": 5347,
+    "AEProductFinanceRateProperties": 5353,
+    "AEProductVariableRateProperties": 5471,
+    "AEProductFixedRateProperties": 5501,
+    "AEProductVariableInterestRateProperties": 5520,
+    "AEProductVariableProfitRateProperties": 5536,
+    "AEProductFixedInterestRateProperties": 5552,
+    "AEProductFixedProfitRateProperties": 5568,
+    "AEProductFixedRateEndProperties": 5584,
+    "AEProductVariableTermProperties": 5591,
+    "AEProductHybridInterestRateProperties": 5599,
+    "AEProductHybridProfitRateProperties": 5625,
+    "AEProductFinanceRates": 5651,
+    "AEProductDepositRates": 5670,
+    "AEBankDataSharingRichAuthorizationRequests.AEBankDataSharingFromDate": 5779,
+    "AEBankDataSharingRichAuthorizationRequests.AEBankDataSharingToDate": 5791,
+    "AEConsentStatus.AEBankDataSharingOpenFinanceBilling": 5804,
+    "AEBankDataSharingRichAuthorizationRequests.OnBehalfOf": 5836,
+    "AEConsentStatus.AEBankDataSharingConsentPropertiesV21": 5856,
+    "AEConsentStatus.AECreationDateTime": 5927,
+    "AEPushedAuthorizationRequests.AEBaseConsentId": 5936,
+    "AEPushedAuthorizationRequests.AEConsentExpirationDateTime": 5947,
+    "AEPushedAuthorizationRequests.AEConsentId": 5956,
+    "AEConsentStatus.AEConsentStatusCodes": 5961,
+    "AEConsentStatus.AEStatusUpdateDateTime": 5983,
+    "AEBankDataSharingConsentPermissionCodes": 5992,
+    "AEBankDataSharing.AEExternalAccountSubTypeCode": 6017,
+    "AEBankDataSharing.AEExternalAccountTypeCode": 6037,
+    "AEConsentStatus.AERevokedByCodes": 6044,
+    "AEStandardModels.AEEventNotification": 6060,
+    "AEStandardModels.AELinksSelf": 6076,
+    "AEStandardModels.AEMeta": 6085,
+    "AEStandardModels.AESelfLink": 6089,
+    "Authorization": 6094,
+    "ConsentId": 6135,
+    "FromBookingDateTimeParam": 6149,
+    "ToBookingDateTimeParam": 6159,
+    "baseConsentId": 6169,
+    "TPPOAuth2Security": 6183,
+    "UserOAuth2Security": 6198,
+    "LFIWebhookSecurity": 6215
   },
   "bandOverrides": {
     "Account.Nickname": "Common",
@@ -3842,41 +3842,11 @@
           "description": "Describes how often the interest rate is calculated"
         },
         {
-          "path": "Data.Product[].FinanceRates.CalculationFrequency",
-          "name": "CalculationFrequency",
-          "type": "string",
-          "enum": [
-            "Monthly",
-            "Daily",
-            "Quarterly",
-            "Annually"
-          ],
-          "status": "optional"
-        },
-        {
           "path": "Data.Product[].FinanceRates.ApplicationFrequency",
           "name": "ApplicationFrequency",
           "type": "unknown",
           "status": "optional",
           "description": "Describes how often the rate is charged, especially in relation to the conditions or triggers (e.g., monthly, one-off, or on each trigger)"
-        },
-        {
-          "path": "Data.Product[].FinanceRates.ApplicationFrequency",
-          "name": "ApplicationFrequency",
-          "type": "string",
-          "enum": [
-            "Monthly",
-            "Daily",
-            "Quarterly",
-            "Annually"
-          ],
-          "status": "optional"
-        },
-        {
-          "path": "Data.Product[].FinanceRates",
-          "name": "FinanceRates",
-          "type": "object",
-          "status": "optional"
         },
         {
           "path": "Data.Product[].FinanceRates.InterestCalculationMethod",
@@ -3889,13 +3859,6 @@
           ],
           "status": "optional",
           "description": "Method used to calculate interest or profit, depending on the product type"
-        },
-        {
-          "path": "Data.Product[].FinanceRates",
-          "name": "FinanceRates",
-          "type": "object",
-          "status": "optional",
-          "description": "Details of the annual percentage rate"
         },
         {
           "path": "Data.Product[].FinanceRates.AnnualPercentageRate",
@@ -3943,8 +3906,9 @@
           "path": "Data.Product[].FinanceRates.Tiers[].Name",
           "name": "Name",
           "type": "string",
-          "status": "mandatory",
-          "description": "The name of the tier."
+          "status": "conditional",
+          "description": "The name of the tier.",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Product[].FinanceRates.Tiers[].Unit",
@@ -3955,8 +3919,9 @@
             "LTV",
             "Rate"
           ],
-          "status": "mandatory",
-          "description": "The unit of the tier."
+          "status": "conditional",
+          "description": "The unit of the tier.",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Product[].FinanceRates.Tiers[].ApplicationMethod",
@@ -3994,16 +3959,18 @@
           "name": "Amount",
           "type": "string",
           "pattern": "^\\d{1,13}$|^\\d{1,13}\\.\\d{1,5}$",
-          "status": "mandatory",
-          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217."
+          "status": "conditional",
+          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217.",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Product[].FinanceRates.Tiers[].BalanceTierDetails[].MinimumTierValue.Currency",
           "name": "Currency",
           "type": "string",
           "pattern": "^[A-Z]{3,3}$",
-          "status": "mandatory",
-          "description": "A 3 character alphabetic code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'."
+          "status": "conditional",
+          "description": "A 3 character alphabetic code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'.",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Product[].FinanceRates.Tiers[].BalanceTierDetails[].MaximumTierValue",
@@ -4017,16 +3984,18 @@
           "name": "Amount",
           "type": "string",
           "pattern": "^\\d{1,13}$|^\\d{1,13}\\.\\d{1,5}$",
-          "status": "mandatory",
-          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217."
+          "status": "conditional",
+          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217.",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Product[].FinanceRates.Tiers[].BalanceTierDetails[].MaximumTierValue.Currency",
           "name": "Currency",
           "type": "string",
           "pattern": "^[A-Z]{3,3}$",
-          "status": "mandatory",
-          "description": "A 3 character alphabetic code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'."
+          "status": "conditional",
+          "description": "A 3 character alphabetic code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'.",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Product[].FinanceRates.Tiers[].BalanceTierDetails[].TierRate",
@@ -4135,8 +4104,9 @@
           "path": "Data.Product[].FinanceRates.Conditions[].Description",
           "name": "Description",
           "type": "string",
-          "status": "mandatory",
-          "description": "Description of the fee, including purpose and applicability"
+          "status": "conditional",
+          "description": "Description of the fee, including purpose and applicability",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Product[].FinanceRates.Notes",
@@ -4176,6 +4146,56 @@
           "type": "string",
           "status": "optional",
           "description": "The description of the additional information."
+        },
+        {
+          "path": "Data.Product[].FinanceRates.ProfitCalculationMethod",
+          "name": "ProfitCalculationMethod",
+          "type": "string",
+          "enum": [
+            "PrincipalBalance",
+            "OutstandingBalance",
+            "InitialDrawdownAmount"
+          ],
+          "status": "optional",
+          "description": "Method used to calculate interest or profit, depending on the product type"
+        },
+        {
+          "path": "Data.Product[].FinanceRates.BenchMark",
+          "name": "BenchMark",
+          "type": "string",
+          "status": "optional",
+          "description": "Rate benchmark."
+        },
+        {
+          "path": "Data.Product[].FinanceRates.BenchMarkRate",
+          "name": "BenchMarkRate",
+          "type": "number",
+          "status": "optional",
+          "description": "Benchmark rate value."
+        },
+        {
+          "path": "Data.Product[].FinanceRates.Margin",
+          "name": "Margin",
+          "type": "number",
+          "status": "optional",
+          "description": "Margin added to the base rate to determine the effective rate"
+        },
+        {
+          "path": "Data.Product[].FinanceRates.RateReviewFrequency",
+          "name": "RateReviewFrequency",
+          "type": "string",
+          "format": "duration",
+          "pattern": "^P(\\d+Y)?(\\d+M)?$",
+          "status": "optional",
+          "description": "A period of time implemented using ISO 8601 compatible duration format"
+        },
+        {
+          "path": "Data.Product[].FinanceRates.RateReviewNextDate",
+          "name": "RateReviewNextDate",
+          "type": "string",
+          "format": "date",
+          "status": "optional",
+          "description": "Date for next review of the rate."
         },
         {
           "path": "Data.Product[].DepositRates",
@@ -4703,13 +4723,6 @@
           "description": "Description of the reward or benefit program."
         },
         {
-          "path": "Data.Product[].RewardsBenefits[]",
-          "name": "RewardsBenefits[]",
-          "type": "object",
-          "status": "optional",
-          "description": "Cashback benefit or reward."
-        },
-        {
           "path": "Data.Product[].RewardsBenefits[].Type",
           "name": "Type",
           "type": "string",
@@ -4730,23 +4743,26 @@
           "name": "Amount",
           "type": "string",
           "pattern": "^\\d{1,13}$|^\\d{1,13}\\.\\d{1,5}$",
-          "status": "mandatory",
-          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217."
+          "status": "conditional",
+          "description": "A number of monetary units specified in an active currency where the unit of currency is explicit and compliant with ISO 4217.",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Product[].RewardsBenefits[].Balance.Currency",
           "name": "Currency",
           "type": "string",
           "pattern": "^[A-Z]{3,3}$",
-          "status": "mandatory",
-          "description": "A 3 character alphabetic code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'."
+          "status": "conditional",
+          "description": "A 3 character alphabetic code allocated to a currency under an international currency identification scheme, as described in the latest edition of the international standard ISO 4217 'Codes for the representation of currencies and funds'.",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Product[].RewardsBenefits[].RewardBasis",
           "name": "RewardBasis",
           "type": "array",
-          "status": "optional",
-          "description": "Details how cashback can be earned by the customer."
+          "status": "conditional",
+          "description": "Details how cashback can be earned by the customer.",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Product[].RewardsBenefits[].RewardBasis[]",
@@ -4770,6 +4786,22 @@
           ],
           "status": "optional",
           "description": "When the Cashback is paid to the customer."
+        },
+        {
+          "path": "Data.Product[].RewardsBenefits[].PointsType",
+          "name": "PointsType",
+          "type": "string",
+          "status": "conditional",
+          "description": "The type of Points awarded to the customer.",
+          "conditionalReason": "Required only in some schema alternatives"
+        },
+        {
+          "path": "Data.Product[].RewardsBenefits[].ExpiryDate",
+          "name": "ExpiryDate",
+          "type": "string",
+          "format": "date",
+          "status": "optional",
+          "description": "The date the Points will expire if not used."
         },
         {
           "path": "Links",
@@ -4978,7 +5010,7 @@
           "name": "AssuranceProcess",
           "type": "object",
           "status": "optional",
-          "description": "Determines the assurance process that was followed. This reflects how the evidence meets the requirements of the TrustFramework and AssuranceLevel. The factual record of the evidence and the procedures followed are recorded in the evidence element, this element is used to cross reference the evidence to the AssuranceLevel followed\nOpenID Connect for Identity Assurance 1.0: [https://openid.net/specs/openid-connect-4-identity-assurance-1_0.html#name-verification-element](https://openid.net/specs/openid-connect-4-identity-assurance-1_0.html#name-verification-element)                \n"
+          "description": "Determines the assurance process that was followed. This reflects how the evidence meets the requirements of the TrustFramework and AssuranceLevel. The factual record of the evidence and the procedures followed are recorded in the evidence element, this element is used to cross reference the evidence to the AssuranceLevel followed\nOpenID Connect for Identity Assurance 1.0: [https://openid.net/specs/openid-connect-4-identity-assurance-1_0.html#name-verification-element](https://openid.net/specs/openid-connect-4-identity-assurance-1_0.html#name-verification-element)\n"
         },
         {
           "path": "Data.Party[].VerifiedClaims[].Verification.AssuranceProcess.Policy",
@@ -5096,7 +5128,7 @@
           "name": "CheckDetails[]",
           "type": "object",
           "status": "optional",
-          "description": "Identifes the method used by PASP for checking the evidence for verification.\nRepresenting the checks done in relation to the evidence\nOpenID Connect for Identity Assurance 1.0: [https://openid.net/specs/openid-connect-4-identity-assurance-1_0.html#name-evidence-element](https://openid.net/specs/openid-connect-4-identity-assurance-1_0.html#name-evidence-element)                \n"
+          "description": "Identifes the method used by PASP for checking the evidence for verification.\nRepresenting the checks done in relation to the evidence\nOpenID Connect for Identity Assurance 1.0: [https://openid.net/specs/openid-connect-4-identity-assurance-1_0.html#name-evidence-element](https://openid.net/specs/openid-connect-4-identity-assurance-1_0.html#name-evidence-element)\n"
         },
         {
           "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.CheckDetails[].CheckMethod",
@@ -5138,8 +5170,9 @@
           "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.Verifier.Organization",
           "name": "Organization",
           "type": "string",
-          "status": "mandatory",
-          "description": "String denoting the organization which performed the verification on behalf of the OP."
+          "status": "conditional",
+          "description": "String denoting the organization which performed the verification on behalf of the OP.",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.Verifier.Txn",
@@ -5236,15 +5269,17 @@
           "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.DocumentDetails.Issuer.Name",
           "name": "Name",
           "type": "string",
-          "status": "mandatory",
-          "description": "Designation of the issuer of the document.\n"
+          "status": "conditional",
+          "description": "Designation of the issuer of the document.\n",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.DocumentDetails.Issuer.Address",
           "name": "Address",
           "type": "object",
-          "status": "mandatory",
-          "description": "Address properties based on ISO 20022 `PostalAddress27` definition"
+          "status": "conditional",
+          "description": "Address properties based on ISO 20022 `PostalAddress27` definition",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.DocumentDetails.Issuer.Address.AddressType",
@@ -5270,8 +5305,9 @@
           "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.DocumentDetails.Issuer.Address.AddressLine",
           "name": "AddressLine",
           "type": "array",
-          "status": "mandatory",
-          "description": "Information that locates and identifies a specific address for a transaction entry, that is presented in free format text."
+          "status": "conditional",
+          "description": "Information that locates and identifies a specific address for a transaction entry, that is presented in free format text.",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.DocumentDetails.Issuer.Address.AddressLine[]",
@@ -5365,29 +5401,33 @@
           "name": "Country",
           "type": "string",
           "pattern": "^[A-Z]{2}$",
-          "status": "mandatory",
-          "description": "The country associated with the address, represented using the ISO 3166-1 alpha-2 country code."
+          "status": "conditional",
+          "description": "The country associated with the address, represented using the ISO 3166-1 alpha-2 country code.",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.DocumentDetails.Issuer.CountryCode",
           "name": "CountryCode",
           "type": "object",
-          "status": "mandatory"
+          "status": "conditional",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.DocumentDetails.Issuer.CountryCode.CountryCode",
           "name": "CountryCode",
           "type": "string",
           "pattern": "^[A-Z]{2,2}$",
-          "status": "mandatory",
-          "description": "String denoting the country or supranational organization that issued the document as ISO 3166"
+          "status": "conditional",
+          "description": "String denoting the country or supranational organization that issued the document as ISO 3166",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.DocumentDetails.Issuer.Jurisdiction",
           "name": "Jurisdiction",
           "type": "string",
-          "status": "mandatory",
-          "description": "String containing the name of the region(s)/state(s)/province(s)/municipality(ies) that issuer has jurisdiction over (if this information is not common knowledge or derivable from the address)\n"
+          "status": "conditional",
+          "description": "String containing the name of the region(s)/state(s)/province(s)/municipality(ies) that issuer has jurisdiction over (if this information is not common knowledge or derivable from the address)\n",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.Attachments",
@@ -5437,6 +5477,236 @@
           "description": "Identifier referring to the transaction\n"
         },
         {
+          "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.Record",
+          "name": "Record",
+          "type": "object",
+          "status": "optional",
+          "description": "Representing the record used to perform the identity verification.\n"
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.Record.Type",
+          "name": "Type",
+          "type": "string",
+          "enum": [
+            "bank_account",
+            "mortgage_account",
+            "finance_account"
+          ],
+          "status": "conditional",
+          "description": "String denoting the type of electronic record\n",
+          "conditionalReason": "Required only in some schema alternatives"
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.Record.PersonalNumber",
+          "name": "PersonalNumber",
+          "type": "string",
+          "status": "conditional",
+          "description": "String representing an identifier that is assigned to the User and is not limited to being used in one record, for example a national identification number, personal identity number, citizen number, social security number, driver number, account number, customer number, licensee number, etc.\n",
+          "conditionalReason": "Required only in some schema alternatives"
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.Record.CalendarType",
+          "name": "CalendarType",
+          "type": "string",
+          "enum": [
+            "IslamicCalendar",
+            "GregorianCalendar"
+          ],
+          "status": "conditional",
+          "description": "The type of calendar used for the date of issuance and date of expiry in the document evidence\nAllowable values:\n\"Islamic Calendar\"\n\"Gregorian Calendar\"\nBoth calendars must follow YYYY-MM-DD\n",
+          "conditionalReason": "Required only in some schema alternatives"
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.Record.CreatedAt",
+          "name": "CreatedAt",
+          "type": "string",
+          "format": "date-time",
+          "status": "conditional",
+          "description": "All dates in the JSON payloads are represented in ISO 8601 date-time format. \nAll date-time fields in responses must include the timezone. An example is below:\n2017-04-05T10:43:07+00:00",
+          "conditionalReason": "Required only in some schema alternatives"
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.Record.DateOfExpiry",
+          "name": "DateOfExpiry",
+          "type": "string",
+          "format": "date-time",
+          "status": "conditional",
+          "description": "All dates in the JSON payloads are represented in ISO 8601 date-time format. \nAll date-time fields in responses must include the timezone. An example is below:\n2017-04-05T10:43:07+00:00",
+          "conditionalReason": "Required only in some schema alternatives"
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.Record.Source",
+          "name": "Source",
+          "type": "object",
+          "status": "conditional",
+          "description": "Information about the source of this record\n",
+          "conditionalReason": "Required only in some schema alternatives"
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.Record.Source.Name",
+          "name": "Name",
+          "type": "string",
+          "status": "conditional",
+          "description": "Designation of the source of the electronic_record\n",
+          "conditionalReason": "Required only in some schema alternatives"
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.Record.Source.Address",
+          "name": "Address",
+          "type": "object",
+          "status": "conditional",
+          "description": "Address properties based on ISO 20022 `PostalAddress27` definition",
+          "conditionalReason": "Required only in some schema alternatives"
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.Record.Source.Address.AddressType",
+          "name": "AddressType",
+          "type": "string",
+          "enum": [
+            "Billing",
+            "Business",
+            "Correspondence",
+            "DeliveryTo",
+            "MailTo",
+            "POBox",
+            "Postal",
+            "Permanent",
+            "Residential",
+            "Statement",
+            "Other"
+          ],
+          "status": "optional",
+          "description": "The type of address. Omitted if type not held."
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.Record.Source.Address.AddressLine",
+          "name": "AddressLine",
+          "type": "array",
+          "status": "conditional",
+          "description": "Information that locates and identifies a specific address for a transaction entry, that is presented in free format text.",
+          "conditionalReason": "Required only in some schema alternatives"
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.Record.Source.Address.AddressLine[]",
+          "name": "AddressLine[]",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 70,
+          "status": "optional"
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.Record.Source.Address.BuildingNumber",
+          "name": "BuildingNumber",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16,
+          "status": "optional",
+          "description": "The unit, apartment, or villa number within a building or community"
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.Record.Source.Address.BuildingName",
+          "name": "BuildingName",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "status": "optional",
+          "description": "Name of the building or house."
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.Record.Source.Address.Floor",
+          "name": "Floor",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 70,
+          "status": "optional",
+          "description": "Floor or storey within a building."
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.Record.Source.Address.StreetName",
+          "name": "StreetName",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "status": "optional",
+          "description": "The name of the street or road where the property is located."
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.Record.Source.Address.DistrictName",
+          "name": "DistrictName",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "status": "optional",
+          "description": "The district, community, or neighbourhood where the property is located."
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.Record.Source.Address.PostBox",
+          "name": "PostBox",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16,
+          "status": "optional",
+          "description": "The P.O. Box number assigned to the recipient for mail delivery."
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.Record.Source.Address.TownName",
+          "name": "TownName",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "status": "optional",
+          "description": "Name of a built-up area, such as a town or city."
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.Record.Source.Address.CountrySubDivision",
+          "name": "CountrySubDivision",
+          "type": "string",
+          "enum": [
+            "AbuDhabi",
+            "Ajman",
+            "Dubai",
+            "Fujairah",
+            "RasAlKhaimah",
+            "Sharjah",
+            "UmmAlQuwain"
+          ],
+          "status": "optional",
+          "description": "Country subdivision, such as state or province. This is the Emirate where the address is registered."
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.Record.Source.Address.Country",
+          "name": "Country",
+          "type": "string",
+          "pattern": "^[A-Z]{2}$",
+          "status": "conditional",
+          "description": "The country associated with the address, represented using the ISO 3166-1 alpha-2 country code.",
+          "conditionalReason": "Required only in some schema alternatives"
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.Record.Source.CountryCode",
+          "name": "CountryCode",
+          "type": "object",
+          "status": "conditional",
+          "conditionalReason": "Required only in some schema alternatives"
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.Record.Source.CountryCode.CountryCode",
+          "name": "CountryCode",
+          "type": "string",
+          "pattern": "^[A-Z]{2,2}$",
+          "status": "conditional",
+          "description": "String denoting the country or supranational organization that issued the document as ISO 3166",
+          "conditionalReason": "Required only in some schema alternatives"
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Verification.Evidence.Record.Source.Jurisdiction",
+          "name": "Jurisdiction",
+          "type": "string",
+          "status": "conditional",
+          "description": "String containing the name of the region(s) / state(s) / province(s) / municipality(ies) that source has jurisdiction over (if it's not common knowledge or derivable from the address)\n",
+          "conditionalReason": "Required only in some schema alternatives"
+        },
+        {
           "path": "Data.Party[].VerifiedClaims[].Claims",
           "name": "Claims",
           "type": "object",
@@ -5450,28 +5720,32 @@
           "enum": [
             "Person"
           ],
-          "status": "mandatory"
+          "status": "conditional",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party[].VerifiedClaims[].Claims.FullName",
           "name": "FullName",
           "type": "string",
-          "status": "mandatory",
-          "description": "The full name of the account holder, as it appears on the account, as a single string. Used where LFIs hold the account name as a single value."
+          "status": "conditional",
+          "description": "The full name of the account holder, as it appears on the account, as a single string. Used where LFIs hold the account name as a single value.",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party[].VerifiedClaims[].Claims.GivenName",
           "name": "GivenName",
           "type": "string",
-          "status": "mandatory",
-          "description": "Given name of the Party. Given name (also called forename) is used to differentiate from the surname or family name."
+          "status": "conditional",
+          "description": "Given name of the Party. Given name (also called forename) is used to differentiate from the surname or family name.",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party[].VerifiedClaims[].Claims.Surname",
           "name": "Surname",
           "type": "string",
-          "status": "mandatory",
-          "description": "Surname of the Party"
+          "status": "conditional",
+          "description": "Surname of the Party",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party[].VerifiedClaims[].Claims.MiddleName",
@@ -5491,16 +5765,18 @@
           "path": "Data.Party[].VerifiedClaims[].Claims.EmiratesId",
           "name": "EmiratesId",
           "type": "string",
-          "status": "mandatory",
-          "description": "Emirates ID number of the Party"
+          "status": "conditional",
+          "description": "Emirates ID number of the Party",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party[].VerifiedClaims[].Claims.EmiratesIdExpiryDate",
           "name": "EmiratesIdExpiryDate",
           "type": "string",
           "format": "date",
-          "status": "mandatory",
-          "description": "Emirates ID card expiry date"
+          "status": "conditional",
+          "description": "Emirates ID card expiry date",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party[].VerifiedClaims[].Claims.DateOfBirth",
@@ -5532,8 +5808,9 @@
           "path": "Data.Party[].VerifiedClaims[].Claims.ResidentialAddress",
           "name": "ResidentialAddress",
           "type": "object",
-          "status": "mandatory",
-          "description": "Address properties based on ISO 20022 `PostalAddress27` definition"
+          "status": "conditional",
+          "description": "Address properties based on ISO 20022 `PostalAddress27` definition",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party[].VerifiedClaims[].Claims.ResidentialAddress.AddressType",
@@ -5559,8 +5836,9 @@
           "path": "Data.Party[].VerifiedClaims[].Claims.ResidentialAddress.AddressLine",
           "name": "AddressLine",
           "type": "array",
-          "status": "mandatory",
-          "description": "Information that locates and identifies a specific address for a transaction entry, that is presented in free format text."
+          "status": "conditional",
+          "description": "Information that locates and identifies a specific address for a transaction entry, that is presented in free format text.",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party[].VerifiedClaims[].Claims.ResidentialAddress.AddressLine[]",
@@ -5654,23 +5932,9 @@
           "name": "Country",
           "type": "string",
           "pattern": "^[A-Z]{2}$",
-          "status": "mandatory",
-          "description": "The country associated with the address, represented using the ISO 3166-1 alpha-2 country code."
-        },
-        {
-          "path": "Data.Party[].VerifiedClaims[].Claims.ResidentialAddress",
-          "name": "ResidentialAddress",
-          "type": "object",
-          "status": "mandatory"
-        },
-        {
-          "path": "Data.Party[].VerifiedClaims[].Claims.ResidentialAddress.AddressType",
-          "name": "AddressType",
-          "type": "string",
-          "enum": [
-            "Residential"
-          ],
-          "status": "optional"
+          "status": "conditional",
+          "description": "The country associated with the address, represented using the ISO 3166-1 alpha-2 country code.",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party[].VerifiedClaims[].Claims.MobileNumber",
@@ -5740,6 +6004,205 @@
           "format": "date-time",
           "status": "optional",
           "description": "The date and time at which the claims were last updated, in ISO 8601 format"
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Claims.BusinessName",
+          "name": "BusinessName",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "status": "optional",
+          "description": "The name of the business"
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Claims.TradeLicenceNumber",
+          "name": "TradeLicenceNumber",
+          "type": "string",
+          "status": "optional",
+          "description": "Trade License Number of the business."
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Claims.TaxIdentificationNumber",
+          "name": "TaxIdentificationNumber",
+          "type": "string",
+          "status": "optional",
+          "description": "The tax identification number or VAT number for the company."
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Claims.DateOfIncorporation",
+          "name": "DateOfIncorporation",
+          "type": "string",
+          "format": "date",
+          "status": "optional",
+          "description": "The date the company was legally incorporated."
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Claims.CountryOfIncorporation",
+          "name": "CountryOfIncorporation",
+          "type": "string",
+          "status": "optional",
+          "description": "The country where the company is incorporated."
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Claims.CorporateAddress",
+          "name": "CorporateAddress",
+          "type": "object",
+          "status": "optional",
+          "description": "Address properties based on ISO 20022 `PostalAddress27` definition"
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Claims.CorporateAddress.AddressType",
+          "name": "AddressType",
+          "type": "string",
+          "enum": [
+            "Billing",
+            "Business",
+            "Correspondence",
+            "DeliveryTo",
+            "MailTo",
+            "POBox",
+            "Postal",
+            "Permanent",
+            "Residential",
+            "Statement",
+            "Other"
+          ],
+          "status": "optional",
+          "description": "The type of address. Omitted if type not held."
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Claims.CorporateAddress.AddressLine",
+          "name": "AddressLine",
+          "type": "array",
+          "status": "conditional",
+          "description": "Information that locates and identifies a specific address for a transaction entry, that is presented in free format text.",
+          "conditionalReason": "Required only in some schema alternatives"
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Claims.CorporateAddress.AddressLine[]",
+          "name": "AddressLine[]",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 70,
+          "status": "optional"
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Claims.CorporateAddress.BuildingNumber",
+          "name": "BuildingNumber",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16,
+          "status": "optional",
+          "description": "The unit, apartment, or villa number within a building or community"
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Claims.CorporateAddress.BuildingName",
+          "name": "BuildingName",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "status": "optional",
+          "description": "Name of the building or house."
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Claims.CorporateAddress.Floor",
+          "name": "Floor",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 70,
+          "status": "optional",
+          "description": "Floor or storey within a building."
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Claims.CorporateAddress.StreetName",
+          "name": "StreetName",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "status": "optional",
+          "description": "The name of the street or road where the property is located."
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Claims.CorporateAddress.DistrictName",
+          "name": "DistrictName",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "status": "optional",
+          "description": "The district, community, or neighbourhood where the property is located."
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Claims.CorporateAddress.PostBox",
+          "name": "PostBox",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16,
+          "status": "optional",
+          "description": "The P.O. Box number assigned to the recipient for mail delivery."
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Claims.CorporateAddress.TownName",
+          "name": "TownName",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "status": "optional",
+          "description": "Name of a built-up area, such as a town or city."
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Claims.CorporateAddress.CountrySubDivision",
+          "name": "CountrySubDivision",
+          "type": "string",
+          "enum": [
+            "AbuDhabi",
+            "Ajman",
+            "Dubai",
+            "Fujairah",
+            "RasAlKhaimah",
+            "Sharjah",
+            "UmmAlQuwain"
+          ],
+          "status": "optional",
+          "description": "Country subdivision, such as state or province. This is the Emirate where the address is registered."
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Claims.CorporateAddress.Country",
+          "name": "Country",
+          "type": "string",
+          "pattern": "^[A-Z]{2}$",
+          "status": "conditional",
+          "description": "The country associated with the address, represented using the ISO 3166-1 alpha-2 country code.",
+          "conditionalReason": "Required only in some schema alternatives"
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Claims.CorporateContactEmail",
+          "name": "CorporateContactEmail",
+          "type": "string",
+          "format": "email",
+          "status": "optional",
+          "description": "The primary email address for corporate communications."
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Claims.CorporateContactPhoneNumber",
+          "name": "CorporateContactPhoneNumber",
+          "type": "string",
+          "status": "optional",
+          "description": "The primary phone number for corporate communications."
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Claims.Industry",
+          "name": "Industry",
+          "type": "string",
+          "status": "optional",
+          "description": "The industry or sector in which the company operates."
+        },
+        {
+          "path": "Data.Party[].VerifiedClaims[].Claims.CompanyWebsite",
+          "name": "CompanyWebsite",
+          "type": "string",
+          "format": "uri",
+          "status": "optional",
+          "description": "The official website of the company."
         },
         {
           "path": "Links",
@@ -5897,7 +6360,7 @@
           "name": "AssuranceProcess",
           "type": "object",
           "status": "optional",
-          "description": "Determines the assurance process that was followed. This reflects how the evidence meets the requirements of the TrustFramework and AssuranceLevel. The factual record of the evidence and the procedures followed are recorded in the evidence element, this element is used to cross reference the evidence to the AssuranceLevel followed\nOpenID Connect for Identity Assurance 1.0: [https://openid.net/specs/openid-connect-4-identity-assurance-1_0.html#name-verification-element](https://openid.net/specs/openid-connect-4-identity-assurance-1_0.html#name-verification-element)                \n"
+          "description": "Determines the assurance process that was followed. This reflects how the evidence meets the requirements of the TrustFramework and AssuranceLevel. The factual record of the evidence and the procedures followed are recorded in the evidence element, this element is used to cross reference the evidence to the AssuranceLevel followed\nOpenID Connect for Identity Assurance 1.0: [https://openid.net/specs/openid-connect-4-identity-assurance-1_0.html#name-verification-element](https://openid.net/specs/openid-connect-4-identity-assurance-1_0.html#name-verification-element)\n"
         },
         {
           "path": "Data.Party.VerifiedClaims[].Verification.AssuranceProcess.Policy",
@@ -6015,7 +6478,7 @@
           "name": "CheckDetails[]",
           "type": "object",
           "status": "optional",
-          "description": "Identifes the method used by PASP for checking the evidence for verification.\nRepresenting the checks done in relation to the evidence\nOpenID Connect for Identity Assurance 1.0: [https://openid.net/specs/openid-connect-4-identity-assurance-1_0.html#name-evidence-element](https://openid.net/specs/openid-connect-4-identity-assurance-1_0.html#name-evidence-element)                \n"
+          "description": "Identifes the method used by PASP for checking the evidence for verification.\nRepresenting the checks done in relation to the evidence\nOpenID Connect for Identity Assurance 1.0: [https://openid.net/specs/openid-connect-4-identity-assurance-1_0.html#name-evidence-element](https://openid.net/specs/openid-connect-4-identity-assurance-1_0.html#name-evidence-element)\n"
         },
         {
           "path": "Data.Party.VerifiedClaims[].Verification.Evidence.CheckDetails[].CheckMethod",
@@ -6057,8 +6520,9 @@
           "path": "Data.Party.VerifiedClaims[].Verification.Evidence.Verifier.Organization",
           "name": "Organization",
           "type": "string",
-          "status": "mandatory",
-          "description": "String denoting the organization which performed the verification on behalf of the OP."
+          "status": "conditional",
+          "description": "String denoting the organization which performed the verification on behalf of the OP.",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party.VerifiedClaims[].Verification.Evidence.Verifier.Txn",
@@ -6155,15 +6619,17 @@
           "path": "Data.Party.VerifiedClaims[].Verification.Evidence.DocumentDetails.Issuer.Name",
           "name": "Name",
           "type": "string",
-          "status": "mandatory",
-          "description": "Designation of the issuer of the document.\n"
+          "status": "conditional",
+          "description": "Designation of the issuer of the document.\n",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party.VerifiedClaims[].Verification.Evidence.DocumentDetails.Issuer.Address",
           "name": "Address",
           "type": "object",
-          "status": "mandatory",
-          "description": "Address properties based on ISO 20022 `PostalAddress27` definition"
+          "status": "conditional",
+          "description": "Address properties based on ISO 20022 `PostalAddress27` definition",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party.VerifiedClaims[].Verification.Evidence.DocumentDetails.Issuer.Address.AddressType",
@@ -6189,8 +6655,9 @@
           "path": "Data.Party.VerifiedClaims[].Verification.Evidence.DocumentDetails.Issuer.Address.AddressLine",
           "name": "AddressLine",
           "type": "array",
-          "status": "mandatory",
-          "description": "Information that locates and identifies a specific address for a transaction entry, that is presented in free format text."
+          "status": "conditional",
+          "description": "Information that locates and identifies a specific address for a transaction entry, that is presented in free format text.",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party.VerifiedClaims[].Verification.Evidence.DocumentDetails.Issuer.Address.AddressLine[]",
@@ -6284,29 +6751,33 @@
           "name": "Country",
           "type": "string",
           "pattern": "^[A-Z]{2}$",
-          "status": "mandatory",
-          "description": "The country associated with the address, represented using the ISO 3166-1 alpha-2 country code."
+          "status": "conditional",
+          "description": "The country associated with the address, represented using the ISO 3166-1 alpha-2 country code.",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party.VerifiedClaims[].Verification.Evidence.DocumentDetails.Issuer.CountryCode",
           "name": "CountryCode",
           "type": "object",
-          "status": "mandatory"
+          "status": "conditional",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party.VerifiedClaims[].Verification.Evidence.DocumentDetails.Issuer.CountryCode.CountryCode",
           "name": "CountryCode",
           "type": "string",
           "pattern": "^[A-Z]{2,2}$",
-          "status": "mandatory",
-          "description": "String denoting the country or supranational organization that issued the document as ISO 3166"
+          "status": "conditional",
+          "description": "String denoting the country or supranational organization that issued the document as ISO 3166",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party.VerifiedClaims[].Verification.Evidence.DocumentDetails.Issuer.Jurisdiction",
           "name": "Jurisdiction",
           "type": "string",
-          "status": "mandatory",
-          "description": "String containing the name of the region(s)/state(s)/province(s)/municipality(ies) that issuer has jurisdiction over (if this information is not common knowledge or derivable from the address)\n"
+          "status": "conditional",
+          "description": "String containing the name of the region(s)/state(s)/province(s)/municipality(ies) that issuer has jurisdiction over (if this information is not common knowledge or derivable from the address)\n",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party.VerifiedClaims[].Verification.Evidence.Attachments",
@@ -6356,6 +6827,236 @@
           "description": "Identifier referring to the transaction\n"
         },
         {
+          "path": "Data.Party.VerifiedClaims[].Verification.Evidence.Record",
+          "name": "Record",
+          "type": "object",
+          "status": "optional",
+          "description": "Representing the record used to perform the identity verification.\n"
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Verification.Evidence.Record.Type",
+          "name": "Type",
+          "type": "string",
+          "enum": [
+            "bank_account",
+            "mortgage_account",
+            "finance_account"
+          ],
+          "status": "conditional",
+          "description": "String denoting the type of electronic record\n",
+          "conditionalReason": "Required only in some schema alternatives"
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Verification.Evidence.Record.PersonalNumber",
+          "name": "PersonalNumber",
+          "type": "string",
+          "status": "conditional",
+          "description": "String representing an identifier that is assigned to the User and is not limited to being used in one record, for example a national identification number, personal identity number, citizen number, social security number, driver number, account number, customer number, licensee number, etc.\n",
+          "conditionalReason": "Required only in some schema alternatives"
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Verification.Evidence.Record.CalendarType",
+          "name": "CalendarType",
+          "type": "string",
+          "enum": [
+            "IslamicCalendar",
+            "GregorianCalendar"
+          ],
+          "status": "conditional",
+          "description": "The type of calendar used for the date of issuance and date of expiry in the document evidence\nAllowable values:\n\"Islamic Calendar\"\n\"Gregorian Calendar\"\nBoth calendars must follow YYYY-MM-DD\n",
+          "conditionalReason": "Required only in some schema alternatives"
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Verification.Evidence.Record.CreatedAt",
+          "name": "CreatedAt",
+          "type": "string",
+          "format": "date-time",
+          "status": "conditional",
+          "description": "All dates in the JSON payloads are represented in ISO 8601 date-time format. \nAll date-time fields in responses must include the timezone. An example is below:\n2017-04-05T10:43:07+00:00",
+          "conditionalReason": "Required only in some schema alternatives"
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Verification.Evidence.Record.DateOfExpiry",
+          "name": "DateOfExpiry",
+          "type": "string",
+          "format": "date-time",
+          "status": "conditional",
+          "description": "All dates in the JSON payloads are represented in ISO 8601 date-time format. \nAll date-time fields in responses must include the timezone. An example is below:\n2017-04-05T10:43:07+00:00",
+          "conditionalReason": "Required only in some schema alternatives"
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Verification.Evidence.Record.Source",
+          "name": "Source",
+          "type": "object",
+          "status": "conditional",
+          "description": "Information about the source of this record\n",
+          "conditionalReason": "Required only in some schema alternatives"
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Verification.Evidence.Record.Source.Name",
+          "name": "Name",
+          "type": "string",
+          "status": "conditional",
+          "description": "Designation of the source of the electronic_record\n",
+          "conditionalReason": "Required only in some schema alternatives"
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Verification.Evidence.Record.Source.Address",
+          "name": "Address",
+          "type": "object",
+          "status": "conditional",
+          "description": "Address properties based on ISO 20022 `PostalAddress27` definition",
+          "conditionalReason": "Required only in some schema alternatives"
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Verification.Evidence.Record.Source.Address.AddressType",
+          "name": "AddressType",
+          "type": "string",
+          "enum": [
+            "Billing",
+            "Business",
+            "Correspondence",
+            "DeliveryTo",
+            "MailTo",
+            "POBox",
+            "Postal",
+            "Permanent",
+            "Residential",
+            "Statement",
+            "Other"
+          ],
+          "status": "optional",
+          "description": "The type of address. Omitted if type not held."
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Verification.Evidence.Record.Source.Address.AddressLine",
+          "name": "AddressLine",
+          "type": "array",
+          "status": "conditional",
+          "description": "Information that locates and identifies a specific address for a transaction entry, that is presented in free format text.",
+          "conditionalReason": "Required only in some schema alternatives"
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Verification.Evidence.Record.Source.Address.AddressLine[]",
+          "name": "AddressLine[]",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 70,
+          "status": "optional"
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Verification.Evidence.Record.Source.Address.BuildingNumber",
+          "name": "BuildingNumber",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16,
+          "status": "optional",
+          "description": "The unit, apartment, or villa number within a building or community"
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Verification.Evidence.Record.Source.Address.BuildingName",
+          "name": "BuildingName",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "status": "optional",
+          "description": "Name of the building or house."
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Verification.Evidence.Record.Source.Address.Floor",
+          "name": "Floor",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 70,
+          "status": "optional",
+          "description": "Floor or storey within a building."
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Verification.Evidence.Record.Source.Address.StreetName",
+          "name": "StreetName",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "status": "optional",
+          "description": "The name of the street or road where the property is located."
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Verification.Evidence.Record.Source.Address.DistrictName",
+          "name": "DistrictName",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "status": "optional",
+          "description": "The district, community, or neighbourhood where the property is located."
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Verification.Evidence.Record.Source.Address.PostBox",
+          "name": "PostBox",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16,
+          "status": "optional",
+          "description": "The P.O. Box number assigned to the recipient for mail delivery."
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Verification.Evidence.Record.Source.Address.TownName",
+          "name": "TownName",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "status": "optional",
+          "description": "Name of a built-up area, such as a town or city."
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Verification.Evidence.Record.Source.Address.CountrySubDivision",
+          "name": "CountrySubDivision",
+          "type": "string",
+          "enum": [
+            "AbuDhabi",
+            "Ajman",
+            "Dubai",
+            "Fujairah",
+            "RasAlKhaimah",
+            "Sharjah",
+            "UmmAlQuwain"
+          ],
+          "status": "optional",
+          "description": "Country subdivision, such as state or province. This is the Emirate where the address is registered."
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Verification.Evidence.Record.Source.Address.Country",
+          "name": "Country",
+          "type": "string",
+          "pattern": "^[A-Z]{2}$",
+          "status": "conditional",
+          "description": "The country associated with the address, represented using the ISO 3166-1 alpha-2 country code.",
+          "conditionalReason": "Required only in some schema alternatives"
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Verification.Evidence.Record.Source.CountryCode",
+          "name": "CountryCode",
+          "type": "object",
+          "status": "conditional",
+          "conditionalReason": "Required only in some schema alternatives"
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Verification.Evidence.Record.Source.CountryCode.CountryCode",
+          "name": "CountryCode",
+          "type": "string",
+          "pattern": "^[A-Z]{2,2}$",
+          "status": "conditional",
+          "description": "String denoting the country or supranational organization that issued the document as ISO 3166",
+          "conditionalReason": "Required only in some schema alternatives"
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Verification.Evidence.Record.Source.Jurisdiction",
+          "name": "Jurisdiction",
+          "type": "string",
+          "status": "conditional",
+          "description": "String containing the name of the region(s) / state(s) / province(s) / municipality(ies) that source has jurisdiction over (if it's not common knowledge or derivable from the address)\n",
+          "conditionalReason": "Required only in some schema alternatives"
+        },
+        {
           "path": "Data.Party.VerifiedClaims[].Claims",
           "name": "Claims",
           "type": "object",
@@ -6369,28 +7070,32 @@
           "enum": [
             "Person"
           ],
-          "status": "mandatory"
+          "status": "conditional",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party.VerifiedClaims[].Claims.FullName",
           "name": "FullName",
           "type": "string",
-          "status": "mandatory",
-          "description": "The full name of the account holder, as it appears on the account, as a single string. Used where LFIs hold the account name as a single value."
+          "status": "conditional",
+          "description": "The full name of the account holder, as it appears on the account, as a single string. Used where LFIs hold the account name as a single value.",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party.VerifiedClaims[].Claims.GivenName",
           "name": "GivenName",
           "type": "string",
-          "status": "mandatory",
-          "description": "Given name of the Party. Given name (also called forename) is used to differentiate from the surname or family name."
+          "status": "conditional",
+          "description": "Given name of the Party. Given name (also called forename) is used to differentiate from the surname or family name.",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party.VerifiedClaims[].Claims.Surname",
           "name": "Surname",
           "type": "string",
-          "status": "mandatory",
-          "description": "Surname of the Party"
+          "status": "conditional",
+          "description": "Surname of the Party",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party.VerifiedClaims[].Claims.MiddleName",
@@ -6410,16 +7115,18 @@
           "path": "Data.Party.VerifiedClaims[].Claims.EmiratesId",
           "name": "EmiratesId",
           "type": "string",
-          "status": "mandatory",
-          "description": "Emirates ID number of the Party"
+          "status": "conditional",
+          "description": "Emirates ID number of the Party",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party.VerifiedClaims[].Claims.EmiratesIdExpiryDate",
           "name": "EmiratesIdExpiryDate",
           "type": "string",
           "format": "date",
-          "status": "mandatory",
-          "description": "Emirates ID card expiry date"
+          "status": "conditional",
+          "description": "Emirates ID card expiry date",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party.VerifiedClaims[].Claims.DateOfBirth",
@@ -6451,8 +7158,9 @@
           "path": "Data.Party.VerifiedClaims[].Claims.ResidentialAddress",
           "name": "ResidentialAddress",
           "type": "object",
-          "status": "mandatory",
-          "description": "Address properties based on ISO 20022 `PostalAddress27` definition"
+          "status": "conditional",
+          "description": "Address properties based on ISO 20022 `PostalAddress27` definition",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party.VerifiedClaims[].Claims.ResidentialAddress.AddressType",
@@ -6478,8 +7186,9 @@
           "path": "Data.Party.VerifiedClaims[].Claims.ResidentialAddress.AddressLine",
           "name": "AddressLine",
           "type": "array",
-          "status": "mandatory",
-          "description": "Information that locates and identifies a specific address for a transaction entry, that is presented in free format text."
+          "status": "conditional",
+          "description": "Information that locates and identifies a specific address for a transaction entry, that is presented in free format text.",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party.VerifiedClaims[].Claims.ResidentialAddress.AddressLine[]",
@@ -6573,23 +7282,9 @@
           "name": "Country",
           "type": "string",
           "pattern": "^[A-Z]{2}$",
-          "status": "mandatory",
-          "description": "The country associated with the address, represented using the ISO 3166-1 alpha-2 country code."
-        },
-        {
-          "path": "Data.Party.VerifiedClaims[].Claims.ResidentialAddress",
-          "name": "ResidentialAddress",
-          "type": "object",
-          "status": "mandatory"
-        },
-        {
-          "path": "Data.Party.VerifiedClaims[].Claims.ResidentialAddress.AddressType",
-          "name": "AddressType",
-          "type": "string",
-          "enum": [
-            "Residential"
-          ],
-          "status": "optional"
+          "status": "conditional",
+          "description": "The country associated with the address, represented using the ISO 3166-1 alpha-2 country code.",
+          "conditionalReason": "Required only in some schema alternatives"
         },
         {
           "path": "Data.Party.VerifiedClaims[].Claims.MobileNumber",
@@ -6659,6 +7354,205 @@
           "format": "date-time",
           "status": "optional",
           "description": "The date and time at which the claims were last updated, in ISO 8601 format"
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Claims.BusinessName",
+          "name": "BusinessName",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "status": "optional",
+          "description": "The name of the business"
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Claims.TradeLicenceNumber",
+          "name": "TradeLicenceNumber",
+          "type": "string",
+          "status": "optional",
+          "description": "Trade License Number of the business."
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Claims.TaxIdentificationNumber",
+          "name": "TaxIdentificationNumber",
+          "type": "string",
+          "status": "optional",
+          "description": "The tax identification number or VAT number for the company."
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Claims.DateOfIncorporation",
+          "name": "DateOfIncorporation",
+          "type": "string",
+          "format": "date",
+          "status": "optional",
+          "description": "The date the company was legally incorporated."
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Claims.CountryOfIncorporation",
+          "name": "CountryOfIncorporation",
+          "type": "string",
+          "status": "optional",
+          "description": "The country where the company is incorporated."
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Claims.CorporateAddress",
+          "name": "CorporateAddress",
+          "type": "object",
+          "status": "optional",
+          "description": "Address properties based on ISO 20022 `PostalAddress27` definition"
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Claims.CorporateAddress.AddressType",
+          "name": "AddressType",
+          "type": "string",
+          "enum": [
+            "Billing",
+            "Business",
+            "Correspondence",
+            "DeliveryTo",
+            "MailTo",
+            "POBox",
+            "Postal",
+            "Permanent",
+            "Residential",
+            "Statement",
+            "Other"
+          ],
+          "status": "optional",
+          "description": "The type of address. Omitted if type not held."
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Claims.CorporateAddress.AddressLine",
+          "name": "AddressLine",
+          "type": "array",
+          "status": "conditional",
+          "description": "Information that locates and identifies a specific address for a transaction entry, that is presented in free format text.",
+          "conditionalReason": "Required only in some schema alternatives"
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Claims.CorporateAddress.AddressLine[]",
+          "name": "AddressLine[]",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 70,
+          "status": "optional"
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Claims.CorporateAddress.BuildingNumber",
+          "name": "BuildingNumber",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16,
+          "status": "optional",
+          "description": "The unit, apartment, or villa number within a building or community"
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Claims.CorporateAddress.BuildingName",
+          "name": "BuildingName",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "status": "optional",
+          "description": "Name of the building or house."
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Claims.CorporateAddress.Floor",
+          "name": "Floor",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 70,
+          "status": "optional",
+          "description": "Floor or storey within a building."
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Claims.CorporateAddress.StreetName",
+          "name": "StreetName",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "status": "optional",
+          "description": "The name of the street or road where the property is located."
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Claims.CorporateAddress.DistrictName",
+          "name": "DistrictName",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "status": "optional",
+          "description": "The district, community, or neighbourhood where the property is located."
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Claims.CorporateAddress.PostBox",
+          "name": "PostBox",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16,
+          "status": "optional",
+          "description": "The P.O. Box number assigned to the recipient for mail delivery."
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Claims.CorporateAddress.TownName",
+          "name": "TownName",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "status": "optional",
+          "description": "Name of a built-up area, such as a town or city."
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Claims.CorporateAddress.CountrySubDivision",
+          "name": "CountrySubDivision",
+          "type": "string",
+          "enum": [
+            "AbuDhabi",
+            "Ajman",
+            "Dubai",
+            "Fujairah",
+            "RasAlKhaimah",
+            "Sharjah",
+            "UmmAlQuwain"
+          ],
+          "status": "optional",
+          "description": "Country subdivision, such as state or province. This is the Emirate where the address is registered."
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Claims.CorporateAddress.Country",
+          "name": "Country",
+          "type": "string",
+          "pattern": "^[A-Z]{2}$",
+          "status": "conditional",
+          "description": "The country associated with the address, represented using the ISO 3166-1 alpha-2 country code.",
+          "conditionalReason": "Required only in some schema alternatives"
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Claims.CorporateContactEmail",
+          "name": "CorporateContactEmail",
+          "type": "string",
+          "format": "email",
+          "status": "optional",
+          "description": "The primary email address for corporate communications."
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Claims.CorporateContactPhoneNumber",
+          "name": "CorporateContactPhoneNumber",
+          "type": "string",
+          "status": "optional",
+          "description": "The primary phone number for corporate communications."
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Claims.Industry",
+          "name": "Industry",
+          "type": "string",
+          "status": "optional",
+          "description": "The industry or sector in which the company operates."
+        },
+        {
+          "path": "Data.Party.VerifiedClaims[].Claims.CompanyWebsite",
+          "name": "CompanyWebsite",
+          "type": "string",
+          "format": "uri",
+          "status": "optional",
+          "description": "The official website of the company."
         },
         {
           "path": "Links",

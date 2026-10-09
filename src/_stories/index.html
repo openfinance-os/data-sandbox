@@ -271,7 +271,7 @@
     activeJsonString: () => JSON.stringify({ Data: { Account: [] }, Links: { Self: '...' }, Meta: { TotalPages: 1 } }, null, 2),
     activeCsvString: () => 'AccountId,Currency,Type\nACC-DEMO-001,AED,CurrentAccount',
   });
-  document.getElementById('story-export-open').addEventListener('click', () => exportPopover.open());
+  document.getElementById('story-export-open').addEventListener('click', (e) => exportPopover.open(e.currentTarget));
 
   // Compare split pane — static visual contract for the .diff-* classes.
   function renderCompareSwatches(stage) {

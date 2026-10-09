@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 // Build-time helpers shared between fixture-package builders and any other
 // tool that needs the pinned spec version, the build-time `now` anchor, or
 // the package version. Pure reads — no side effects.
@@ -5,6 +6,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { repoRoot } from './load-fixtures.mjs';
+import { REFERENCE_DATE } from '../src/core/scenario.js';
 
 /**
  * Top-level package version from /package.json. Used as the `version` field
@@ -21,16 +23,10 @@ export function readPackageVersion() {
 }
 
 /**
- * Build-time `now` anchor. Reads `spec/SPEC_PIN.retrieved` (an ISO timestamp)
- * and floors to the first day of that month so deterministic transactions
- * align to month boundaries. Falls back to 2026-04-01 UTC.
+ * Explicit corpus reference date, independent of specification retrieval.
  */
 export function readNowAnchor() {
-  const f = path.join(repoRoot, 'spec/SPEC_PIN.retrieved');
-  if (!fs.existsSync(f)) return new Date(Date.UTC(2026, 3, 1)).toISOString();
-  const ts = fs.readFileSync(f, 'utf8').trim();
-  const d = new Date(ts);
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)).toISOString();
+  return REFERENCE_DATE;
 }
 
 /**
@@ -50,7 +46,7 @@ export function readSpecSha() {
  * still get a stringable value.
  *
  * Banking and insurance are pinned independently — currently banking is on
- * `v2.1-errata2` while insurance is on `v2.1-errata1` (errata2 didn't
+ * `v2.1-errata2` while insurance is on `v2.1-errata3` (errata2 didn't
  * republish the insurance spec).
  */
 export function readSpecVersions() {
@@ -76,4 +72,15 @@ function readVersionFromDist(rel) {
  */
 export function safeEndpointName(s) {
   return s.replace(/^\//, '').replace(/\//g, '__').replace(/[{}]/g, '');
+}
+
+export function readSpecProvenance() {
+  return JSON.parse(fs.readFileSync(path.join(repoRoot, 'spec/provenance.json'), 'utf8')).domains;
+}
+
+export function readBuildRevision() {
+  if (process.env.SANDBOX_REVISION) return process.env.SANDBOX_REVISION;
+  const sha = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+  const dirty = execFileSync('git', ['status', '--porcelain'], { encoding: 'utf8' }).trim();
+  return dirty ? `${sha}-working-tree` : sha;
 }

@@ -4,18 +4,23 @@
 // the parsed SPEC + persona manifests + a tiny ESM/CJS loader, into
 // packages/sandbox-fixtures/. Runs after `npm run build:spec`.
 
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildBundle } from '../src/generator/index.js';
 import { buildRoleBundle, normalizeFootprint } from '../src/generator/multi-lfi.js';
-import { envelopesFromBundle } from '../src/ui/export.js';
+import { envelopesFromBundle } from '../src/core/envelopes.js';
+import { scenarioDescriptor, CORPUS_VERSION } from '../src/core/scenario.js';
+import { createValidators, stripAnnotations } from './schema-validator.mjs';
 import { loadPersonasByDomain, loadAllPools, repoRoot } from './load-fixtures.mjs';
 import {
   readPackageVersion,
+  readBuildRevision,
   readNowAnchor,
   readSpecSha,
   readSpecVersions,
+  readSpecProvenance,
   safeEndpointName as safeName,
 } from './build-shared.mjs';
 
@@ -23,13 +28,133 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PKG_VERSION = readPackageVersion() || '0.0.0';
+// Capture before replacing tracked generated files; our own rebuild is not a
+// user working-tree modification. Include this identity in the build cache.
+const BUILD_REVISION = readBuildRevision();
 const OUT = path.join(repoRoot, 'packages/sandbox-fixtures');
+
+// ── Build cache ──────────────────────────────────────────────────────
+// EXP-05 makes the corpus a pure function of its inputs, so a content
+// hash over every input root is a sound staleness key. All-or-nothing by
+// design: any change under src/ or tools/ (not just the generator's
+// transitive import closure) invalidates — a broad key trades cache hits
+// for zero risk of serving a stale corpus. The stamp lives next to the
+// (gitignored) outputs, so a fresh clone or CI runner always builds once.
+// Bypass with FIXTURES_FORCE=1.
+const STAMP_PATH = path.join(OUT, '.build-stamp');
+const CACHE_INPUT_ROOTS = [
+  'personas',
+  'synthetic-identity-pool',
+  'spec',
+  'src',
+  'tools',
+  'package.json',
+];
+
+// Entry type comes from the directory read itself (withFileTypes) and
+// missing paths surface as a failed read rather than a prior existsSync,
+// so there is no check-then-use window on any path we hash.
+//
+// The walk fails loudly rather than skipping anything it cannot hash: a
+// silently-omitted input would produce a hash that matches across a real
+// change, and the cache would then serve a stale corpus (EXP-05). Dirent
+// types follow lstat semantics, so a symlink is neither isFile() nor
+// isDirectory() — it must error, not fall through. Errors below the root
+// probe propagate for the same reason: a file vanishing mid-walk would
+// otherwise truncate the hash and return it as if complete.
+function corpusInputHash() {
+  const h = crypto.createHash('sha256');
+  h.update(BUILD_REVISION);
+
+  const hashFile = (p) => {
+    // Hash path + content, never mtime — a `touch` must not invalidate.
+    h.update(path.relative(repoRoot, p));
+    h.update('\0');
+    h.update(fs.readFileSync(p));
+    h.update('\0');
+  };
+
+  const walkEntries = (dir, entries) => {
+    entries.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+    for (const entry of entries) {
+      const p = path.join(dir, entry.name);
+      if (entry.isDirectory()) walkEntries(p, fs.readdirSync(p, { withFileTypes: true }));
+      else if (entry.isFile()) hashFile(p);
+      else {
+        throw new Error(
+          `corpusInputHash: ${path.relative(repoRoot, p)} is neither a regular file nor a ` +
+            `directory (symlink or special file). The build cache key cannot cover it — ` +
+            `add explicit handling or move it out of CACHE_INPUT_ROOTS.`,
+        );
+      }
+    }
+  };
+
+  for (const root of CACHE_INPUT_ROOTS) {
+    const p = path.join(repoRoot, root);
+    let entries;
+    try {
+      entries = fs.readdirSync(p, { withFileTypes: true });
+    } catch (err) {
+      // Scoped to the root probe only — anything deeper must propagate.
+      // ENOTDIR → the root is a plain file (package.json);
+      // ENOENT → an optional root absent from this checkout.
+      if (err.code === 'ENOTDIR') {
+        hashFile(p);
+        continue;
+      }
+      if (err.code === 'ENOENT') continue;
+      throw err;
+    }
+    walkEntries(p, entries);
+  }
+  return h.digest('hex');
+}
+
+function readStamp() {
+  try {
+    // A surviving stamp with cleared outputs must not count as a hit, so
+    // the manifest has to be present too — opened rather than read, since
+    // this is only an existence probe (it is ~1.4 MB).
+    fs.closeSync(fs.openSync(path.join(OUT, 'manifest.json'), 'r'));
+    fs.closeSync(fs.openSync(path.join(repoRoot, 'dist/published-scenarios.json'), 'r'));
+    return fs.readFileSync(STAMP_PATH, 'utf8').trim();
+  } catch {
+    return null;
+  }
+}
+
+const inputHash = corpusInputHash();
+if (process.env.FIXTURES_FORCE !== '1' && readStamp() === inputHash) {
+  console.log(
+    `fixture package up to date (input hash ${inputHash.slice(0, 12)}…) — skipping rebuild. ` +
+      `Force with FIXTURES_FORCE=1.`,
+  );
+  process.exit(0);
+}
+
 const NOW_ANCHOR = readNowAnchor();
 const SHA = readSpecSha();
 // Banking and insurance specs are pinned independently — banking on
-// `v2.1-errata2`, insurance on `v2.1-errata1`. Each envelope is stamped
+// `v2.1-errata2`, insurance on `v2.1-errata3`. Each envelope is stamped
 // with the version that matches its domain.
 const SPEC_VERSIONS = readSpecVersions();
+const SPEC_PROVENANCE = readSpecProvenance();
+const validators = Object.fromEntries(
+  ['banking', 'insurance', 'atm'].map((domain) => [
+    domain,
+    createValidators(
+      fs.readFileSync(
+        path.join(
+          repoRoot,
+          `spec/uae-${domain === 'banking' ? 'account-information' : domain}-openapi.yaml`,
+        ),
+        'utf8',
+      ),
+      { normalization: domain === 'insurance' },
+    ),
+  ]),
+);
 
 // Fail the build BEFORE writing a malformed envelope, rather than deferring
 // the only structural check to rendered-fixture-spec-validation.test.mjs
@@ -40,8 +165,17 @@ function assertEnvelope(env, endpoint, personaId) {
   const ctx = `${personaId} ${endpoint}`;
   if (!env || typeof env !== 'object') throw new Error(`emit ${ctx}: envelope is not an object`);
   if (env.Data === undefined) throw new Error(`emit ${ctx}: missing Data`);
-  if (!env.Links || env.Links.Self === undefined)
+  if (endpoint !== '/atms' && (!env.Links || env.Links.Self === undefined))
     throw new Error(`emit ${ctx}: missing Links.Self`);
+  const domain =
+    endpoint === '/atms'
+      ? 'atm'
+      : endpoint.includes('-insurance-') || endpoint.startsWith('/insurance-consents')
+        ? 'insurance'
+        : 'banking';
+  const validate = validators[domain].forEndpoint(endpoint);
+  if (!validate(stripAnnotations(env)))
+    throw new Error(`emit ${ctx}: ${JSON.stringify(validate.errors?.slice(0, 4))}`);
   if (env.Meta === undefined) throw new Error(`emit ${ctx}: missing Meta`);
   if (typeof env._watermark !== 'string' || !env._watermark.includes('SYNTHETIC')) {
     throw new Error(`emit ${ctx}: missing/invalid _watermark`);
@@ -66,6 +200,9 @@ const now = new Date(NOW_ANCHOR);
 const manifest = {
   package: '@openfinance-os/sandbox-fixtures',
   version: PKG_VERSION,
+  corpusVersion: CORPUS_VERSION,
+  revision: BUILD_REVISION,
+  specProvenance: SPEC_PROVENANCE,
   // Banking is the primary domain of the npm/PyPI bundle — keep the
   // back-compat string field on the banking spec. `specVersions` carries
   // the per-domain breakdown for consumers that need it.
@@ -132,6 +269,8 @@ async function emitPersona(personaId, persona, domain) {
       specVersion: SPEC_VERSIONS.banking,
       specVersions: SPEC_VERSIONS,
       specSha: SHA,
+      specProvenance: SPEC_PROVENANCE,
+      referenceDate: NOW_ANCHOR,
       retrievedAt: NOW_ANCHOR,
     };
     const bundle = buildBundle({ persona, lfi, seed, pools, now });
@@ -156,6 +295,8 @@ async function emitPersona(personaId, persona, domain) {
       const enrichText = JSON.stringify(
         {
           schema: 'openfinance-os/data-sandbox/enrichment/v1',
+          purpose: 'synthetic-evaluation-labels',
+          evaluationOnly: true,
           personaId,
           seed,
           generatedAt: new Date(NOW_ANCHOR).toISOString(),
@@ -249,6 +390,7 @@ async function emitPersona(personaId, persona, domain) {
       : [bundle.domain ?? domain];
     manifest.fixtures[`${personaId}|${lfi}|${seed}`] = {
       personaId,
+      scenario: scenarioDescriptor({ personaId, lfi, seed, specProvenance: SPEC_PROVENANCE }),
       lfi,
       seed,
       domain: bundleDomains[0],
@@ -286,7 +428,7 @@ async function emitPersona(personaId, persona, domain) {
         const slotKey = slot.key;
         const roleBundle = await buildRoleBundle({ persona, slot: slotKey, lfi, seed, pools, now });
         if (!roleBundle) continue;
-        const roleEnvelopes = envelopesFromBundle(roleBundle, ctx);
+        const roleEnvelopes = envelopesFromBundle(roleBundle, { ...ctx, role: slotKey });
         const roleDir = path.join(OUT, 'bundles', personaId, slotKey, lfi, `seed-${seed}`);
         fs.mkdirSync(roleDir, { recursive: true });
         const roleFiles = {};
@@ -315,6 +457,13 @@ async function emitPersona(personaId, persona, domain) {
           }
         }
         manifest.roleFixtures[`${personaId}|${slotKey}|${lfi}|${seed}`] = {
+          scenario: scenarioDescriptor({
+            personaId,
+            role: slotKey,
+            lfi,
+            seed,
+            specProvenance: SPEC_PROVENANCE,
+          }),
           personaId,
           slot: slotKey,
           role: slot.role,
@@ -367,6 +516,21 @@ fs.copyFileSync(
 fs.copyFileSync(path.join(repoRoot, 'dist/SPEC.atm.json'), path.join(OUT, 'spec.atm.json'));
 
 fs.writeFileSync(path.join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 2));
+// The explorer needs membership only; keep the full endpoint catalogue off
+// its initial loading path. Grouping keys by persona avoids repeated IDs.
+const published = {};
+for (const key of Object.keys(manifest.fixtures)) {
+  const [persona, profile, seed] = key.split('|');
+  (published[persona] ??= []).push(`primary|${profile}|${seed}`);
+}
+for (const key of Object.keys(manifest.roleFixtures)) {
+  const [persona, role, profile, seed] = key.split('|');
+  (published[persona] ??= []).push(`${role}|${profile}|${seed}`);
+}
+fs.writeFileSync(
+  path.join(repoRoot, 'dist/published-scenarios.json'),
+  JSON.stringify({ corpusVersion: manifest.corpusVersion, published }, null, 2),
+);
 
 // Workstream C plug-point 2 — vendor the runtime engine (generator + persona-
 // builder + prng + pool indexer) into the package so TPPs can run a custom
@@ -386,12 +550,25 @@ function copyDirRecursive(src, dst) {
 }
 copyDirRecursive(path.join(repoRoot, 'src/generator'), path.join(LIB_DIR, 'generator'));
 copyDirRecursive(path.join(repoRoot, 'src/persona-builder'), path.join(LIB_DIR, 'persona-builder'));
+copyDirRecursive(path.join(repoRoot, 'src/core'), path.join(LIB_DIR, 'core'));
 copyDirRecursive(path.join(repoRoot, 'src/shared'), path.join(LIB_DIR, 'shared'));
 // `src/ui/export.js` defines envelopesFromBundle, which lib/persona-builder/
 // fixture-handler.js + export-zip.js + the new MCP build_persona path all
 // import as `../ui/export.js`. Without this copy the published package's
 // custom-persona handlers fail to resolve their import.
 copyDirRecursive(path.join(repoRoot, 'src/ui'), path.join(LIB_DIR, 'ui'));
+fs.mkdirSync(path.join(LIB_DIR, 'validation'), { recursive: true });
+fs.copyFileSync(
+  path.join(repoRoot, 'tools/schema-validator.mjs'),
+  path.join(LIB_DIR, 'validation/schema-validator.mjs'),
+);
+fs.mkdirSync(path.join(OUT, 'schemas'), { recursive: true });
+for (const name of [
+  'uae-account-information-openapi.yaml',
+  'uae-insurance-openapi.yaml',
+  'uae-atm-openapi.yaml',
+])
+  fs.copyFileSync(path.join(repoRoot, 'spec', name), path.join(OUT, 'schemas', name));
 fs.copyFileSync(path.join(repoRoot, 'src/prng.js'), path.join(LIB_DIR, 'prng.js'));
 
 // Serialise the indexed pools so consumers can call getPools() without
@@ -424,21 +601,43 @@ const pkgJson = {
   type: 'module',
   main: './index.cjs',
   module: './index.mjs',
+  // E-01: `types` must exist both as a top-level field (legacy `node`
+  // moduleResolution) and as the FIRST condition in the exports map
+  // (`node16` / `bundler` moduleResolution ignores the top-level field
+  // when `exports` is present — without the condition every TS consumer
+  // gets TS7016 and the .d.ts is dead weight).
+  types: './index.d.ts',
   exports: {
-    '.': { import: './index.mjs', require: './index.cjs', default: './index.mjs' },
+    '.': {
+      types: './index.d.ts',
+      import: './index.mjs',
+      require: './index.cjs',
+      default: './index.mjs',
+    },
+    './validation': { types: './validation.d.ts', import: './lib/validation/schema-validator.mjs' },
+    './payloads/banking': { types: './payloads.banking.d.ts' },
+    './payloads/insurance': { types: './payloads.insurance.d.ts' },
+    './payloads/atm': { types: './payloads.atm.d.ts' },
+    './schemas/*': './schemas/*',
+    './package.json': './package.json',
     './manifest.json': './manifest.json',
     './spec.json': './spec.json',
     './spec.insurance.json': './spec.insurance.json',
     './spec.atm.json': './spec.atm.json',
     './pools.json': './pools.json',
+    './brand-registry.json': './brand-registry.json',
     './bundles/*': './bundles/*',
     './personas/*': './personas/*',
+    './enrichment/*': './enrichment/*',
+    './brands/*': './brands/*',
     './lib/*': './lib/*',
   },
   files: [
     'index.mjs',
     'index.cjs',
     'index.d.ts',
+    'core-types.d.ts',
+    'validation.d.ts',
     'manifest.json',
     'spec.json',
     'spec.insurance.json',
@@ -450,8 +649,13 @@ const pkgJson = {
     'brands/',
     'brand-registry.json',
     'lib/',
+    'schemas/',
+    'payloads.banking.d.ts',
+    'payloads.insurance.d.ts',
+    'payloads.atm.d.ts',
     'README.md',
   ],
+  dependencies: { ajv: '^8.17.1', 'ajv-formats': '^3.0.1', 'js-yaml': '^4.2.0' },
   publishConfig: { access: 'public' },
 };
 fs.writeFileSync(path.join(OUT, 'package.json'), JSON.stringify(pkgJson, null, 2));
@@ -499,7 +703,7 @@ export function listEndpoints(personaId, lfi = 'median') {
 // is the package-level entry point for TPPs that want to simulate paging
 // through a listing endpoint (transactions, standing orders, etc.) the
 // way they would against a real LFI. Internally it loads the full fixture
-// envelope and slices its Data array — the same engine the Service Worker
+// envelope and slices its Data array — the same portable pagination engine
 // uses for the staged \`/fixtures/v1/bundles/.../*.json?offset=&limit=\` URL.
 //
 // \`requestUrl\` is optional; supply it to make Links.{Self,First,Next,Last}
@@ -670,6 +874,9 @@ export function getPools() {
   return _poolsCache;
 }
 export { buildBundle } from './lib/generator/index.js';
+export { queryTransactions, summarizeTransactions } from './lib/core/transaction-query.js';
+export { minorUnits, formatMinor, postedTransactions, movement } from './lib/core/ledger.js';
+export { scenarioDescriptor, CORPUS_VERSION, REFERENCE_DATE } from './lib/core/scenario.js';
 export { expandRecipe } from './lib/persona-builder/expand.js';
 export {
   RECIPE_DEFAULTS,
@@ -914,41 +1121,127 @@ module.exports = {
 `;
 fs.writeFileSync(path.join(OUT, 'index.cjs'), indexCjs);
 
-// Tiny TS types for editor support.
-const indexDts = `export type Domain = 'banking' | 'insurance' | 'atm';
+// TS types — served through the `types` field + the `types` exports
+// condition (see pkgJson above). One shared .d.ts covers both entries;
+// CJS-only divergences (async loadFixturePage, getEngine/getPagination)
+// are declared below with explicit doc comments.
+const indexDts = `/** A generator domain a persona can declare. */
+export type Domain = 'banking' | 'insurance' | 'atm';
+/** Manifest label: single-domain personas carry their Domain; Phase 2.2
+ * multi-domain personas (domains.length > 1) are labelled 'multi'. Use
+ * PersonaInfo.domains for the real declared set. */
+export type DomainLabel = Domain | 'multi';
+export type LfiProfile = 'rich' | 'median' | 'sparse';
+
+/** One slot in a multi-LFI / multi-insurer footprint. NG5/D-14: candidate
+ * lists are plausibility sets only — no populate-rate claim binds to them. */
+export interface FootprintSlot {
+  /** Slot key (Phase 2.2 N-slot shape), e.g. 'salary', 'mortgage-lender'.
+   * Absent on the legacy triad shape (the key is the property name). */
+  key?: string;
+  role: string;
+  lfi_default?: string;
+  plausible_lfi_candidates?: string[];
+  [k: string]: unknown;
+}
+/** Legacy (pre-Phase-2.2) fixed triad footprint. */
+export interface LegacyMultiLfiFootprint {
+  primary?: FootprintSlot;
+  secondary?: FootprintSlot;
+  tertiary?: FootprintSlot;
+}
+/** Phase 2.2 N-slot footprint — slots[0] is the primary. */
+export interface SlotsMultiLfiFootprint {
+  slots: FootprintSlot[];
+}
+/** Both manifest shapes occur; normalizeFootprint() in lib/generator/
+ * multi-lfi.js walks either. */
+export type MultiLfiFootprint = LegacyMultiLfiFootprint | SlotsMultiLfiFootprint;
+
+/** Phase 2.2 — insurance-carrier mirror of the banking footprint. */
+export interface InsurerFootprintSlot {
+  key?: string;
+  role?: string;
+  insurer_default?: string;
+  plausible_insurer_candidates?: string[];
+  [k: string]: unknown;
+}
+export interface MultiInsurerFootprint {
+  slots: InsurerFootprintSlot[];
+}
+
 export interface PersonaInfo {
   name: string;
   archetype: string;
   default_seed: number;
-  domain: Domain;
+  /** 'multi' for multi-domain personas — see \`domains\` for the real set. */
+  domain: DomainLabel;
+  /** Declared domain set. Multi-domain personas list every domain they
+   * render under (e.g. ['banking', 'insurance']). */
+  domains?: Domain[];
   stress_coverage: string[];
+  /** D-14: legacy triad or Phase 2.2 slots[] shape; null when absent. */
+  multi_lfi_footprint?: MultiLfiFootprint | null;
+  /** Phase 2.2: insurance-carrier footprint; null when absent. */
+  multi_insurer_footprint?: MultiInsurerFootprint | null;
+  /** Phase R1.5 — seed-keyed relative paths of enrichment sidecars. */
+  enrichmentFiles?: Record<string, string>;
+  enrichmentRecordCount?: number;
 }
 export interface FixtureEntry {
+  scenario: import('./core-types.js').Scenario;
   personaId: string;
   lfi: string;
   seed: number;
-  domain: Domain;
+  domain: DomainLabel;
+  domains?: Domain[];
   accountIds: string[];
   policyIds: string[];
   quoteId: string | null;
+  consentIds?: string[];
+  endpoints: Record<string, string>;
+}
+/** Phase D Slice 5 — a secondary/tertiary (or Phase 2.2 N-slot) role
+ * bundle emitted for a persona with a multi_lfi_footprint. */
+export interface RoleFixtureEntry {
+  scenario: import('./core-types.js').Scenario;
+  personaId: string;
+  slot: string;
+  role: string;
+  lfi: string;
+  seed: number;
+  domain: string;
+  accountIds: string[];
   endpoints: Record<string, string>;
 }
 export interface Manifest {
+  corpusVersion: string;
+  revision: string;
+  specProvenance: NonNullable<import('./core-types.js').Scenario['specProvenance']>;
   package: string;
   version: string;
   specVersion: string;
+  /** Per-domain spec versions (banking / insurance / atm are pinned
+   * independently). */
+  specVersions?: Record<string, string>;
   specSha: string;
   generatedAt: string;
   nowAnchor: string;
   domains: Domain[];
   fixtures: Record<string, FixtureEntry>;
+  /** Keyed \`<persona>|<slot>|<lfi>|<seed>\`. */
+  roleFixtures?: Record<string, RoleFixtureEntry>;
   personas: Record<string, PersonaInfo>;
 }
 export interface Journey {
   persona: string;
-  lfi: 'rich' | 'median' | 'sparse';
+  lfi: LfiProfile;
+  /** 'primary' for the historical primary bundle; otherwise the role-slot
+   * key that was loaded (legacy 'secondary'/'tertiary' or a Phase 2.2
+   * N-slot key — see listRoleBundles). */
+  lfi_role: string;
   seed: number;
-  domain: Domain;
+  domain: DomainLabel;
   accountIds: string[];
   policyIds: string[];
   quoteId: string | null;
@@ -959,6 +1252,9 @@ export interface Journey {
   endpoints: Record<string, unknown>;
 }
 export const manifest: Manifest;
+/** List persona ids. With \`domain\`, filters on the persona's declared
+ * domain set — multi-domain personas appear under BOTH 'banking' and
+ * 'insurance' filters (Phase 2.2). */
 export function listPersonas(opts?: { domain?: Domain }): string[];
 export function getPersonaInfo(personaId: string): PersonaInfo | null;
 export function listEndpoints(personaId: string, lfi?: 'rich' | 'median' | 'sparse'): string[];
@@ -994,7 +1290,7 @@ export interface PaginationOptions {
   requestUrl?: string;
 }
 export interface PaginatedMeta {
-  TotalPages: number;
+  TotalPages?: number;
   [k: string]: unknown;
 }
 export interface PaginatedLinks {
@@ -1015,11 +1311,16 @@ export interface PaginationSidecar {
 }
 export interface PaginatedEnvelope {
   Data: unknown;
-  Links: PaginatedLinks;
+  Links?: PaginatedLinks;
+  _paginationLinks?: PaginatedLinks;
   Meta: PaginatedMeta;
   _pagination: PaginationSidecar;
   [k: string]: unknown;
 }
+/** NOTE (CJS entry): under \`require('@openfinance-os/sandbox-fixtures')\`
+ * this function is **async** — it dynamically imports the ESM pagination
+ * engine and returns \`Promise<PaginatedEnvelope>\`; \`await\` the result.
+ * The ESM entry (\`import\`) is synchronous as typed here. */
 export function loadFixturePage(
   opts: {
     persona: string;
@@ -1165,22 +1466,76 @@ export function validateRecipe(recipe: CustomRecipe, pools: IndexedPools): { ok:
 export function getPools(): IndexedPools;
 export function expandRecipe(recipe: CustomRecipe, pools: IndexedPools): unknown;
 export function buildBundle(opts: { persona: unknown; lfi: 'rich' | 'median' | 'sparse'; seed: number; pools: IndexedPools; now?: Date }): unknown;
-export function envelopesFromBundle(bundle: unknown, ctx: { personaId: string; lfi: 'rich' | 'median' | 'sparse'; seed: number; specVersion?: string; specSha?: string; retrievedAt: string }): Record<string, unknown>;
-`;
-fs.writeFileSync(path.join(OUT, 'index.d.ts'), indexDts);
+export function envelopesFromBundle(bundle: unknown, ctx: Pick<import('./core-types.js').Scenario,'personaId'|'lfi'|'seed'> & Partial<import('./core-types.js').Scenario> & { specVersion?: string; specVersions?: Record<string,string>; specSha?: string; retrievedAt?: string }): Record<string, unknown>;
 
-// README.
-const readme = `# @openfinance-os/sandbox-fixtures
+// ---------------------------------------------------------------------------
+// CJS-only async accessors. The CommonJS entry (index.cjs) cannot re-export
+// the ESM runtime engine synchronously, so it exposes these two accessors
+// instead of the direct named exports above (buildBundle, expandRecipe, the
+// recipe codec, envelopesFromBundle, and the pagination helpers are
+// ESM-entry-only). They are NOT present on the ESM entry — under \`import\`,
+// use the direct named exports.
+// ---------------------------------------------------------------------------
+export interface Engine {
+  buildBundle: typeof buildBundle;
+  expandRecipe: typeof expandRecipe;
+  RECIPE_DEFAULTS: Required<CustomRecipe>;
+  encodeRecipe: typeof encodeRecipe;
+  decodeRecipe: typeof decodeRecipe;
+  recipeHash: typeof recipeHash;
+  validateRecipe: typeof validateRecipe;
+  envelopesFromBundle: typeof envelopesFromBundle;
+}
+/** CJS entry only — resolves the runtime engine (generator + recipe codec +
+ * envelope wrapper) via dynamic import. */
+export function getEngine(): Promise<Engine>;
+/** CJS entry only — resolves the pagination helper module
+ * (paginateEnvelope, parsePaginationParams, isPaginatableEnvelope,
+ * findListKey, PAGINATION_DEFAULTS) via dynamic import. */
+export function getPagination(): Promise<{
+  paginateEnvelope: typeof paginateEnvelope;
+  parsePaginationParams: typeof parsePaginationParams;
+  isPaginatableEnvelope: typeof isPaginatableEnvelope;
+  findListKey: typeof findListKey;
+  PAGINATION_DEFAULTS: { readonly defaultLimit: number; readonly maxLimit: number };
+}>;
+`;
+fs.copyFileSync(path.join(repoRoot, 'tools/core-types.d.ts'), path.join(OUT, 'core-types.d.ts'));
+fs.copyFileSync(
+  path.join(repoRoot, 'tools/validation-types.d.ts'),
+  path.join(OUT, 'validation.d.ts'),
+);
+fs.writeFileSync(path.join(OUT, 'index.d.ts'), indexDts + "\nexport * from './core-types.js';\n");
+
+// README. Persona counts are DERIVED from the manifest just built — never
+// hand-typed literals (they went stale twice; see APP_IMPROVEMENT_PLAN E-01).
+const personasByDomain = {};
+for (const info of Object.values(manifest.personas)) {
+  const d = info.domain ?? 'banking';
+  personasByDomain[d] = (personasByDomain[d] ?? 0) + 1;
+}
+const personaSummary = Object.entries(personasByDomain)
+  .map(([d, n]) => `${n} ${d === 'multi' ? 'multi-domain' : d}`)
+  .join(' + ');
+const personaTotal = Object.keys(manifest.personas).length;
+const bankingTabCount = (personasByDomain.banking ?? 0) + (personasByDomain.multi ?? 0);
+const insuranceTabCount = (personasByDomain.insurance ?? 0) + (personasByDomain.multi ?? 0);
+const fixtureFileCount = fileCount;
+
+const readme = `> Generated distribution candidate. Registry publication must be verified before using registry install commands. Static seeds/roles are manifest-listed; raw current URLs are not immutable snapshots. Enrichment sidecars are synthetic answer labels for evaluation.
+
+# @openfinance-os/sandbox-fixtures
 
 Deterministic, v2.1-shaped UAE Open Finance synthetic fixtures from the
 [Open Finance Data Sandbox](https://github.com/openfinance-os/data-sandbox).
 
-38 personas (21 banking + 9 insurance + 8 multi-domain) × 3 LFI profiles ×
-every v2.1 endpoint per persona's accounts/policies = **~2,000 fixtures**,
-plus the parsed v2.1 OpenAPI specs (banking + insurance) and the persona
-manifests. Multi-domain personas are surfaced by both
-\`loadPersonasByDomain('banking')\` and \`loadPersonasByDomain('insurance')\`,
-matching the way the sandbox UI renders them in both tabs.
+${personaTotal} personas (${personaSummary}) × 3 LFI profiles ×
+every v2.1 endpoint per persona's accounts/policies = **${fixtureFileCount.toLocaleString('en-US')} fixture files**,
+plus the parsed v2.1 OpenAPI specs for all three domains (banking +
+insurance + ATM Locator) and the persona manifests. Multi-domain personas
+are surfaced by both \`listPersonas({ domain: 'banking' })\` (${bankingTabCount} personas)
+and \`listPersonas({ domain: 'insurance' })\` (${insuranceTabCount} personas), matching the
+way the sandbox UI renders them in both tabs.
 
 ## Install
 
@@ -1226,10 +1581,59 @@ const { loadFixture } = require('@openfinance-os/sandbox-fixtures');
 
 ## What's in the box
 
-- \`bundles/<persona>/<lfi>/seed-<n>/<endpoint>.json\` — ~2,000 fixtures across two domains. Banking: 18 personas × 3 LFIs × every Account-Information endpoint per persona's accounts. Insurance: 9 personas (motor, home, health, life, travel, renters, employment) × 3 LFIs × the per-line endpoint set. Each is a v2.1-correct \`{ Data, Links, Meta }\` envelope plus watermark fields (\`_persona\`, \`_lfi\`, \`_seed\`, \`_specSha\`).
+- \`bundles/<persona>/<lfi>/seed-<n>/<endpoint>.json\` — ${fixtureFileCount.toLocaleString('en-US')} fixture files across three domains (banking · insurance across all 7 lines — motor, home, health, life, travel, renters, employment · ATM Locator). Banking: ${bankingTabCount} personas (incl. ${personasByDomain.multi ?? 0} multi-domain). Insurance: ${insuranceTabCount} personas (incl. the same ${personasByDomain.multi ?? 0} multi-domain). Each follows its reviewed domain contract (ATM has Data/Meta without Links; insurance quotes use the documented composition adapter) plus watermark fields (\`_persona\`, \`_lfi\`, \`_seed\`, \`_specSha\`).
 - \`personas/<persona>.json\` — persona manifest (demographics, fixed commitments, stress coverage, narrative).
-- \`spec.json\` — the parsed UAE Open Finance v2.1 Account-Information spec, keyed by endpoint with field metadata. The insurance spec is sibling-loadable via \`loadSpec({ domain: 'insurance' })\`.
+- \`spec.json\` / \`spec.insurance.json\` / \`spec.atm.json\` — the parsed UAE Open Finance v2.1 specs, keyed by endpoint with field metadata. Load via \`loadSpec()\` / \`loadSpec({ domain: 'insurance' })\` / \`loadSpec({ domain: 'atm' })\`.
+- \`enrichment/<persona>/seed-<n>.json\` + \`brand-registry.json\` + \`brands/*.svg\` — enrichment sidecars and the slug-keyed brand registry (see below).
 - \`manifest.json\` — top-level index keyed by \`<persona>|<lfi>|<seed>\`.
+- \`pools.json\` + \`lib/\` — the vendored runtime engine for custom personas (see below).
+
+All data files are also importable as subpaths, e.g.
+\`import manifest from '@openfinance-os/sandbox-fixtures/manifest.json' with { type: 'json' }\`
+— the exports map exposes \`./manifest.json\`, \`./spec*.json\`, \`./pools.json\`,
+\`./brand-registry.json\`, \`./bundles/*\`, \`./personas/*\`, \`./enrichment/*\`,
+\`./brands/*\`, \`./lib/*\`, and \`./package.json\`.
+
+## Pagination helpers
+
+\`loadFixturePage({ persona, endpoint, lfi, seed, offset, limit })\` returns one
+page of a listing endpoint the way a real LFI would: the array under \`Data\`
+is sliced, \`Links.{Self,First,Next,Prev,Last}\` and \`Meta.TotalPages\` are
+populated where the domain schema declares them, and a \`_pagination\` sidecar exposes the resolved page state. ATM navigation remains in \`_paginationLinks\` rather than invented wire fields.
+Pure helpers are exported too: \`paginateEnvelope\`, \`parsePaginationParams\`,
+\`isPaginatableEnvelope\`, \`findListKey\`, and \`PAGINATION_DEFAULTS\`
+(default limit 25, max 500). Note: on the CommonJS entry \`loadFixturePage\`
+is **async** (await it), and the pure helpers are reached via the
+\`getPagination()\` accessor.
+
+## Role bundles (multi-LFI footprints)
+
+Personas declaring a \`multi_lfi_footprint\` ship extra role bundles — the
+same customer seen from their secondary/tertiary (or Phase 2.2 N-slot)
+banking relationships. \`listRoleBundles(personaId)\` returns the emitted
+slot keys; pass \`lfi_role\` to \`loadFixture\` / \`loadFixturePage\` /
+\`loadJourney\` to read them. Cross-bundle IBAN identity holds: the role
+bundle's account IBAN byte-matches the corresponding self-beneficiary in
+the primary bundle.
+
+## Enrichment sidecar + brand registry
+
+\`loadEnrichment({ persona, seed })\` returns the per-(persona, seed)
+enrichment sidecar — cleaned merchant, corrected MCC, category taxonomy,
+logo slug/URL, brand colour, parent-group, and MCC-misrouting metadata —
+joined to the raw envelopes by \`TransactionId\`. \`loadBrandRegistry()\`
+returns the slug-keyed brand registry (logo URL, primary colour, display
+variants; the \`logoSlug\` on an enrichment record is the join key). Logos
+are algorithmically-generated placeholders — no real brand marks.
+
+## Custom personas (recipe codec + runtime engine)
+
+The full generator ships in \`lib/\`: compose a recipe and run it in-process
+for the same v2.1 envelopes as the static fixtures, no network needed.
+ESM exports: \`buildBundle\`, \`expandRecipe\`, \`encodeRecipe\`, \`decodeRecipe\`,
+\`recipeHash\`, \`validateRecipe\`, \`RECIPE_DEFAULTS\`, \`envelopesFromBundle\`,
+and \`getPools()\` for the serialised synthetic-identity pools. On the
+CommonJS entry these are reached via the async \`getEngine()\` accessor.
 
 ## Determinism
 
@@ -1250,18 +1654,13 @@ UAE Open Finance Standards \`v2.1\`, vendored from \`Nebras-Open-Finance/api-spe
 `;
 fs.writeFileSync(path.join(OUT, 'README.md'), readme);
 
-const personasByDomain = {};
-for (const info of Object.values(manifest.personas)) {
-  const d = info.domain ?? 'banking';
-  personasByDomain[d] = (personasByDomain[d] ?? 0) + 1;
-}
-const personaSummary = Object.entries(personasByDomain)
-  .map(([d, n]) => `${n} ${d}`)
-  .join(' + ');
-
 console.log(
   `built fixture package → ${path.relative(repoRoot, OUT)}/` +
     `\n  ${fileCount} fixture files (${(totalBytes / 1024).toFixed(1)} KB raw)` +
     `\n  ${Object.keys(manifest.personas).length} personas (${personaSummary}) · ${Object.keys(manifest.fixtures).length} (persona × lfi) keys` +
     `\n  spec ${manifest.specVersion} @ ${manifest.specSha.slice(0, 7)}`,
 );
+
+// Stamp the cache only after a fully successful build — any throw above
+// leaves no stamp, so the next run rebuilds from scratch.
+fs.writeFileSync(STAMP_PATH, `${inputHash}\n`);

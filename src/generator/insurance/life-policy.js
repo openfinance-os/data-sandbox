@@ -196,7 +196,7 @@ export function generateLifeClaims({ persona }) {
       TotalGrossPaidAmount: aed(c.total_gross_aed ?? 0),
     },
   ];
-  return { Summary: summary, NoClaimsDiscountAvailable: (c.claims_in_period ?? 0) === 0 };
+  return { Summary: summary };
 }
 
 export function generateLifePremium({ persona }) {

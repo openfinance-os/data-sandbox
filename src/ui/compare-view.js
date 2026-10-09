@@ -1,17 +1,56 @@
+import { CORPUS_VERSION } from '../core/scenario.js';
 // EXP-16 Compare-LFIs view. Renders the active LFI (state.lfi) against
 // a partner (state.compareWith) side-by-side, with diff highlighting:
 // green = present only on this side, amber = changed value, red =
 // missing here. Pure UI module; takes state + DOM helper + the
 // underscore-prefix stripper as deps so it can live outside src/app.js.
 
-import { buildBundle } from '../generator/index.js';
+// C-P1 perf — the async lazy generator entry (banking static, other domains
+// dynamic-imported). Compare-mode is banking-only today, so in practice the
+// pipeline is always already loaded by the time this runs.
+import { buildBundle } from '../generator/lazy.js';
 import { leafFields } from '../shared/spec-helpers.js';
 import { statusPill } from '../shared/dom.js';
 
-export function createCompareView(deps) {
-  const { state, el, stripInternal, personaAvatarEl } = deps;
+// C-P2 — compare-mode bundle memo cap. Small on purpose: one compare session
+// touches at most a handful of (persona, lfi, seed) tuples; the cache exists
+// to stop every re-render re-generating two full bundles.
+const BUNDLE_CACHE_MAX = 6;
 
-  function renderCompareView(body) {
+export function createCompareView(deps) {
+  const { state, el, stripInternal, personaAvatarEl, localizedName } = deps;
+
+  // C-P2 — memoized compare bundles, keyed (personaId, lfi, seed). The cached
+  // entry also pins the persona OBJECT it was built from: the custom persona
+  // keeps its 'custom' id across re-applies of a new recipe, so object
+  // identity (a fresh object per expansion) is the invalidation signal.
+  const bundleCache = new Map();
+
+  async function bundleFor(persona, lfi, now) {
+    // Reuse the app's active bundle when this side matches the active LFI —
+    // rebuildAndRender guarantees state.bundle corresponds to the current
+    // (personaId, lfi, seed) before any compare render runs.
+    if (lfi === state.lfi && state.bundle && state.bundle.persona === persona.persona_id) {
+      return state.bundle;
+    }
+    const key = `${CORPUS_VERSION}|${now.toISOString()}|${persona.persona_id}|${lfi}|${state.seed}`;
+    const hit = bundleCache.get(key);
+    if (hit && hit.persona === persona) return hit.bundle;
+    const bundle = await buildBundle({
+      persona,
+      lfi,
+      seed: state.seed,
+      pools: state.data.pools,
+      now,
+    });
+    if (bundleCache.size >= BUNDLE_CACHE_MAX) {
+      bundleCache.delete(bundleCache.keys().next().value); // drop the oldest entry
+    }
+    bundleCache.set(key, { persona, bundle });
+    return bundle;
+  }
+
+  async function renderCompareView(body) {
     const persona = state.data.personas[state.personaId];
     const now = new Date(state.data.buildInfo.nowIso);
     // Compare-mode renders the active LFI (state.lfi) against a partner
@@ -19,20 +58,8 @@ export function createCompareView(deps) {
     // affordance is just a thin context line + diff legend.
     const leftLfi = state.lfi;
     const rightLfi = state.compareWith;
-    const leftBundle = buildBundle({
-      persona,
-      lfi: leftLfi,
-      seed: state.seed,
-      pools: state.data.pools,
-      now,
-    });
-    const rightBundle = buildBundle({
-      persona,
-      lfi: rightLfi,
-      seed: state.seed,
-      pools: state.data.pools,
-      now,
-    });
+    const leftBundle = await bundleFor(persona, leftLfi, now);
+    const rightBundle = await bundleFor(persona, rightLfi, now);
 
     const leftRows = compareRowsFor(leftBundle);
     const rightRows = compareRowsFor(rightBundle);
@@ -46,7 +73,12 @@ export function createCompareView(deps) {
           el(
             'div',
             { class: 'compare-persona-text' },
-            el('div', { class: 'compare-persona-name', text: persona.name }),
+            // D-10 — use the localized display name (name_ar under Arabic UI)
+            // instead of the raw English manifest name.
+            el('div', {
+              class: 'compare-persona-name',
+              text: localizedName ? localizedName(persona) : persona.name,
+            }),
             el('div', { class: 'compare-persona-lfis', text: `${leftLfi} vs ${rightLfi}` }),
           ),
         ),
@@ -58,6 +90,27 @@ export function createCompareView(deps) {
         text: `${stats.totalCellsLeft} populated cells on ${leftLfi} · ${stats.totalCellsRight} on ${rightLfi} · ${stats.diffCount} fields differ across ${Math.max(leftRows.length, rightRows.length)} rows. Cells highlighted: green = present only on this side, amber = changed, red = missing.`,
       }),
     );
+
+    const [{ incomeAndCommitments }, { envelopesFromBundle }] = await Promise.all([
+      import('../core/analysis.js'),
+      import('../core/envelopes.js'),
+    ]);
+    const outcome = el('details', { class: 'compare-outcome' });
+    outcome.appendChild(
+      el('summary', {
+        text: 'Observed April income and commitments — source IDs and missing evidence',
+      }),
+    );
+    for (const [profile, bundle] of [
+      [leftLfi, leftBundle],
+      [rightLfi, rightBundle],
+    ]) {
+      const result = incomeAndCommitments(
+        envelopesFromBundle(bundle, { personaId: state.personaId, lfi: profile, seed: state.seed }),
+      );
+      outcome.appendChild(el('pre', { text: `${profile}\n${JSON.stringify(result, null, 2)}` }));
+    }
+    body.appendChild(outcome);
 
     // Union of column keys across both sides so each half renders the same
     // columns. That's how a "missing" cell on Sparse gets a column to live in
@@ -177,7 +230,8 @@ export function createCompareView(deps) {
     const thead = el('thead');
     const headRow = el('tr');
     for (const k of allKeys) {
-      const th = el('th');
+      // C-A2 — column-header semantics for screen-reader table navigation.
+      const th = el('th', { attrs: { scope: 'col' } });
       const f = fieldsByName.get(k);
       if (f) th.dataset.status = f.status;
       if (f) {
