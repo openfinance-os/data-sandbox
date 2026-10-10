@@ -1,0 +1,12 @@
+{
+  "name": "data-sandbox-public-read",
+  "main": "public-read-worker.mjs",
+  "compatibility_date": "2026-10-10",
+  "workers_dev": false,
+  "routes": [
+    {
+      "pattern": "data-sandbox.openfinance-os.org/*",
+      "zone_name": "openfinance-os.org",
+    },
+  ],
+}

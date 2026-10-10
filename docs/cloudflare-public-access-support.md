@@ -1,6 +1,8 @@
 # Draft Cloudflare support request
 
-Not submitted. No authorization to contact Cloudflare is implied by this document.
+Not submitted. The user canceled support outreach. This draft is retained only as a diagnostic record.
+
+Historical diagnosis: the approved [Worker delivery route](public-access-worker.md) subsequently restored canonical GET/HEAD access, passing all 42 ordinary-Python checks. The failure description and reproduction below describe the earlier Pages-origin behavior, before Worker routing.
 
 **Subject:** Pages origin returns BIC 1010 despite a matching hostname/method exception
 

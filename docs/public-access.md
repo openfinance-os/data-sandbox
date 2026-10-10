@@ -18,13 +18,17 @@ Browser Integrity Check rejects some standard programmatic clients based on thei
 
 The rule belongs to the zone-level `http_config_settings` phase. Its Cloudflare reference is `sandbox_public_read_bic`. Inspect existing phase rules before adding it; do not replace another entrypoint or unrelated rules. To roll back, disable or remove only that rule and verify the zone-wide Browser Integrity Check is still on.
 
-**Application status:** applied after the user's explicit approval at 04:16:58 UTC on 10 October 2026. Ruleset ID `474b169b28cc4e14b573818e63dcf46f`, rule ID `4116fdc790dc46f8a98283e262572ceb`. The zone-wide Browser Integrity Check remains on. Cloudflare Request Trace matches this rule, but real default-client reads still return 1010 from both the local network and a GitHub runner. Cloudflare HTTP analytics records those subsequent failures with both edge and origin status 403; no subsequent zone BIC block events appeared in the checked window. A BIC-only skip with the identical hostname/method scope did not help and was removed. Pages domain revalidation returned to active and did not fix the reads. This remains an origin delivery issue, not a completed public-access correction. See the [prepared provider request](cloudflare-public-access-support.md).
+**Rule status:** applied after the user's explicit approval at 04:16:58 UTC on 10 October 2026. Ruleset ID `474b169b28cc4e14b573818e63dcf46f`, rule ID `4116fdc790dc46f8a98283e262572ceb`. The zone-wide Browser Integrity Check remains on. The exception alone did not restore reads: Request Trace matched it, but real clients still received origin/edge 403/1010 locally and from a GitHub runner. A BIC-only skip with identical scope and Pages domain revalidation did not help; the temporary skip was removed. This origin delivery failure was subsequently resolved for canonical public reads through the approved Worker route below. The [unsent diagnostic draft](cloudflare-public-access-support.md) records the original evidence.
 
 The weekly/manual audit workflow also runs the real public-access check from a GitHub runner. A trace success or a curl success cannot satisfy it.
 
-## Temporary programmatic download path
+## Alternative delivery without support outreach
 
-The existing [GitHub deployment mirror](https://openfinance-os.github.io/data-sandbox/) supports ordinary Python clients. On 10 October, the full check passed there, including three domain fixtures, GET/HEAD, CORS, missing-path 404s, noindex and parity with the deployed MCP service. Until the canonical origin is corrected, use `https://openfinance-os.github.io/data-sandbox/fixtures/v1/manifest.json` to discover fixture paths, and resolve them under `https://openfinance-os.github.io/data-sandbox/fixtures/v1/`.
+The user canceled the support ticket and approved the exact full-host rollout. The active [Worker delivery route](public-access-worker.md) uses the verified GitHub deployment as the fixed origin for GET/HEAD at `data-sandbox.openfinance-os.org/*`. All 42 canonical checks pass with the ordinary Python client, including all three fixture domains and release parity. Normal browser explorer/embed loads and byte-identical payload comparisons pass. HTTP reads still redirect to HTTPS with scenario parameters retained; POST/OPTIONS keep the existing Pages responses. DNS and security rules retain their prior configuration, and the temporary Worker preview endpoint is disabled.
+
+## Direct GitHub deployment mirror
+
+The existing [GitHub deployment mirror](https://openfinance-os.github.io/data-sandbox/) also supports ordinary Python clients. On 10 October, the full check passed there, including three domain fixtures, GET/HEAD, CORS, missing-path 404s, noindex and parity with the deployed MCP service. Public clients can now use `https://data-sandbox.openfinance-os.org/fixtures/v1/manifest.json` and resolve its fixture paths under `https://data-sandbox.openfinance-os.org/fixtures/v1/`. The direct mirror remains available under `https://openfinance-os.github.io/data-sandbox/fixtures/v1/`.
 
 Verify a release before using the mirror:
 
@@ -32,7 +36,7 @@ Verify a release before using the mirror:
 python3 tools/check-public-access.py --origin https://openfinance-os.github.io/data-sandbox --expected-revision <full-sha>
 ```
 
-The mirror is a temporary delivery path; the canonical app hostname and indexing policy remain unchanged.
+The mirror is the Worker's fixed upstream; the canonical app hostname and indexing policy remain unchanged.
 
 Cloudflare documents [selective configuration settings](https://developers.cloudflare.com/rules/configuration-rules/settings/) and [Browser Integrity Check](https://developers.cloudflare.com/waf/tools/browser-integrity-check/).
 

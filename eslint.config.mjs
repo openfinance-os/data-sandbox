@@ -120,6 +120,12 @@ export default [
   },
   js.configs.recommended,
   browserSrc,
+  {
+    files: ['cloudflare/**/*.mjs'],
+    languageOptions: {
+      globals: { ...globals.serviceworker },
+    },
+  },
   dualEnvSrc,
   nodeFiles,
   e2eTests,
