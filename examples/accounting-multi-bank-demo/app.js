@@ -31,15 +31,27 @@ const $ = (id) => document.getElementById(id);
 const showErr = (msg) => {
   $('err').textContent = msg;
   $('err').hidden = false;
+  $('load-status').textContent = '';
+  $('results').setAttribute('aria-busy', 'false');
+  if (!$('persona-select').value) {
+    $('scenario-name').textContent = 'Unavailable';
+    $('holder-names').textContent = 'Unavailable';
+  }
 };
 
-async function getJSON(url) {
-  const r = await fetch(url, { headers: { Accept: 'application/json' } });
-  if (!r.ok) throw new Error(`${r.status} ${r.statusText} — ${url}`);
+async function getJSON(url, signal) {
+  const r = await fetch(url, { headers: { Accept: 'application/json' }, signal });
+  if (!r.ok) {
+    const error = new Error(`${r.status} ${r.statusText} — ${url}`);
+    error.status = r.status;
+    throw error;
+  }
   return r.json();
 }
 
 let manifest;
+let currentRequest;
+let renderGeneration = 0;
 
 // Mirror of normalizeFootprint() in src/generator/multi-lfi.js — the demo is
 // a standalone page fetching a remote manifest, so it carries its own copy.
@@ -102,30 +114,68 @@ async function renderAll() {
   const lfi = $('lfi-select').value;
   const info = manifest.personas[personaId];
   const seed = info.default_seed;
+  const generation = ++renderGeneration;
+  currentRequest?.abort();
+  const controller = new AbortController();
+  currentRequest = controller;
 
+  $('err').hidden = true;
+  $('load-status').textContent = 'Loading synthetic accounts and balances…';
+  $('scenario-name').textContent = info.name;
+  $('holder-names').textContent = 'Loading…';
+  $('results').setAttribute('aria-busy', 'true');
+  $('recon-table').querySelector('tbody').replaceChildren();
+  $('ledger-table').querySelector('tbody').replaceChildren();
+  $('watermark').textContent = '';
   renderFootprint(info);
 
-  const [primaryAccounts, primaryBeneficiaries, ...roleBundles] = await fetchPrimaryAndRoles(
-    personaId,
-    lfi,
-    seed,
-    info,
-  );
+  try {
+    const [primaryAccounts, primaryBeneficiaries, primaryBalances, ...roleBundles] =
+      await fetchPrimaryAndRoles(personaId, lfi, seed, info, controller.signal);
+    if (generation !== renderGeneration) return;
 
-  renderReconciliation(info, primaryAccounts, primaryBeneficiaries, roleBundles);
-  renderLedger(personaId, info, primaryAccounts, roleBundles);
-  $('watermark').textContent = primaryAccounts._watermark ?? '';
+    const holders = new Set(
+      [primaryAccounts, ...roleBundles.map((rb) => rb.accounts)].flatMap((env) =>
+        (env.Data?.Account ?? []).map((acc) => acc.AccountHolderName).filter(Boolean),
+      ),
+    );
+    $('holder-names').textContent = [...holders].join(' · ') || 'Not supplied';
+    renderReconciliation(info, primaryAccounts, primaryBeneficiaries, roleBundles);
+    renderLedger(primaryAccounts, primaryBalances, roleBundles);
+    $('watermark').textContent = primaryAccounts._watermark ?? '';
+    const unavailable = [
+      ...primaryBalances.values(),
+      ...roleBundles.map((rb) => rb.balances),
+    ].filter((env) => env === null).length;
+    $('load-status').textContent = unavailable
+      ? `Loaded accounts. ${unavailable === 1 ? '1 balance feed is' : `${unavailable} balance feeds are`} unavailable; those balances are not shown.`
+      : 'Synthetic accounts and balances loaded.';
+  } catch (err) {
+    if (generation !== renderGeneration || controller.signal.aborted) return;
+    $('holder-names').textContent = 'Unavailable';
+    $('load-status').textContent = '';
+    showErr(`Could not load this scenario. Choose a scenario or profile to retry. ${err.message}`);
+  } finally {
+    if (generation === renderGeneration) $('results').setAttribute('aria-busy', 'false');
+  }
 }
 
-async function fetchPrimaryAndRoles(personaId, lfi, seed, info) {
+async function fetchPrimaryAndRoles(personaId, lfi, seed, info, signal) {
   // Primary bundle: /accounts is bundle-level; beneficiaries is per-account
   // — fetch for the first account.
   const primaryAccountsUrl = `${FX}/bundles/${personaId}/${lfi}/seed-${seed}/accounts.json`;
-  const primaryAccounts = await getJSON(primaryAccountsUrl);
+  const primaryAccounts = await getJSON(primaryAccountsUrl, signal);
   const firstAccount = primaryAccounts.Data?.Account?.[0];
   if (!firstAccount) throw new Error('primary bundle missing /accounts.Data.Account[0]');
   const primaryBeneficiariesUrl = `${FX}/bundles/${personaId}/${lfi}/seed-${seed}/accounts__${firstAccount.AccountId}__beneficiaries.json`;
-  const primaryBeneficiaries = await getJSON(primaryBeneficiariesUrl);
+  const primaryBeneficiariesFetch = getJSON(primaryBeneficiariesUrl, signal);
+  const primaryBalanceFetches = (primaryAccounts.Data.Account ?? []).map(async (acc) => {
+    const url = primaryAccountsUrl.replace(
+      'accounts.json',
+      `accounts__${acc.AccountId}__balances.json`,
+    );
+    return [acc.AccountId, await fetchBalance(url, signal)];
+  });
 
   // Role bundles in parallel — every declared slot beyond the primary
   // (slots[0]), whichever footprint shape the persona uses.
@@ -134,34 +184,53 @@ async function fetchPrimaryAndRoles(personaId, lfi, seed, info) {
   const roleFetches = declaredSlots.map(async (slot) => {
     const url = `${FX}/bundles/${personaId}/${slot}/${lfi}/seed-${seed}/accounts.json`;
     try {
-      const env = await getJSON(url);
+      const env = await getJSON(url, signal);
       return {
         slot,
         accounts: env,
-        balanceUrl: url.replace(
-          'accounts.json',
-          `accounts__${env.Data?.Account?.[0]?.AccountId}__balances.json`,
+        balances: await fetchBalance(
+          url.replace(
+            'accounts.json',
+            `accounts__${env.Data?.Account?.[0]?.AccountId}__balances.json`,
+          ),
+          signal,
         ),
       };
-    } catch {
+    } catch (err) {
       // The slot may have all-non-bank candidates (e.g. F&B's `acquiring`
       // slot whose candidates are all PSPs not in the counterparty pool).
       // No role bundle was emitted; gracefully skip.
-      return null;
+      if (err.status === 404) return null;
+      throw err;
     }
   });
-  const roleBundlesRaw = await Promise.all(roleFetches);
-  const roleBundles = [];
-  for (const rb of roleBundlesRaw) {
-    if (!rb) continue;
-    try {
-      rb.balances = await getJSON(rb.balanceUrl);
-    } catch {
-      rb.balances = null;
-    }
-    roleBundles.push(rb);
+  const [primaryBeneficiaries, primaryBalanceEntries, roleBundles] = await Promise.all([
+    primaryBeneficiariesFetch,
+    Promise.all(primaryBalanceFetches),
+    Promise.all(roleFetches),
+  ]);
+  return [
+    primaryAccounts,
+    primaryBeneficiaries,
+    new Map(primaryBalanceEntries),
+    ...roleBundles.filter(Boolean),
+  ];
+}
+
+async function fetchBalance(url, signal) {
+  try {
+    return await getJSON(url, signal);
+  } catch (err) {
+    if (signal.aborted) throw err;
+    return null;
   }
-  return [primaryAccounts, primaryBeneficiaries, ...roleBundles];
+}
+
+function balanceText(env) {
+  if (env === null) return 'Unavailable';
+  const balance = env?.Data?.Balance?.[0];
+  if (balance?.Amount?.Amount == null || !balance.Amount.Currency) return 'Not supplied';
+  return `${balance.CreditDebitIndicator === 'Debit' ? '-' : ''}${balance.Amount.Amount} ${balance.Amount.Currency}`;
 }
 
 function renderFootprint(info) {
@@ -251,7 +320,7 @@ function addReconRow(tbody, source, bank, bic, iban, holder) {
   return tr;
 }
 
-function renderLedger(personaId, info, primaryAccounts, roleBundles) {
+function renderLedger(primaryAccounts, primaryBalances, roleBundles) {
   const tbody = $('ledger-table').querySelector('tbody');
   tbody.innerHTML = '';
 
@@ -264,18 +333,13 @@ function renderLedger(personaId, info, primaryAccounts, roleBundles) {
       acc.AccountId,
       acc.Currency,
       acc.AccountIdentifiers?.[0]?.Identification,
-      '—',
+      balanceText(primaryBalances.get(acc.AccountId)),
     );
   }
 
   for (const rb of roleBundles) {
     const acc = rb.accounts.Data?.Account?.[0];
     if (!acc) continue;
-    let bal = '—';
-    if (rb.balances?.Data?.Balance?.length) {
-      const b = rb.balances.Data.Balance[0];
-      bal = `${b.CreditDebitIndicator === 'Debit' ? '-' : ''}${b.Amount?.Amount ?? '—'} ${b.Amount?.Currency ?? ''}`;
-    }
     addLedgerRow(
       tbody,
       rb.slot,
@@ -283,7 +347,7 @@ function renderLedger(personaId, info, primaryAccounts, roleBundles) {
       acc.AccountId,
       acc.Currency,
       acc.AccountIdentifiers?.[0]?.Identification,
-      bal,
+      balanceText(rb.balances),
     );
   }
 }
