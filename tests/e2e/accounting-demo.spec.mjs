@@ -53,12 +53,16 @@ test('primary balances and generated holders come from the selected fixture enve
 test('a slower old selection cannot replace the latest scenario and profile', async ({ page }) => {
   let release;
   let notify;
+  let handled;
   const gate = new Promise((resolve) => (release = resolve));
   const started = new Promise((resolve) => (notify = resolve));
+  const finished = new Promise((resolve) => (handled = resolve));
   await page.route(`**${BALANCE}`, async (route) => {
+    const response = await route.fetch();
     notify();
     await gate;
-    await route.continue().catch(() => {});
+    await route.fulfill({ response }).catch(() => {});
+    handled();
   });
   try {
     await page.goto(DEMO);
@@ -77,7 +81,12 @@ test('a slower old selection cannot replace the latest scenario and profile', as
     await expect(page.locator('#results')).toHaveAttribute('aria-busy', 'false');
     await expect(page.locator('#watermark')).toContainText(`persona:${other} lfi:sparse`);
     release();
-    await page.waitForLoadState('networkidle');
+    await finished;
+    // Inspect the next paint after delivering the held response. Firefox can
+    // retain aborted routed requests in its page-wide network-idle bookkeeping.
+    await page.evaluate(
+      () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+    );
     await expect(page.locator('#watermark')).toContainText(`persona:${other} lfi:sparse`);
     await expect(page.locator('#scenario-name')).toHaveText(
       (await page.locator('#persona-select option:checked').textContent()).replace(
