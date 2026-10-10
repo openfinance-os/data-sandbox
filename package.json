@@ -39,7 +39,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "test:perf": "lhci autorun --config=lighthouserc.json",
+    "test:perf": "node tools/run-lighthouse.mjs",
     "validate:spec-conformance": "npm run lint:persona-spec-conformance && vitest run tests/spec-validation.test.mjs tests/spec-validation.insurance.test.mjs tests/rendered-fixture-spec-validation.test.mjs",
     "serve": "node tools/gzip-static-server.mjs 8000 _site",
     "ci": "npm run verify:spec-shape && npm run build:spec && npm run build:data && npm run build:avatars && npm run build:fixtures:pkgs && node tools/build-labs.mjs && npm run check:dist-clean && node tools/stage-site.mjs && npm run lint && npm run audit:realism && npm test && npm run test:mcp && npm run test:py",
@@ -51,7 +51,8 @@
     "build:evaluation": "node tools/build-evaluation.mjs",
     "export:tables": "node tools/export-tables.mjs",
     "test:install": "node tools/clean-install.mjs",
-    "build:archives": "node tools/build-release-archives.mjs"
+    "build:archives": "node tools/build-release-archives.mjs",
+    "audit:dependencies": "npm audit --audit-level=low"
   },
   "lint-staged": {
     "*.{js,mjs,cjs}": [
@@ -65,7 +66,6 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^10.0.1",
-    "@lhci/cli": "^0.15.1",
     "@playwright/test": "^1.62.1",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
@@ -78,6 +78,12 @@
     "posthog-js": "^1.422.1",
     "prettier": "^3.9.6",
     "vitest": "^4.1.11",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "lighthouse": "^13.5.0",
+    "chrome-launcher": "^1.2.1"
+  },
+  "overrides": {
+    "basic-ftp": "^6.2.3",
+    "qs": "^6.16.0"
   }
 }

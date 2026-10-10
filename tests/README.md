@@ -9,7 +9,7 @@ the workspace `packages/sandbox-mcp/` package.
 |---|---|---|
 | `npm test` | All 27 vitest suites | none required, but expect 1 skip |
 | `npm run test:e2e` | Playwright (smoke + analytics + a11y) | `npm run build:spec` |
-| `npm run test:perf` | Lighthouse CI (EXP-24 perf budget) | `npm run build:spec`, `build:data` |
+| `npm run test:perf` | Official Lighthouse (EXP-24 perf budget) | `npm run build:spec`, `build:data` |
 | `npm run test:mcp` | The MCP package's own vitest workspace | runs `build:fixtures` itself |
 | `npm run ci` | The full local gate (no perf, no e2e) | runs all build steps itself |
 | `npm run ci:full` | `ci` + `build:site` + `test:e2e` + `test:perf` | for full local verification |
