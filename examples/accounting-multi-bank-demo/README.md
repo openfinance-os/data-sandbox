@@ -33,6 +33,18 @@ trading SME), the demo:
 6. Renders a **consolidated multi-bank ledger view** — every account
    the SME holds across every LFI, joined into one table.
 
+The demo fetches a balance feed for each primary account and displays the
+signed amount and currency from its wire envelope, alongside the existing
+role-account balances. A failed balance request is labelled **Unavailable**;
+an empty or incomplete balance payload is labelled **Not supplied**. Neither
+is treated as zero. Switching scenario or profile cancels the previous load,
+and a failed account load can be retried by changing either control.
+
+The selected **scenario** describes the fictional customer. Its display name
+can differ from the **generated account holders**, whose names are read from
+the seeded account payloads. The demo shows both separately without rewriting
+the fixtures or changing their deterministic identities.
+
 ## Spec adherence
 
 Every payload is a v2.1-shaped envelope (`{ Data, Links, Meta }` plus

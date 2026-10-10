@@ -5,29 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Multi-bank reconciliation demo</title>
     <style>
-      :root { color-scheme: light dark; }
+      :root { color-scheme: light dark; --surface: #fff; --text: #161616; --muted: #555; --header: #f4f4f4; --border: #ddd; --linked: #fffae6; --match: #050; --watermark: #666; background: var(--surface); color: var(--text); }
+      @media (prefers-color-scheme: dark) {
+        :root { --surface: #12171d; --text: #edf2f6; --muted: #bbc5ce; --header: #27323c; --border: #44515c; --linked: #34301a; --match: #85e0a3; --watermark: #bbc5ce; }
+      }
       body { font-family: -apple-system, system-ui, sans-serif; max-width: 980px; margin: 2rem auto; padding: 0 1.25rem; line-height: 1.45; }
       h1 { margin-bottom: 0.25rem; }
-      .lede { color: #555; margin-top: 0; }
+      .lede { color: var(--muted); margin-top: 0; }
       [hidden] { display: none !important; }
       .err { color: #c00; padding: 0.75rem; background: #fee; border-left: 3px solid #c00; }
       table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.92rem; }
-      th, td { padding: 0.45rem 0.6rem; text-align: left; border-bottom: 1px solid #ddd; vertical-align: top; }
-      th { background: #f4f4f4; font-weight: 600; }
-      .lfi-pill { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px; background: #eef; font-size: 0.78rem; }
+      th, td { padding: 0.45rem 0.6rem; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
+      th { background: var(--header); font-weight: 600; }
+      .table-scroll { overflow-x: auto; }
+      :focus-visible { outline: 2px solid #4795ca; outline-offset: 3px; }
+      .lfi-pill { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px; background: #eef; color: #223; font-size: 0.78rem; }
       .role-primary { background: #e7f5ff; color: #036; }
       .role-secondary { background: #fff5e6; color: #6a3500; }
       .role-tertiary { background: #f0fff0; color: #036020; }
       .iban { font-family: 'SF Mono', Monaco, monospace; font-size: 0.87rem; }
-      .match { color: #050; font-weight: 600; }
-      .row-link { background: #fffae6; }
+      code { overflow-wrap: anywhere; }
+      .match { color: var(--match); font-weight: 600; }
+      .row-link { background: var(--linked); }
       .ledger-row { font-family: monospace; font-size: 0.88rem; }
-      .controls { margin: 1rem 0; }
-      select { padding: 0.4rem; }
-      .watermark { color: #888; font-size: 0.78rem; margin-top: 1.5rem; }
+      .controls { margin: 1rem 0; display: flex; flex-wrap: wrap; gap: 0.75rem; }
+      .controls .control { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.25rem; min-width: 0; max-width: 100%; }
+      select { box-sizing: border-box; width: 100%; padding: 0.4rem; min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; color: var(--text); background: var(--surface); border: 1px solid var(--border); }
+      select { appearance: none; -webkit-appearance: none; padding-right: 1.75rem; background-image: linear-gradient(45deg, transparent 50%, var(--text) 50%), linear-gradient(135deg, var(--text) 50%, transparent 50%); background-position: calc(100% - 12px) 50%, calc(100% - 8px) 50%; background-size: 4px 4px; background-repeat: no-repeat; }
+      .watermark { color: var(--watermark); font-size: 0.78rem; margin-top: 1.5rem; overflow-wrap: anywhere; }
+      .scenario-context dt { font-weight: 600; }
+      .scenario-context dd { margin: 0 0 0.75rem; overflow-wrap: anywhere; }
     </style>
   </head>
   <body>
+    <main>
     <h1>Multi-bank reconciliation</h1>
     <p class="lede">
       A worked example: a TPP-side accounting system fetches an SME persona's
@@ -48,20 +59,34 @@
     </p>
 
     <div class="controls">
-      <label>Persona:
-        <select id="persona-select"></select>
-      </label>
-      <label>LFI populate-rate profile:
+      <div class="control">
+        <label for="persona-select">Scenario:</label>
+        <select id="persona-select" aria-describedby="scenario-note"></select>
+      </div>
+      <div class="control">
+        <label for="lfi-select">LFI populate-rate profile:</label>
         <select id="lfi-select">
           <option value="rich">Rich</option>
           <option value="median" selected>Median</option>
           <option value="sparse">Sparse</option>
         </select>
-      </label>
+      </div>
     </div>
 
-    <p class="err" id="err" hidden></p>
+    <p id="scenario-note">
+      The scenario label describes the fictional customer. Account-holder names
+      come from the seeded synthetic fixtures and can differ from that label.
+    </p>
+    <dl class="scenario-context">
+      <dt>Selected scenario</dt>
+      <dd id="scenario-name">Loading…</dd>
+      <dt>Generated account holders</dt>
+      <dd id="holder-names">Loading…</dd>
+    </dl>
+    <p id="load-status" role="status"></p>
+    <p class="err" id="err" role="alert" hidden></p>
 
+    <div id="results" aria-busy="true">
     <h2>1. Persona's declared multi-LFI footprint</h2>
     <p>
       From <code>list_personas</code> / <code>manifest.json</code>. Each row
@@ -69,12 +94,14 @@
       real UAE banks; the populate-rate label
       (Rich/Median/Sparse) stays anonymous (NG5 / D-14).
     </p>
+    <div class="table-scroll" role="region" aria-label="Declared footprint table" tabindex="0">
     <table id="footprint-table">
       <thead>
         <tr><th>Slot</th><th>Role</th><th>Plausible LFI candidates</th><th>Populate-rate</th></tr>
       </thead>
       <tbody></tbody>
     </table>
+    </div>
 
     <h2>2. Cross-bundle IBAN reconciliation</h2>
     <p>
@@ -84,12 +111,14 @@
       <strong>each role bundle's /accounts</strong>. Highlighted rows are
       the IBAN matches that close the cross-bundle reference loop.
     </p>
+    <div class="table-scroll" role="region" aria-label="IBAN reconciliation table" tabindex="0">
     <table id="recon-table">
       <thead>
         <tr><th>Source</th><th>Bank</th><th>BIC</th><th>IBAN</th><th>Holder</th></tr>
       </thead>
       <tbody></tbody>
     </table>
+    </div>
 
     <h2>3. Consolidated multi-bank ledger view</h2>
     <p>
@@ -97,14 +126,18 @@
       show: a single legal entity's accounts across every bank, computed
       from the joined bundles.
     </p>
+    <div class="table-scroll" role="region" aria-label="Consolidated ledger table" tabindex="0">
     <table id="ledger-table">
       <thead>
         <tr><th>Slot</th><th>Bank</th><th>Account ID</th><th>Currency</th><th>IBAN</th><th>Balance</th></tr>
       </thead>
       <tbody></tbody>
     </table>
+    </div>
 
     <p class="watermark" id="watermark"></p>
+    </div>
+    </main>
 
     <script src="./app.js" type="module"></script>
   </body>
