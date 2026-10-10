@@ -2,6 +2,8 @@
 
 Not submitted. The user canceled support outreach. This draft is retained only as a diagnostic record.
 
+Historical diagnosis: the approved [Worker delivery route](public-access-worker.md) subsequently restored canonical GET/HEAD access, passing all 42 ordinary-Python checks. The failure description and reproduction below describe the earlier Pages-origin behavior, before Worker routing.
+
 **Subject:** Pages origin returns BIC 1010 despite a matching hostname/method exception
 
 Our public synthetic Open Finance sandbox is served by the `data-sandbox` Pages project at `data-sandbox.openfinance-os.org`, with Pages origin `data-sandbox-1cq.pages.dev`. DNS is proxied, the custom domain and certificate are active, and the production deployment is healthy. Normal browser and ordinary curl reads return 200. Unmodified Python urllib requests return 403 with body `error code: 1010`, including JSON fixtures and release metadata. The same failure occurs from a local network and a GitHub-hosted Ubuntu runner.

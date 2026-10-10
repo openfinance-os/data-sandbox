@@ -2,10 +2,10 @@
 
 The Pages origin returns 403/1010 to ordinary Python clients even after the approved hostname-specific GET/HEAD Browser Integrity Check exception. The existing GitHub Pages deployment serves the same synthetic release successfully. A small Worker can deliver those files at the canonical hostname without a support ticket or a DNS migration.
 
-## Prepared change
+## Approved production delivery
 
 - Worker: `data-sandbox-public-read`; source: [`cloudflare/public-read-worker.mjs`](../cloudflare/public-read-worker.mjs).
-- Production route: `data-sandbox.openfinance-os.org/*`, replacing the tested release-only route `data-sandbox.openfinance-os.org/dist/release.json*`.
+- Active production route: `data-sandbox.openfinance-os.org/*`, replacing the tested release-only route `data-sandbox.openfinance-os.org/dist/release.json*` after the user's exact rollout approval.
 - Route ID: `caaf270b5c914dbd9d819e837e1d2883`; zone: `openfinance-os.org`.
 - GET/HEAD files come from the fixed public origin `https://openfinance-os.github.io/data-sandbox/`. No configurable destination or open proxy is provided.
 - Other methods use `fetch(request)` to the existing Pages origin. The release-only trial confirmed POST and OPTIONS still return 403 for the same Python client.
@@ -15,9 +15,9 @@ The proxy streams response bodies unchanged. It preserves HTTPS redirection, con
 
 ## Verified status
 
-On 10 October 2026 the release-only production route changed default Python GET and HEAD from 403/1010 to 200. POST and OPTIONS remained 403. The response contains `X-Sandbox-Delivery: github-pages` and the published release revision. The Worker preview works for normal curl, but the platform's `workers.dev` hostname blocks Python before the Worker executes; preview curl checks and the canonical release trial must be kept distinct.
+On 10 October 2026 the release-only production route changed default Python GET and HEAD from 403/1010 to 200. The approved full-host rollout then passed all 42 canonical default-Python checks against release `ecd585a259d5bee97aaa7beef484b2f00bfe6f4f`: metadata and three fixture domains, GET/HEAD, CORS, missing-file 404, noindex and site/fixture/MCP parity. Twelve canonical curl checks passed, including eleven byte-identical comparisons with the GitHub deployment. Normal browser explorer and embed loads rendered the generated data.
 
-The broader route has **not** been applied. Automatic approval review requires explicit authorization for routing all production paths. The user canceled the support ticket; it remains unsent.
+Twelve additional method/redirect checks passed across the root, explorer and release file: HTTP GET/HEAD redirect to HTTPS with scenario parameters retained, and HTTPS POST/OPTIONS retain their prior 403 responses. The response contains `X-Sandbox-Delivery: github-pages`. Zone-wide BIC remains on and its existing exception retains the exact hostname/GET/HEAD scope. The temporary `workers.dev` endpoint and version previews are disabled; canonical reads still return 200. The user canceled the support ticket; it remains unsent.
 
 ## Deployment and acceptance
 
@@ -27,17 +27,17 @@ The source and production configuration are committed alongside eleven focused t
 npx wrangler deploy --config cloudflare/wrangler.jsonc
 ```
 
-Do not run that command until the complete production route has been approved. The API deployment used for the trial uploads only the Worker and enables its preview; route changes are separate guarded API operations.
+The configuration matches the approved production scope and keeps `workers_dev: false`. The API deployment uploads Worker code separately from guarded route updates. Inspect the exact route ID, pattern and script before a route change.
 
-After approval, update only route `caaf270b5c914dbd9d819e837e1d2883` from the release-only pattern to `data-sandbox.openfinance-os.org/*`, keeping script `data-sandbox-public-read`. Then run:
+The rollout updated only route `caaf270b5c914dbd9d819e837e1d2883` from the release-only pattern to `data-sandbox.openfinance-os.org/*`, keeping script `data-sandbox-public-read`. After each subsequent release, run:
 
 ```sh
 python3 tools/check-public-access.py --expected-revision <current-deployed-main-sha>
 ```
 
-Acceptance requires all 42 default-Python checks, a normal browser explorer/embed load, byte-identical metadata and fixture payloads, and unchanged non-read responses. Verify the zone-wide BIC setting remains on and the existing exception still matches only GET/HEAD on this hostname. Disable the Worker's `workers.dev` endpoint after acceptance; the production configuration already sets `workers_dev: false`.
+Acceptance requires all 42 default-Python checks, a normal browser explorer/embed load, byte-identical metadata and fixture payloads, and unchanged non-read responses. Verify the zone-wide BIC setting remains on and the existing exception still matches only GET/HEAD on this hostname. Keep the Worker's `workers.dev` endpoint disabled after acceptance.
 
-The static site continues to update through the existing successful-main-CI GitHub Pages workflow. The Worker source requires its own deployment only when proxy behavior changes. Delivery depends on GitHub Pages availability and the account's existing Workers request limits.
+The static site continues to update through the existing successful-main-CI GitHub Pages workflow. The Worker source requires its own deployment only when proxy behavior changes. A release containing only documentation or Worker files is outside the automatic MCP deployment path filter; after successful main CI, manually dispatch the existing gated `Deploy sandbox-mcp to Fly` workflow to keep revision metadata in parity, then repeat the public check. Delivery depends on GitHub Pages availability and the account's existing Workers request limits.
 
 ## Rollback
 
