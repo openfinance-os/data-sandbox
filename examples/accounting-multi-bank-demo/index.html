@@ -29,8 +29,8 @@
       .row-link { background: var(--linked); }
       .ledger-row { font-family: monospace; font-size: 0.88rem; }
       .controls { margin: 1rem 0; display: flex; flex-wrap: wrap; gap: 0.75rem; }
-      .controls .control { display: grid; gap: 0.25rem; min-width: 0; max-width: 100%; }
-      select { padding: 0.4rem; min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; color: var(--text); background: var(--surface); border: 1px solid var(--border); }
+      .controls .control { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.25rem; min-width: 0; max-width: 100%; }
+      select { box-sizing: border-box; width: 100%; padding: 0.4rem; min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; color: var(--text); background: var(--surface); border: 1px solid var(--border); }
       .watermark { color: var(--watermark); font-size: 0.78rem; margin-top: 1.5rem; overflow-wrap: anywhere; }
       .scenario-context dt { font-weight: 600; }
       .scenario-context dd { margin: 0 0 0.75rem; overflow-wrap: anywhere; }
