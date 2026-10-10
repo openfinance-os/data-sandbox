@@ -11,7 +11,7 @@ The Pages origin returns 403/1010 to ordinary Python clients even after the appr
 - Other methods use `fetch(request)` to the existing Pages origin. The release-only trial confirmed POST and OPTIONS still return 403 for the same Python client.
 - DNS, Pages project/custom domain, the existing GET/HEAD BIC exception and zone-wide security settings stay as configured. This change does not add another WAF/BIC skip.
 
-The proxy streams response bodies unchanged. It preserves conditional/range headers, CORS, actual 404s, HTML noindex and existing cache/security-header behavior. Internal redirects stay on the incoming hostname, including scenario parameters. Requests to GitHub omit cookies, authorization, forwarded client addresses and URL query parameters. The client's user agent is preserved; no browser identity is substituted. Upstream failures return 502 without caching an error or falling back to the blocked origin.
+The proxy streams response bodies unchanged. It preserves HTTPS redirection, conditional/range headers, CORS, actual 404s, HTML noindex and existing cache/security-header behavior. Internal redirects stay on the incoming hostname, including scenario parameters. Requests to GitHub do not copy incoming cookies, authorization or forwarding/IP headers, and omit URL query parameters. The client's user agent is preserved; no browser identity is substituted. Upstream failures return 502 without caching an error or falling back to the blocked origin.
 
 ## Verified status
 
@@ -21,7 +21,7 @@ The broader route has **not** been applied. Automatic approval review requires e
 
 ## Deployment and acceptance
 
-The source and production configuration are committed alongside ten focused tests. Deploy code with the existing Cloudflare connector's multipart Worker API, or with an authorized Wrangler session:
+The source and production configuration are committed alongside eleven focused tests. Deploy code with the existing Cloudflare connector's multipart Worker API, or with an authorized Wrangler session:
 
 ```sh
 npx wrangler deploy --config cloudflare/wrangler.jsonc

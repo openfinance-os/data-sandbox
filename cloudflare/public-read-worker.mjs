@@ -36,6 +36,13 @@ export default {
       });
     }
 
+    // A Worker route bypasses Pages' automatic HTTP-to-HTTPS redirect.
+    if (incoming.protocol !== 'https:') {
+      incoming.protocol = 'https:';
+      incoming.port = '';
+      return Response.redirect(incoming.href, 301);
+    }
+
     // Static files do not depend on query parameters. Keep scenario URLs in the
     // browser, but do not disclose recipes, cookies or credentials to GitHub.
     const upstreamUrl = new URL(mirrorPrefix + incoming.pathname, mirrorOrigin);

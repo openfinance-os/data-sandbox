@@ -7,6 +7,17 @@ const preview = 'https://data-sandbox-public-read.michartmann.workers.dev';
 afterEach(() => vi.unstubAllGlobals());
 
 describe('public sandbox delivery Worker', () => {
+  it('preserves the Pages HTTPS redirect without fetching public files over HTTP', async () => {
+    const fetch = vi.fn();
+    vi.stubGlobal('fetch', fetch);
+    const response = await worker.fetch(
+      new Request('http://data-sandbox.openfinance-os.org/dist/release.json?seed=4729'),
+    );
+    expect(response.status).toBe(301);
+    expect(response.headers.get('Location')).toBe(host + '/dist/release.json?seed=4729');
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   it('serves unchanged fixtures without sending credentials or scenario queries to GitHub', async () => {
     const body = '{"Data":{"Account":[]},"_scenario":{"synthetic":true}}';
     const fetch = vi.fn().mockResolvedValue(
