@@ -166,9 +166,25 @@ test('scenario context and scrollable tables work at narrow widths in both theme
   for (const colorScheme of ['light', 'dark']) {
     await page.emulateMedia({ colorScheme });
     await page.setViewportSize({ width: 320, height: 740 });
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
-      320,
-    );
+    const layout = await page.evaluate(() => ({
+      width: document.documentElement.scrollWidth,
+      overflowing: [...document.querySelectorAll('main *')]
+        .filter((element) => !element.closest('.table-scroll'))
+        .filter((element) => element.getBoundingClientRect().right > innerWidth)
+        .map((element) => ({
+          tag: element.tagName,
+          id: element.id,
+          width: element.getBoundingClientRect().width,
+          scrollWidth: element.scrollWidth,
+        })),
+      selects: [...document.querySelectorAll('select')].map((element) => ({
+        id: element.id,
+        width: element.getBoundingClientRect().width,
+        scrollWidth: element.scrollWidth,
+        appearance: getComputedStyle(element).appearance,
+      })),
+    }));
+    expect(layout.width, JSON.stringify(layout)).toBeLessThanOrEqual(320);
     await expect(page.getByLabel('Scenario:', { exact: true })).toBeVisible();
     await page.keyboard.press('Tab');
     await page.getByRole('region', { name: 'Consolidated ledger table' }).focus();
