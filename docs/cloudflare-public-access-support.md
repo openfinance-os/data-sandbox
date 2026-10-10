@@ -1,6 +1,6 @@
 # Draft Cloudflare support request
 
-Not submitted. No authorization to contact Cloudflare is implied by this document.
+Not submitted. The user canceled support outreach. This draft is retained only as a diagnostic record.
 
 **Subject:** Pages origin returns BIC 1010 despite a matching hostname/method exception
 

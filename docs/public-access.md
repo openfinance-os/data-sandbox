@@ -22,6 +22,10 @@ The rule belongs to the zone-level `http_config_settings` phase. Its Cloudflare 
 
 The weekly/manual audit workflow also runs the real public-access check from a GitHub runner. A trace success or a curl success cannot satisfy it.
 
+## Alternative delivery without support outreach
+
+The user canceled the support ticket. A [prepared Worker delivery change](public-access-worker.md) uses the already verified GitHub deployment as the fixed origin for canonical GET/HEAD reads. Its release-only production trial makes default Python GET/HEAD to `/dist/release.json` return 200 while POST/OPTIONS remain 403. Full-host routing is prepared but awaits explicit authorization after automatic approval review rejected the broader production scope. Other paths still use Pages and remain blocked for this client.
+
 ## Temporary programmatic download path
 
 The existing [GitHub deployment mirror](https://openfinance-os.github.io/data-sandbox/) supports ordinary Python clients. On 10 October, the full check passed there, including three domain fixtures, GET/HEAD, CORS, missing-path 404s, noindex and parity with the deployed MCP service. Until the canonical origin is corrected, use `https://openfinance-os.github.io/data-sandbox/fixtures/v1/manifest.json` to discover fixture paths, and resolve them under `https://openfinance-os.github.io/data-sandbox/fixtures/v1/`.
