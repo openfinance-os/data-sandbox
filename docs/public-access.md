@@ -18,7 +18,21 @@ Browser Integrity Check rejects some standard programmatic clients based on thei
 
 The rule belongs to the zone-level `http_config_settings` phase. Its Cloudflare reference is `sandbox_public_read_bic`. Inspect existing phase rules before adding it; do not replace another entrypoint or unrelated rules. To roll back, disable or remove only that rule and verify the zone-wide Browser Integrity Check is still on.
 
-**Application status:** applied after the user's explicit approval at 04:16:58 UTC on 10 October 2026. Ruleset ID `474b169b28cc4e14b573818e63dcf46f`, rule ID `4116fdc790dc46f8a98283e262572ceb`. The zone-wide Browser Integrity Check remains on. Cloudflare Request Trace matches this rule and reaches HTTP 200 with the Python user agent, but live reads from the local network still return 1010; acceptance requires a real default-client read, not trace success alone. The weekly/manual audit workflow also runs this check from a GitHub runner.
+**Application status:** applied after the user's explicit approval at 04:16:58 UTC on 10 October 2026. Ruleset ID `474b169b28cc4e14b573818e63dcf46f`, rule ID `4116fdc790dc46f8a98283e262572ceb`. The zone-wide Browser Integrity Check remains on. Cloudflare Request Trace matches this rule, but real default-client reads still return 1010 from both the local network and a GitHub runner. Cloudflare HTTP analytics records those subsequent failures with both edge and origin status 403; no subsequent zone BIC block events appeared in the checked window. A BIC-only skip with the identical hostname/method scope did not help and was removed. Pages domain revalidation returned to active and did not fix the reads. This remains an origin delivery issue, not a completed public-access correction. See the [prepared provider request](cloudflare-public-access-support.md).
+
+The weekly/manual audit workflow also runs the real public-access check from a GitHub runner. A trace success or a curl success cannot satisfy it.
+
+## Temporary programmatic download path
+
+The existing [GitHub deployment mirror](https://openfinance-os.github.io/data-sandbox/) supports ordinary Python clients. On 10 October, the full check passed there, including three domain fixtures, GET/HEAD, CORS, missing-path 404s, noindex and parity with the deployed MCP service. Until the canonical origin is corrected, use `https://openfinance-os.github.io/data-sandbox/fixtures/v1/manifest.json` to discover fixture paths, and resolve them under `https://openfinance-os.github.io/data-sandbox/fixtures/v1/`.
+
+Verify a release before using the mirror:
+
+```sh
+python3 tools/check-public-access.py --origin https://openfinance-os.github.io/data-sandbox --expected-revision <full-sha>
+```
+
+The mirror is a temporary delivery path; the canonical app hostname and indexing policy remain unchanged.
 
 Cloudflare documents [selective configuration settings](https://developers.cloudflare.com/rules/configuration-rules/settings/) and [Browser Integrity Check](https://developers.cloudflare.com/waf/tools/browser-integrity-check/).
 
