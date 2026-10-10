@@ -1,0 +1,16 @@
+{
+  "name": "Sandbox public read access",
+  "description": "Allow standard HTTP clients to retrieve the public synthetic sandbox without Browser Integrity Check false positives.",
+  "kind": "zone",
+  "phase": "http_config_settings",
+  "rules": [
+    {
+      "ref": "sandbox_public_read_bic",
+      "description": "Public synthetic sandbox GET/HEAD: disable only Browser Integrity Check",
+      "expression": "(http.host eq \"data-sandbox.openfinance-os.org\" and http.request.method in {\"GET\" \"HEAD\"})",
+      "action": "set_config",
+      "action_parameters": { "bic": false },
+      "enabled": true
+    }
+  ]
+}

@@ -90,7 +90,7 @@ npm run serve            # http://localhost:8000/index.html
 npm test            # 413 unit tests
 npm run lint        # 4 invariant lints
 npm run test:e2e    # 15 Playwright e2e tests + axe-core a11y
-npm run test:perf   # Lighthouse-CI mobile profile
+npm run test:perf   # Official Lighthouse mobile profile
 npm run ci          # full suite
 ```
 

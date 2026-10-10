@@ -655,7 +655,7 @@ const pkgJson = {
     'payloads.atm.d.ts',
     'README.md',
   ],
-  dependencies: { ajv: '^8.17.1', 'ajv-formats': '^3.0.1', 'js-yaml': '^4.2.0' },
+  dependencies: { ajv: '^8.17.1', 'ajv-formats': '^3.0.1', 'js-yaml': '^4.3.2' },
   publishConfig: { access: 'public' },
 };
 fs.writeFileSync(path.join(OUT, 'package.json'), JSON.stringify(pkgJson, null, 2));

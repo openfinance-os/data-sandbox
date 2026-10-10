@@ -50,6 +50,7 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - run: npm ci
+      - run: npm run audit:dependencies
       - run: npm run verify:spec-shape
       - run: npm run build:spec
       - run: npm run build:data
