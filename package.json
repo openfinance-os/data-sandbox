@@ -78,7 +78,7 @@
     "posthog-js": "^1.422.1",
     "prettier": "^3.9.6",
     "vitest": "^4.1.11",
-    "typescript": "^5.7.0",
+    "typescript": "^7.0.2",
     "lighthouse": "^13.5.0",
     "chrome-launcher": "^1.2.1"
   },
