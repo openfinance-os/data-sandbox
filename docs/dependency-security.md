@@ -16,7 +16,7 @@ Missing scores, runtime errors, an unsuccessful collection or all three scores b
 
 The 6 November main lockfile had 15 findings (1 critical, 4 high, 10 moderate). The refresh selects patched DOMPurify, body-parser, fast-uri, ip-address, qs, Undici, Vite, Vitest and Zod releases without adopting unrelated major tooling upgrades. Vitest's minimum is 4.1.12 in both test workspaces and Zod's minimum is 4.6.7 in the MCP package.
 
-PostHog 1.447.2's `module.slim.js` and its source map contain no DOMPurify code. `tools/stage-site.mjs` vendors that exact file. The full SDK bundles do include DOMPurify, so the dependency tree still needs the patched 3.4.17 resolution. This inspection does not establish that every optional runtime-loaded SDK feature is unreachable, and it is not evidence of compromise.
+PostHog 1.447.2's `module.slim.js` and its source map contain no DOMPurify code. `tools/stage-site.mjs` vendors that exact file, with a regression test preserving this boundary. The unused full SDK bundle embeds DOMPurify 3.4.13; updating the installed dependency to 3.4.17 does not rewrite that prebuilt bundle. Do not switch to the full bundle without reviewing its embedded dependencies. This inspection does not establish that every optional runtime-loaded SDK feature is unreachable, and it is not evidence of compromise.
 
 ## Transitive overrides
 

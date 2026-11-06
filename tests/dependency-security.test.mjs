@@ -1,11 +1,20 @@
 import { createRequire } from 'node:module';
+import fs from 'node:fs';
 import path from 'node:path';
 import { ESLint } from 'eslint';
 import { describe, expect, it } from 'vitest';
 
 const require = createRequire(import.meta.url);
 const eslintRequire = createRequire(require.resolve('eslint'));
-const configArrayRequire = createRequire(require.resolve('@eslint/config-array'));
+const configArrayRequire = createRequire(eslintRequire.resolve('@eslint/config-array'));
+
+it('keeps DOMPurify out of the vendored PostHog slim distribution', () => {
+  const sdkPath = require.resolve('posthog-js/dist/module.slim.js');
+  const map = JSON.parse(fs.readFileSync(`${sdkPath}.map`, 'utf8'));
+  expect(map.sources.length).toBeGreaterThan(0);
+  expect(map.sources.filter((source) => /dompurify/i.test(source))).toEqual([]);
+  expect(fs.readFileSync(sdkPath, 'utf8')).not.toMatch(/DOMPurify|SAFE_FOR_TEMPLATES/);
+});
 
 describe('patched minimatch compatibility', () => {
   for (const [consumer, load] of [
