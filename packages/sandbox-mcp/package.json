@@ -40,7 +40,7 @@
     "start": "node src/index.mjs"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.32.1",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "@openfinance-os/sandbox-fixtures": "0.1.0",
     "zod": "^4.6.7"
   },
