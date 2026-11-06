@@ -103,6 +103,7 @@ describe('sandbox-mcp HTTP transport (D-13)', () => {
     expect(res.status).toBe(204);
     expect(res.headers.get('access-control-allow-origin')).toBe('*');
     expect(res.headers.get('access-control-allow-methods')).toMatch(/POST/);
+    expect(res.headers.get('access-control-allow-headers')).toMatch(/MCP-Protocol-Version/i);
     expect(res.headers.get('access-control-expose-headers') ?? '').toMatch(/Mcp-Session-Id/i);
   });
 
