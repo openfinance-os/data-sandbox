@@ -12,9 +12,16 @@ The latest published `@lhci/cli` was still 0.15.1. Its old dependency tree inclu
 
 Missing scores, runtime errors, an unsuccessful collection or all three scores below the threshold cannot pass. Any missing warning audit is reported as missing rather than silently treated as success. Changing the performance engine can change scores even when the app is unchanged; compare the recorded Lighthouse version along with results.
 
-## Transitive patch overrides
+## November 2026 refresh
 
-- `basic-ftp ^6.2.3`: patches the directory-listing denial of service still reachable through proxy-agent/get-uri's dependency requirement. The current Lighthouse browser tooling remains functional; the override should be removed when upstream requirements select a patched version themselves.
-- `qs ^6.16.0`: patches query-string denial-of-service advisories in Express's older semver range. Both Express versions in the SDK tree resolve to the patched parser. MCP transport, consent/OAuth simulation, pagination and real HTTP tests verify compatibility.
+The 6 November main lockfile had 15 findings (1 critical, 4 high, 10 moderate). The refresh selects patched DOMPurify, body-parser, fast-uri, ip-address, qs, Undici, Vite, Vitest and Zod releases without adopting unrelated major tooling upgrades. Vitest's minimum is 4.1.12 in both test workspaces and Zod's minimum is 4.6.7 in the MCP package.
 
-These are version patches, not ignored advisories or alternate packages. Refresh the lockfile with the pinned Node runtime, inspect `npm ls qs basic-ftp`, run the full audit, and test the consumers before changing or removing either override.
+PostHog 1.447.2's `module.slim.js` and its source map contain no DOMPurify code. `tools/stage-site.mjs` vendors that exact file. The full SDK bundles do include DOMPurify, so the dependency tree still needs the patched 3.4.17 resolution. This inspection does not establish that every optional runtime-loaded SDK feature is unreachable, and it is not evidence of compromise.
+
+## Transitive overrides
+
+- `basic-ftp ^6.2.3`: retained defensively for the directory-listing denial of service previously introduced by proxy-agent/get-uri. The current lockfile no longer contains this optional dependency chain; the override prevents older requirements from restoring an affected version if it returns.
+- `qs ^6.16.1`: also patches the comma-array stringification denial of service affecting 6.16.0. Both Express versions in the SDK tree resolve to the patched parser. MCP transport, consent/OAuth simulation, pagination and real HTTP tests verify compatibility.
+- `minimatch@^10.0.0` to `^11.0.1`: addresses [GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249) in ESLint and `@eslint/config-array`. Their upstream requirements still select affected 10.x releases. This narrowly scoped major-version override leaves unaffected older minimatch consumers unchanged. Version 11 replaces the matching engine and removes some APIs; the observed ESLint consumers use only the retained `Minimatch` constructor, `match`, `pattern`, partial matching and `flipNegate`. Regression coverage checks these patterns and ESLint's source/generated-file selection. Remove the override when both upstream consumers accept a patched version directly.
+
+These are patched versions, not ignored advisories or alternate packages. Refresh the lockfile with a supported Node runtime, inspect `npm ls qs basic-ftp minimatch`, run the full audit, and test the consumers before changing or removing an override. The minimatch override additionally requires checking that ESLint still visits the same source files.
