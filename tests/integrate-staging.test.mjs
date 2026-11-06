@@ -5,6 +5,7 @@
 
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { repoRoot } from '../tools/load-fixtures.mjs';
 
@@ -23,6 +24,17 @@ if (!SITE_STAGED) {
   });
 } else
   describe('EXP-28..EXP-31 staging contract', () => {
+    it('vendors only the exact PostHog slim bundle, not the full SDK', () => {
+      const sdk = fs.readFileSync(
+        path.join(repoRoot, 'node_modules/posthog-js/dist/module.slim.js'),
+      );
+      const hash = createHash('sha256').update(sdk).digest('hex').slice(0, 8);
+      const vendorDir = path.join(SITE, 'src/vendor');
+      const sdkFiles = fs.readdirSync(vendorDir).filter((file) => /^posthog-js-.*\.js$/.test(file));
+      expect(sdkFiles).toEqual([`posthog-js-${hash}.js`]);
+      expect(fs.readFileSync(path.join(vendorDir, sdkFiles[0])).equals(sdk)).toBe(true);
+    });
+
     it('integration guide files are staged (EXP-31)', () => {
       expect(need('src/integrate.html').exists, 'integrate.html').toBe(true);
       expect(need('src/integrate.js').exists, 'integrate.js').toBe(true);
