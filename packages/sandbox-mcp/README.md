@@ -65,7 +65,7 @@ curl http://127.0.0.1:8787/health
 #    "personaCount":39,"toolCount":51,"uptimeMs":1234,"sessions":0}
 ```
 
-The endpoint is the [Streamable HTTP](https://spec.modelcontextprotocol.io/specification/basic/transports/#streamable-http) transport at `/mcp`. CORS is permissive (`*`); `Mcp-Session-Id` round-trips. One process serves many concurrent MCP sessions with per-session state isolation.
+The endpoint is the [Streamable HTTP](https://spec.modelcontextprotocol.io/specification/basic/transports/#streamable-http) transport at `/mcp`. CORS is permissive (`*`); `Mcp-Session-Id` round-trips. One process serves many concurrent MCP sessions with per-session state isolation. On Fly, session IDs include their owning Machine ID and requests arriving on a peer are replayed to the owner. Clients keep using the same URL and opaque `Mcp-Session-Id`; they need no Fly-specific headers.
 
 ### Deploying to Fly.io
 
@@ -84,9 +84,13 @@ Subsequent deploys go via the `.github/workflows/deploy-mcp.yml` workflow, which
 The default config:
 - `primary_region = "fra"` (Frankfurt — change in `fly.toml` if you want US or APAC)
 - `shared-cpu-1x` / `512mb` (covers expected traffic on the free tier; the bundled fixture corpus is ~14 MB JSON)
-- `auto_stop_machines = "stop"`, `min_machines_running = 0` — single machine, autostarts on first request. If long-lived MCP sessions start dropping at idle, raise `min_machines_running` so Streamable HTTP `GET /mcp` connections survive
+- `auto_stop_machines = "stop"`, `min_machines_running = 0` — machines may stop when idle and autostart on demand. This setting does not specify the machine count. The hosted service currently has two machines. Sessions are in-memory: stopping/restarting an owner, rolling deployments, TTL eviction, or explicit deletion ends its sessions. A stale ID returns HTTP 404; clients must initialize without that ID and restore their scenario. Affinity is not session replication or failover. Keeping machines running avoids routine autostop loss but does not preserve sessions across restarts.
 - `MCP_ALLOWED_HOSTS` env var pre-sets DNS-rebinding allowlist to `data-sandbox.fly.dev` and `mcp.openfinance-os.org`
 - Health check: `GET /health` every 30 s
+
+The anonymous Fly deployment uses the platform-provided `FLY_MACHINE_ID` to enable routing. Only a validated hexadecimal owner ID and random UUID are accepted; replay stays within the same app and is limited to one hop with a five-second timeout and fallback. An unavailable owner returns 404 after fallback, or a proxy error if the fallback machine is also unavailable. Legacy unprefixed sessions cannot be routed between machines and should be reinitialized after this rollout. Outside Fly, session IDs remain UUIDs and no replay is emitted.
+
+The opt-in OAuth simulation has its own process-local authorization state and is not made multi-instance by MCP affinity. Keep it off for this anonymous deployment; a replicated OAuth deployment needs a separate design.
 
 ### Other deployment targets
 
@@ -107,7 +111,7 @@ Anything that runs Docker continuously and supports long-lived HTTP connections 
 - **Public URL** — `--public-url https://mcp.example.org` (or `MCP_PUBLIC_URL`) declares the deployment's public https origin. It is validated (must be `https://`), added to the Host allowlist, and used as the OAuth issuer in the RFC 8414/9728 discovery documents instead of the internal `http://host:port` listen address. For the Fly deploy, set `MCP_PUBLIC_URL = "https://data-sandbox.fly.dev"` in `fly.toml` `[env]` (the deploy workflow already uses the same value to smoke-test the endpoint).
 - **Stub Dynamic Client Registration** — with `--simulate-oauth`, `POST /register` implements an RFC 7591 stub (echoes back a synthetic `client_id`, public client, PKCE-only) and the RFC 8414 metadata advertises `registration_endpoint`, so real MCP clients that attempt DCR (Claude.ai, VS Code) can complete the simulated flow.
 - **Graceful shutdown** — SIGTERM / SIGINT closes every active MCP session before the process exits, so `docker stop` and Kubernetes pod evictions don't drop in-flight requests.
-- **Structured request logging** — every request emits `<ISO timestamp> METHOD /path STATUS Nms session=<id8>` to stderr (stdout is reserved for stdio MCP framing).
+- **Structured request logging** — every request emits `<ISO timestamp> METHOD /path STATUS Nms session=<id8>` (or `<machine>:<random-id8>` on Fly) to stderr (stdout is reserved for stdio MCP framing).
 
 ### Claude Desktop (stdio)
 

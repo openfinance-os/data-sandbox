@@ -31,6 +31,17 @@ import { createOAuthSimulation } from './oauth-simulation.mjs';
 const MCP_PATH = '/mcp';
 const HEALTH_PATH = '/health';
 const SESSION_HEADER = 'mcp-session-id';
+// Only a same-app Machine ID can be interpolated into Fly's routing header.
+// The random UUID remains the session capability; the prefix is just routing.
+const FLY_MACHINE_ID = /^[0-9a-f]{8,32}$/;
+const FLY_SESSION_ID =
+  /^fly\.([0-9a-f]{8,32})\.[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+function validateFlyMachineId(id) {
+  if (id !== null && (typeof id !== 'string' || !FLY_MACHINE_ID.test(id))) {
+    throw new Error('FLY_MACHINE_ID must be a hexadecimal Machine ID (8–32 characters)');
+  }
+}
 
 const MAX_BODY_BYTES = 1_000_000; // 1 MB — JSON-RPC messages are tiny
 const DEFAULT_IDLE_TTL_MS = Number(process.env.MCP_SESSION_IDLE_TTL_MS) || 30 * 60 * 1000;
@@ -77,7 +88,7 @@ function applyCors(res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader(
     'Access-Control-Allow-Headers',
-    'Content-Type, Mcp-Session-Id, Last-Event-ID, Authorization',
+    'Content-Type, Mcp-Session-Id, MCP-Protocol-Version, Last-Event-ID, Authorization',
   );
   res.setHeader('Access-Control-Expose-Headers', 'Mcp-Session-Id');
   res.setHeader('Access-Control-Max-Age', '86400');
@@ -86,17 +97,23 @@ function applyCors(res) {
 function readJsonBody(req) {
   return new Promise((resolve, reject) => {
     let total = 0;
+    let tooLarge = false;
     const chunks = [];
     req.on('data', (chunk) => {
+      if (tooLarge) return;
       total += chunk.length;
       if (total > MAX_BODY_BYTES) {
-        reject(new Error('request body too large'));
-        req.destroy();
+        tooLarge = true;
+        chunks.length = 0;
+        const err = new Error('request body too large');
+        err.status = 413;
+        reject(err);
         return;
       }
       chunks.push(chunk);
     });
     req.on('end', () => {
+      if (tooLarge) return;
       if (total === 0) {
         resolve(undefined);
         return;
@@ -123,6 +140,8 @@ function jsonRpcError(id, code, message) {
 
 function shortId(id) {
   if (!id) return '-';
+  const owner = FLY_SESSION_ID.exec(id)?.[1];
+  if (owner) return `${owner}:${id.split('.')[2].slice(0, 8)}`;
   return id.slice(0, 8);
 }
 
@@ -150,10 +169,13 @@ export function createHttpHandler({
   allowedOrigins,
   enableDnsRebindingProtection = true,
   oauthSimulation = null,
+  flyMachineId = process.env.FLY_MACHINE_ID || null,
   rateLimitBurst = DEFAULT_RATE_BURST,
   rateLimitRps = DEFAULT_RATE_RPS,
   log = defaultLogger,
 } = {}) {
+  validateFlyMachineId(flyMachineId);
+
   // sessionId → { transport, server, lastActivity }
   const sessions = new Map();
 
@@ -189,6 +211,19 @@ export function createHttpHandler({
     bucket.last = now;
     if (bucket.tokens < 1) return false;
     bucket.tokens -= 1;
+    return true;
+  }
+
+  function replaySession(req, res, sessionId) {
+    if (!flyMachineId || sessions.has(sessionId)) return false;
+    const owner = typeof sessionId === 'string' ? FLY_SESSION_ID.exec(sessionId)?.[1] : null;
+    if (!owner || owner === flyMachineId) return false;
+    // At most one hop. A failed replay must not reissue itself, and a replay
+    // arriving at the wrong Machine must fail closed rather than loop.
+    if (req.headers['fly-replay-src'] || req.headers['fly-replay-failed']) return false;
+    res.statusCode = 307;
+    res.setHeader('Fly-Replay', `instance=${owner};timeout=5s;fallback=force_self`);
+    res.end();
     return true;
   }
 
@@ -318,7 +353,37 @@ export function createHttpHandler({
       }
     }
 
+    // The SDK validates these on local sessions too. Validate before replay
+    // so a request rejected by this instance cannot be forwarded elsewhere.
+    if (enableDnsRebindingProtection) {
+      const invalidHost = allowedHosts?.length && !allowedHosts.includes(req.headers.host);
+      const invalidOrigin =
+        allowedOrigins?.length &&
+        req.headers.origin &&
+        !allowedOrigins.includes(req.headers.origin);
+      if (invalidHost || invalidOrigin) {
+        sendJson(res, 403, jsonRpcError(null, -32000, 'Invalid Host or Origin header'));
+        return;
+      }
+    }
+
     const sessionId = req.headers[SESSION_HEADER];
+
+    // Fly can replay only bounded requests. Reject unsupported GET/DELETE
+    // bodies rather than forwarding an unmeasured stream to another Machine.
+    if (Number(req.headers['content-length']) > MAX_BODY_BYTES) {
+      res.setHeader('Connection', 'close');
+      sendJson(res, 413, jsonRpcError(null, -32000, 'request body too large'));
+      return;
+    }
+    if (
+      (req.method === 'GET' || req.method === 'DELETE') &&
+      (Number(req.headers['content-length']) > 0 || req.headers['transfer-encoding'])
+    ) {
+      res.setHeader('Connection', 'close');
+      sendJson(res, 400, jsonRpcError(null, -32600, 'request body not supported for this method'));
+      return;
+    }
 
     if (req.method === 'POST') {
       // Per-IP token bucket — public-endpoint abuse guard (custom-persona
@@ -338,17 +403,20 @@ export function createHttpHandler({
       try {
         body = await readJsonBody(req);
       } catch (err) {
-        sendJson(res, 400, jsonRpcError(null, -32700, `parse error: ${err.message}`));
+        if (err.status === 413) res.setHeader('Connection', 'close');
+        sendJson(res, err.status ?? 400, jsonRpcError(null, -32700, `parse error: ${err.message}`));
         return;
       }
 
-      let entry = sessionId ? sessions.get(sessionId) : null;
+      if (replaySession(req, res, sessionId)) return;
+      const entry = sessionId ? sessions.get(sessionId) : null;
 
-      if (!entry && isInitializeRequest(body)) {
+      if (!sessionId && isInitializeRequest(body)) {
         evictOldestIfFull();
         const server = createServer();
         const transport = new StreamableHTTPServerTransport({
-          sessionIdGenerator: () => randomUUID(),
+          sessionIdGenerator: () =>
+            flyMachineId ? `fly.${flyMachineId}.${randomUUID()}` : randomUUID(),
           enableDnsRebindingProtection,
           allowedHosts,
           allowedOrigins,
@@ -367,11 +435,11 @@ export function createHttpHandler({
       if (!entry) {
         sendJson(
           res,
-          400,
+          sessionId ? 404 : 400,
           jsonRpcError(
             body?.id,
             -32000,
-            'no active session — initialize first or supply a known Mcp-Session-Id header',
+            sessionId ? 'Session not found — initialize a new session' : 'Mcp-Session-Id required',
           ),
         );
         return;
@@ -383,9 +451,18 @@ export function createHttpHandler({
     }
 
     if (req.method === 'GET' || req.method === 'DELETE') {
+      if (replaySession(req, res, sessionId)) return;
       const entry = sessionId ? sessions.get(sessionId) : null;
       if (!entry) {
-        sendJson(res, 400, { error: 'no active session for that Mcp-Session-Id' });
+        sendJson(
+          res,
+          sessionId ? 404 : 400,
+          jsonRpcError(
+            null,
+            -32000,
+            sessionId ? 'Session not found — initialize a new session' : 'Mcp-Session-Id required',
+          ),
+        );
         return;
       }
       touch(sessionId);
@@ -456,6 +533,7 @@ export async function startHttp({
   allowedOrigins,
   enableDnsRebindingProtection = true,
   simulateOauth = false,
+  flyMachineId = process.env.FLY_MACHINE_ID || null,
   publicUrl,
   rateLimitBurst,
   rateLimitRps,
@@ -463,6 +541,7 @@ export async function startHttp({
 } = {}) {
   // Validate before binding the port so a bad config fails fast.
   const publicOrigin = normalizePublicUrl(publicUrl);
+  validateFlyMachineId(flyMachineId);
 
   const earlyServer = http.createServer();
   await new Promise((resolve, reject) => {
@@ -512,6 +591,7 @@ export async function startHttp({
     allowedOrigins,
     enableDnsRebindingProtection,
     oauthSimulation,
+    flyMachineId,
     rateLimitBurst,
     rateLimitRps,
     log,
