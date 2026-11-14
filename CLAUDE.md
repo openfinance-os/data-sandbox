@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Phases 1 through 2.3 have shipped. The repo contains source, tests, build tooling, three distribution packages (npm + PyPI + MCP server), two worked TPP integration examples, and a stage-to-`_site/` pipeline. The PRD remains the source of truth for new features and decisions — **do not invent behaviour that contradicts it.**
 
 Key documents in the repo:
-- `PRD_OF_Data_Explorer.md` (v0.9, draft) — the product spec.
+- `PRD_OF_Data_Explorer.md` (draft; the version is in its header) — the product spec.
 - `IMPLEMENTATION_PLAN.md` — current execution plan.
 - `PHASE2_INSURANCE_PLAN.md` — Phase 2 insurance-domain plan (motor MVP partially landed).
 - `CHANGELOG.md` — running log of shipped slices.
@@ -63,7 +63,7 @@ An interactive, **client-side static** sandbox that lets a TPP-perspective user 
 
 Documented end-to-end in `src/integrate.html`; verified in the test harness. Five ways a TPP gets persona data, sharing domain-specific wire envelopes (ATM omits Links):
 
-1. **Static fixtures** — `…/fixtures/v1/bundles/<persona>/<lfi>/seed-<n>/<endpoint>.json`. Built by `stage-site.mjs`. `_site/_headers` declares `Access-Control-Allow-Origin: *` and `Cache-Control: public, max-age=600` on `/fixtures/v1/*`. Note: GitHub Pages (the current deploy target) ignores `_headers` directives, but it serves `Access-Control-Allow-Origin: *` by default, so EXP-28 still holds. The cache directives are no-ops on GH Pages — they take effect only on Netlify / Cloudflare Pages. See `tools/stage-site.mjs:96` for the full nuance.
+1. **Static fixtures** — `…/fixtures/v1/bundles/<persona>/<lfi>/seed-<n>/<endpoint>.json`. Built by `stage-site.mjs`. `_site/_headers` declares `Access-Control-Allow-Origin: *` and `Cache-Control: public, max-age=600` on `/fixtures/v1/*`. Note: GitHub Pages (the current deploy target) ignores `_headers` directives, but it serves `Access-Control-Allow-Origin: *` by default, so EXP-28 still holds. The cache directives are no-ops on GH Pages — they take effect only on Netlify / Cloudflare Pages. See the `_headers` comment block in `tools/stage-site.mjs` for the full nuance.
 2. **Local HTTP mock** for curated/custom scenarios and controlled failures — `npm run mock`; static fixture query parameters do not paginate.
 3. **Embed iframe** (chrome-less) — `src/embed.html` + `src/embed.js`, EXP-27.
 4. **npm / PyPI package** — `packages/sandbox-fixtures{,-py}/`, EXP-20.
@@ -113,11 +113,7 @@ The PRD assigns every requirement an `EXP-NN` ID (PRD §4). When discussing or i
 
 - The author/maintainer (Michael Hartmann) is also the OF-OS Commons maintainer — domain context is deep; concise technical responses preferred.
 - Use the `open-finance-uae` skill for any UAE Open Finance regulatory / Standards / Al Tareq / Nebras / CBUAE questions — it's the authoritative source over training data.
-- The PRD has a Decisions log (§13). Decisions D-01…D-10 are settled. If a discussion seems to re-open one, surface that explicitly.
-
-## Filesystem note
-
-On the maintainer's local checkout the repo directory has a **trailing space**: `open-finance-data-sandbox ` — quote the path when shelling out (e.g. `ls "/Users/michartmann/Documents/GitHub/open-finance-data-sandbox /"`). In sandbox/CI environments the repo is checked out cleanly (e.g. `/home/user/data-sandbox`) with no trailing space.
+- The PRD has a Decisions log (§13). Every decision recorded there is settled. If a discussion seems to re-open one, surface that explicitly.
 
 ## Approved October 2026 correctness contract
 
