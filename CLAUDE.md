@@ -113,7 +113,7 @@ The PRD assigns every requirement an `EXP-NN` ID (PRD §4). When discussing or i
 
 - The author/maintainer (Michael Hartmann) is also the OF-OS Commons maintainer — domain context is deep; concise technical responses preferred.
 - Use the `open-finance-uae` skill for any UAE Open Finance regulatory / Standards / Al Tareq / Nebras / CBUAE questions — it's the authoritative source over training data.
-- The PRD has a Decisions log (§13). Decisions D-01…D-10 are settled. If a discussion seems to re-open one, surface that explicitly.
+- The PRD has a Decisions log (§13). Every decision recorded there is settled. If a discussion seems to re-open one, surface that explicitly.
 
 ## Approved October 2026 correctness contract
 
