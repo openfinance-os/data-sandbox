@@ -24,6 +24,19 @@ if (!SITE_STAGED) {
   });
 } else
   describe('EXP-28..EXP-31 staging contract', () => {
+    it('stages the guide sitemap and compatibility redirect without indexing the app', () => {
+      const sitemap = fs.readFileSync(need('sitemap.xml').p, 'utf8');
+      const guide = fs.readFileSync(need('src/integrate.html').p, 'utf8');
+      const root = fs.readFileSync(need('index.html').p, 'utf8');
+      const alias = fs.readFileSync(need('integrate.html').p, 'utf8');
+      const canonical = 'https://data-sandbox.openfinance-os.org/src/integrate.html';
+      expect([...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((m) => m[1])).toEqual([canonical]);
+      expect(guide).toContain(`rel="canonical" href="${canonical}"`);
+      expect(alias).toContain('content="0; url=src/integrate.html"');
+      expect(root).toContain('name="robots" content="noindex"');
+      expect(root).toContain('href="https://data-sandbox.openfinance-os.org/src/index.html"');
+    });
+
     it('vendors only the exact PostHog slim bundle, not the full SDK', () => {
       const sdk = fs.readFileSync(
         path.join(repoRoot, 'node_modules/posthog-js/dist/module.slim.js'),

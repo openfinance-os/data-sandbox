@@ -74,6 +74,24 @@ function staticImportsFromModule(modulePath) {
   return [...out];
 }
 
+// Metadata links (canonical, alternate, preconnect, etc.) do not fetch a
+// response body. Classify by rel, not by whether href looks like a URL.
+function fetchedLinkHrefs(html) {
+  const hrefs = [];
+  for (const tag of html.match(/<link\b[^>]*>/gi) ?? []) {
+    const attributes = {};
+    for (const match of tag.matchAll(/\b(rel|href)\s*=\s*(["'])(.*?)\2/gi)) {
+      attributes[match[1].toLowerCase()] = match[3];
+    }
+    const rels = (attributes.rel ?? '').toLowerCase().split(/\s+/);
+    if (!rels.some((rel) => ['stylesheet', 'preload', 'modulepreload', 'icon'].includes(rel)))
+      continue;
+    const href = attributes.href;
+    if (href && !href.startsWith('data:')) hrefs.push(href);
+  }
+  return hrefs;
+}
+
 function discoverAssets(pageHtml) {
   const html = fs.readFileSync(path.join(repoRoot, pageHtml), 'utf8');
   const assets = new Set([pageHtml]);
@@ -82,20 +100,17 @@ function discoverAssets(pageHtml) {
   // the T-01 under-count). `visited` alone dedupes the walk.
   const queue = [];
 
-  // <link rel="stylesheet">, <link rel="preload">, <link rel="modulepreload">
-  // — every href contributes to first-paint network cost. Data URIs are
-  // inlined in the HTML weight already, so skip them as separate assets.
-  const linkRe = /<link\s+[^>]*?href="([^"]+)"[^>]*>/g;
-  let m;
-  while ((m = linkRe.exec(html))) {
-    if (m[1].startsWith('data:')) continue;
-    const rel = resolveHref(m[1]);
+  // Only body-fetching links seed assets. Data URIs are already included
+  // in HTML weight; metadata URLs must not be resolved as local files.
+  for (const href of fetchedLinkHrefs(html)) {
+    const rel = resolveHref(href);
     assets.add(rel);
     queue.push(rel);
   }
 
   // Entry-script discovery — and from there, transitive static imports.
   const scriptRe = /<script\s+[^>]*?src="([^"]+)"[^>]*>/g;
+  let m;
   while ((m = scriptRe.exec(html))) {
     const entry = resolveHref(m[1]);
     assets.add(entry);
@@ -117,6 +132,22 @@ function discoverAssets(pageHtml) {
 }
 
 describe('bundle-weight budget — EXP-24', () => {
+  it('counts fetch links but not canonical or other metadata links', () => {
+    expect(
+      fetchedLinkHrefs(`
+      <link rel="canonical" href="https://data-sandbox.openfinance-os.org/src/integrate.html">
+      <link href="relative-page.html" rel="alternate">
+      <link rel="preconnect" href="https://example.com">
+      <link href='style.css' REL='stylesheet'>
+      <link rel="preload" as="fetch" href="../dist/manifest.json">
+      <link href="module.js" rel="modulepreload">
+      <link rel="stylesheet" href="data:text/css,body{}">
+      <link rel="icon" href="favicon.svg">
+      <link rel="icon" href="data:image/svg+xml,icon">
+    `),
+    ).toEqual(['style.css', '../dist/manifest.json', 'module.js', 'favicon.svg']);
+  });
+
   for (const [page, budgetKb] of Object.entries(PAGE_BUDGETS_KB)) {
     it(`${page} cold-load gzipped weight is under ${budgetKb} KB`, () => {
       const assets = discoverAssets(page);

@@ -10,6 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { discoveryFiles } from './site-discovery.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -201,15 +202,11 @@ if (fs.existsSync(path.join(fixtureSrc, 'manifest.json'))) {
   );
 }
 
-// Top-level redirect into the app entry so the bare URL works.
-const indexHtml = `<!doctype html>
-<html><head><meta charset="utf-8"/>
-<title>Open Finance Data Sandbox</title>
-<meta http-equiv="refresh" content="0; url=src/index.html"/>
-<link rel="canonical" href="src/index.html"/>
-</head><body><p>Redirecting to <a href="src/index.html">the sandbox</a>…</p></body></html>
-`;
-fs.writeFileSync(path.join(out, 'index.html'), indexHtml);
+// Keep documentation discoverable without indexing the explorer.
+const guideHtml = fs.readFileSync(path.join(out, 'src/integrate.html'), 'utf8');
+for (const [filename, contents] of Object.entries(discoveryFiles(guideHtml))) {
+  fs.writeFileSync(path.join(out, filename), contents);
+}
 
 // .nojekyll so GitHub Pages skips Jekyll. Harmless on Cloudflare/Netlify.
 fs.writeFileSync(path.join(out, '.nojekyll'), '');
