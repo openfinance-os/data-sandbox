@@ -68,7 +68,7 @@ Drops you into the Alpine container as the `node` user. Useful for:
 fly scale show --app data-sandbox
 ```
 
-Confirms the VM size and memory match `fly.toml` (default: `shared-cpu-1x` / `512mb`, one machine in `fra`). Resize with:
+Confirms the VM size and memory match `fly.toml` (default VM: `shared-cpu-1x` / `512mb`; the hosted app currently has two machines in `fra`). Resize with:
 
 ```sh
 fly scale memory 1024 --app data-sandbox                    # bump RAM
@@ -89,6 +89,34 @@ For our deploy you should not normally need any secrets — the MCP endpoint is 
 - If you've pinned an override like `MCP_SESSION_IDLE_TTL_MS`, it appears here.
 
 ---
+
+## Session routing across machines
+
+MCP sessions live in their owning process. On Fly the server issues an opaque
+`fly.<machine>.<random-uuid>` session ID and sends a same-app `Fly-Replay` response
+when a request lands on a different machine. POST calls and notifications, GET
+streams, and DELETE all route to the owner. Clients use the ordinary MCP URL,
+without pinning themselves to an instance. Replay is bounded to one hop with a
+five-second timeout and `fallback=force_self`; missing owners return 404 on
+fallback rather than creating fresh state under an old session ID.
+
+The current `auto_stop_machines = 'stop'` and `min_machines_running = 0` settings
+remain unchanged. Autostop, restarts, deployments and TTL eviction can end a
+session. This is affinity, not replicated session failover: clients receiving
+404 must initialize again without the stale ID and reselect their persona.
+An unavailable fallback machine can still produce a proxy error. Legacy UUID
+sessions need reinitialization after this rollout. The optional OAuth simulation
+also has process-local state and is not supported across machines by this fix.
+
+After a routing deployment, run the ordinary unpinned smoke test. Also initialize
+on each machine and deliberately send subsequent requests through the other
+machine, using Fly's `fly-force-instance-id` request header for this diagnostic
+only. Verify persona state, GET streaming and DELETE, then remove all pinning.
+Two individually pinned smoke passes do not prove cross-machine routing works.
+Do not weaken the deploy smoke gate or pin it to hide routing failures.
+
+See [Fly replay](https://docs.fly.io/networking/dynamic-request-routing) and
+[MCP session lifecycle](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports).
 
 ## Failure modes to recognise
 
