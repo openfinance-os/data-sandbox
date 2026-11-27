@@ -1,10 +1,55 @@
 # Open Finance Data Sandbox
 
-A synthetic UAE Open Finance corpus, explorer, and local testing harness for developers, analysts and educators. It helps teams see realistic payloads, calculate a useful result, and understand how missing fields affect that result.
+Synthetic UAE Open Finance v2.1 data you can browse, fetch or plug into an AI assistant. It gives you realistic Bank Data Sharing, Insurance and ATM Locator payloads for 38 fictional customers, with every field marked mandatory, optional or conditional straight from the published OpenAPI spec. Nothing here comes from a real customer or a real bank.
 
-The working tree prepares **corpus 0.1.0**, referenced to **1 May 2026 UTC**, with **24 completed calendar months** of transaction/statement history. This corrected release has not been published. The existing public site and hosted MCP remain separate deployments until their revision and synthetic journeys are verified.
+- **Explorer:** <https://data-sandbox.openfinance-os.org/>
+- **Hosted MCP server:** `https://data-sandbox.fly.dev/mcp` (anonymous, no API key)
+- **Integration guide:** <https://data-sandbox.openfinance-os.org/src/integrate.html>
 
-## Start locally
+## Try it in a minute
+
+**1. Fetch a payload.** Static fixtures are plain JSON, served with open CORS. This is Sara, a salaried expat, as a typical bank would return her accounts:
+
+```sh
+curl -fsS https://data-sandbox.openfinance-os.org/fixtures/v1/bundles/salaried_expat_mid/median/seed-4729/accounts.json
+```
+
+Use `fixtures/v1/index.json` (about 40 KB) to list personas and their published seeds. Each persona has one published seed; any other seed is generated on demand by the options below.
+
+**2. Ask an AI assistant.** Add the hosted MCP server as a custom connector in Claude (Settings, Connectors, Add custom connector) or in Claude Code:
+
+```sh
+claude mcp add --transport http open-finance-sandbox https://data-sandbox.fly.dev/mcp
+```
+
+Then ask, for example: "List the banking personas, pick the gig worker, and tell me how regular their income is." The assistant calls `list_personas`, `set_session` and `get_transactions`. Every tool is read-only.
+
+**3. Use it in code.** The npm and PyPI packages are not on the registries yet, so build them from this repository:
+
+```sh
+git clone https://github.com/openfinance-os/data-sandbox.git
+cd data-sandbox
+npm ci && npm run build:fixtures
+```
+
+```js
+// in your project, after: npm install /path/to/data-sandbox/packages/sandbox-fixtures
+import { loadJourney } from '@openfinance-os/sandbox-fixtures';
+
+const journey = loadJourney({ persona: 'salaried_expat_mid', lfi: 'median' });
+console.log(journey.accountIds, Object.keys(journey.endpoints));
+```
+
+Python works the same way with `pip install ./packages/sandbox-fixtures-py` and `load_journey()`.
+
+## What the data looks like
+
+- **Personas:** 29 in banking (retail, SME and corporate), 17 in insurance across seven lines, and an ATM directory. Eight personas hold both bank accounts and insurance policies.
+- **History:** 24 completed months up to 1 May 2026. Balances add up: salaries land in the main current account, cards are repaid monthly, and accounts do not go below zero without a credit line. `tests/financial-coherence.test.mjs` checks this for every banking persona.
+- **Bank profiles:** Rich, Median and Sparse show how many optional fields a bank fills in. They are anonymous; mandatory fields are always present.
+- **Reproducible:** the same persona, profile and seed always give the same bytes. Every export carries a `SYNTHETIC` watermark.
+
+## Run it locally
 
 Use Node 22 and Python 3.11+:
 
@@ -23,7 +68,7 @@ node examples/labs/run.mjs cover
 npm run export:tables -- salaried_expat_mid rich
 ```
 
-A five-minute first useful result is a product target that still needs observed user sessions.
+For failure cases (pagination, consent expiry, 429s, latency), run the local mock with `npm run mock`; see "Integrations and reproducibility" below.
 
 ## Data and purpose
 
@@ -43,10 +88,10 @@ Strict validation preserves unknown-field rejection. The upstream insurance quot
 
 ## Integrations and reproducibility
 
-Static JSON exposes **only manifest-listed seeds/roles**. Fetch the manifest first, then use the listed endpoint file. Custom recipes and arbitrary seeds use a downloaded envelope, the Node runtime generator, or the local mock. A static file ignores query parameters; it does not provide server pagination.
+Static JSON exposes **only manifest-listed seeds/roles**. Use `index.json` to discover personas and seeds, and `manifest.json` (about 1.8 MB) only when you need the full file list. Custom recipes and arbitrary seeds use a downloaded envelope, the Node runtime generator, or the local mock. A static file ignores query parameters; it does not provide server pagination.
 
 ```sh
-curl -fsS http://localhost:8000/fixtures/v1/manifest.json
+curl -fsS http://localhost:8000/fixtures/v1/index.json
 curl -fsS http://localhost:8000/fixtures/v1/bundles/salaried_expat_mid/median/seed-4729/accounts.json
 npm run mock
 curl -fsS http://localhost:8788/scenarios/salaried_expat_mid/accounts
@@ -81,6 +126,6 @@ node tools/check-spec-drift.mjs
 
 `check:dist-clean` requires generated outputs to have been committed. Do not weaken checks to accommodate an uncommitted working tree. Releases validate the exact trusted main revision; dependent MCP publication requires its matching fixture version already in npm. Health metadata carries revision, corpus date/version, domain pins and tool catalogue hash. The post-deploy smoke performs actual synthetic banking, insurance, secondary-bank and ATM reads.
 
-Public publication is pending credentials/configuration and review of this candidate. The site remains `noindex` until the public experience has been verified. Analytics stay anonymous and allowlisted; optional lab completion is self-reported within a session and does not establish retention or user success. No outreach or user research has been performed by this change.
+Publishing the npm and PyPI packages is pending registry credentials and configuration. The explorer stays `noindex` until the public experience has been verified. Analytics stay anonymous and allowlisted; optional lab completion is self-reported within a session and does not establish retention or user success. No outreach or user research has been performed by this change.
 
 Code and loader license: MIT. Synthetic fixture data: CC0. Not endorsed by CBUAE, Nebras or any named institution.
