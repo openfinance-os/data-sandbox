@@ -5,6 +5,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follo
 
 ## [Unreleased]
 
+### Changed — MCP: four insurance tools and compact JSON (breaking for MCP clients)
+
+- The 28 per-line insurance tools (`get_<line>_policies`, `get_<line>_policy`,
+  `get_<line>_payment_details`, `get_<line>_quote` for seven lines) are replaced by
+  `get_insurance_policies`, `get_insurance_policy`, `get_insurance_payment_details`
+  and `get_insurance_quote`, each with an optional `line` argument that defaults to
+  the session's line. Multi-domain personas with several lines must pass `line`.
+  The server now lists 27 tools instead of 51, and the tool definitions shrink
+  from about 43,000 to 26,000 characters.
+- Tool results are compact JSON (resources stay pretty-printed): `get_transactions`
+  for the default persona drops from 107,000 to 77,000 characters and
+  `list_personas` from 35,000 to 22,000.
+
 ### 0.1.0 candidate — 8 October 2026
 
 - Reviewed official Errata 4 and pinned the effective stable files per domain. Preserved the literal insurance source defect and added a hash-scoped quote composition adapter, saved patch, strict validators, conditional badges and generated payload types.

@@ -62,7 +62,7 @@ describe('load_journey size guard', () => {
 describe('tool annotations', () => {
   it('marks every tool non-destructive and closed-world, and every read tool read-only', async () => {
     const { tools } = await client.listTools();
-    expect(tools.length).toBeGreaterThan(40);
+    expect(tools.length).toBe(27);
     for (const tool of tools) {
       expect(tool.annotations, `${tool.name} has no annotations`).toBeDefined();
       expect(tool.annotations.destructiveHint, tool.name).toBe(false);

@@ -103,7 +103,7 @@ export function registerPrompts(server) {
                 ? `  1. Call \`set_session\` with { persona: "${persona}" }.`
                 : '  1. If there is no active insurance session (`get_session`), call `list_personas` with { domain: "insurance" } and ask me to pick one, then `set_session`.',
               '  2. Call `list_endpoints` to see which insurance line(s) the persona carries (motor / home / health / life / travel / renters / employment). Multi-domain personas can carry several lines.',
-              '  3. For EACH line, call the per-line tools: `get_<line>_policies` → `get_<line>_policy` → `get_<line>_payment_details` → `get_<line>_quote`.',
+              '  3. For EACH line, call `get_insurance_policies` → `get_insurance_policy` → `get_insurance_payment_details` → `get_insurance_quote`, passing { line } when the persona carries more than one.',
               '  4. Summarise per line: what is covered, sum insured / coverage blocks, premium (amount, frequency, payment IBAN), claims history if present, renewal / expiry dates, and whether the product is Takaful.',
               '  5. Flag anything a broker would raise: lapsed or soon-expiring cover, claims that could affect renewal pricing, obvious coverage gaps (e.g. contents-only home cover with a mortgage).',
               '',
@@ -147,7 +147,7 @@ export function registerPrompts(server) {
                 'Steps:',
                 `  1. Call \`list_personas\` and find "${target}". Note its \`available_lfi_roles\` (the loadable bank slots), \`multi_lfi_footprint\` (declared bank slots + plausible real-UAE candidates), and \`multi_insurer_footprint\` (declared insurance carriers) if present.`,
                 '  2. For EACH role in `available_lfi_roles` (starting with "primary"): call `set_session` with { persona, lfi_role: <role> }, then `get_accounts` and `get_balances`. Track which slot each account came from.',
-                '  3. Re-pin the primary role and, if the persona is multi-domain, review each insurance line it carries with the per-line `get_<line>_policies` / `get_<line>_policy` tools.',
+                '  3. Re-pin the primary role and, if the persona is multi-domain, review each insurance line it carries with `get_insurance_policies` / `get_insurance_policy` and the { line } argument.',
                 '  4. Aggregate: total balances across ALL bank slots (flag non-AED separately), the role each bank plays (salary, everyday card, mortgage, digital sidekick, …), premiums payable across insurers, and cross-domain links (e.g. a home policy tied to the mortgage-lender slot).',
                 '  5. Close with what a single-LFI view would have missed — the point of multi-LFI aggregation under UAE Open Finance.',
                 '',

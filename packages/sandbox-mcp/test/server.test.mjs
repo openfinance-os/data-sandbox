@@ -30,36 +30,11 @@ const EXPECTED_TOOLS = [
   'field_status',
   // Phase 2.3 — ATM Locator domain.
   'get_atms',
-  // Phase 2.0 motor full-coverage — insurance domain.
-  'get_motor_policies',
-  'get_motor_policy',
-  'get_motor_payment_details',
-  'get_motor_quote',
-  // Phase 2.1 non-motor lines — same 4-tool surface per line.
-  'get_home_policies',
-  'get_home_policy',
-  'get_home_payment_details',
-  'get_home_quote',
-  'get_health_policies',
-  'get_health_policy',
-  'get_health_payment_details',
-  'get_health_quote',
-  'get_life_policies',
-  'get_life_policy',
-  'get_life_payment_details',
-  'get_life_quote',
-  'get_travel_policies',
-  'get_travel_policy',
-  'get_travel_payment_details',
-  'get_travel_quote',
-  'get_renters_policies',
-  'get_renters_policy',
-  'get_renters_payment_details',
-  'get_renters_quote',
-  'get_employment_policies',
-  'get_employment_policy',
-  'get_employment_payment_details',
-  'get_employment_quote',
+  // Insurance, all seven lines — four tools with a `line` argument.
+  'get_insurance_policies',
+  'get_insurance_policy',
+  'get_insurance_payment_details',
+  'get_insurance_quote',
 ];
 
 const WATERMARK_RE = /SYNTHETIC — Open Finance Data Sandbox/;
@@ -235,20 +210,34 @@ describe('sandbox-mcp server', () => {
       const t = textOf(r);
       return JSON.parse(t.slice(t.indexOf('{')));
     };
+    // With several lines, the caller must say which one.
+    const ambiguous = await client.callTool({ name: 'get_insurance_policies', arguments: {} });
+    expect(ambiguous.isError).toBe(true);
+    expect(textOf(ambiguous)).toMatch(
+      /several insurance lines \(motor, home, travel\); pass \{ line \}/,
+    );
     for (const line of ['motor', 'home', 'travel']) {
-      const list = parse(await client.callTool({ name: `get_${line}_policies`, arguments: {} }));
+      const list = parse(
+        await client.callTool({ name: 'get_insurance_policies', arguments: { line } }),
+      );
       expect(list.Data, `${line} policies Data`).toBeDefined();
-      // get_<line>_policy resolves THIS line's policy (not a different line's
+      // get_insurance_policy { line } resolves THIS line's policy (not a different line's
       // id from the mixed array) and returns a spec-shaped, watermarked detail.
-      const detailRes = await client.callTool({ name: `get_${line}_policy`, arguments: {} });
+      const detailRes = await client.callTool({
+        name: 'get_insurance_policy',
+        arguments: { line },
+      });
       expect(detailRes.isError ?? false, `${line} policy isError`).toBe(false);
       const detail = parse(detailRes);
       expect(detail._watermark).toMatch(/SYNTHETIC/);
-      const quoteRes = await client.callTool({ name: `get_${line}_quote`, arguments: {} });
+      const quoteRes = await client.callTool({ name: 'get_insurance_quote', arguments: { line } });
       expect(quoteRes.isError ?? false, `${line} quote isError`).toBe(false);
     }
     // A line the persona does NOT carry errors with a clear message.
-    const health = await client.callTool({ name: 'get_health_policies', arguments: {} });
+    const health = await client.callTool({
+      name: 'get_insurance_policies',
+      arguments: { line: 'health' },
+    });
     expect(health.isError).toBe(true);
     expect(textOf(health)).toMatch(/no "health" insurance line|requires an insurance session/);
   });
@@ -293,8 +282,9 @@ describe('sandbox-mcp server', () => {
       name: 'get_transactions',
       arguments: { since: '2099-01-01' }, // far future → kept = 0
     });
-    expect(textOf(filtered)).toMatch(/"kept": 0/);
-    expect(textOf(unfiltered)).not.toMatch(/"kept": 0/);
+    // Tool results are compact JSON; match `"kept":0` with or without spacing.
+    expect(textOf(filtered)).toMatch(/"kept":\s*0\b/);
+    expect(textOf(unfiltered)).not.toMatch(/"kept":\s*0\b/);
   });
 
   it('get_balances fans out across every account when accountId is omitted', async () => {
@@ -430,7 +420,7 @@ describe('sandbox-mcp server', () => {
     expect(salaried.multi_insurer_footprint).toBeNull();
   });
 
-  it('insurance flow — set_session + get_motor_* round-trip with watermark + spec pin', async () => {
+  it('insurance flow — set_session + get_insurance_* round-trip (motor) with watermark + spec pin', async () => {
     await client.callTool({
       name: 'set_session',
       arguments: { persona: 'motor_comprehensive_mid' },
@@ -440,7 +430,7 @@ describe('sandbox-mcp server', () => {
     );
     expect(session).toMatchObject({ persona: 'motor_comprehensive_mid', lfi: 'median' });
 
-    const policies = await client.callTool({ name: 'get_motor_policies', arguments: {} });
+    const policies = await client.callTool({ name: 'get_insurance_policies', arguments: {} });
     const policiesText = textOf(policies);
     expect(policiesText).toMatch(WATERMARK_RE);
     const policiesEnv = JSON.parse(policiesText.slice(policiesText.indexOf('{')));
@@ -448,24 +438,24 @@ describe('sandbox-mcp server', () => {
     expect(policiesEnv._domain).toBe('insurance');
     expect(policiesEnv._specSha).toBe(manifest.specSha);
 
-    const detail = await client.callTool({ name: 'get_motor_policy', arguments: {} });
+    const detail = await client.callTool({ name: 'get_insurance_policy', arguments: {} });
     const detailEnv = JSON.parse(textOf(detail).slice(textOf(detail).indexOf('{')));
     expect(detailEnv.Data?.InsurancePolicyId).toBeDefined();
     expect(detailEnv.Data?.PolicyHolder).toBeDefined();
     expect(detailEnv.Data?.Product?.Policy).toBeDefined();
 
-    const payment = await client.callTool({ name: 'get_motor_payment_details', arguments: {} });
+    const payment = await client.callTool({ name: 'get_insurance_payment_details', arguments: {} });
     const paymentEnv = JSON.parse(textOf(payment).slice(textOf(payment).indexOf('{')));
     expect(paymentEnv.Data?.Account?.SchemeName).toBe('IBAN');
 
-    const quote = await client.callTool({ name: 'get_motor_quote', arguments: {} });
+    const quote = await client.callTool({ name: 'get_insurance_quote', arguments: {} });
     const quoteEnv = JSON.parse(textOf(quote).slice(textOf(quote).indexOf('{')));
     expect(quoteEnv.Data?.QuoteStatus).toBe('PolicyIssued');
     expect(quoteEnv.Data?.ServiceRating).toBeDefined();
     expect(quoteEnv.Data?.PolicyIssuanceAllowed).toBeDefined();
   });
 
-  // Phase 2.1 — each non-motor line gets the same 4-tool surface as motor.
+  // Phase 2.1 — each non-motor line works through the same four insurance tools.
   // Personas are 1:1 with lines (one persona per non-motor line today), so
   // this also covers the line-id resolution path.
   const NON_MOTOR_LINES = [
@@ -478,10 +468,10 @@ describe('sandbox-mcp server', () => {
   ];
 
   for (const { line, persona } of NON_MOTOR_LINES) {
-    it(`insurance ${line} flow — get_${line}_* round-trip with watermark + spec pin`, async () => {
+    it(`insurance ${line} flow — get_insurance_* round-trip with watermark + spec pin`, async () => {
       await client.callTool({ name: 'set_session', arguments: { persona } });
 
-      const policies = await client.callTool({ name: `get_${line}_policies`, arguments: {} });
+      const policies = await client.callTool({ name: 'get_insurance_policies', arguments: {} });
       const policiesText = textOf(policies);
       expect(policiesText).toMatch(WATERMARK_RE);
       const policiesEnv = JSON.parse(policiesText.slice(policiesText.indexOf('{')));
@@ -489,19 +479,22 @@ describe('sandbox-mcp server', () => {
       expect(policiesEnv._domain).toBe('insurance');
       expect(policiesEnv._specSha).toBe(manifest.specSha);
 
-      const detail = await client.callTool({ name: `get_${line}_policy`, arguments: {} });
+      const detail = await client.callTool({ name: 'get_insurance_policy', arguments: {} });
       const detailText = textOf(detail);
       const detailEnv = JSON.parse(detailText.slice(detailText.indexOf('{')));
       expect(detailEnv.Data?.InsurancePolicyId).toBeDefined();
       expect(detailEnv.Data?.PolicyHolder).toBeDefined();
       expect(detailEnv.Data?.Product?.Policy).toBeDefined();
 
-      const payment = await client.callTool({ name: `get_${line}_payment_details`, arguments: {} });
+      const payment = await client.callTool({
+        name: 'get_insurance_payment_details',
+        arguments: {},
+      });
       const paymentText = textOf(payment);
       const paymentEnv = JSON.parse(paymentText.slice(paymentText.indexOf('{')));
       expect(paymentEnv.Data?.Account?.SchemeName).toBe('IBAN');
 
-      const quote = await client.callTool({ name: `get_${line}_quote`, arguments: {} });
+      const quote = await client.callTool({ name: 'get_insurance_quote', arguments: {} });
       const quoteText = textOf(quote);
       const quoteEnv = JSON.parse(quoteText.slice(quoteText.indexOf('{')));
       expect(quoteEnv.Data?.QuoteStatus).toBe('PolicyIssued');
@@ -509,19 +502,25 @@ describe('sandbox-mcp server', () => {
   }
 
   it('wrong-line insurance tool errors with a "switch persona to a <line>-line persona" hint', async () => {
-    // motor → home (non-motor tool called against motor persona)
+    // motor persona asked for the home line
     await client.callTool({
       name: 'set_session',
       arguments: { persona: 'motor_comprehensive_mid' },
     });
-    const motorOnHome = await client.callTool({ name: 'get_home_policies', arguments: {} });
+    const motorOnHome = await client.callTool({
+      name: 'get_insurance_policies',
+      arguments: { line: 'home' },
+    });
     expect(motorOnHome.isError).toBe(true);
     expect(textOf(motorOnHome)).toMatch(/requires an insurance session on the "home" line/);
     expect(textOf(motorOnHome)).toMatch(/line="motor"/);
 
-    // home → motor (motor tool called against non-motor persona — symmetric guarantee)
+    // home persona asked for the motor line (symmetric guarantee)
     await client.callTool({ name: 'set_session', arguments: { persona: 'home_mortgage_villa' } });
-    const homeOnMotor = await client.callTool({ name: 'get_motor_policies', arguments: {} });
+    const homeOnMotor = await client.callTool({
+      name: 'get_insurance_policies',
+      arguments: { line: 'motor' },
+    });
     expect(homeOnMotor.isError).toBe(true);
     expect(textOf(homeOnMotor)).toMatch(/requires an insurance session on the "motor" line/);
     expect(textOf(homeOnMotor)).toMatch(/line="home"/);
@@ -533,7 +532,10 @@ describe('sandbox-mcp server', () => {
       name: 'set_session',
       arguments: { persona: 'salaried_expat_mid' },
     });
-    const wrongInsurance = await client.callTool({ name: 'get_motor_policies', arguments: {} });
+    const wrongInsurance = await client.callTool({
+      name: 'get_insurance_policies',
+      arguments: {},
+    });
     expect(wrongInsurance.isError).toBe(true);
     expect(textOf(wrongInsurance)).toMatch(/requires an insurance session/);
 
