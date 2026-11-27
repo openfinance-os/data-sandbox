@@ -14,7 +14,7 @@ async function connect() {
 
 async function loadJourney(client, persona, lfi) {
   await client.callTool({ name: 'set_session', arguments: { persona, lfi } });
-  const r = await client.callTool({ name: 'load_journey', arguments: {} });
+  const r = await client.callTool({ name: 'load_journey', arguments: { full: true } });
   return r.content[0].text;
 }
 
@@ -45,7 +45,7 @@ describe('sandbox-mcp determinism (EXP-05)', () => {
       name: 'set_session',
       arguments: { persona: 'salaried_expat_mid' },
     });
-    const r = await client.callTool({ name: 'load_journey', arguments: {} });
+    const r = await client.callTool({ name: 'load_journey', arguments: { full: true } });
     const journey = JSON.parse(r.content[0].text);
     expect(Object.keys(journey.endpoints).length).toBeGreaterThan(0);
     for (const [path, env] of Object.entries(journey.endpoints)) {

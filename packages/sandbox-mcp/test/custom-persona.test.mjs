@@ -78,11 +78,15 @@ describe('custom persona builder (build_persona)', () => {
     const args = { recipe: { income_band: 'hnw', fx_activity: true }, lfi: 'median', seed: 99 };
 
     await client.callTool({ name: 'build_persona', arguments: args });
-    const journeyA = textOf(await client.callTool({ name: 'load_journey', arguments: {} }));
+    const journeyA = textOf(
+      await client.callTool({ name: 'load_journey', arguments: { full: true } }),
+    );
 
     const second = await connect();
     await second.client.callTool({ name: 'build_persona', arguments: args });
-    const journeyB = textOf(await second.client.callTool({ name: 'load_journey', arguments: {} }));
+    const journeyB = textOf(
+      await second.client.callTool({ name: 'load_journey', arguments: { full: true } }),
+    );
     await second.client.close();
     await second.server.close();
 

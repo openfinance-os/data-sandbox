@@ -45,6 +45,25 @@ test.describe('tour auto-launch (PR #2)', () => {
     await expect(page.locator('#tour-btn')).toHaveClass(/topbar-btn-icon/);
   });
 
+  test('cold landing shows Sara at her own published seed', async ({ page }) => {
+    await page.goto('/src/index.html');
+    await expect(page.locator('#tour-overlay')).toBeVisible({ timeout: 5000 });
+    // The tour switches to Sara; the seed must follow her default, not the
+    // first persona's, or her static fixture URLs disappear.
+    await expect(page.locator('#seed-input')).toHaveValue('4729');
+    await expect(page).toHaveURL(/persona=salaried_expat_mid.*seed=4729/);
+  });
+
+  test('switching persona from the library lands on its default seed', async ({ page }) => {
+    await page.goto('/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729');
+    await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');
+    await page
+      .locator('.persona-card[data-persona-id="gig_variable_income"] .persona-name')
+      .click();
+    await expect(page.locator('#seed-input')).toHaveValue('5523');
+    await expect(page).toHaveURL(/persona=gig_variable_income/);
+  });
+
   test('URL with query params skips auto-launch and demotes by default', async ({ page }) => {
     await page.goto('/src/index.html?persona=salaried_expat_mid&lfi=median&seed=4729');
     await page.waitForFunction(() => document.getElementById('coverage-pct')?.textContent !== '—');

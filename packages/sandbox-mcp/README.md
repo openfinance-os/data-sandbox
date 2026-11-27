@@ -167,7 +167,7 @@ claude mcp add open-finance-sandbox -- npx -y @openfinance-os/sandbox-mcp
 | `get_beneficiaries` | `/accounts/{AccountId}/beneficiaries`. |
 | `get_product` | `/accounts/{AccountId}/product` (mortgage rate, card APR, …). `accountId` required. |
 | `get_statements` | `/accounts/{AccountId}/statements`. `accountId` required. |
-| `load_journey` | Every endpoint in one call. Verbose — prefer the granular tools. |
+| `load_journey` | Every endpoint in one call. Above 100,000 characters (every banking persona) it returns an index of endpoints with item counts; pass `{ full: true }` for the whole journey. Prefer the granular tools. |
 
 ### Insurance endpoints (v2.1, all 7 lines — same 4-tool surface per line)
 

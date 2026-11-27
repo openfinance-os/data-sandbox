@@ -2635,13 +2635,16 @@
         Add it as a custom connector in <strong>Claude.ai → Customize → Connectors → Add custom
         connector</strong>, paste the URL, and chat as if the sandbox were your bank's labs MCP.
       </p>
-      <pre><code># Or run your own instance locally
-npx -y @openfinance-os/sandbox-mcp --transport http --port 8787
+      <pre><code># Or run your own instance locally. The package is not on npm yet,
+# so run it from a clone of the repository:
+git clone https://github.com/openfinance-os/data-sandbox.git && cd data-sandbox
+npm ci &amp;&amp; npm run build:fixtures
+node packages/sandbox-mcp/src/index.mjs --transport http --port 8787
 
 # Opt-in OAuth simulation (J1 consent screen end-to-end)
-npx -y @openfinance-os/sandbox-mcp --transport http --port 8787 --simulate-oauth
+node packages/sandbox-mcp/src/index.mjs --transport http --port 8787 --simulate-oauth
 # or:
-MCP_SIMULATE_OAUTH=1 npx -y @openfinance-os/sandbox-mcp --transport http</code></pre>
+MCP_SIMULATE_OAUTH=1 node packages/sandbox-mcp/src/index.mjs --transport http</code></pre>
       <p>
         Helpful links:
         <a href="https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp" target="_blank" rel="noopener noreferrer">Claude custom-connector help</a>

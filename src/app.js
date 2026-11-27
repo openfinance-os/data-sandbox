@@ -872,6 +872,7 @@ function buildPersonaList() {
     // children (JTBD chips, the disclosure) keep handling their own events.
     const activatePersona = () => {
       state.personaId = id;
+      state.seed = defaultSeedFor(id);
       state.navAccountCollapsed.clear();
       // PR #5 — banking persona-switch now lands on the Underwriting
       // Summary by default; insurance flow has its own per-domain
@@ -1294,8 +1295,21 @@ function attachEventHandlers() {
   });
 }
 
+// A persona switch lands on that persona's own default seed. Its static
+// fixtures are published for that seed only, so carrying the previous
+// persona's seed over would hide the copyable fixture URLs. The seed input
+// and URL still pin any other seed explicitly.
+function defaultSeedFor(personaId) {
+  // A custom recipe has no published fixtures, so its chosen seed stays.
+  if (personaId === CUSTOM_PERSONA_SLUG && Number.isFinite(state.seed)) return state.seed;
+  const def = Number(state.data.personas[personaId]?.default_seed);
+  if (Number.isFinite(def)) return def;
+  return Number.isFinite(state.seed) ? state.seed : 1;
+}
+
 function setPersona(personaId, lfi) {
   state.personaId = personaId;
+  state.seed = defaultSeedFor(personaId);
   state.navAccountCollapsed.clear();
   if (lfi) state.lfi = lfi;
   rebuildAndRender();
@@ -2641,13 +2655,24 @@ function renderUseInDemoPanel() {
     }).replace(/^\/embed/, '/embed.html');
   const iframeSnippet = `<iframe src="${embedHref}" width="100%" height="600" loading="lazy" title="Open Finance Data Sandbox · ${personaId} · ${lfi}" referrerpolicy="no-referrer" style="border:1px solid #d9d5cb;border-radius:4px"></iframe>`;
 
-  const npmSnippet = `npm install @openfinance-os/sandbox-fixtures
+  // The packages are not on npm or PyPI yet; these snippets build them from
+  // source. Restore the plain `npm install` / `pip install` lines once the
+  // first release is published.
+  const fromSource = `# Not yet published to npm or PyPI. Build the package from source:
+git clone https://github.com/openfinance-os/data-sandbox.git && cd data-sandbox
+npm ci && npm run build:fixtures`;
+
+  const npmSnippet = `${fromSource}
+npm install ./packages/sandbox-fixtures   # or point your project at this folder
+
 import { loadJourney } from '@openfinance-os/sandbox-fixtures';
 const j = loadJourney({ persona: '${personaId}', lfi: '${lfi}', seed: ${seed} });
 // j.endpoints['/accounts'], j.endpoints['/parties'],
 // j.endpoints['/accounts/{AccountId}/transactions'], ...`;
 
-  const pipSnippet = `pip install openfinance-os-sandbox-fixtures
+  const pipSnippet = `${fromSource}
+pip install ./packages/sandbox-fixtures-py
+
 from openfinance_os_sandbox_fixtures import load_journey
 j = load_journey('${personaId}', lfi='${lfi}', seed=${seed})
 # j['endpoints']['/accounts'], j['endpoints']['/parties'],
