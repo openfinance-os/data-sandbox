@@ -61,7 +61,8 @@ const PFM_INSTRUCTIONS = [
   "     the persona's default_seed. The same (persona, lfi, seed) always returns byte-identical data.",
   '  3. For a banking session: use `get_party`, `get_accounts`, `get_balances`, `get_transactions`,',
   '     `get_standing_orders`, `get_direct_debits`, `get_scheduled_payments`, `get_beneficiaries`,',
-  '     `get_product`, `get_statements`. Use `load_journey` for a single dump of everything.',
+  '     `get_product`, `get_statements`. `load_journey` returns an endpoint index when the full',
+  '     journey is too large for one tool result; pass { full: true } only when the client can hold it.',
   "  4. For an insurance session: use the per-line tools matching the persona's `line`",
   '     (motor / home / health / life / travel / renters / employment) — e.g. for a `life` persona,',
   '     call `get_life_policies`, `get_life_policy`, `get_life_payment_details`, `get_life_quote`.',
@@ -93,6 +94,77 @@ function envelope(persona, lfi, seed, kind, payload) {
   return {
     content: [{ type: 'text', text }],
   };
+}
+
+// MCP clients cap a single tool result well below a full banking journey
+// (2–7 MB of JSON). Above this many characters, load_journey answers with an
+// index of endpoints and item counts unless the caller asks for { full: true }.
+export const LOAD_JOURNEY_INLINE_LIMIT = 100_000;
+
+function countItems(env) {
+  const data = env?.Data;
+  if (Array.isArray(data)) return data.length;
+  if (data && typeof data === 'object') {
+    const arr = Object.values(data).find(Array.isArray);
+    return arr ? arr.length : 1;
+  }
+  return 0;
+}
+
+function journeyIndex(journey, totalChars) {
+  const endpoints = {};
+  let watermark = null;
+  for (const [p, env] of Object.entries(journey.endpoints ?? {})) {
+    watermark ??= env?._watermark ?? null;
+    endpoints[p] = { items: countItems(env), chars: JSON.stringify(env).length };
+  }
+  const { endpoints: _omit, ...meta } = journey;
+  return {
+    ...meta,
+    _watermark: watermark,
+    truncated: true,
+    totalChars,
+    inlineLimit: LOAD_JOURNEY_INLINE_LIMIT,
+    hint:
+      'The full journey is larger than one tool result can safely hold. Call the granular ' +
+      'tools (get_accounts, get_balances, get_transactions with filters, …) for the data you ' +
+      'need, or call load_journey with { full: true } if your client accepts large results.',
+    endpoints,
+  };
+}
+
+// Every tool here reads synthetic fixtures; none changes anything outside the
+// server. Session tools only choose which fixture later reads return.
+const READ_ONLY = {
+  readOnlyHint: true,
+  destructiveHint: false,
+  idempotentHint: true,
+  openWorldHint: false,
+};
+const SESSION_STATE = {
+  readOnlyHint: false,
+  destructiveHint: false,
+  idempotentHint: true,
+  openWorldHint: false,
+};
+const SESSION_TOOLS = new Set(['set_session', 'build_persona']);
+
+function withAnnotations(server) {
+  const register = server.registerTool.bind(server);
+  server.registerTool = (name, config, handler) =>
+    register(
+      name,
+      {
+        ...config,
+        annotations: {
+          title: config.title,
+          ...(SESSION_TOOLS.has(name) ? SESSION_STATE : READ_ONLY),
+          ...config.annotations,
+        },
+      },
+      handler,
+    );
+  return server;
 }
 
 function textResult(text) {
@@ -434,9 +506,8 @@ function poolValuesPayload({ pool, kind, value, limit, search }) {
 }
 
 export function createServer() {
-  const server = new McpServer(
-    { name: PKG_NAME, version: PKG_VERSION },
-    { instructions: PFM_INSTRUCTIONS },
+  const server = withAnnotations(
+    new McpServer({ name: PKG_NAME, version: PKG_VERSION }, { instructions: PFM_INSTRUCTIONS }),
   );
   const session = createSessionStore();
 
@@ -1408,17 +1479,25 @@ export function createServer() {
     'load_journey',
     {
       title: 'Load full journey',
-      description:
-        "Return every in-scope endpoint for the active persona in one call. For a banking session: /parties + /accounts + per-account balances/transactions/standing-orders/direct-debits/beneficiaries/scheduled-payments/product/statements/parties. For an insurance session: the per-line policy list + policy detail + payment-details + quote-read for the persona's line (one of motor / home / health / life / travel / renters / employment). Verbose — prefer the granular tools when answering targeted questions.",
-      inputSchema: {},
+      description: `Return every in-scope endpoint for the active persona in one call. For a banking session: /parties + /accounts + per-account balances/transactions/standing-orders/direct-debits/beneficiaries/scheduled-payments/product/statements/parties. For an insurance session: the per-line policy list + policy detail + payment-details + quote-read for the persona's line (one of motor / home / health / life / travel / renters / employment). Banking journeys run to several megabytes, so above ${LOAD_JOURNEY_INLINE_LIMIT.toLocaleString('en-US')} characters this returns an index of endpoints with item counts instead; pass { full: true } to force the whole journey. Prefer the granular tools when answering targeted questions.`,
+      inputSchema: {
+        full: z
+          .boolean()
+          .optional()
+          .describe(
+            'Return the whole journey even when it exceeds the inline limit. Only for clients that accept multi-megabyte results.',
+          ),
+      },
     },
-    async () => {
+    async ({ full } = {}) => {
       const s = session.get();
       const j =
         s.kind === 'custom'
           ? s.journey
           : loadJourney({ persona: s.persona, lfi: s.lfi, seed: s.seed, lfi_role: s.lfi_role });
-      return textResult(JSON.stringify(j, null, 2));
+      const text = JSON.stringify(j, null, 2);
+      if (full || text.length <= LOAD_JOURNEY_INLINE_LIMIT) return textResult(text);
+      return textResult(JSON.stringify(journeyIndex(j, text.length), null, 2));
     },
   );
 

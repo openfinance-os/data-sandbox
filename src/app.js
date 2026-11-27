@@ -23,8 +23,6 @@ import { personaInDomain } from './shared/domains.js';
 import { statusPill, syncViewTabs } from './shared/dom.js';
 import { setDocumentLocale, normalizeLocale, DEFAULT_LOCALE, t } from './shared/i18n.js';
 import { decodeFromUrl, encodeEmbed, encodeFixtureUrl, CUSTOM_PERSONA_SLUG } from './url.js';
-import { expandRecipe } from './persona-builder/expand.js';
-import { decodeRecipe, encodeRecipe, RECIPE_DEFAULTS } from './persona-builder/recipe.js';
 // C-P1 perf — the persona-builder UI (and its export-zip → generator chain)
 // is dynamic-imported on the first "+ Build a custom persona" click; see
 // attachBuilderHandlers. Keeping it off the cold path matters because
@@ -41,7 +39,6 @@ import { createTour } from './ui/tour.js';
 // budget) but it backfired: the dynamic import fires at init's tail
 // on cold landing, inside the TBT measurement window, dropping the
 // median to 0.57. Static import + modulepreload is the right shape.
-import { createCompareView } from './ui/compare-view.js';
 import { createTxFilter } from './ui/tx-filter.js';
 // PR-15 perf — insurance module is dynamic-imported when the active
 // domain shifts to insurance. The banking default landing never needs
@@ -257,14 +254,24 @@ function demoteTourButton() {
   btn.setAttribute('aria-label', 'Replay guided tour');
   btn.setAttribute('title', 'Replay the 5-step guided tour');
 }
-const { renderCompareView } = createCompareView({
-  state,
-  el,
-  stripInternal,
-  personaAvatarEl,
-  // D-10 — Arabic display names in the compare header.
-  localizedName: (p) => localizedName(p),
-});
+// Compare-LFIs is opt-in (button or ?compare= permalink) and already renders
+// asynchronously, so its module loads on first use and stays off the
+// cold-load budget (EXP-24).
+let compareViewFactory = null;
+const renderCompareView = async (body) => {
+  compareViewFactory ??= import('./ui/compare-view.js').then(({ createCompareView }) =>
+    createCompareView({
+      state,
+      el,
+      stripInternal,
+      personaAvatarEl,
+      // D-10 — Arabic display names in the compare header.
+      localizedName: (p) => localizedName(p),
+    }),
+  );
+  const { renderCompareView: render } = await compareViewFactory;
+  return render(body);
+};
 const { renderTxFilterBar, applyFilter, applySort, toggleSort } = createTxFilter({
   state,
   el,
@@ -582,6 +589,10 @@ async function init() {
   // pushPermalink can re-encode it on share / URL update.
   if (state.domain === 'banking' && url.personaId === CUSTOM_PERSONA_SLUG && url.recipe) {
     try {
+      const [{ decodeRecipe }, { expandRecipe }] = await Promise.all([
+        loadRecipeCodec(),
+        import('./persona-builder/expand.js'),
+      ]);
       const recipe = decodeRecipe(url.recipe);
       const customPersona = expandRecipe(recipe, state.data.pools);
       state.data.personas[CUSTOM_PERSONA_SLUG] = customPersona;
@@ -663,6 +674,13 @@ function emitPersonaLoad() {
 // to the builder dialog. The dialog is mounted lazily on first open so the
 // initial render stays cheap; subsequent opens reuse the same instance.
 let builderInstance = null;
+// Custom-persona recipe helpers load only when a recipe is in play (a
+// ?recipe= permalink or the builder), keeping them off the cold-load budget.
+let recipeCodec = null;
+async function loadRecipeCodec() {
+  recipeCodec ??= await import('./persona-builder/recipe.js');
+  return recipeCodec;
+}
 function attachBuilderHandlers() {
   const btn = document.getElementById('open-builder-btn');
   if (!btn) return;
@@ -671,7 +689,10 @@ function attachBuilderHandlers() {
       // C-P1 perf — first click pays the dynamic-import; the builder UI's
       // transitive graph (export-zip → sync generator entry → insurance +
       // ATM trees) stays off the cold-load critical path.
-      const { mountPersonaBuilder } = await import('./ui/persona-builder-ui.js');
+      const [{ mountPersonaBuilder }] = await Promise.all([
+        import('./ui/persona-builder-ui.js'),
+        loadRecipeCodec(),
+      ]);
       builderInstance = mountPersonaBuilder({
         exportContext,
         pools: state.data.pools,
@@ -693,7 +714,7 @@ function attachBuilderHandlers() {
         },
       });
     }
-    builderInstance.open(state.recipe ?? { ...RECIPE_DEFAULTS });
+    builderInstance.open(state.recipe ?? { ...recipeCodec.RECIPE_DEFAULTS });
   });
 }
 
@@ -872,6 +893,7 @@ function buildPersonaList() {
     // children (JTBD chips, the disclosure) keep handling their own events.
     const activatePersona = () => {
       state.personaId = id;
+      state.seed = defaultSeedFor(id);
       state.navAccountCollapsed.clear();
       // PR #5 — banking persona-switch now lands on the Underwriting
       // Summary by default; insurance flow has its own per-domain
@@ -1294,8 +1316,21 @@ function attachEventHandlers() {
   });
 }
 
+// A persona switch lands on that persona's own default seed. Its static
+// fixtures are published for that seed only, so carrying the previous
+// persona's seed over would hide the copyable fixture URLs. The seed input
+// and URL still pin any other seed explicitly.
+function defaultSeedFor(personaId) {
+  // A custom recipe has no published fixtures, so its chosen seed stays.
+  if (personaId === CUSTOM_PERSONA_SLUG && Number.isFinite(state.seed)) return state.seed;
+  const def = Number(state.data.personas[personaId]?.default_seed);
+  if (Number.isFinite(def)) return def;
+  return Number.isFinite(state.seed) ? state.seed : 1;
+}
+
 function setPersona(personaId, lfi) {
   state.personaId = personaId;
+  state.seed = defaultSeedFor(personaId);
   state.navAccountCollapsed.clear();
   if (lfi) state.lfi = lfi;
   rebuildAndRender();
@@ -1649,8 +1684,10 @@ function pushPermalink() {
   }
   // Workstream B — emit the recipe param when the active persona is the
   // ephemeral custom one, so the URL fully describes the bundle.
-  if (state.personaId === CUSTOM_PERSONA_SLUG && state.recipe) {
-    params.set('recipe', encodeRecipe(state.recipe));
+  // The codec is always loaded by then: a custom persona only exists after
+  // the URL recipe was decoded or the builder applied one.
+  if (state.personaId === CUSTOM_PERSONA_SLUG && state.recipe && recipeCodec) {
+    params.set('recipe', recipeCodec.encodeRecipe(state.recipe));
   }
   // Phase R1.5 — enriched view toggle. Emit only when ON so existing
   // shareable raw-view permalinks stay byte-identical.
@@ -2641,13 +2678,24 @@ function renderUseInDemoPanel() {
     }).replace(/^\/embed/, '/embed.html');
   const iframeSnippet = `<iframe src="${embedHref}" width="100%" height="600" loading="lazy" title="Open Finance Data Sandbox · ${personaId} · ${lfi}" referrerpolicy="no-referrer" style="border:1px solid #d9d5cb;border-radius:4px"></iframe>`;
 
-  const npmSnippet = `npm install @openfinance-os/sandbox-fixtures
+  // The packages are not on npm or PyPI yet; these snippets build them from
+  // source. Restore the plain `npm install` / `pip install` lines once the
+  // first release is published.
+  const fromSource = `# Not yet published to npm or PyPI. Build the package from source:
+git clone https://github.com/openfinance-os/data-sandbox.git && cd data-sandbox
+npm ci && npm run build:fixtures`;
+
+  const npmSnippet = `${fromSource}
+npm install ./packages/sandbox-fixtures   # or point your project at this folder
+
 import { loadJourney } from '@openfinance-os/sandbox-fixtures';
 const j = loadJourney({ persona: '${personaId}', lfi: '${lfi}', seed: ${seed} });
 // j.endpoints['/accounts'], j.endpoints['/parties'],
 // j.endpoints['/accounts/{AccountId}/transactions'], ...`;
 
-  const pipSnippet = `pip install openfinance-os-sandbox-fixtures
+  const pipSnippet = `${fromSource}
+pip install ./packages/sandbox-fixtures-py
+
 from openfinance_os_sandbox_fixtures import load_journey
 j = load_journey('${personaId}', lfi='${lfi}', seed=${seed})
 # j['endpoints']['/accounts'], j['endpoints']['/parties'],

@@ -248,7 +248,15 @@
     for one tuple in a single call — drop it in where your TPP demo currently
     fetches from the Nebras-operated regulatory sandbox.
   </p>
-  <pre><code>npm install @openfinance-os/sandbox-fixtures</code></pre>
+  <p class="callout">
+    <strong>Not yet published.</strong> The npm and PyPI packages are prepared but
+    not released, so the registry install commands do not work yet. Build them
+    from this repository instead:
+  </p>
+  <pre><code>git clone https://github.com/openfinance-os/data-sandbox.git
+cd data-sandbox
+npm ci &amp;&amp; npm run build:fixtures
+npm install ./packages/sandbox-fixtures   # from your project, use the path to this folder</code></pre>
   <pre><code>// Wrap sandbox fixtures behind a Nebras-mock-shaped Express handler.
 // Your existing fetch-from-Nebras code keeps working unmodified.
 import express from 'express';
@@ -282,7 +290,10 @@ app.listen(3000);</code></pre>
   <p>
     Same data, same determinism, same coherence guarantees — Python edition.
   </p>
-  <pre><code>pip install openfinance-os-sandbox-fixtures</code></pre>
+  <p>
+    Not yet on PyPI. After the source build above:
+  </p>
+  <pre><code>pip install ./packages/sandbox-fixtures-py</code></pre>
   <pre><code># A FastAPI shim that mirrors the v2.1 Account Information surface
 # but serves persona-coherent sandbox data.
 from fastapi import FastAPI

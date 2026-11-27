@@ -121,7 +121,9 @@ export function generateAccounts({ persona, identity, rng, pools, now }) {
       _meta: {
         kind: spec.type,
         creditLimitAed: spec.credit_limit_aed,
-        openingBalance: opening,
+        // A card's opening position is an outstanding (debit) balance;
+        // ./budget.js repays it with the first monthly card payment.
+        openingBalance: spec.type === 'CreditCard' ? -opening : opening,
         servicerName: bank.name,
         // Phase 2.2 — anchors the account to its multi_lfi_footprint slot
         // so standing-order / direct-debit generation can match

@@ -10,6 +10,7 @@ import { drawName, drawOrganisationName } from '../identity.js';
 import { generateAccounts, derivePrimaryAnchor } from '../accounts.js';
 import { generateBalances } from '../balances.js';
 import { generateTransactions } from '../transactions.js';
+import { balanceBudget } from '../budget.js';
 import { generateStandingOrders } from '../standing-orders.js';
 import { generateDirectDebits } from '../direct-debits.js';
 import { generateBeneficiaries } from '../beneficiaries.js';
@@ -145,10 +146,12 @@ export function buildBankingBundle({ persona, lfi, seed, pools, now = DEFAULT_NO
   const transactions = [];
   const runningBalance = { balance: 0 };
   const txState = { counter: 0 };
+  const primaryCurrent = accounts.find((a) => a._meta.kind === 'CurrentAccount') ?? null;
   for (const acc of accounts) {
     const accTx = generateTransactions({
       persona,
       account: acc,
+      isPrimary: acc === primaryCurrent,
       rng,
       pools: {
         groceries: p.groceries,
@@ -222,6 +225,12 @@ export function buildBankingBundle({ persona, lfi, seed, pools, now = DEFAULT_NO
       transactions.push(...(ledger[slotKey] ?? []));
     }
   }
+
+  // Make the money add up: card repayments and limits, a current-account
+  // floor, funded secondary accounts, nothing before an account opened.
+  // Runs before balances, statements and enrichment so they all agree.
+  const budgeted = balanceBudget({ persona, accounts, transactions, now });
+  transactions.splice(0, transactions.length, ...budgeted);
 
   const balances = generateBalances({ accounts, transactions, now });
 

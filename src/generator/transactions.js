@@ -91,6 +91,11 @@ export function generateTransactions({
   runningBalance,
   now,
   txState,
+  // Day-to-day flows (salary, bills, card-less spending, cash, FX, NSF)
+  // land on the persona's primary current account only. Secondary current
+  // accounts (a USD account, a second outlet account) are funded by
+  // own-account transfers in ./budget.js instead of mirroring the spend.
+  isPrimary = account._meta.kind === 'CurrentAccount',
 }) {
   const out = [];
   const today = new Date(now.getTime());
@@ -101,7 +106,7 @@ export function generateTransactions({
     monthStart.setUTCDate(1);
     monthStart.setUTCMonth(monthStart.getUTCMonth() - m);
 
-    if (persona.income && persona.income.flag_payroll && account._meta.kind === 'CurrentAccount') {
+    if (persona.income && persona.income.flag_payroll && isPrimary) {
       const salaryDate = weekdayBias(dateForDay(monthStart, persona.income.pay_day), rng);
       const salary = makeSalary({
         rng,
@@ -117,7 +122,24 @@ export function generateTransactions({
       runningBalance.balance += persona.income.monthly_amount_aed;
     }
 
-    if (account._meta.kind === 'CurrentAccount') {
+    // Non-payroll income (gig platforms, freelance clients): irregular
+    // credits from several payers. Side-channel PRNG keyed on the month so
+    // the main rng sequence — and every other persona — is unaffected.
+    if (persona.income && !persona.income.flag_payroll && isPrimary) {
+      for (const credit of makeIrregularIncome({
+        persona,
+        account,
+        monthStart,
+        employers: pools.employers,
+        txState,
+        now,
+      })) {
+        out.push(credit);
+        runningBalance.balance += Number(credit.Amount.Amount);
+      }
+    }
+
+    if (isPrimary) {
       for (const c of persona.fixed_commitments ?? []) {
         const day = parseScheduleDay(c.schedule);
         if (day == null) continue;
@@ -349,7 +371,7 @@ export function generateTransactions({
     }
 
     // Cash deposits — only on cash-heavy personas (EXP-06).
-    if (persona.cash_deposit_activity && account._meta.kind === 'CurrentAccount') {
+    if (persona.cash_deposit_activity && isPrimary) {
       const lo = persona.cash_deposits_per_month_band?.[0] ?? 3;
       const hi = persona.cash_deposits_per_month_band?.[1] ?? 10;
       const count = rngInt(rng, lo, hi + 1);
@@ -373,7 +395,7 @@ export function generateTransactions({
     }
 
     // FX transactions — only on FX-active personas (EXP-06).
-    if (persona.fx_activity && account._meta.kind === 'CurrentAccount') {
+    if (persona.fx_activity && isPrimary) {
       const lo = persona.fx_transactions_per_month_band?.[0] ?? 1;
       const hi = persona.fx_transactions_per_month_band?.[1] ?? 4;
       const count = rngInt(rng, lo, hi + 1);
@@ -404,11 +426,7 @@ export function generateTransactions({
     // with UAE VAT breakdowns. Only on the FIRST CurrentAccount in the
     // bundle (typical SME operating account); other accounts get the
     // existing flows unchanged.
-    if (
-      account._meta.kind === 'CurrentAccount' &&
-      idxOfCurrentAccount(persona, account) === 0 &&
-      persona.cash_flow
-    ) {
+    if (isPrimary && persona.cash_flow) {
       const cf = persona.cash_flow;
       if (cf.customer_inflows?.counterparty_pool && pools.counterparties) {
         const pool = pools.counterparties[cf.customer_inflows.counterparty_pool];
@@ -470,7 +488,7 @@ export function generateTransactions({
     // emit BOTH the failed attempt (Rejected) AND a small return-fee debit
     // (Booked) charged to the customer for the bounce.
     const nsfHi = persona.distress_signals?.nsf_events_per_year_band?.[1] ?? 0;
-    if (nsfHi > 0 && account._meta.kind === 'CurrentAccount') {
+    if (nsfHi > 0 && isPrimary) {
       const probability = Math.min(0.5, nsfHi / 12);
       if (rng() < probability) {
         const day = rngInt(rng, 1, 28);
@@ -535,7 +553,7 @@ export function generateTransactions({
   return out;
 }
 
-function fxRateFor(ccy) {
+export function fxRateFor(ccy) {
   // Pinned mid-market rate snapshot (AED per unit of foreign currency).
   // Phase 1.5 EXP-18 multi-currency normalisation will publish this table
   // alongside the spec SHA so it's deterministic across rebuilds.
@@ -591,6 +609,7 @@ function makeFxTransaction({
   const posted = applyPostingTime(date, rng);
   return attachBankTransactionCode({
     _accountId: account.AccountId,
+    _discretionary: true,
     TransactionId: nextTxId(account, posted, txState),
     TransactionReference: referenceNumber(rng, 'InternationalTransfer', posted),
     CreditDebitIndicator: 'Debit',
@@ -838,6 +857,9 @@ function makePosTransaction({
     SubTransactionType: 'Purchase',
     MerchantDetails: { MerchantName: merchant.name, MerchantCategoryCode: noise.mcc },
     _isCreditCard: isCreditCard,
+    // Discretionary spend: ./budget.js declines it when funds or the card
+    // limit don't cover it. Strips on export.
+    _discretionary: true,
     _mccCategory: mccCategory,
     // Phase R2 — internal back-reference so the enrichment sidecar can
     // surface parent-group ownership without re-loading the merchant
@@ -870,6 +892,7 @@ function makeAtmWithdrawal({ rng, account, date, amount, merchant, mcc, txState,
     : [networkToken, branch, emirate];
   return attachBankTransactionCode({
     _accountId: account.AccountId,
+    _discretionary: true,
     TransactionId: nextTxId(account, posted, txState),
     TransactionReference: referenceNumber(rng, 'ATM', posted),
     CreditDebitIndicator: 'Debit',
@@ -899,6 +922,7 @@ function makeGovBillPayment({ rng, account, date, amount, merchant, mcc, txState
   const ref = String(rngInt(rng, 1000, 9999));
   return attachBankTransactionCode({
     _accountId: account.AccountId,
+    _discretionary: true,
     TransactionId: nextTxId(account, posted, txState),
     TransactionReference: referenceNumber(rng, 'BillPayments', posted, 'GOV'),
     CreditDebitIndicator: 'Debit',
@@ -954,19 +978,6 @@ function poolAverageTypicalAed(pool) {
 void rngPick;
 
 // ─── Slice 10: B2B + VAT helpers ────────────────────────────────────────
-
-function idxOfCurrentAccount(persona, account) {
-  // Position of `account` among the persona's CurrentAccounts. Used to
-  // gate the B2B-flow generation to the first operating account only.
-  let n = 0;
-  for (const spec of persona.accounts ?? []) {
-    if (spec.type !== 'CurrentAccount') continue;
-    const expectedId = `${persona.persona_id.replace(/_/g, '-')}-acct-${String(persona.accounts.indexOf(spec) + 1).padStart(2, '0')}`;
-    if (expectedId === account.AccountId) return n;
-    n += 1;
-  }
-  return -1;
-}
 
 function cadenceToCount(cadence) {
   // Translates persona.cash_flow.customer_inflows.invoice_cadence into
@@ -1045,6 +1056,67 @@ function makeB2bOutflow({ rng, account, date, grossAmount, counterparty, poolId,
       { SchemeName: 'IBAN', Identification: synthCounterpartyIban(rng), Name: counterparty },
     ],
   });
+}
+
+// Irregular, non-payroll income — a gig worker's platform payouts. The
+// month's total varies around income.monthly_amount_aed by the persona's
+// declared variability and arrives in several credits from different
+// payers, so no single Flags=Payroll credit marks it.
+const INCOME_VARIABILITY_BAND = {
+  none: [1, 1],
+  low: [0.9, 1.1],
+  medium: [0.75, 1.25],
+  high: [0.55, 1.35],
+};
+
+function makeIrregularIncome({ persona, account, monthStart, employers, txState, now }) {
+  const monthKey = monthStart.toISOString().slice(0, 7);
+  const sideRng = makePrng(account.AccountId, 'irregular-income', monthKey);
+  const [lo, hi] = INCOME_VARIABILITY_BAND[persona.income.variability] ?? [0.75, 1.25];
+  const total = persona.income.monthly_amount_aed * (lo + sideRng() * (hi - lo));
+  const count = rngInt(sideRng, 4, 11);
+  const weights = Array.from({ length: count }, () => 0.4 + sideRng());
+  const weightSum = weights.reduce((a, b) => a + b, 0);
+  const payers = Array.from({ length: 3 }, () => drawEmployer(sideRng, employers));
+  const out = [];
+  for (let i = 0; i < count; i++) {
+    const amount = Math.round((total * weights[i] * 100) / weightSum) / 100;
+    if (amount <= 0) continue;
+    const date = dateForDay(monthStart, rngInt(sideRng, 1, 29));
+    const posted = withPostingTime(date, { h: 4 + rngInt(sideRng, 0, 3), m: 15 });
+    if (posted.getTime() > now.getTime()) continue;
+    const payer = payers[i % payers.length];
+    const payerSlug = String(payer)
+      .split(/\s+/)
+      .slice(0, 2)
+      .join('')
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, '')
+      .slice(0, 10);
+    out.push(
+      attachBankTransactionCode({
+        _accountId: account.AccountId,
+        TransactionId: nextTxId(account, posted, txState),
+        TransactionReference: referenceNumber(sideRng, 'LocalBankTransfer', posted, 'PAY'),
+        CreditDebitIndicator: 'Credit',
+        Status: 'Booked',
+        BookingDateTime: isoOf(posted),
+        TransactionDateTime: isoOf(posted),
+        ValueDateTime: isoOf(posted),
+        TransactionInformation: bankishNarrative('IBT', ['PAYOUT', payerSlug]),
+        DebtorAgent: { SchemeName: 'BICFI', Identification: 'SYNAEAA', Name: payer },
+        DebtorAccount: {
+          SchemeName: 'IBAN',
+          Identification: synthEmployerIbanFor(`${account.AccountId}-${payerSlug}`, posted),
+          Name: payer,
+        },
+        Amount: { Amount: amount.toFixed(2), Currency: account.Currency },
+        TransactionType: 'LocalBankTransfer',
+        SubTransactionType: 'MoneyTransfer',
+      }),
+    );
+  }
+  return out;
 }
 
 function synthEmployerIbanFor(accountId, posted) {
