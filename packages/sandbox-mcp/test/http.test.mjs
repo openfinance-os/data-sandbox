@@ -30,8 +30,8 @@ describe('sandbox-mcp HTTP transport (D-13)', () => {
     expect(names).toContain('list_personas');
     expect(names).toContain('build_persona');
     expect(names).toContain('get_recipe_defaults');
-    expect(names).toContain('get_motor_policies');
-    expect(names).toContain('get_motor_quote');
+    expect(names).toContain('get_insurance_policies');
+    expect(names).toContain('get_insurance_quote');
     expect(names).toContain('list_endpoints');
     expect(names).toContain('field_status');
     expect(names).toContain('list_pool_values');
@@ -39,9 +39,9 @@ describe('sandbox-mcp HTTP transport (D-13)', () => {
     expect(names).toContain('decode_recipe');
     expect(names).toContain('lfi_profiles');
     expect(names).toContain('get_atms');
-    // 16 banking + 4 motor-insurance + 24 non-motor-insurance (4 each × 6 lines)
-    // + 1 atm + 6 discovery/spec helpers = 51.
-    expect(tools.length).toBe(51);
+    // 16 banking + 4 insurance (all seven lines via `line`) + 1 atm
+    // + 6 discovery/spec helpers = 27.
+    expect(tools.length).toBe(27);
     await client.close();
   });
 
@@ -86,7 +86,7 @@ describe('sandbox-mcp HTTP transport (D-13)', () => {
     expect(body.specVersion).toBe(manifest.specVersion);
     expect(body.specSha).toBe(manifest.specSha);
     expect(body.personaCount).toBe(Object.keys(manifest.personas).length);
-    expect(body.toolCount).toBeGreaterThanOrEqual(51);
+    expect(body.toolCount).toBeGreaterThanOrEqual(27);
     expect(body.uptimeMs).toBeGreaterThanOrEqual(0);
     expect(typeof body.sessions).toBe('number');
   });

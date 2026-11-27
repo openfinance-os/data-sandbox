@@ -62,7 +62,7 @@ Health check:
 ```sh
 curl http://127.0.0.1:8787/health
 # → {"ok":true,"version":"0.0.1","specVersion":"v2.1-errata2","specSha":"52caa14…",
-#    "personaCount":39,"toolCount":51,"uptimeMs":1234,"sessions":0}
+#    "personaCount":39,"toolCount":27,"uptimeMs":1234,"sessions":0}
 ```
 
 The endpoint is the [Streamable HTTP](https://spec.modelcontextprotocol.io/specification/basic/transports/#streamable-http) transport at `/mcp`. CORS is permissive (`*`); `Mcp-Session-Id` round-trips. One process serves many concurrent MCP sessions with per-session state isolation.
@@ -138,7 +138,7 @@ claude mcp add open-finance-sandbox -- npx -y @openfinance-os/sandbox-mcp
 
 | Tool | Purpose |
 |---|---|
-| `list_personas` | List the 39 synthetic personas (21 banking-only + 9 insurance-only: 3 motor, 1 home, 1 health, 1 life, 1 travel, 1 renters, 1 employment + 8 multi-domain + the `atm_directory` infrastructure persona) with id, name, archetype, default seed, domain (`"banking"` / `"insurance"` / `"multi"` / `"atm"`), stress-coverage tags, and `multi_lfi_footprint` / `multi_insurer_footprint` slot arrays. Pass `{ domain: 'banking' \| 'insurance' \| 'atm' }` to filter; multi-domain personas appear under both banking and insurance filters. Per-line `get_*` tools (motor / home / health / life / travel / renters / employment) cover every insurance line. |
+| `list_personas` | List the 39 synthetic personas (21 banking-only + 9 insurance-only: 3 motor, 1 home, 1 health, 1 life, 1 travel, 1 renters, 1 employment + 8 multi-domain + the `atm_directory` infrastructure persona) with id, name, archetype, default seed, domain (`"banking"` / `"insurance"` / `"multi"` / `"atm"`), stress-coverage tags, and `multi_lfi_footprint` / `multi_insurer_footprint` slot arrays. Pass `{ domain: 'banking' \| 'insurance' \| 'atm' }` to filter; multi-domain personas appear under both banking and insurance filters. Four `get_insurance_*` tools with a `line` argument cover every insurance line. |
 | `lfi_profiles` | Describe the three LFI populate-rate profiles (rich/median/sparse) and the EXP-04 invariant that mandatory fields are never redacted. |
 | `set_session` | Pin a curated persona via `{ persona, lfi?, seed? }`. `lfi` defaults to `median`; `seed` defaults to `persona.default_seed`. |
 | `get_session` | Echo the active persona / lfi / seed (and recipe hash for custom personas). |
@@ -169,18 +169,18 @@ claude mcp add open-finance-sandbox -- npx -y @openfinance-os/sandbox-mcp
 | `get_statements` | `/accounts/{AccountId}/statements`. `accountId` required. |
 | `load_journey` | Every endpoint in one call. Above 100,000 characters (every banking persona) it returns an index of endpoints with item counts; pass `{ full: true }` for the whole journey. Prefer the granular tools. |
 
-### Insurance endpoints (v2.1, all 7 lines — same 4-tool surface per line)
+### Insurance endpoints (v2.1, all 7 lines)
 
-Every line — `motor`, `home`, `health`, `life`, `travel`, `renters`, `employment` — gets the same four tools. Substitute the line for `<line>`:
+Four tools cover every line: `motor`, `home`, `health`, `life`, `travel`, `renters`, `employment`. `line` defaults to the active persona's line; pass it only for a multi-domain persona that carries several lines.
 
 | Tool | Purpose |
 |---|---|
-| `get_<line>_policies` | `/<line>-insurance-policies` envelope — list of policy summaries for the active insurance persona on that line. |
-| `get_<line>_policy` | `/<line>-insurance-policies/{InsurancePolicyId}` — full policy detail (PolicyHolder, Identity, Product, Claims, Premium). Omit `policyId` to use the persona's only policy on that line. |
-| `get_<line>_payment_details` | `/<line>-insurance-policies/{InsurancePolicyId}/payment-details` — IBAN-keyed payment account for the premium-payment instruction. |
-| `get_<line>_quote` | `/<line>-insurance-quotes/{QuoteId}` — quote-read response with `ServiceRating`, `Premium`, `PolicyIssuanceAllowed`. |
+| `get_insurance_policies { line? }` | `/<line>-insurance-policies` envelope — list of policy summaries for the active persona on that line. |
+| `get_insurance_policy { line?, policyId? }` | `/<line>-insurance-policies/{InsurancePolicyId}` — full policy detail (PolicyHolder, Identity, Product, Claims, Premium). Omit `policyId` to use the line's only policy. |
+| `get_insurance_payment_details { line?, policyId? }` | `/<line>-insurance-policies/{InsurancePolicyId}/payment-details` — IBAN-keyed payment account for the premium-payment instruction. |
+| `get_insurance_quote { line?, quoteId? }` | `/<line>-insurance-quotes/{QuoteId}` — quote-read response with `ServiceRating`, `Premium`, `PolicyIssuanceAllowed`. |
 
-Calling a tool for a line the active persona doesn't carry errors with a "switch persona" hint; multi-domain personas resolve per line.
+Asking for a line the active persona doesn't carry errors with a "switch persona" hint. These four tools replaced the 28 per-line tools (`get_motor_policies`, `get_home_policy`, …) in this release.
 
 ### ATM Locator (Phase 2.3)
 
@@ -239,7 +239,7 @@ session set → persona:salaried_expat_mid (Salaried Expat — Mid) lfi:median s
 > set_session { persona: "motor_comprehensive_mid" }
 session set → persona:motor_comprehensive_mid (Motor Comprehensive — Mid) lfi:median seed:8112
 
-> get_motor_quote {}
+> get_insurance_quote {}
 [/motor-insurance-quotes/Q-0001] persona:motor_comprehensive_mid lfi:median seed:8112
 # SYNTHETIC — Open Finance Data Sandbox · OpenFinance-OS Commons · persona:motor_comprehensive_mid lfi:median seed:8112 retrieved:2026-04-01T00:00:00.000Z
 { "Data": { "QuoteStatus": "PolicyIssued",

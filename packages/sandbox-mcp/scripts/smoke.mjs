@@ -24,7 +24,7 @@ import { readFileSync } from 'node:fs';
 import { manifest, loadFixture } from '@openfinance-os/sandbox-fixtures';
 import { createValidators, stripAnnotations } from '@openfinance-os/sandbox-fixtures/validation';
 
-const EXPECTED_TOOL_COUNT = 51;
+const EXPECTED_TOOL_COUNT = 27;
 const baseUrl = (process.argv[2] || '').replace(/\/+$/, '');
 if (!baseUrl) {
   console.error('usage: smoke.mjs <base-url>');
@@ -114,7 +114,7 @@ for (const [persona, role, tool, endpoint, domain] of [
   [
     'motor_comprehensive_mid',
     'primary',
-    'get_motor_policies',
+    'get_insurance_policies',
     '/motor-insurance-policies',
     'insurance',
   ],
