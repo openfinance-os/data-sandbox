@@ -4,8 +4,8 @@
       "month": "2026-04",
       "referenceDate": "2026-05-01T00:00:00.000Z",
       "status": "insufficient-evidence",
-      "unknownClassificationCount": 58,
-      "bookedCount": 62,
+      "unknownClassificationCount": 60,
+      "bookedCount": 64,
       "method": "Booked credits with Flags.Payroll; booked debits with Flags.StandingOrder or Flags.DirectDebit. Historical observations only.",
       "limitations": [
         "Other income or obligations may be unrecognised.",
@@ -32,8 +32,8 @@
       "month": "2026-04",
       "referenceDate": "2026-05-01T00:00:00.000Z",
       "status": "insufficient-evidence",
-      "unknownClassificationCount": 62,
-      "bookedCount": 62,
+      "unknownClassificationCount": 64,
+      "bookedCount": 64,
       "method": "Booked credits with Flags.Payroll; booked debits with Flags.StandingOrder or Flags.DirectDebit. Historical observations only.",
       "limitations": [
         "Other income or obligations may be unrecognised.",
@@ -45,8 +45,8 @@
       "month": "2026-04",
       "referenceDate": "2026-05-01T00:00:00.000Z",
       "status": "insufficient-evidence",
-      "unknownClassificationCount": 62,
-      "bookedCount": 62,
+      "unknownClassificationCount": 64,
+      "bookedCount": 64,
       "method": "Booked credits with Flags.Payroll; booked debits with Flags.StandingOrder or Flags.DirectDebit. Historical observations only.",
       "limitations": [
         "Other income or obligations may be unrecognised.",
@@ -70,351 +70,6 @@
           },
           "credit": {
             "Amount": "6305.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-02",
-          "date": "2024-06-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-02-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-02-in",
-          "debit": {
-            "Amount": "9006.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "9006.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-03",
-          "date": "2024-07-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-03-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-03-in",
-          "debit": {
-            "Amount": "4740.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "4740.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-04",
-          "date": "2024-08-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-04-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-04-in",
-          "debit": {
-            "Amount": "7224.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "7224.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-05",
-          "date": "2024-09-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-05-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-05-in",
-          "debit": {
-            "Amount": "11691.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "11691.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-06",
-          "date": "2024-10-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-06-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-06-in",
-          "debit": {
-            "Amount": "8566.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "8566.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-07",
-          "date": "2024-11-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-07-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-07-in",
-          "debit": {
-            "Amount": "11092.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "11092.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-08",
-          "date": "2024-12-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-08-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-08-in",
-          "debit": {
-            "Amount": "11089.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "11089.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-09",
-          "date": "2025-01-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-09-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-09-in",
-          "debit": {
-            "Amount": "4600.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "4600.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-10",
-          "date": "2025-02-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-10-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-10-in",
-          "debit": {
-            "Amount": "4027.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "4027.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-11",
-          "date": "2025-03-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-11-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-11-in",
-          "debit": {
-            "Amount": "8674.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "8674.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-12",
-          "date": "2025-04-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-12-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-12-in",
-          "debit": {
-            "Amount": "6080.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "6080.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-13",
-          "date": "2025-05-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-13-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-13-in",
-          "debit": {
-            "Amount": "10489.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "10489.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-14",
-          "date": "2025-06-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-14-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-14-in",
-          "debit": {
-            "Amount": "4603.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "4603.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-15",
-          "date": "2025-07-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-15-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-15-in",
-          "debit": {
-            "Amount": "5506.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "5506.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-16",
-          "date": "2025-08-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-16-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-16-in",
-          "debit": {
-            "Amount": "4351.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "4351.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-17",
-          "date": "2025-09-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-17-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-17-in",
-          "debit": {
-            "Amount": "9758.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "9758.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-18",
-          "date": "2025-10-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-18-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-18-in",
-          "debit": {
-            "Amount": "8635.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "8635.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-19",
-          "date": "2025-11-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-19-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-19-in",
-          "debit": {
-            "Amount": "7889.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "7889.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-20",
-          "date": "2025-12-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-20-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-20-in",
-          "debit": {
-            "Amount": "8746.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "8746.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-21",
-          "date": "2026-01-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-21-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-21-in",
-          "debit": {
-            "Amount": "8025.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "8025.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-22",
-          "date": "2026-02-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-22-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-22-in",
-          "debit": {
-            "Amount": "6535.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "6535.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-23",
-          "date": "2026-03-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-23-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-23-in",
-          "debit": {
-            "Amount": "10680.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "10680.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-24",
-          "date": "2026-04-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-24-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-24-in",
-          "debit": {
-            "Amount": "4151.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "4151.00",
             "Currency": "AED"
           },
           "exchange": null
@@ -444,6 +99,21 @@
           }
         },
         {
+          "reference": "XLFI-SEC-02",
+          "date": "2024-06-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-02-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-02-in",
+          "debit": {
+            "Amount": "9006.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "9006.00",
+            "Currency": "AED"
+          },
+          "exchange": null
+        },
+        {
           "reference": "XLFI-TER-02",
           "date": "2024-06-28T11:00:00Z",
           "debitId": "sme-rak-trading-emirati-xlfi-s3-02-out",
@@ -466,6 +136,21 @@
               "Currency": "USD"
             }
           }
+        },
+        {
+          "reference": "XLFI-SEC-03",
+          "date": "2024-07-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-03-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-03-in",
+          "debit": {
+            "Amount": "4740.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "4740.00",
+            "Currency": "AED"
+          },
+          "exchange": null
         },
         {
           "reference": "XLFI-TER-03",
@@ -492,6 +177,21 @@
           }
         },
         {
+          "reference": "XLFI-SEC-04",
+          "date": "2024-08-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-04-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-04-in",
+          "debit": {
+            "Amount": "7224.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "7224.00",
+            "Currency": "AED"
+          },
+          "exchange": null
+        },
+        {
           "reference": "XLFI-TER-04",
           "date": "2024-08-28T11:00:00Z",
           "debitId": "sme-rak-trading-emirati-xlfi-s3-04-out",
@@ -514,6 +214,21 @@
               "Currency": "USD"
             }
           }
+        },
+        {
+          "reference": "XLFI-SEC-05",
+          "date": "2024-09-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-05-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-05-in",
+          "debit": {
+            "Amount": "11691.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "11691.00",
+            "Currency": "AED"
+          },
+          "exchange": null
         },
         {
           "reference": "XLFI-TER-05",
@@ -540,6 +255,21 @@
           }
         },
         {
+          "reference": "XLFI-SEC-06",
+          "date": "2024-10-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-06-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-06-in",
+          "debit": {
+            "Amount": "8566.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "8566.00",
+            "Currency": "AED"
+          },
+          "exchange": null
+        },
+        {
           "reference": "XLFI-TER-06",
           "date": "2024-10-28T11:00:00Z",
           "debitId": "sme-rak-trading-emirati-xlfi-s3-06-out",
@@ -562,6 +292,21 @@
               "Currency": "USD"
             }
           }
+        },
+        {
+          "reference": "XLFI-SEC-07",
+          "date": "2024-11-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-07-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-07-in",
+          "debit": {
+            "Amount": "11092.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "11092.00",
+            "Currency": "AED"
+          },
+          "exchange": null
         },
         {
           "reference": "XLFI-TER-07",
@@ -588,6 +333,21 @@
           }
         },
         {
+          "reference": "XLFI-SEC-08",
+          "date": "2024-12-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-08-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-08-in",
+          "debit": {
+            "Amount": "11089.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "11089.00",
+            "Currency": "AED"
+          },
+          "exchange": null
+        },
+        {
           "reference": "XLFI-TER-08",
           "date": "2024-12-28T11:00:00Z",
           "debitId": "sme-rak-trading-emirati-xlfi-s3-08-out",
@@ -610,6 +370,21 @@
               "Currency": "USD"
             }
           }
+        },
+        {
+          "reference": "XLFI-SEC-09",
+          "date": "2025-01-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-09-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-09-in",
+          "debit": {
+            "Amount": "4600.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "4600.00",
+            "Currency": "AED"
+          },
+          "exchange": null
         },
         {
           "reference": "XLFI-TER-09",
@@ -636,6 +411,21 @@
           }
         },
         {
+          "reference": "XLFI-SEC-10",
+          "date": "2025-02-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-10-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-10-in",
+          "debit": {
+            "Amount": "4027.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "4027.00",
+            "Currency": "AED"
+          },
+          "exchange": null
+        },
+        {
           "reference": "XLFI-TER-10",
           "date": "2025-02-28T11:00:00Z",
           "debitId": "sme-rak-trading-emirati-xlfi-s3-10-out",
@@ -658,6 +448,21 @@
               "Currency": "USD"
             }
           }
+        },
+        {
+          "reference": "XLFI-SEC-11",
+          "date": "2025-03-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-11-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-11-in",
+          "debit": {
+            "Amount": "8674.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "8674.00",
+            "Currency": "AED"
+          },
+          "exchange": null
         },
         {
           "reference": "XLFI-TER-11",
@@ -684,6 +489,21 @@
           }
         },
         {
+          "reference": "XLFI-SEC-12",
+          "date": "2025-04-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-12-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-12-in",
+          "debit": {
+            "Amount": "6080.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "6080.00",
+            "Currency": "AED"
+          },
+          "exchange": null
+        },
+        {
           "reference": "XLFI-TER-12",
           "date": "2025-04-28T11:00:00Z",
           "debitId": "sme-rak-trading-emirati-xlfi-s3-12-out",
@@ -706,6 +526,21 @@
               "Currency": "USD"
             }
           }
+        },
+        {
+          "reference": "XLFI-SEC-13",
+          "date": "2025-05-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-13-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-13-in",
+          "debit": {
+            "Amount": "10489.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "10489.00",
+            "Currency": "AED"
+          },
+          "exchange": null
         },
         {
           "reference": "XLFI-TER-13",
@@ -732,6 +567,21 @@
           }
         },
         {
+          "reference": "XLFI-SEC-14",
+          "date": "2025-06-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-14-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-14-in",
+          "debit": {
+            "Amount": "4603.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "4603.00",
+            "Currency": "AED"
+          },
+          "exchange": null
+        },
+        {
           "reference": "XLFI-TER-14",
           "date": "2025-06-28T11:00:00Z",
           "debitId": "sme-rak-trading-emirati-xlfi-s3-14-out",
@@ -754,6 +604,21 @@
               "Currency": "USD"
             }
           }
+        },
+        {
+          "reference": "XLFI-SEC-15",
+          "date": "2025-07-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-15-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-15-in",
+          "debit": {
+            "Amount": "5506.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "5506.00",
+            "Currency": "AED"
+          },
+          "exchange": null
         },
         {
           "reference": "XLFI-TER-15",
@@ -780,6 +645,21 @@
           }
         },
         {
+          "reference": "XLFI-SEC-16",
+          "date": "2025-08-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-16-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-16-in",
+          "debit": {
+            "Amount": "4351.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "4351.00",
+            "Currency": "AED"
+          },
+          "exchange": null
+        },
+        {
           "reference": "XLFI-TER-16",
           "date": "2025-08-28T11:00:00Z",
           "debitId": "sme-rak-trading-emirati-xlfi-s3-16-out",
@@ -802,6 +682,21 @@
               "Currency": "USD"
             }
           }
+        },
+        {
+          "reference": "XLFI-SEC-17",
+          "date": "2025-09-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-17-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-17-in",
+          "debit": {
+            "Amount": "9758.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "9758.00",
+            "Currency": "AED"
+          },
+          "exchange": null
         },
         {
           "reference": "XLFI-TER-17",
@@ -828,6 +723,21 @@
           }
         },
         {
+          "reference": "XLFI-SEC-18",
+          "date": "2025-10-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-18-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-18-in",
+          "debit": {
+            "Amount": "8635.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "8635.00",
+            "Currency": "AED"
+          },
+          "exchange": null
+        },
+        {
           "reference": "XLFI-TER-18",
           "date": "2025-10-28T11:00:00Z",
           "debitId": "sme-rak-trading-emirati-xlfi-s3-18-out",
@@ -850,6 +760,21 @@
               "Currency": "USD"
             }
           }
+        },
+        {
+          "reference": "XLFI-SEC-19",
+          "date": "2025-11-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-19-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-19-in",
+          "debit": {
+            "Amount": "7889.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "7889.00",
+            "Currency": "AED"
+          },
+          "exchange": null
         },
         {
           "reference": "XLFI-TER-19",
@@ -876,6 +801,21 @@
           }
         },
         {
+          "reference": "XLFI-SEC-20",
+          "date": "2025-12-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-20-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-20-in",
+          "debit": {
+            "Amount": "8746.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "8746.00",
+            "Currency": "AED"
+          },
+          "exchange": null
+        },
+        {
           "reference": "XLFI-TER-20",
           "date": "2025-12-28T11:00:00Z",
           "debitId": "sme-rak-trading-emirati-xlfi-s3-20-out",
@@ -898,6 +838,21 @@
               "Currency": "USD"
             }
           }
+        },
+        {
+          "reference": "XLFI-SEC-21",
+          "date": "2026-01-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-21-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-21-in",
+          "debit": {
+            "Amount": "8025.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "8025.00",
+            "Currency": "AED"
+          },
+          "exchange": null
         },
         {
           "reference": "XLFI-TER-21",
@@ -924,6 +879,21 @@
           }
         },
         {
+          "reference": "XLFI-SEC-22",
+          "date": "2026-02-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-22-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-22-in",
+          "debit": {
+            "Amount": "6535.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "6535.00",
+            "Currency": "AED"
+          },
+          "exchange": null
+        },
+        {
           "reference": "XLFI-TER-22",
           "date": "2026-02-28T11:00:00Z",
           "debitId": "sme-rak-trading-emirati-xlfi-s3-22-out",
@@ -948,6 +918,21 @@
           }
         },
         {
+          "reference": "XLFI-SEC-23",
+          "date": "2026-03-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-23-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-23-in",
+          "debit": {
+            "Amount": "10680.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "10680.00",
+            "Currency": "AED"
+          },
+          "exchange": null
+        },
+        {
           "reference": "XLFI-TER-23",
           "date": "2026-03-28T11:00:00Z",
           "debitId": "sme-rak-trading-emirati-xlfi-s3-23-out",
@@ -970,6 +955,21 @@
               "Currency": "USD"
             }
           }
+        },
+        {
+          "reference": "XLFI-SEC-24",
+          "date": "2026-04-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-24-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-24-in",
+          "debit": {
+            "Amount": "4151.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "4151.00",
+            "Currency": "AED"
+          },
+          "exchange": null
         },
         {
           "reference": "XLFI-TER-24",
@@ -1021,351 +1021,6 @@
           "exchange": null
         },
         {
-          "reference": "XLFI-SEC-02",
-          "date": "2024-06-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-02-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-02-in",
-          "debit": {
-            "Amount": "9006.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "9006.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-03",
-          "date": "2024-07-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-03-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-03-in",
-          "debit": {
-            "Amount": "4740.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "4740.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-04",
-          "date": "2024-08-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-04-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-04-in",
-          "debit": {
-            "Amount": "7224.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "7224.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-05",
-          "date": "2024-09-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-05-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-05-in",
-          "debit": {
-            "Amount": "11691.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "11691.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-06",
-          "date": "2024-10-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-06-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-06-in",
-          "debit": {
-            "Amount": "8566.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "8566.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-07",
-          "date": "2024-11-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-07-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-07-in",
-          "debit": {
-            "Amount": "11092.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "11092.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-08",
-          "date": "2024-12-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-08-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-08-in",
-          "debit": {
-            "Amount": "11089.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "11089.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-09",
-          "date": "2025-01-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-09-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-09-in",
-          "debit": {
-            "Amount": "4600.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "4600.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-10",
-          "date": "2025-02-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-10-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-10-in",
-          "debit": {
-            "Amount": "4027.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "4027.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-11",
-          "date": "2025-03-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-11-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-11-in",
-          "debit": {
-            "Amount": "8674.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "8674.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-12",
-          "date": "2025-04-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-12-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-12-in",
-          "debit": {
-            "Amount": "6080.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "6080.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-13",
-          "date": "2025-05-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-13-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-13-in",
-          "debit": {
-            "Amount": "10489.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "10489.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-14",
-          "date": "2025-06-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-14-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-14-in",
-          "debit": {
-            "Amount": "4603.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "4603.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-15",
-          "date": "2025-07-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-15-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-15-in",
-          "debit": {
-            "Amount": "5506.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "5506.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-16",
-          "date": "2025-08-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-16-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-16-in",
-          "debit": {
-            "Amount": "4351.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "4351.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-17",
-          "date": "2025-09-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-17-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-17-in",
-          "debit": {
-            "Amount": "9758.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "9758.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-18",
-          "date": "2025-10-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-18-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-18-in",
-          "debit": {
-            "Amount": "8635.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "8635.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-19",
-          "date": "2025-11-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-19-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-19-in",
-          "debit": {
-            "Amount": "7889.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "7889.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-20",
-          "date": "2025-12-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-20-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-20-in",
-          "debit": {
-            "Amount": "8746.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "8746.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-21",
-          "date": "2026-01-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-21-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-21-in",
-          "debit": {
-            "Amount": "8025.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "8025.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-22",
-          "date": "2026-02-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-22-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-22-in",
-          "debit": {
-            "Amount": "6535.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "6535.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-23",
-          "date": "2026-03-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-23-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-23-in",
-          "debit": {
-            "Amount": "10680.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "10680.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
-          "reference": "XLFI-SEC-24",
-          "date": "2026-04-28T11:00:00Z",
-          "debitId": "sme-rak-trading-emirati-xlfi-s2-24-out",
-          "creditId": "sme-rak-trading-emirati-xlfi-s2-24-in",
-          "debit": {
-            "Amount": "4151.00",
-            "Currency": "AED"
-          },
-          "credit": {
-            "Amount": "4151.00",
-            "Currency": "AED"
-          },
-          "exchange": null
-        },
-        {
           "reference": "XLFI-TER-01",
           "date": "2024-05-28T11:00:00Z",
           "debitId": "sme-rak-trading-emirati-xlfi-s3-01-out",
@@ -1388,6 +1043,21 @@
               "Currency": "USD"
             }
           }
+        },
+        {
+          "reference": "XLFI-SEC-02",
+          "date": "2024-06-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-02-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-02-in",
+          "debit": {
+            "Amount": "9006.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "9006.00",
+            "Currency": "AED"
+          },
+          "exchange": null
         },
         {
           "reference": "XLFI-TER-02",
@@ -1414,6 +1084,21 @@
           }
         },
         {
+          "reference": "XLFI-SEC-03",
+          "date": "2024-07-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-03-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-03-in",
+          "debit": {
+            "Amount": "4740.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "4740.00",
+            "Currency": "AED"
+          },
+          "exchange": null
+        },
+        {
           "reference": "XLFI-TER-03",
           "date": "2024-07-28T11:00:00Z",
           "debitId": "sme-rak-trading-emirati-xlfi-s3-03-out",
@@ -1436,6 +1121,21 @@
               "Currency": "USD"
             }
           }
+        },
+        {
+          "reference": "XLFI-SEC-04",
+          "date": "2024-08-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-04-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-04-in",
+          "debit": {
+            "Amount": "7224.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "7224.00",
+            "Currency": "AED"
+          },
+          "exchange": null
         },
         {
           "reference": "XLFI-TER-04",
@@ -1462,6 +1162,21 @@
           }
         },
         {
+          "reference": "XLFI-SEC-05",
+          "date": "2024-09-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-05-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-05-in",
+          "debit": {
+            "Amount": "11691.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "11691.00",
+            "Currency": "AED"
+          },
+          "exchange": null
+        },
+        {
           "reference": "XLFI-TER-05",
           "date": "2024-09-28T11:00:00Z",
           "debitId": "sme-rak-trading-emirati-xlfi-s3-05-out",
@@ -1484,6 +1199,21 @@
               "Currency": "USD"
             }
           }
+        },
+        {
+          "reference": "XLFI-SEC-06",
+          "date": "2024-10-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-06-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-06-in",
+          "debit": {
+            "Amount": "8566.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "8566.00",
+            "Currency": "AED"
+          },
+          "exchange": null
         },
         {
           "reference": "XLFI-TER-06",
@@ -1510,6 +1240,21 @@
           }
         },
         {
+          "reference": "XLFI-SEC-07",
+          "date": "2024-11-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-07-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-07-in",
+          "debit": {
+            "Amount": "11092.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "11092.00",
+            "Currency": "AED"
+          },
+          "exchange": null
+        },
+        {
           "reference": "XLFI-TER-07",
           "date": "2024-11-28T11:00:00Z",
           "debitId": "sme-rak-trading-emirati-xlfi-s3-07-out",
@@ -1532,6 +1277,21 @@
               "Currency": "USD"
             }
           }
+        },
+        {
+          "reference": "XLFI-SEC-08",
+          "date": "2024-12-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-08-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-08-in",
+          "debit": {
+            "Amount": "11089.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "11089.00",
+            "Currency": "AED"
+          },
+          "exchange": null
         },
         {
           "reference": "XLFI-TER-08",
@@ -1558,6 +1318,21 @@
           }
         },
         {
+          "reference": "XLFI-SEC-09",
+          "date": "2025-01-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-09-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-09-in",
+          "debit": {
+            "Amount": "4600.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "4600.00",
+            "Currency": "AED"
+          },
+          "exchange": null
+        },
+        {
           "reference": "XLFI-TER-09",
           "date": "2025-01-28T11:00:00Z",
           "debitId": "sme-rak-trading-emirati-xlfi-s3-09-out",
@@ -1580,6 +1355,21 @@
               "Currency": "USD"
             }
           }
+        },
+        {
+          "reference": "XLFI-SEC-10",
+          "date": "2025-02-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-10-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-10-in",
+          "debit": {
+            "Amount": "4027.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "4027.00",
+            "Currency": "AED"
+          },
+          "exchange": null
         },
         {
           "reference": "XLFI-TER-10",
@@ -1606,6 +1396,21 @@
           }
         },
         {
+          "reference": "XLFI-SEC-11",
+          "date": "2025-03-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-11-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-11-in",
+          "debit": {
+            "Amount": "8674.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "8674.00",
+            "Currency": "AED"
+          },
+          "exchange": null
+        },
+        {
           "reference": "XLFI-TER-11",
           "date": "2025-03-28T11:00:00Z",
           "debitId": "sme-rak-trading-emirati-xlfi-s3-11-out",
@@ -1628,6 +1433,21 @@
               "Currency": "USD"
             }
           }
+        },
+        {
+          "reference": "XLFI-SEC-12",
+          "date": "2025-04-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-12-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-12-in",
+          "debit": {
+            "Amount": "6080.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "6080.00",
+            "Currency": "AED"
+          },
+          "exchange": null
         },
         {
           "reference": "XLFI-TER-12",
@@ -1654,6 +1474,21 @@
           }
         },
         {
+          "reference": "XLFI-SEC-13",
+          "date": "2025-05-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-13-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-13-in",
+          "debit": {
+            "Amount": "10489.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "10489.00",
+            "Currency": "AED"
+          },
+          "exchange": null
+        },
+        {
           "reference": "XLFI-TER-13",
           "date": "2025-05-28T11:00:00Z",
           "debitId": "sme-rak-trading-emirati-xlfi-s3-13-out",
@@ -1676,6 +1511,21 @@
               "Currency": "USD"
             }
           }
+        },
+        {
+          "reference": "XLFI-SEC-14",
+          "date": "2025-06-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-14-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-14-in",
+          "debit": {
+            "Amount": "4603.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "4603.00",
+            "Currency": "AED"
+          },
+          "exchange": null
         },
         {
           "reference": "XLFI-TER-14",
@@ -1702,6 +1552,21 @@
           }
         },
         {
+          "reference": "XLFI-SEC-15",
+          "date": "2025-07-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-15-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-15-in",
+          "debit": {
+            "Amount": "5506.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "5506.00",
+            "Currency": "AED"
+          },
+          "exchange": null
+        },
+        {
           "reference": "XLFI-TER-15",
           "date": "2025-07-28T11:00:00Z",
           "debitId": "sme-rak-trading-emirati-xlfi-s3-15-out",
@@ -1724,6 +1589,21 @@
               "Currency": "USD"
             }
           }
+        },
+        {
+          "reference": "XLFI-SEC-16",
+          "date": "2025-08-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-16-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-16-in",
+          "debit": {
+            "Amount": "4351.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "4351.00",
+            "Currency": "AED"
+          },
+          "exchange": null
         },
         {
           "reference": "XLFI-TER-16",
@@ -1750,6 +1630,21 @@
           }
         },
         {
+          "reference": "XLFI-SEC-17",
+          "date": "2025-09-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-17-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-17-in",
+          "debit": {
+            "Amount": "9758.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "9758.00",
+            "Currency": "AED"
+          },
+          "exchange": null
+        },
+        {
           "reference": "XLFI-TER-17",
           "date": "2025-09-28T11:00:00Z",
           "debitId": "sme-rak-trading-emirati-xlfi-s3-17-out",
@@ -1772,6 +1667,21 @@
               "Currency": "USD"
             }
           }
+        },
+        {
+          "reference": "XLFI-SEC-18",
+          "date": "2025-10-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-18-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-18-in",
+          "debit": {
+            "Amount": "8635.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "8635.00",
+            "Currency": "AED"
+          },
+          "exchange": null
         },
         {
           "reference": "XLFI-TER-18",
@@ -1798,6 +1708,21 @@
           }
         },
         {
+          "reference": "XLFI-SEC-19",
+          "date": "2025-11-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-19-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-19-in",
+          "debit": {
+            "Amount": "7889.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "7889.00",
+            "Currency": "AED"
+          },
+          "exchange": null
+        },
+        {
           "reference": "XLFI-TER-19",
           "date": "2025-11-28T11:00:00Z",
           "debitId": "sme-rak-trading-emirati-xlfi-s3-19-out",
@@ -1820,6 +1745,21 @@
               "Currency": "USD"
             }
           }
+        },
+        {
+          "reference": "XLFI-SEC-20",
+          "date": "2025-12-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-20-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-20-in",
+          "debit": {
+            "Amount": "8746.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "8746.00",
+            "Currency": "AED"
+          },
+          "exchange": null
         },
         {
           "reference": "XLFI-TER-20",
@@ -1846,6 +1786,21 @@
           }
         },
         {
+          "reference": "XLFI-SEC-21",
+          "date": "2026-01-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-21-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-21-in",
+          "debit": {
+            "Amount": "8025.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "8025.00",
+            "Currency": "AED"
+          },
+          "exchange": null
+        },
+        {
           "reference": "XLFI-TER-21",
           "date": "2026-01-28T11:00:00Z",
           "debitId": "sme-rak-trading-emirati-xlfi-s3-21-out",
@@ -1868,6 +1823,21 @@
               "Currency": "USD"
             }
           }
+        },
+        {
+          "reference": "XLFI-SEC-22",
+          "date": "2026-02-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-22-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-22-in",
+          "debit": {
+            "Amount": "6535.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "6535.00",
+            "Currency": "AED"
+          },
+          "exchange": null
         },
         {
           "reference": "XLFI-TER-22",
@@ -1894,6 +1864,21 @@
           }
         },
         {
+          "reference": "XLFI-SEC-23",
+          "date": "2026-03-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-23-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-23-in",
+          "debit": {
+            "Amount": "10680.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "10680.00",
+            "Currency": "AED"
+          },
+          "exchange": null
+        },
+        {
           "reference": "XLFI-TER-23",
           "date": "2026-03-28T11:00:00Z",
           "debitId": "sme-rak-trading-emirati-xlfi-s3-23-out",
@@ -1916,6 +1901,21 @@
               "Currency": "USD"
             }
           }
+        },
+        {
+          "reference": "XLFI-SEC-24",
+          "date": "2026-04-28T11:00:00Z",
+          "debitId": "sme-rak-trading-emirati-xlfi-s2-24-out",
+          "creditId": "sme-rak-trading-emirati-xlfi-s2-24-in",
+          "debit": {
+            "Amount": "4151.00",
+            "Currency": "AED"
+          },
+          "credit": {
+            "Amount": "4151.00",
+            "Currency": "AED"
+          },
+          "exchange": null
         },
         {
           "reference": "XLFI-TER-24",
@@ -1970,8 +1970,8 @@
         "month": "2026-04",
         "referenceDate": "2026-05-01T00:00:00.000Z",
         "status": "insufficient-evidence",
-        "unknownClassificationCount": 56,
-        "bookedCount": 64,
+        "unknownClassificationCount": 60,
+        "bookedCount": 68,
         "method": "Booked credits with Flags.Payroll; booked debits with Flags.StandingOrder or Flags.DirectDebit. Historical observations only.",
         "limitations": [
           "Other income or obligations may be unrecognised.",
@@ -2138,8 +2138,8 @@
         "month": "2026-04",
         "referenceDate": "2026-05-01T00:00:00.000Z",
         "status": "insufficient-evidence",
-        "unknownClassificationCount": 56,
-        "bookedCount": 64,
+        "unknownClassificationCount": 60,
+        "bookedCount": 68,
         "method": "Booked credits with Flags.Payroll; booked debits with Flags.StandingOrder or Flags.DirectDebit. Historical observations only.",
         "limitations": [
           "Other income or obligations may be unrecognised.",
@@ -2306,8 +2306,8 @@
         "month": "2026-04",
         "referenceDate": "2026-05-01T00:00:00.000Z",
         "status": "insufficient-evidence",
-        "unknownClassificationCount": 64,
-        "bookedCount": 64,
+        "unknownClassificationCount": 68,
+        "bookedCount": 68,
         "method": "Booked credits with Flags.Payroll; booked debits with Flags.StandingOrder or Flags.DirectDebit. Historical observations only.",
         "limitations": [
           "Other income or obligations may be unrecognised.",
