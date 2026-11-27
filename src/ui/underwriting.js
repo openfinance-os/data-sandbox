@@ -206,7 +206,7 @@ export function createUnderwriting(deps) {
             : 'No rejected debits in the trailing 12 months.',
         contributors: result.nsf.contributors,
         formula:
-          'Count of transactions in trailing 12 months where Status=Rejected. Phase 1.5 minimum — Phase 2 widens to "debit posted on a day where ClosingBooked balance for that account became negative".',
+          'Count of transactions in the trailing 12 months where Status=Rejected. Debits that pushed a ClosingBooked balance negative are not counted yet.',
         contributorRender: renderTxContributor,
       }),
     );

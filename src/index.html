@@ -45,6 +45,7 @@
 <body>
 <div class="banner-stripe" role="presentation" aria-hidden="true"></div>
 <script type="module" src="shared/banner.js"></script>
+<nav class="site-bar" aria-label="Open Finance OS"><a class="site-bar-home" href="https://openfinance-os.org/">Open Finance OS</a><span class="site-bar-sep" aria-hidden="true">/</span><a href="index.html">Data Sandbox</a></nav>
 
 <header class="topbar" role="banner">
   <nav class="controls" aria-label="Persona controls">
@@ -69,7 +70,7 @@
           <button type="button" role="radio" data-lfi="rich"   aria-checked="false" data-i18n="lfi.rich" title="Best case. Every populate-band optional field set. Probe what mature LFIs make available.">Rich</button>
           <button type="button" role="radio" data-lfi="median" aria-checked="true"  data-i18n="lfi.median" title="v1 calibration — Universal=1.0, Common=0.7, Variable=0.4, Rare=0.1. The Commons-curated ecosystem-wide assumption.">Median</button>
           <button type="button" role="radio" data-lfi="sparse" aria-checked="false" data-i18n="lfi.sparse" title="Worst case. Mandatory + Universal-band only — every other optional field dropped. Stress-test downstream UI and decisioning logic.">Sparse</button>
-          <button type="button" id="compare-toggle" class="lfi-compare" aria-pressed="false" data-i18n="lfi.compare" title="Compare two LFI profiles side-by-side (EXP-16). Click to add a comparison partner.">+ Compare</button>
+          <button type="button" id="compare-toggle" class="lfi-compare" aria-pressed="false" data-i18n="lfi.compare" title="Compare two LFI profiles side by side. Click to add a comparison partner.">+ Compare</button>
         </div>
         <span class="lfi-caption" id="lfi-caption">Median. Universal=1.0, Common=0.7, Variable=0.4, Rare=0.1 (v1 calibration).</span>
         <select id="lfi-select" aria-label="LFI profile (legacy)" hidden>
@@ -91,7 +92,7 @@
       
       <label class="control-group control-seed">
         <span class="control-label" data-i18n="controls.seed">Seed</span>
-        <input id="seed-input" type="number" value="4729" min="0" step="1" aria-label="Seed (reshuffles deterministic RNG; structure stays, details re-roll)" title="Seed reshuffles the deterministic RNG. Same (persona, lfi, seed) → byte-identical bundle (EXP-05)." />
+        <input id="seed-input" type="number" value="4729" min="0" step="1" aria-label="Seed (reshuffles deterministic RNG; structure stays, details re-roll)" title="Seed reshuffles the deterministic RNG. Same (persona, lfi, seed) → byte-identical bundle." />
         <button type="button" class="info-trigger" popovertarget="seed-help" aria-expanded="false" aria-label="What does Seed do?">ⓘ</button>
         <button type="button" id="seed-reset" class="seed-reset" aria-label="Reset seed to persona default" title="Reset to the persona's default seed." data-i18n="controls.seedReset">Reset</button>
       </label>
@@ -111,7 +112,7 @@
       <div id="seed-help" popover="auto" class="info-popover" role="note">
         <h3 class="info-popover-title">Seed</h3>
         <p>The third lever in the deterministic <code>(persona, LFI, seed)</code> tuple. Reshuffles random details — merchant names, transaction amounts, optional-field choices — while keeping the persona's structure intact (account count, balance bands, mandatory fields).</p>
-        <p>The seed is encoded in the share URL (EXP-17), so the same tuple always reproduces byte-identical data. <strong>Reset</strong> restores the persona's default.</p>
+        <p>The seed is encoded in the share URL, so the same tuple always reproduces byte-identical data. <strong>Reset</strong> restores the persona's default.</p>
       </div>
     </div>
     <div class="controls-runstate" aria-label="Run state">
@@ -142,11 +143,11 @@
       <li><strong>Median</strong> — v1 calibration: Universal=1.0, Common=0.7, Variable=0.4, Rare=0.1. The Commons-curated ecosystem-wide assumption.</li>
       <li><strong>Sparse</strong> — worst case. Mandatory + Universal-band only — every other optional field dropped. Stress-test downstream UI and decisioning logic.</li>
     </ul>
-    <p>Mandatory fields are never redacted (EXP-04). Use <strong>+ Compare</strong> to see two profiles side-by-side (EXP-16).</p>
+    <p>Mandatory fields are never redacted. Use <strong>+ Compare</strong> to see two profiles side by side.</p>
   </div>
   <div id="spec-help" popover="auto" class="info-popover" role="note">
     <h3 class="info-popover-title">Pinned spec SHA</h3>
-    <p>The short hash next to <code>v2.1</code> is the commit SHA of the UAE Open Finance OpenAPI spec this sandbox was built from. Pinning a single SHA per build (D-01) means every field badge, enum, and validation result is anchored to one exact upstream version.</p>
+    <p>The short hash next to <code>v2.1</code> is the commit SHA of the UAE Open Finance OpenAPI spec this sandbox was built from. Pinning a single SHA per build means every field badge, enum, and validation result is anchored to one exact upstream version.</p>
     <p>Hover the pin for the upstream repo path and retrieval date. The same SHA appears in <code>dist/SPEC.json</code>, the About page, and every fixture-package manifest.</p>
   </div>
 </header>
@@ -158,6 +159,7 @@
 </div>
 
 <main class="three-pane" id="three-pane">
+<h1 class="visually-hidden">Open Finance Data Sandbox</h1>
   <section class="pane persona-pane" aria-label="Persona library">
     <div class="pane-header">
       <span class="pane-header-text" data-i18n="pane.personaLibrary">Persona library</span>

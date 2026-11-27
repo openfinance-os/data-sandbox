@@ -52,6 +52,7 @@
   }
   .meta-grid dd { margin: 0; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; }
   .lead { font-size: 15px; line-height: 1.6; color: var(--text); }
+  .about-shell p a, .about-shell li a { text-decoration: underline; }
   .back-link { font-size: 12px; color: var(--text-muted); }
   .band-table {
     width: 100%;
@@ -68,6 +69,7 @@
 </style>
 </head>
 <body>
+<nav class="site-bar" aria-label="Open Finance OS"><a class="site-bar-home" href="https://openfinance-os.org/">Open Finance OS</a><span class="site-bar-sep" aria-hidden="true">/</span><a href="index.html">Data Sandbox</a></nav>
 <div class="banner" role="status" aria-label="Synthetic data notice" data-dismissible>
   <strong>SYNTHETIC.</strong>
   Data is generated from the UAE Open Finance Standards v2.1 OpenAPI spec — not from any real bank.
@@ -202,7 +204,7 @@
     are the only events the bundle will ever send, and the property keys
     they carry are likewise restricted:
   </p>
-  <table class="band-table" aria-label="EXP-21 event allowlist">
+  <table class="band-table" aria-label="Analytics event allowlist">
     <thead><tr><th>Event</th><th>Fires when</th><th>Properties</th></tr></thead>
     <tbody>
       <tr><td><code>persona_load</code></td><td>Page mount, persona switch, domain switch</td><td><code>persona_id</code>, <code>domain</code>, <code>lfi</code>, <code>custom</code></td></tr>
@@ -245,6 +247,7 @@
     <li><strong>Synthetic data &amp; fixtures:</strong> CC0 — public domain.</li>
     <li><strong>Vendored OpenAPI YAML:</strong> inherits the upstream Nebras-Open-Finance/api-specs licence; the maintainer verifies compatibility at every pin-SHA bump.</li>
   </ul>
+  <p class="corpus-note">Corrected corpus 0.1.0 uses 24 completed months ending April 2026. Official v2.1 Errata 4 is recorded alongside independently pinned wire schemas. Insurance quote conformance uses a documented source-hash scoped adapter. Guided labs provide observed calculations and unknowns. This local candidate awaits publication and real user validation.</p>
 </main>
 
 <footer class="footer" role="contentinfo">
@@ -252,6 +255,5 @@
 </footer>
 
 <script type="module" src="about.js"></script>
-<p style="padding:1rem">Corrected corpus 0.1.0 uses 24 completed months ending April 2026. Official v2.1 Errata 4 is recorded alongside independently pinned wire schemas. Insurance quote conformance uses a documented source-hash scoped adapter. Guided labs provide observed calculations and unknowns. This local candidate awaits publication and real user validation.</p>
 </body>
 </html>

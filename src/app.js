@@ -1724,7 +1724,7 @@ function renderCoverage() {
         'data-band': band,
         title:
           b.total === 0
-            ? `${band} band: no curated probes yet (Phase 1 starter — widens as the spec parser feeds bands directly).`
+            ? `${band} band: no curated probes yet.`
             : `${band} band — ${b.populated} of ${b.total} populated (${b.pct}%). ${MEDIAN_HINT[band] ?? ''}`,
       },
     });
@@ -2250,7 +2250,7 @@ function renderPayloadUnsafe() {
       attrs: {
         scope: 'col',
         title:
-          'Linked transactions — count of /transactions rows that match each record on this endpoint (EXP-12).',
+          'Linked transactions — count of /transactions rows that match each record on this endpoint.',
       },
     });
     linkedTh.appendChild(el('span', { class: 'pill pill-linked', text: '→' }));
@@ -2422,7 +2422,7 @@ function renderWelcomeCards() {
     }),
   );
   wrap.appendChild(head);
-  wrap.appendChild(el('h3', { class: 'welcome-title', text: 'Three ways to use the sandbox' }));
+  wrap.appendChild(el('h2', { class: 'welcome-title', text: 'Three ways to use the sandbox' }));
 
   const grid = el('div', { class: 'welcome-grid' });
 

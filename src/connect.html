@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -2352,6 +2352,7 @@
 </style>
 </head>
 <body>
+<nav class="site-bar" aria-label="Open Finance OS"><a class="site-bar-home" href="https://openfinance-os.org/">Open Finance OS</a><span class="site-bar-sep" aria-hidden="true">/</span><a href="index.html">Data Sandbox</a></nav>
 <div class="banner" role="status" aria-label="Synthetic data notice" data-dismissible>
   <strong>SYNTHETIC.</strong>
   Data is generated from the UAE Open Finance Standards v2.1 OpenAPI spec — not from any real bank.
@@ -2379,15 +2380,15 @@
       <p class="lead secondary">
         Nothing here is endorsed by Anthropic, CBUAE, Nebras, or any UAE LFI. Every persona is
         synthetic; bank profiles are anonymous Rich/Median/Sparse populate-rate bands, never real
-        UAE bank names (PRD NG5 / D-14).
+        UAE bank names.
       </p>
     </div>
 
-    <div class="journey-cards" role="list" aria-label="Pick a connection journey">
-      <button type="button" class="journey-card" id="open-j1" data-journey="j1" role="listitem" aria-describedby="j1-desc">
+    <div class="journey-cards" role="group" aria-label="Pick a connection journey">
+      <button type="button" class="journey-card" id="open-j1" data-journey="j1" aria-describedby="j1-desc">
         <span class="jc-eyebrow">Journey 1 · Single-entity</span>
         <span class="jc-icon" aria-hidden="true">🏦</span>
-        <h3 class="jc-title">Bank-direct (MCP labs)</h3>
+        <h2 class="jc-title">Bank-direct (MCP labs)</h2>
         <p class="jc-body" id="j1-desc">
           What if your bank ran a labs MCP endpoint exposing the same OF v2.1 data shape directly to
           its own retail or SME customer — no TPP, no Al Tareq? The bank's own OAuth handles consent.
@@ -2400,10 +2401,10 @@
         <span class="jc-cta" aria-hidden="true">Try this →</span>
       </button>
 
-      <button type="button" class="journey-card" id="open-j2" data-journey="j2" role="listitem" aria-describedby="j2-desc">
+      <button type="button" class="journey-card" id="open-j2" data-journey="j2" aria-describedby="j2-desc">
         <span class="jc-eyebrow">Journey 2 · OF rails</span>
         <span class="jc-icon" aria-hidden="true">🔗</span>
-        <h3 class="jc-title">TPP via Al Tareq</h3>
+        <h2 class="jc-title">TPP via Al Tareq</h2>
         <p class="jc-body" id="j2-desc">
           A regulated TPP — or an agent acting as TPP — aggregates one or many LFIs through the Al
           Tareq CAAP consent flow and returns a holistic PFM (Retail) or BFM (SME) view.
@@ -2565,8 +2566,7 @@
       <p class="step-sub" id="step-2-sub">
         Pretend this is your bank's own labs MCP. Pick the populate-rate band you want to simulate
         — Rich (every optional field set), Median (typical UAE-market posture), or Sparse
-        (minimum-conformant). The sandbox uses anonymous bands per PRD
-        <abbr title="Non-Goal 5">NG5</abbr> — never a named real bank.
+        (minimum-conformant). The sandbox uses anonymous bands, never a named real bank.
       </p>
       <div id="institutions-body" class="institutions-block">
         <p class="skeleton">Pick a persona to see their applicable institutions.</p>
@@ -2657,10 +2657,9 @@ MCP_SIMULATE_OAUTH=1 node packages/sandbox-mcp/src/index.mjs --transport http</c
       <h2>Status &amp; scope (applies to all journeys)</h2>
       <p>
         These pages are <strong>simulations, not a roadmap</strong>. Nothing here changes the load-bearing
-        invariants of the sandbox: spec-driven field metadata (EXP-01), no real customer data
-        (NG4 / EXP-07), no institution-specific operational detail (NG5 / D-14), deterministic
-        generation (EXP-05), Standards baseline v2.1 only (D-01), and no separate contributor
-        branding (NG6). Real UAE bank names appear only in the SME advisory panel pulled from
+        invariants of the sandbox: field metadata taken from the published specification, no real customer data,
+        no institution-specific operational detail, deterministic generation, the v2.1
+        Standards baseline only, and no separate contributor branding. Real UAE bank names appear only in the SME advisory panel pulled from
         each persona's <code>multi_lfi_footprint.plausible_lfi_candidates</code> — never bound
         to a populate-rate profile.
       </p>
@@ -2730,7 +2729,7 @@ MCP_SIMULATE_OAUTH=1 node packages/sandbox-mcp/src/index.mjs --transport http</c
         <p class="step-title">Step 3 of 5</p>
         <h2 class="step-h">Pick LFI(s)</h2>
         <p class="step-sub" id="j2-step-3-sub">
-          Anonymous populate-rate bands per PRD <abbr title="Non-Goal 5">NG5</abbr> — Rich
+          Anonymous populate-rate bands: Rich
           (every optional field set), Median (typical UAE-market posture), or Sparse
           (minimum-conformant). Each band stands in for an LFI with that data posture.
         </p>

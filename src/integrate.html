@@ -68,6 +68,7 @@
     font-size: inherit;
   }
   .lead { font-size: 15px; line-height: 1.6; color: var(--text); }
+  .integrate-shell p a, .integrate-shell li a { text-decoration: underline; }
   .back-link { font-size: 12px; color: var(--text-muted); }
   .callout {
     margin: 12px 0 20px;
@@ -116,6 +117,7 @@
 </style>
 </head>
 <body>
+<nav class="site-bar" aria-label="Open Finance OS"><a class="site-bar-home" href="https://openfinance-os.org/">Open Finance OS</a><span class="site-bar-sep" aria-hidden="true">/</span><a href="index.html">Data Sandbox</a></nav>
 <div class="banner" role="status" aria-label="Synthetic data notice" data-dismissible>
   <strong>SYNTHETIC.</strong>
   Data is generated from the UAE Open Finance Standards v2.1 OpenAPI spec — not from any real bank.
@@ -152,7 +154,7 @@
         emits both endpoint families at the same persona path. The banking
         tab in the sandbox UI renders 29 personas (21 banking-only + 8
         multi-domain); the insurance tab renders 17 (9 insurance-only + 8
-        multi-domain). Each persona stresses a distinct spec area (EXP-25);
+        multi-domain). Each persona stresses a distinct spec area;
         the flagship <code>retail-multi-banker</code> exercises N-slot
         multi-LFI banking (4 LFIs × multiple products) plus multi-insurer
         coverage in a single connect journey.</li>
@@ -176,9 +178,9 @@
         <code>(persona, lfi, seed)</code> tuple, AccountIds, the calling
         <code>PartyId</code>, transaction account-references and standing-order
         / direct-debit links all resolve consistently across the bundle.
-        Verified per build by EXP-32.</li>
+        Checked in CI on every build.</li>
     <li><strong>Determinism</strong> — same <code>(persona, lfi, seed)</code>
-        always yields byte-identical envelopes (EXP-05). Pin the seed, pin the
+        always yields byte-identical envelopes. Pin the seed, pin the
         package, and your pitch demo runs the same way every time.</li>
     <li><strong>Watermarks, in every export and envelope</strong> — every fixture
         carries <code>_persona</code>, <code>_lfi</code>, <code>_seed</code>,
@@ -212,18 +214,18 @@
       </tr>
       <tr>
         <td>Building a multi-bank reconciliation flow (UAE accounting-platform integration)</td>
-        <td>Any path + <a href="#multi-lfi">multi-LFI consent flow</a> (D-14)</td>
+        <td>Any path + <a href="#multi-lfi">multi-LFI consent flow</a> </td>
       </tr>
     </tbody>
   </table>
 
   <h2 id="path-iframe">Path 1 — iframe embed</h2>
   <p>
-    EXP-27 ships a chrome-less variant of the sandbox you can drop into any
+    There is a chrome-less variant of the sandbox you can drop into any
     HTML host. Use the <em>Use this persona in your demo</em> panel on a
     persona page to copy a pre-filled snippet, or build the URL yourself:
   </p>
-  <pre><code>&lt;iframe
+  <pre tabindex="0"><code>&lt;iframe
   src="https://data-sandbox.openfinance-os.org/embed.html?persona=salaried_expat_mid&amp;lfi=median&amp;endpoint=/accounts/%7BAccountId%7D/transactions&amp;seed=4729&amp;height=600"
   width="100%" height="600" loading="lazy"
   title="Open Finance Data Sandbox — Sara · median"
@@ -242,9 +244,9 @@
 
   <h2 id="path-npm">Path 2 — npm <code>loadJourney()</code></h2>
   <p>
-    The <code>@openfinance-os/sandbox-fixtures</code> package (EXP-20) bundles
+    The <code>@openfinance-os/sandbox-fixtures</code> package bundles
     every fixture, the parsed v2.1 spec, and a small loader. The
-    <code>loadJourney()</code> helper (EXP-29) returns the full coherent bundle
+    <code>loadJourney()</code> helper returns the full coherent bundle
     for one tuple in a single call — drop it in where your TPP demo currently
     fetches from the Nebras-operated regulatory sandbox.
   </p>
@@ -253,11 +255,11 @@
     not released, so the registry install commands do not work yet. Build them
     from this repository instead:
   </p>
-  <pre><code>git clone https://github.com/openfinance-os/data-sandbox.git
+  <pre tabindex="0"><code>git clone https://github.com/openfinance-os/data-sandbox.git
 cd data-sandbox
 npm ci &amp;&amp; npm run build:fixtures
 npm install ./packages/sandbox-fixtures   # from your project, use the path to this folder</code></pre>
-  <pre><code>// Wrap sandbox fixtures behind a Nebras-mock-shaped Express handler.
+  <pre tabindex="0"><code>// Wrap sandbox fixtures behind a Nebras-mock-shaped Express handler.
 // Your existing fetch-from-Nebras code keeps working unmodified.
 import express from 'express';
 import { loadJourney } from '@openfinance-os/sandbox-fixtures';
@@ -293,8 +295,8 @@ app.listen(3000);</code></pre>
   <p>
     Not yet on PyPI. After the source build above:
   </p>
-  <pre><code>pip install ./packages/sandbox-fixtures-py</code></pre>
-  <pre><code># A FastAPI shim that mirrors the v2.1 Account Information surface
+  <pre tabindex="0"><code>pip install ./packages/sandbox-fixtures-py</code></pre>
+  <pre tabindex="0"><code># A FastAPI shim that mirrors the v2.1 Account Information surface
 # but serves persona-coherent sandbox data.
 from fastapi import FastAPI
 from openfinance_os_sandbox_fixtures import load_journey
@@ -317,11 +319,11 @@ def parties():
   <h2 id="path-raw">Path 4 — raw HTTPS fixtures</h2>
   <p>
     Fixtures are also published as static JSON at a stable, CORS-permissive
-    URL (EXP-28). Anything that speaks HTTP can consume them — Swift, Kotlin,
+    URL. Anything that speaks HTTP can consume them — Swift, Kotlin,
     Flutter, .NET, Postman, plain <code>curl</code>.
   </p>
   <h3>URL contract</h3>
-  <pre><code>https://data-sandbox.openfinance-os.org/fixtures/v1/manifest.json
+  <pre tabindex="0"><code>https://data-sandbox.openfinance-os.org/fixtures/v1/manifest.json
 https://data-sandbox.openfinance-os.org/fixtures/v1/spec.json
 https://data-sandbox.openfinance-os.org/fixtures/v1/index.json
 https://data-sandbox.openfinance-os.org/fixtures/v1/personas/&lt;persona&gt;.json
@@ -340,7 +342,7 @@ https://data-sandbox.openfinance-os.org/fixtures/v1/bundles/&lt;persona&gt;/&lt;
     Start with <code>index.json</code> — a TPP-friendly summary of which
     personas, LFIs, endpoints, and version are live, plus the path contract:
   </p>
-  <pre><code>curl -fsS https://data-sandbox.openfinance-os.org/fixtures/v1/index.json</code></pre>
+  <pre tabindex="0"><code>curl -fsS https://data-sandbox.openfinance-os.org/fixtures/v1/index.json</code></pre>
   <h3>Postman walk-through</h3>
   <ol>
     <li><code>GET .../fixtures/v1/manifest.json</code> — capture
@@ -363,7 +365,7 @@ https://data-sandbox.openfinance-os.org/fixtures/v1/bundles/&lt;persona&gt;/&lt;
 
   <h2 id="path-mcp">Path 5 — MCP connector (Claude)</h2>
   <p>
-    PRD D-13 ships <code>@openfinance-os/sandbox-mcp</code> — a Model Context
+    <code>@openfinance-os/sandbox-mcp</code> is a Model Context
     Protocol server that wraps the same fixtures as MCP tools, resources, and
     prompts. The intended use is running Claude as a <em>dynamic PFM</em>
     against a synthetic customer: pick a persona with <code>set_session</code>
@@ -379,11 +381,11 @@ https://data-sandbox.openfinance-os.org/fixtures/v1/bundles/&lt;persona&gt;/&lt;
   <ul>
     <li><strong>Claude.ai</strong> — Settings → Connectors → Add custom connector → paste the URL.</li>
     <li><strong>Claude Code</strong>:
-      <pre><code>claude mcp add --transport http open-finance-sandbox https://data-sandbox.fly.dev/mcp</code></pre>
+      <pre tabindex="0"><code>claude mcp add --transport http open-finance-sandbox https://data-sandbox.fly.dev/mcp</code></pre>
     </li>
   </ul>
   <h3>Local stdio (Claude Desktop / npx)</h3>
-  <pre><code>{
+  <pre tabindex="0"><code>{
   "mcpServers": {
     "open-finance-sandbox": {
       "command": "npx",
@@ -393,8 +395,8 @@ https://data-sandbox.openfinance-os.org/fixtures/v1/bundles/&lt;persona&gt;/&lt;
 }</code></pre>
   <p>
     Every tool response carries the same <code>_watermark</code>,
-    <code>_specSha</code>, and <code>_retrievedAt</code> as the other plug-points
-    (EXP-19 / EXP-10). Determinism (EXP-05) holds: the same
+    <code>_specSha</code>, and <code>_retrievedAt</code> as the other plug-points.
+    Determinism holds: the same
     <code>(persona, lfi, seed)</code> returns byte-identical bundles whether
     the client reaches it via npm, raw HTTPS, or MCP. See
     <a href="https://github.com/openfinance-os/data-sandbox/tree/main/packages/sandbox-mcp">the package README</a>
@@ -403,7 +405,7 @@ https://data-sandbox.openfinance-os.org/fixtures/v1/bundles/&lt;persona&gt;/&lt;
     <code>build_persona</code> custom-recipe path.
   </p>
 
-  <h2 id="multi-lfi">Multi-LFI consent flow (D-14)</h2>
+  <h2 id="multi-lfi">Multi-LFI consent flow</h2>
   <p>
     UAE SMEs are typically multi-banked — operating account at a Tier-1
     conventional bank, Islamic deposit / savings at a second LFI, and
@@ -420,7 +422,7 @@ https://data-sandbox.openfinance-os.org/fixtures/v1/bundles/&lt;persona&gt;/&lt;
     <code>/fixtures/v1/manifest.json#personas[&lt;id&gt;]</code> carries an
     optional <code>multi_lfi_footprint</code> block:
   </p>
-  <pre><code>{
+  <pre tabindex="0"><code>{
   "name": "&lt;persona display name&gt;",
   "domain": "banking",
   "default_seed": 5172,
@@ -433,8 +435,7 @@ https://data-sandbox.openfinance-os.org/fixtures/v1/bundles/&lt;persona&gt;/&lt;
 }</code></pre>
   <p>
     Real UAE bank names appear inside
-    <code>plausible_lfi_candidates</code> in the live manifest per PRD
-    decision D-14: a candidate set with no populate-rate binding is
+    <code>plausible_lfi_candidates</code> in the live manifest: a candidate set with no populate-rate binding is
     descriptive of the persona's banking reality, not an operational
     claim about any named bank. The <code>lfi_default</code>
     populate-rate label (<code>Rich</code> / <code>Median</code> /
@@ -450,9 +451,9 @@ https://data-sandbox.openfinance-os.org/fixtures/v1/bundles/&lt;persona&gt;/&lt;
     For personas with <code>multi_lfi_footprint</code>, the sandbox emits
     separate v2.1-shaped bundles for each declared non-primary slot at a
     role-keyed stage path. The primary stays at the historical URL
-    (D-11 forward-compat); secondary / tertiary land at:
+    for forward compatibility; secondary / tertiary land at:
   </p>
-  <pre><code>/fixtures/v1/bundles/&lt;persona&gt;/&lt;slot&gt;/&lt;lfi&gt;/seed-N/accounts.json
+  <pre tabindex="0"><code>/fixtures/v1/bundles/&lt;persona&gt;/&lt;slot&gt;/&lt;lfi&gt;/seed-N/accounts.json
 /fixtures/v1/bundles/&lt;persona&gt;/&lt;slot&gt;/&lt;lfi&gt;/seed-N/accounts__&lt;AccountId&gt;__balances.json
 /fixtures/v1/bundles/&lt;persona&gt;/&lt;slot&gt;/&lt;lfi&gt;/seed-N/accounts__&lt;AccountId&gt;__transactions.json
 ... (and the rest of the v2.1 in-scope endpoints, single-account)</code></pre>
@@ -464,7 +465,7 @@ https://data-sandbox.openfinance-os.org/fixtures/v1/bundles/&lt;persona&gt;/&lt;
     primary bundle's <code>/accounts/{AccountId}/beneficiaries</code>.
     That match closes the cross-bundle reference loop:
   </p>
-  <pre><code>// In the primary's beneficiaries:
+  <pre tabindex="0"><code>// In the primary's beneficiaries:
 {
   "Reference": "self-to-tertiary",
   "AccountHolderName": "&lt;persona organisation legal name&gt;",
@@ -538,7 +539,7 @@ https://data-sandbox.openfinance-os.org/fixtures/v1/bundles/&lt;persona&gt;/&lt;
     <code>/accounts/{AccountId}/product</code>, and
     <code>/accounts/{AccountId}/statements</code>; the calling
     <code>PartyId</code> in <code>/parties</code> is consistent across the bundle.
-    EXP-32 enforces this in CI on every release.
+    CI checks this on every release.
   </p>
   <p>
     This is the property the Nebras-operated regulatory sandbox does not
@@ -573,7 +574,7 @@ https://data-sandbox.openfinance-os.org/fixtures/v1/bundles/&lt;persona&gt;/&lt;
     <dt>Within v1</dt>
     <dd>Additive only: new personas, new endpoints, in-v2.1 spec-SHA bumps, populate-rate evolution.</dd>
     <dt>Breaking change</dt>
-    <dd>New /v2/ slot + new package major. Old /v1/ stays live for ≥ 24 months (PRD §16).</dd>
+    <dd>New /v2/ slot + new package major. Old /v1/ stays live for at least 24 months.</dd>
     <dt>Pin point (immutable)</dt>
     <dd>npm/PyPI package version</dd>
     <dt>Pin point (mutable, latest-only)</dt>
@@ -631,6 +632,7 @@ https://data-sandbox.openfinance-os.org/fixtures/v1/bundles/&lt;persona&gt;/&lt;
     <a href="https://github.com/openfinance-os/data-sandbox/issues" target="_blank" rel="noopener noreferrer">github.com/openfinance-os/data-sandbox/issues</a>.
     Triaged within 14 days.
   </p>
+  <p class="corpus-note">Candidate 0.1.0: verify registry publication before installing by name. Static files ignore query pagination; use the local HTTP mock for generated scenarios and cursor retrieval. Current URLs are mutable aliases; retain a versioned package/archive for replay. <a href="labs.html">Guided labs</a></p>
 </main>
 
 <footer class="footer" role="contentinfo">
@@ -638,6 +640,5 @@ https://data-sandbox.openfinance-os.org/fixtures/v1/bundles/&lt;persona&gt;/&lt;
 </footer>
 
 <script type="module" src="integrate.js"></script>
-<p style="padding:1rem">Candidate 0.1.0: verify registry publication before installing by name. Static files ignore query pagination; use the local HTTP mock for generated scenarios and cursor retrieval. Current URLs are mutable aliases; retain a versioned package/archive for replay. <a href="labs.html">Guided labs</a></p>
 </body>
 </html>

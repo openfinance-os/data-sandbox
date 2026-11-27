@@ -65,10 +65,10 @@ narrative: |
   Hadi is salaried at AED 11.5k with rent + utilities + telco + a personal-
   loan repayment that together leave little buffer. Late-month direct-debit
   rejections are routine — Status="Rejected" on roughly half the months
-  in the trailing window. EXP-18's NSF / distress event count exercises
+  in the trailing window. The Underwriting panel's NSF / distress event count exercises
   this persona heavily; behavioural-distress monitoring rules can use this
   shape as a positive case.
 
 # D-10 — Arabic narrative (parallel-text UI; English `narrative` is the fallback).
 narrative_ar: |
-  هادي موظف براتب ١١٫٥ ألف درهم مع إيجار + مرافق + اتصالات + سداد قرض شخصي تترك مجتمعةً هامشًا ضئيلًا. رفض الخصم المباشر أواخر الشهر أمر معتاد — Status="Rejected" في نحو نصف أشهر النافذة الزمنية الأخيرة. يستخدم عدّ أحداث الرصيد غير الكافي / التعثّر في EXP-18 هذه الشخصية بكثافة؛ ويمكن لقواعد رصد التعثّر السلوكي استخدام هذا الشكل كحالة إيجابية.
+  هادي موظف براتب ١١٫٥ ألف درهم مع إيجار + مرافق + اتصالات + سداد قرض شخصي تترك مجتمعةً هامشًا ضئيلًا. رفض الخصم المباشر أواخر الشهر أمر معتاد — Status="Rejected" في نحو نصف أشهر النافذة الزمنية الأخيرة. يستخدم عدّ أحداث الرصيد غير الكافي / التعثّر في لوحة الاكتتاب هذه الشخصية بكثافة؛ ويمكن لقواعد رصد التعثّر السلوكي استخدام هذا الشكل كحالة إيجابية.
