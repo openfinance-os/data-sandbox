@@ -50,11 +50,11 @@ distress_signals:
 narrative: |
   Priya works gig hours via delivery and rideshare platforms. Her income
   arrives in irregular bursts from multiple counterparties — no single
-  Flags=Payroll credit marks her salary. EXP-18's primary income formula
-  (trailing-12-month average of Payroll-flagged credits) returns nothing
-  for her; the Phase 1.5 Underwriting panel must fall back to Fallback B
+  Flags=Payroll credit marks her salary. The Underwriting panel's primary
+  income formula (trailing-12-month average of Payroll-flagged credits)
+  returns nothing for her, so the panel must fall back to Fallback B
   (clustered counterparty inflow) to produce a usable income signal.
 
 # D-10 — Arabic narrative (parallel-text UI; English `narrative` is the fallback).
 narrative_ar: |
-  تعمل بريا بنظام الساعات الحرة عبر منصات التوصيل ومشاركة الركوب. يصل دخلها في دفعات غير منتظمة من أطراف متعددة — ولا يوجد ائتمان واحد بعلامة Flags=Payroll يميّز راتبها. صيغة الدخل الأساسي في EXP-18 (متوسط اثني عشر شهرًا للائتمانات المعلّمة Payroll) لا تُرجع لها شيئًا؛ ويجب أن ترجع لوحة الاكتتاب في المرحلة ١٫٥ إلى البديل ب (تدفق الأطراف المُجمَّع) لإنتاج إشارة دخل قابلة للاستخدام.
+  تعمل بريا بنظام الساعات الحرة عبر منصات التوصيل ومشاركة الركوب. يصل دخلها في دفعات غير منتظمة من أطراف متعددة — ولا يوجد ائتمان واحد بعلامة Flags=Payroll يميّز راتبها. صيغة الدخل الأساسي في لوحة الاكتتاب (متوسط اثني عشر شهرًا للائتمانات المعلّمة Payroll) لا تُرجع لها شيئًا؛ ويجب أن ترجع اللوحة إلى البديل ب (تدفق الأطراف المُجمَّع) لإنتاج إشارة دخل قابلة للاستخدام.

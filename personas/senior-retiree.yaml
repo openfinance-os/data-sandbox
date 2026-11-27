@@ -59,7 +59,7 @@ distress_signals:
 narrative: |
   Hassan is 68, retired, receiving a GCC pension on the 1st of each month.
   Low transaction volume by design — typically <10 transactions/month.
-  Triggers EXP-18's low-volume guard under all three LFI profiles: the
+  Triggers the Underwriting panel's low-volume guard under all three LFI profiles: the
   trailing-12-month-count is below the 50-transaction floor, so the
   Underwriting panel suppresses DBR with a tooltip explaining why. The
   Senior persona is the case study for "off-the-shelf affordability
@@ -67,4 +67,4 @@ narrative: |
 
 # D-10 — Arabic narrative (parallel-text UI; English `narrative` is the fallback).
 narrative_ar: |
-  حسن في الثامنة والستين، متقاعد، يتلقى معاشًا خليجيًا في الأول من كل شهر. حجم معاملات منخفض بحكم التصميم — عادةً أقل من ١٠ معاملات شهريًا. يُفعّل حارس انخفاض الحجم في EXP-18 تحت ملفات المؤسسات المالية الثلاثة جميعها: عدّ الاثني عشر شهرًا الأخيرة دون أرضية ٥٠ معاملة، فتُخمد لوحة الاكتتاب نسبة عبء الدين مع تلميح يوضّح السبب. شخصية المسنّ هي دراسة الحالة لـ«صيغ القدرة على التحمل الجاهزة لا تُعمَّم على الشرائح منخفضة الحجم».
+  حسن في الثامنة والستين، متقاعد، يتلقى معاشًا خليجيًا في الأول من كل شهر. حجم معاملات منخفض بحكم التصميم — عادةً أقل من ١٠ معاملات شهريًا. يُفعّل حارس انخفاض الحجم في لوحة الاكتتاب تحت ملفات المؤسسات المالية الثلاثة جميعها: عدّ الاثني عشر شهرًا الأخيرة دون أرضية ٥٠ معاملة، فتُخمد لوحة الاكتتاب نسبة عبء الدين مع تلميح يوضّح السبب. شخصية المسنّ هي دراسة الحالة لـ«صيغ القدرة على التحمل الجاهزة لا تُعمَّم على الشرائح منخفضة الحجم».

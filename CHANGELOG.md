@@ -5,6 +5,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follo
 
 ## [Unreleased]
 
+### Changed — guided labs run in the browser; public pages drop internal labels
+
+- `/src/labs.html` now runs each lab in the browser against the published static
+  fixtures (wire payloads only), with a Rich / Median / Sparse picker, and checks the
+  result against the answer key. The consent lab simulates the revocation step and
+  points to the local mock for a real HTTP 403. Local commands stay available.
+- `dist/labs.json` lists the fixture files each lab reads and its default seed.
+- Public pages, tooltips and persona narratives no longer cite internal requirement
+  and decision IDs (EXP-, NG-, D-), PRD sections or phase numbers, and the labs page
+  no longer says its timing target is "awaiting user validation".
+
 ### Changed — MCP: four insurance tools and compact JSON (breaking for MCP clients)
 
 - The 28 per-line insurance tools (`get_<line>_policies`, `get_<line>_policy`,

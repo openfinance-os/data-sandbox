@@ -2379,7 +2379,7 @@
       <p class="lead secondary">
         Nothing here is endorsed by Anthropic, CBUAE, Nebras, or any UAE LFI. Every persona is
         synthetic; bank profiles are anonymous Rich/Median/Sparse populate-rate bands, never real
-        UAE bank names (PRD NG5 / D-14).
+        UAE bank names.
       </p>
     </div>
 
@@ -2565,8 +2565,7 @@
       <p class="step-sub" id="step-2-sub">
         Pretend this is your bank's own labs MCP. Pick the populate-rate band you want to simulate
         — Rich (every optional field set), Median (typical UAE-market posture), or Sparse
-        (minimum-conformant). The sandbox uses anonymous bands per PRD
-        <abbr title="Non-Goal 5">NG5</abbr> — never a named real bank.
+        (minimum-conformant). The sandbox uses anonymous bands, never a named real bank.
       </p>
       <div id="institutions-body" class="institutions-block">
         <p class="skeleton">Pick a persona to see their applicable institutions.</p>
@@ -2657,10 +2656,9 @@ MCP_SIMULATE_OAUTH=1 node packages/sandbox-mcp/src/index.mjs --transport http</c
       <h2>Status &amp; scope (applies to all journeys)</h2>
       <p>
         These pages are <strong>simulations, not a roadmap</strong>. Nothing here changes the load-bearing
-        invariants of the sandbox: spec-driven field metadata (EXP-01), no real customer data
-        (NG4 / EXP-07), no institution-specific operational detail (NG5 / D-14), deterministic
-        generation (EXP-05), Standards baseline v2.1 only (D-01), and no separate contributor
-        branding (NG6). Real UAE bank names appear only in the SME advisory panel pulled from
+        invariants of the sandbox: field metadata taken from the published specification, no real customer data,
+        no institution-specific operational detail, deterministic generation, the v2.1
+        Standards baseline only, and no separate contributor branding. Real UAE bank names appear only in the SME advisory panel pulled from
         each persona's <code>multi_lfi_footprint.plausible_lfi_candidates</code> — never bound
         to a populate-rate profile.
       </p>
@@ -2730,7 +2728,7 @@ MCP_SIMULATE_OAUTH=1 node packages/sandbox-mcp/src/index.mjs --transport http</c
         <p class="step-title">Step 3 of 5</p>
         <h2 class="step-h">Pick LFI(s)</h2>
         <p class="step-sub" id="j2-step-3-sub">
-          Anonymous populate-rate bands per PRD <abbr title="Non-Goal 5">NG5</abbr> — Rich
+          Anonymous populate-rate bands: Rich
           (every optional field set), Median (typical UAE-market posture), or Sparse
           (minimum-conformant). Each band stands in for an LFI with that data posture.
         </p>

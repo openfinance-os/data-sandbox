@@ -47,6 +47,38 @@ const read = (fx) =>
       .filter(([e]) => !e.includes('{'))
       .map(([e, rel]) => [e, JSON.parse(fs.readFileSync(path.join(root, rel), 'utf8'))]),
   );
+// Wire-file paths (relative to /fixtures/v1/) each lab reads, so the labs page
+// can fetch the published static fixtures and run the same calculation in the
+// browser. Only observed wire payloads are listed, never enrichment sidecars.
+const wanted = {
+  income: (e) => e.endsWith('/transactions'),
+  reconciliation: (e) => e.endsWith('/transactions'),
+  cover: (e) => e.endsWith('/transactions') || /-insurance-policies\/[^/{]+$/.test(e),
+  consent: (e) => e.endsWith('/transactions'),
+};
+const pick = (fx, lab) =>
+  Object.fromEntries(
+    Object.entries(fx.endpoints).filter(([e]) => !e.includes('{') && wanted[lab.id](e)),
+  );
+for (const lab of labs) {
+  const seed = manifest.personas[lab.persona].default_seed;
+  lab.seed = seed;
+  lab.sources = {};
+  for (const lfi of ['rich', 'median', 'sparse']) {
+    const primary = pick(manifest.fixtures[`${lab.persona}|${lfi}|${seed}`], lab);
+    const roles =
+      lab.id === 'reconciliation'
+        ? Object.fromEntries(
+            Object.entries(manifest.roleFixtures)
+              .filter(
+                ([, fx]) => fx.personaId === lab.persona && fx.lfi === lfi && fx.seed === seed,
+              )
+              .map(([, fx]) => [fx.role, pick(fx, lab)]),
+          )
+        : {};
+    lab.sources[lfi] = { primary, roles };
+  }
+}
 const answers = {};
 for (const lab of labs) {
   if (lab.id === 'consent') {

@@ -72,11 +72,11 @@ distress_signals:
 narrative: |
   Yousef is salaried at AED 32k with a long-dated mortgage. Total fixed
   commitments — mortgage principal, school fees, utilities, car finance —
-  push his implied DBR comfortably above 60%. The Phase 1.5 Underwriting
-  panel will compute Total Fixed Commitments by summing standing-order
+  push his implied DBR comfortably above 60%. The Underwriting
+  panel computes Total Fixed Commitments by summing standing-order
   NextPaymentAmount + direct-debit PreviousPaymentAmount, normalised to
   monthly via Frequency. This persona is the DBR stress case.
 
 # D-10 — Arabic narrative (parallel-text UI; English `narrative` is the fallback).
 narrative_ar: |
-  يوسف موظف براتب ٣٢ ألف درهم مع رهن طويل الأجل. مجموع التزاماته الثابتة — أصل الرهن والرسوم المدرسية والمرافق وتمويل السيارة — يدفع نسبة عبء الدين الضمنية لديه إلى ما يفوق ٦٠٪ بمريح. ستحسب لوحة الاكتتاب في المرحلة ١٫٥ إجمالي الالتزامات الثابتة بجمع NextPaymentAmount للأمر الدائم + PreviousPaymentAmount للخصم المباشر، مُطبَّعة شهريًا عبر Frequency. هذه الشخصية هي حالة اختبار ضغط نسبة عبء الدين.
+  يوسف موظف براتب ٣٢ ألف درهم مع رهن طويل الأجل. مجموع التزاماته الثابتة — أصل الرهن والرسوم المدرسية والمرافق وتمويل السيارة — يدفع نسبة عبء الدين الضمنية لديه إلى ما يفوق ٦٠٪ بمريح. تحسب لوحة الاكتتاب إجمالي الالتزامات الثابتة بجمع NextPaymentAmount للأمر الدائم + PreviousPaymentAmount للخصم المباشر، مُطبَّعة شهريًا عبر Frequency. هذه الشخصية هي حالة اختبار ضغط نسبة عبء الدين.

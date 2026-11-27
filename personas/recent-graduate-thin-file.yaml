@@ -49,10 +49,10 @@ narrative: |
   Tanvi is a junior IT analyst, salaried at AED 8.5k, single account opened
   8 months ago. She splits rent with flatmates via a shared standing order.
   Tests thin-file underwriting: short-tenure account, low-value transactions,
-  little fixed-commitment surface. EXP-18 low-volume guard may engage at the
+  little fixed-commitment surface. The Underwriting panel's low-volume guard may engage at the
   margin (8 months × ~30 tx/month ≈ 240 — above the 50-tx floor but distinct
   months below the 12 expected).
 
 # D-10 — Arabic narrative (parallel-text UI; English `narrative` is the fallback).
 narrative_ar: |
-  تانفي محللة تقنية مبتدئة، براتب ٨٫٥ ألف درهم، بحساب وحيد فُتح قبل ٨ أشهر. تتقاسم الإيجار مع زميلات سكن عبر أمر دائم مشترك. تختبر اكتتاب السجل الضعيف: حساب قصير المدة، ومعاملات منخفضة القيمة، وسطح التزامات ثابتة ضئيل. قد يتفعّل حارس انخفاض الحجم في EXP-18 عند الحد (٨ أشهر × نحو ٣٠ معاملة شهريًا ≈ ٢٤٠ — فوق أرضية ٥٠ معاملة لكن بأشهر متمايزة دون الاثني عشر المتوقعة).
+  تانفي محللة تقنية مبتدئة، براتب ٨٫٥ ألف درهم، بحساب وحيد فُتح قبل ٨ أشهر. تتقاسم الإيجار مع زميلات سكن عبر أمر دائم مشترك. تختبر اكتتاب السجل الضعيف: حساب قصير المدة، ومعاملات منخفضة القيمة، وسطح التزامات ثابتة ضئيل. قد يتفعّل حارس انخفاض الحجم في لوحة الاكتتاب عند الحد (٨ أشهر × نحو ٣٠ معاملة شهريًا ≈ ٢٤٠ — فوق أرضية ٥٠ معاملة لكن بأشهر متمايزة دون الاثني عشر المتوقعة).

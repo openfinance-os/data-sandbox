@@ -1067,7 +1067,7 @@ function renderInstitutions() {
       el(
         'span',
         {},
-        "Descriptive of the persona's likely relationships per the persona manifest — not bound to any populate-rate profile (NG5 / D-14).",
+        "Descriptive of the persona's likely relationships per the persona manifest — not bound to any populate-rate profile.",
       ),
     );
     for (const s of slots) {
@@ -2338,7 +2338,7 @@ function renderJ2LFIs() {
   const sub = document.getElementById('j2-step-3-sub');
   const multi = state.j2Scope === 'multi';
   sub.textContent = multi
-    ? `${persona.name} — pick 2 to 4 anonymous LFI profiles. Each profile stands in for a regulated LFI authorized in the same consent grant. Per PRD NG5, profiles are never bound to real bank names.`
+    ? `${persona.name} — pick 2 to 4 anonymous LFI profiles. Each profile stands in for a regulated LFI authorized in the same consent grant. Profiles are never bound to real bank names.`
     : `${persona.name} — pick one anonymous LFI profile (the TPP requests consent from a single LFI through Al Tareq).`;
 
   const header = el('h4', {}, multi ? 'Pick 2–4 LFI profiles' : 'Pick one LFI profile');
@@ -2385,7 +2385,7 @@ function renderJ2LFIs() {
       el(
         'span',
         {},
-        'Descriptive — from persona manifest, never bound to a populate-rate profile (NG5 / D-14).',
+        'Descriptive — from persona manifest, never bound to a populate-rate profile.',
       ),
     );
     for (const role of ['primary', 'secondary', 'tertiary']) {

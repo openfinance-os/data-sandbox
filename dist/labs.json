@@ -8,7 +8,31 @@
       "persona": "salaried_expat_mid",
       "task": "Calculate observed April 2026 payroll and fixed-payment debits by currency. Compare Rich and Sparse; explain unknowns.",
       "method": "incomeAndCommitments",
-      "commands": "node examples/labs/run.mjs income"
+      "commands": "node examples/labs/run.mjs income",
+      "seed": 4729,
+      "sources": {
+        "rich": {
+          "primary": {
+            "/accounts/salaried-expat-mid-acct-01/transactions": "bundles/salaried_expat_mid/rich/seed-4729/accounts__salaried-expat-mid-acct-01__transactions.json",
+            "/accounts/salaried-expat-mid-acct-02/transactions": "bundles/salaried_expat_mid/rich/seed-4729/accounts__salaried-expat-mid-acct-02__transactions.json"
+          },
+          "roles": {}
+        },
+        "median": {
+          "primary": {
+            "/accounts/salaried-expat-mid-acct-01/transactions": "bundles/salaried_expat_mid/median/seed-4729/accounts__salaried-expat-mid-acct-01__transactions.json",
+            "/accounts/salaried-expat-mid-acct-02/transactions": "bundles/salaried_expat_mid/median/seed-4729/accounts__salaried-expat-mid-acct-02__transactions.json"
+          },
+          "roles": {}
+        },
+        "sparse": {
+          "primary": {
+            "/accounts/salaried-expat-mid-acct-01/transactions": "bundles/salaried_expat_mid/sparse/seed-4729/accounts__salaried-expat-mid-acct-01__transactions.json",
+            "/accounts/salaried-expat-mid-acct-02/transactions": "bundles/salaried_expat_mid/sparse/seed-4729/accounts__salaried-expat-mid-acct-02__transactions.json"
+          },
+          "roles": {}
+        }
+      }
     },
     {
       "id": "reconciliation",
@@ -16,7 +40,55 @@
       "persona": "sme_rak_trading_emirati",
       "task": "Match self-sweeps across primary and role accounts. Preserve both booked currencies and any conversion.",
       "method": "reconcileSweeps",
-      "commands": "node examples/labs/run.mjs reconciliation"
+      "commands": "node examples/labs/run.mjs reconciliation",
+      "seed": 4106,
+      "sources": {
+        "rich": {
+          "primary": {
+            "/accounts/sme-rak-trading-emirati-acct-01/transactions": "bundles/sme_rak_trading_emirati/rich/seed-4106/accounts__sme-rak-trading-emirati-acct-01__transactions.json",
+            "/accounts/sme-rak-trading-emirati-acct-02/transactions": "bundles/sme_rak_trading_emirati/rich/seed-4106/accounts__sme-rak-trading-emirati-acct-02__transactions.json",
+            "/accounts/sme-rak-trading-emirati-acct-03/transactions": "bundles/sme_rak_trading_emirati/rich/seed-4106/accounts__sme-rak-trading-emirati-acct-03__transactions.json"
+          },
+          "roles": {
+            "islamic_deposit": {
+              "/accounts/sme-rak-trading-emirati-acct-01/transactions": "bundles/sme_rak_trading_emirati/secondary/rich/seed-4106/accounts__sme-rak-trading-emirati-acct-01__transactions.json"
+            },
+            "trade_finance": {
+              "/accounts/sme-rak-trading-emirati-acct-01/transactions": "bundles/sme_rak_trading_emirati/tertiary/rich/seed-4106/accounts__sme-rak-trading-emirati-acct-01__transactions.json"
+            }
+          }
+        },
+        "median": {
+          "primary": {
+            "/accounts/sme-rak-trading-emirati-acct-01/transactions": "bundles/sme_rak_trading_emirati/median/seed-4106/accounts__sme-rak-trading-emirati-acct-01__transactions.json",
+            "/accounts/sme-rak-trading-emirati-acct-02/transactions": "bundles/sme_rak_trading_emirati/median/seed-4106/accounts__sme-rak-trading-emirati-acct-02__transactions.json",
+            "/accounts/sme-rak-trading-emirati-acct-03/transactions": "bundles/sme_rak_trading_emirati/median/seed-4106/accounts__sme-rak-trading-emirati-acct-03__transactions.json"
+          },
+          "roles": {
+            "islamic_deposit": {
+              "/accounts/sme-rak-trading-emirati-acct-01/transactions": "bundles/sme_rak_trading_emirati/secondary/median/seed-4106/accounts__sme-rak-trading-emirati-acct-01__transactions.json"
+            },
+            "trade_finance": {
+              "/accounts/sme-rak-trading-emirati-acct-01/transactions": "bundles/sme_rak_trading_emirati/tertiary/median/seed-4106/accounts__sme-rak-trading-emirati-acct-01__transactions.json"
+            }
+          }
+        },
+        "sparse": {
+          "primary": {
+            "/accounts/sme-rak-trading-emirati-acct-01/transactions": "bundles/sme_rak_trading_emirati/sparse/seed-4106/accounts__sme-rak-trading-emirati-acct-01__transactions.json",
+            "/accounts/sme-rak-trading-emirati-acct-02/transactions": "bundles/sme_rak_trading_emirati/sparse/seed-4106/accounts__sme-rak-trading-emirati-acct-02__transactions.json",
+            "/accounts/sme-rak-trading-emirati-acct-03/transactions": "bundles/sme_rak_trading_emirati/sparse/seed-4106/accounts__sme-rak-trading-emirati-acct-03__transactions.json"
+          },
+          "roles": {
+            "islamic_deposit": {
+              "/accounts/sme-rak-trading-emirati-acct-01/transactions": "bundles/sme_rak_trading_emirati/secondary/sparse/seed-4106/accounts__sme-rak-trading-emirati-acct-01__transactions.json"
+            },
+            "trade_finance": {
+              "/accounts/sme-rak-trading-emirati-acct-01/transactions": "bundles/sme_rak_trading_emirati/tertiary/sparse/seed-4106/accounts__sme-rak-trading-emirati-acct-01__transactions.json"
+            }
+          }
+        }
+      }
     },
     {
       "id": "consent",
@@ -24,7 +96,31 @@
       "persona": "salaried_expat_mid",
       "task": "Read a successful transaction page, then simulate revoked consent. Stop using the stale result and explain the API Hub authority.",
       "method": "mock",
-      "commands": "npm run mock\n# In another terminal:\nnode examples/labs/consent.mjs"
+      "commands": "npm run mock\n# In another terminal:\nnode examples/labs/consent.mjs",
+      "seed": 4729,
+      "sources": {
+        "rich": {
+          "primary": {
+            "/accounts/salaried-expat-mid-acct-01/transactions": "bundles/salaried_expat_mid/rich/seed-4729/accounts__salaried-expat-mid-acct-01__transactions.json",
+            "/accounts/salaried-expat-mid-acct-02/transactions": "bundles/salaried_expat_mid/rich/seed-4729/accounts__salaried-expat-mid-acct-02__transactions.json"
+          },
+          "roles": {}
+        },
+        "median": {
+          "primary": {
+            "/accounts/salaried-expat-mid-acct-01/transactions": "bundles/salaried_expat_mid/median/seed-4729/accounts__salaried-expat-mid-acct-01__transactions.json",
+            "/accounts/salaried-expat-mid-acct-02/transactions": "bundles/salaried_expat_mid/median/seed-4729/accounts__salaried-expat-mid-acct-02__transactions.json"
+          },
+          "roles": {}
+        },
+        "sparse": {
+          "primary": {
+            "/accounts/salaried-expat-mid-acct-01/transactions": "bundles/salaried_expat_mid/sparse/seed-4729/accounts__salaried-expat-mid-acct-01__transactions.json",
+            "/accounts/salaried-expat-mid-acct-02/transactions": "bundles/salaried_expat_mid/sparse/seed-4729/accounts__salaried-expat-mid-acct-02__transactions.json"
+          },
+          "roles": {}
+        }
+      }
     },
     {
       "id": "cover",
@@ -32,7 +128,46 @@
       "persona": "retail_multi_banker",
       "task": "Describe observed payments, declared policy premiums, end dates and cover. Explicitly list information that is unknown.",
       "method": "insuranceCommitments",
-      "commands": "node examples/labs/run.mjs cover"
+      "commands": "node examples/labs/run.mjs cover",
+      "seed": 99072,
+      "sources": {
+        "rich": {
+          "primary": {
+            "/accounts/retail-multi-banker-acct-01/transactions": "bundles/retail_multi_banker/rich/seed-99072/accounts__retail-multi-banker-acct-01__transactions.json",
+            "/accounts/retail-multi-banker-acct-02/transactions": "bundles/retail_multi_banker/rich/seed-99072/accounts__retail-multi-banker-acct-02__transactions.json",
+            "/accounts/retail-multi-banker-acct-03/transactions": "bundles/retail_multi_banker/rich/seed-99072/accounts__retail-multi-banker-acct-03__transactions.json",
+            "/accounts/retail-multi-banker-acct-04/transactions": "bundles/retail_multi_banker/rich/seed-99072/accounts__retail-multi-banker-acct-04__transactions.json",
+            "/motor-insurance-policies/1cd9688b-e1b3-4fbd-b0cc-3fe5bef38f4c": "bundles/retail_multi_banker/rich/seed-99072/motor-insurance-policies__1cd9688b-e1b3-4fbd-b0cc-3fe5bef38f4c.json",
+            "/home-insurance-policies/7e1cd968-8be1-4b3f-ade0-cc3fe5bef38f": "bundles/retail_multi_banker/rich/seed-99072/home-insurance-policies__7e1cd968-8be1-4b3f-ade0-cc3fe5bef38f.json",
+            "/travel-insurance-policies/5467e1cd-9688-4be1-a3fb-de0cc3fe5bef": "bundles/retail_multi_banker/rich/seed-99072/travel-insurance-policies__5467e1cd-9688-4be1-a3fb-de0cc3fe5bef.json"
+          },
+          "roles": {}
+        },
+        "median": {
+          "primary": {
+            "/accounts/retail-multi-banker-acct-01/transactions": "bundles/retail_multi_banker/median/seed-99072/accounts__retail-multi-banker-acct-01__transactions.json",
+            "/accounts/retail-multi-banker-acct-02/transactions": "bundles/retail_multi_banker/median/seed-99072/accounts__retail-multi-banker-acct-02__transactions.json",
+            "/accounts/retail-multi-banker-acct-03/transactions": "bundles/retail_multi_banker/median/seed-99072/accounts__retail-multi-banker-acct-03__transactions.json",
+            "/accounts/retail-multi-banker-acct-04/transactions": "bundles/retail_multi_banker/median/seed-99072/accounts__retail-multi-banker-acct-04__transactions.json",
+            "/motor-insurance-policies/1cd9688b-e1b3-4fbd-b0cc-3fe5bef38f4c": "bundles/retail_multi_banker/median/seed-99072/motor-insurance-policies__1cd9688b-e1b3-4fbd-b0cc-3fe5bef38f4c.json",
+            "/home-insurance-policies/7e1cd968-8be1-4b3f-ade0-cc3fe5bef38f": "bundles/retail_multi_banker/median/seed-99072/home-insurance-policies__7e1cd968-8be1-4b3f-ade0-cc3fe5bef38f.json",
+            "/travel-insurance-policies/5467e1cd-9688-4be1-a3fb-de0cc3fe5bef": "bundles/retail_multi_banker/median/seed-99072/travel-insurance-policies__5467e1cd-9688-4be1-a3fb-de0cc3fe5bef.json"
+          },
+          "roles": {}
+        },
+        "sparse": {
+          "primary": {
+            "/accounts/retail-multi-banker-acct-01/transactions": "bundles/retail_multi_banker/sparse/seed-99072/accounts__retail-multi-banker-acct-01__transactions.json",
+            "/accounts/retail-multi-banker-acct-02/transactions": "bundles/retail_multi_banker/sparse/seed-99072/accounts__retail-multi-banker-acct-02__transactions.json",
+            "/accounts/retail-multi-banker-acct-03/transactions": "bundles/retail_multi_banker/sparse/seed-99072/accounts__retail-multi-banker-acct-03__transactions.json",
+            "/accounts/retail-multi-banker-acct-04/transactions": "bundles/retail_multi_banker/sparse/seed-99072/accounts__retail-multi-banker-acct-04__transactions.json",
+            "/motor-insurance-policies/1cd9688b-e1b3-4fbd-b0cc-3fe5bef38f4c": "bundles/retail_multi_banker/sparse/seed-99072/motor-insurance-policies__1cd9688b-e1b3-4fbd-b0cc-3fe5bef38f4c.json",
+            "/home-insurance-policies/7e1cd968-8be1-4b3f-ade0-cc3fe5bef38f": "bundles/retail_multi_banker/sparse/seed-99072/home-insurance-policies__7e1cd968-8be1-4b3f-ade0-cc3fe5bef38f.json",
+            "/travel-insurance-policies/5467e1cd-9688-4be1-a3fb-de0cc3fe5bef": "bundles/retail_multi_banker/sparse/seed-99072/travel-insurance-policies__5467e1cd-9688-4be1-a3fb-de0cc3fe5bef.json"
+          },
+          "roles": {}
+        }
+      }
     }
   ]
 }
