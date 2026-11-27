@@ -910,6 +910,9 @@ input:focus,
 .coverage {
   display: flex;
   align-items: center;
+  /* Settled height once the band dots render; reserving it stops the tree and
+     payload below from shifting down when coverage fills in. */
+  min-height: 29px;
   gap: 10px;
   font-size: 12px;
   color: var(--text);
@@ -1177,6 +1180,16 @@ input:focus,
   padding: 6px 8px;
   border-bottom: 1px solid var(--border);
   background: var(--bg-soft);
+}
+/* The rails are filled by app.js after data loads. Reserve their settled
+   height (segment rail: one row of chips; JTBD rail: two rows at both the
+   desktop pane width and phone widths) so the persona list below them does
+   not jump when the chips arrive — this was the explorer's main layout shift. */
+.segment-rail:empty {
+  min-height: 36px;
+}
+.jtbd-rail:empty {
+  min-height: 63px;
 }
 .jtbd-rail .jtbd-chip,
 .segment-rail .jtbd-chip {
@@ -2890,9 +2903,21 @@ details.nav-account > summary.nav-account-header:focus-visible {
     overflow: visible;
   }
   /* The persona library stays a bounded, internally-scrolling block so the
-     long card list doesn't bury the navigator + payload beneath it. */
-  .persona-pane {
-    max-height: 240px;
+     long card list doesn't bury the navigator + payload beneath it. Bound the
+     card list itself, not the whole pane: the header, filter rails and the
+     custom-persona footer already take ~240px on a phone, so capping the pane
+     left the list zero-height and pushed the footer over the "Accounts &
+     endpoints" heading. */
+  .persona-list-shell {
+    flex: 0 0 auto;
+  }
+  .persona-list {
+    flex: 0 0 auto;
+    max-height: 260px;
+  }
+  /* Hold the list's space while the cards load so the footer doesn't jump. */
+  .persona-list:empty {
+    min-height: 260px;
   }
   /* Stack the navigator's tree above the payload. The desktop side-by-side
      split (minmax(220px,260px) tree + 1fr payload) leaves ~140px for the
