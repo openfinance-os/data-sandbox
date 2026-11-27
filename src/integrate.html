@@ -68,6 +68,7 @@
     font-size: inherit;
   }
   .lead { font-size: 15px; line-height: 1.6; color: var(--text); }
+  .integrate-shell p a, .integrate-shell li a { text-decoration: underline; }
   .back-link { font-size: 12px; color: var(--text-muted); }
   .callout {
     margin: 12px 0 20px;
@@ -116,6 +117,7 @@
 </style>
 </head>
 <body>
+<nav class="site-bar" aria-label="Open Finance OS"><a class="site-bar-home" href="https://openfinance-os.org/">Open Finance OS</a><span class="site-bar-sep" aria-hidden="true">/</span><a href="index.html">Data Sandbox</a></nav>
 <div class="banner" role="status" aria-label="Synthetic data notice" data-dismissible>
   <strong>SYNTHETIC.</strong>
   Data is generated from the UAE Open Finance Standards v2.1 OpenAPI spec — not from any real bank.
@@ -223,7 +225,7 @@
     HTML host. Use the <em>Use this persona in your demo</em> panel on a
     persona page to copy a pre-filled snippet, or build the URL yourself:
   </p>
-  <pre><code>&lt;iframe
+  <pre tabindex="0"><code>&lt;iframe
   src="https://data-sandbox.openfinance-os.org/embed.html?persona=salaried_expat_mid&amp;lfi=median&amp;endpoint=/accounts/%7BAccountId%7D/transactions&amp;seed=4729&amp;height=600"
   width="100%" height="600" loading="lazy"
   title="Open Finance Data Sandbox — Sara · median"
@@ -253,11 +255,11 @@
     not released, so the registry install commands do not work yet. Build them
     from this repository instead:
   </p>
-  <pre><code>git clone https://github.com/openfinance-os/data-sandbox.git
+  <pre tabindex="0"><code>git clone https://github.com/openfinance-os/data-sandbox.git
 cd data-sandbox
 npm ci &amp;&amp; npm run build:fixtures
 npm install ./packages/sandbox-fixtures   # from your project, use the path to this folder</code></pre>
-  <pre><code>// Wrap sandbox fixtures behind a Nebras-mock-shaped Express handler.
+  <pre tabindex="0"><code>// Wrap sandbox fixtures behind a Nebras-mock-shaped Express handler.
 // Your existing fetch-from-Nebras code keeps working unmodified.
 import express from 'express';
 import { loadJourney } from '@openfinance-os/sandbox-fixtures';
@@ -293,8 +295,8 @@ app.listen(3000);</code></pre>
   <p>
     Not yet on PyPI. After the source build above:
   </p>
-  <pre><code>pip install ./packages/sandbox-fixtures-py</code></pre>
-  <pre><code># A FastAPI shim that mirrors the v2.1 Account Information surface
+  <pre tabindex="0"><code>pip install ./packages/sandbox-fixtures-py</code></pre>
+  <pre tabindex="0"><code># A FastAPI shim that mirrors the v2.1 Account Information surface
 # but serves persona-coherent sandbox data.
 from fastapi import FastAPI
 from openfinance_os_sandbox_fixtures import load_journey
@@ -321,7 +323,7 @@ def parties():
     Flutter, .NET, Postman, plain <code>curl</code>.
   </p>
   <h3>URL contract</h3>
-  <pre><code>https://data-sandbox.openfinance-os.org/fixtures/v1/manifest.json
+  <pre tabindex="0"><code>https://data-sandbox.openfinance-os.org/fixtures/v1/manifest.json
 https://data-sandbox.openfinance-os.org/fixtures/v1/spec.json
 https://data-sandbox.openfinance-os.org/fixtures/v1/index.json
 https://data-sandbox.openfinance-os.org/fixtures/v1/personas/&lt;persona&gt;.json
@@ -340,7 +342,7 @@ https://data-sandbox.openfinance-os.org/fixtures/v1/bundles/&lt;persona&gt;/&lt;
     Start with <code>index.json</code> — a TPP-friendly summary of which
     personas, LFIs, endpoints, and version are live, plus the path contract:
   </p>
-  <pre><code>curl -fsS https://data-sandbox.openfinance-os.org/fixtures/v1/index.json</code></pre>
+  <pre tabindex="0"><code>curl -fsS https://data-sandbox.openfinance-os.org/fixtures/v1/index.json</code></pre>
   <h3>Postman walk-through</h3>
   <ol>
     <li><code>GET .../fixtures/v1/manifest.json</code> — capture
@@ -379,11 +381,11 @@ https://data-sandbox.openfinance-os.org/fixtures/v1/bundles/&lt;persona&gt;/&lt;
   <ul>
     <li><strong>Claude.ai</strong> — Settings → Connectors → Add custom connector → paste the URL.</li>
     <li><strong>Claude Code</strong>:
-      <pre><code>claude mcp add --transport http open-finance-sandbox https://data-sandbox.fly.dev/mcp</code></pre>
+      <pre tabindex="0"><code>claude mcp add --transport http open-finance-sandbox https://data-sandbox.fly.dev/mcp</code></pre>
     </li>
   </ul>
   <h3>Local stdio (Claude Desktop / npx)</h3>
-  <pre><code>{
+  <pre tabindex="0"><code>{
   "mcpServers": {
     "open-finance-sandbox": {
       "command": "npx",
@@ -420,7 +422,7 @@ https://data-sandbox.openfinance-os.org/fixtures/v1/bundles/&lt;persona&gt;/&lt;
     <code>/fixtures/v1/manifest.json#personas[&lt;id&gt;]</code> carries an
     optional <code>multi_lfi_footprint</code> block:
   </p>
-  <pre><code>{
+  <pre tabindex="0"><code>{
   "name": "&lt;persona display name&gt;",
   "domain": "banking",
   "default_seed": 5172,
@@ -451,7 +453,7 @@ https://data-sandbox.openfinance-os.org/fixtures/v1/bundles/&lt;persona&gt;/&lt;
     role-keyed stage path. The primary stays at the historical URL
     for forward compatibility; secondary / tertiary land at:
   </p>
-  <pre><code>/fixtures/v1/bundles/&lt;persona&gt;/&lt;slot&gt;/&lt;lfi&gt;/seed-N/accounts.json
+  <pre tabindex="0"><code>/fixtures/v1/bundles/&lt;persona&gt;/&lt;slot&gt;/&lt;lfi&gt;/seed-N/accounts.json
 /fixtures/v1/bundles/&lt;persona&gt;/&lt;slot&gt;/&lt;lfi&gt;/seed-N/accounts__&lt;AccountId&gt;__balances.json
 /fixtures/v1/bundles/&lt;persona&gt;/&lt;slot&gt;/&lt;lfi&gt;/seed-N/accounts__&lt;AccountId&gt;__transactions.json
 ... (and the rest of the v2.1 in-scope endpoints, single-account)</code></pre>
@@ -463,7 +465,7 @@ https://data-sandbox.openfinance-os.org/fixtures/v1/bundles/&lt;persona&gt;/&lt;
     primary bundle's <code>/accounts/{AccountId}/beneficiaries</code>.
     That match closes the cross-bundle reference loop:
   </p>
-  <pre><code>// In the primary's beneficiaries:
+  <pre tabindex="0"><code>// In the primary's beneficiaries:
 {
   "Reference": "self-to-tertiary",
   "AccountHolderName": "&lt;persona organisation legal name&gt;",
@@ -630,6 +632,7 @@ https://data-sandbox.openfinance-os.org/fixtures/v1/bundles/&lt;persona&gt;/&lt;
     <a href="https://github.com/openfinance-os/data-sandbox/issues" target="_blank" rel="noopener noreferrer">github.com/openfinance-os/data-sandbox/issues</a>.
     Triaged within 14 days.
   </p>
+  <p class="corpus-note">Candidate 0.1.0: verify registry publication before installing by name. Static files ignore query pagination; use the local HTTP mock for generated scenarios and cursor retrieval. Current URLs are mutable aliases; retain a versioned package/archive for replay. <a href="labs.html">Guided labs</a></p>
 </main>
 
 <footer class="footer" role="contentinfo">
@@ -637,6 +640,5 @@ https://data-sandbox.openfinance-os.org/fixtures/v1/bundles/&lt;persona&gt;/&lt;
 </footer>
 
 <script type="module" src="integrate.js"></script>
-<p style="padding:1rem">Candidate 0.1.0: verify registry publication before installing by name. Static files ignore query pagination; use the local HTTP mock for generated scenarios and cursor retrieval. Current URLs are mutable aliases; retain a versioned package/archive for replay. <a href="labs.html">Guided labs</a></p>
 </body>
 </html>

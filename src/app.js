@@ -2422,7 +2422,7 @@ function renderWelcomeCards() {
     }),
   );
   wrap.appendChild(head);
-  wrap.appendChild(el('h3', { class: 'welcome-title', text: 'Three ways to use the sandbox' }));
+  wrap.appendChild(el('h2', { class: 'welcome-title', text: 'Three ways to use the sandbox' }));
 
   const grid = el('div', { class: 'welcome-grid' });
 

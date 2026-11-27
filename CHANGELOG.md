@@ -5,6 +5,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follo
 
 ## [Unreleased]
 
+### Added — Open Finance OS bar, dark mode, accessibility fixes
+
+- Every page except the embed opens with an Open Finance OS bar that links back to
+  openfinance-os.org and to the explorer.
+- Colours follow the system light or dark setting. There is no toggle and nothing is
+  stored. The embed and `/connect` stay light. Hard-coded alert colours are now tokens.
+- Accessibility: the explorer has a level-one heading, the seed help button is 24 px,
+  prose links on About and Integrate are underlined, Integrate code blocks take
+  keyboard focus, every About and Integrate paragraph sits inside `main`, and the
+  `/connect` journey cards use valid roles and heading levels. Axe reports no
+  violations on the explorer, About, Integrate, Labs or Connect in either theme.
+
 ### Changed — guided labs run in the browser; public pages drop internal labels
 
 - `/src/labs.html` now runs each lab in the browser against the published static

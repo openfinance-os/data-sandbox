@@ -5,17 +5,18 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
 <title>Guided labs — Open Finance Data Sandbox</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Crect width=%2716%27 height=%2716%27 rx=%273%27 fill=%27%236E548F%27/%3E%3Ctext x=%278%27 y=%2712%27 font-family=%27system-ui,sans-serif%27 font-size=%2710%27 font-weight=%27700%27 text-anchor=%27middle%27 fill=%27%23fff%27%3E%C2%A4%3C/text%3E%3C/svg%3E" />
 <link rel="stylesheet" href="styles.css">
 <style>
   .labs-page { max-width: 960px; margin: 2rem auto; padding: 0 1rem 3rem; line-height: 1.6; }
   .labs-page h1 { margin: 1rem 0 0.5rem; }
   .labs-page .lede { max-width: 70ch; }
-  .lab { margin-block: 2rem; padding: 1.25rem; border: 1px solid #d4dbd8; border-radius: 10px; }
+  .lab { margin-block: 2rem; padding: 1.25rem; border: 1px solid var(--border); background: var(--bg-card); border-radius: 10px; }
   .lab h2 { margin: 0 0 0.5rem; font-size: 1.25rem; }
   .lab-controls { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-block: 1rem; }
   .lab-controls label { display: inline-flex; gap: 0.5rem; align-items: center; }
   .lab button, .lab select { font: inherit; padding: 0.4rem 0.8rem; }
-  .lab pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 24rem; overflow: auto; background: #f3f6f5; padding: 0.75rem; border-radius: 6px; font-size: 0.8125rem; }
+  .lab pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 24rem; overflow: auto; background: var(--bg-soft); padding: 0.75rem; border-radius: 6px; font-size: 0.8125rem; }
   .lab pre:empty { display: none; }
   .lab-summary { font-weight: 600; }
   .lab-check { margin: 0.25rem 0 0; }
@@ -24,6 +25,7 @@
 </style>
 </head>
 <body>
+<nav class="site-bar" aria-label="Open Finance OS"><a class="site-bar-home" href="https://openfinance-os.org/">Open Finance OS</a><span class="site-bar-sep" aria-hidden="true">/</span><a href="index.html">Data Sandbox</a></nav>
 <main class="labs-page">
   <a href="index.html">← Explorer</a>
   <h1>Guided labs</h1>
