@@ -50,6 +50,7 @@ export const INSURANCE_NORMALIZATION_HASH =
 // quote status branches and declare their union on the two closed wrappers.
 // Branch-specific required fields, enums and unknown-field rejection remain.
 export function normalizeInsuranceQuotes(spec, hash) {
+  if (hash === INSURANCE_PREVIEW_V22_RC2_HASH) return normalizeInsuranceQuotesV22Rc2(spec);
   if (hash !== INSURANCE_NORMALIZATION_HASH)
     throw new Error('Unreviewed insurance schema normalization');
   const schemas = spec.components.schemas;
@@ -72,6 +73,48 @@ export function normalizeInsuranceQuotes(spec, hash) {
         branch.required = [...new Set([...(base.required ?? []), ...(branch.required ?? [])])];
         branch.additionalProperties = false;
         delete branch.allOf;
+      }
+      for (const key of Object.keys(branch.properties)) union[key] = {};
+    }
+    wrapper.properties = union;
+  }
+}
+
+// v2.2-rc2 preview (PRD D-01 amendment, 28 November 2026). The release
+// candidate keeps the same composition defect: each line's quote wrapper is
+// a closed `oneOf` with no declared properties, and each status branch adds
+// `QuoteStatus` beside an `allOf` of a closed base, so no payload can pass
+// literally. Only the reviewed byte-identical rc2 file is eligible. The same
+// repair applies per line: flatten each branch onto its base and declare the
+// union on the wrapper. Branch-specific required fields, enums and
+// unknown-field rejection remain.
+export const INSURANCE_PREVIEW_V22_RC2_HASH =
+  '3551898712103371c7cfeda061b36f033200d9eeed384b61c31e700e56ccb245';
+
+function normalizeInsuranceQuotesV22Rc2(spec) {
+  const schemas = spec.components.schemas;
+  const wrappers = Object.keys(schemas).filter(
+    (name) => /^AE\w+InsuranceQuoteRead\w*$/.test(name) && Array.isArray(schemas[name].oneOf),
+  );
+  if (wrappers.length !== 7) throw new Error('Reviewed rc2 quote wrappers have changed');
+  for (const name of wrappers) {
+    const wrapper = schemas[name];
+    if (wrapper.properties || wrapper.additionalProperties !== false || wrapper.oneOf.length !== 12)
+      throw new Error(`Reviewed rc2 quote wrapper ${name} has changed`);
+    const union = {};
+    for (const { $ref } of wrapper.oneOf) {
+      const branch = resolveRef(spec, { $ref });
+      if (branch.allOf) {
+        if (branch.allOf.length !== 1 || !branch.allOf[0].$ref)
+          throw new Error(`Reviewed rc2 quote composition has changed in ${name}`);
+        const base = resolveRef(spec, branch.allOf[0]);
+        if (base.additionalProperties !== false) throw new Error('rc2 quote base closure changed');
+        branch.properties = { ...structuredClone(base.properties), ...branch.properties };
+        branch.required = [...new Set([...(base.required ?? []), ...(branch.required ?? [])])];
+        branch.additionalProperties = false;
+        delete branch.allOf;
+      } else if (branch.additionalProperties !== false) {
+        throw new Error(`rc2 quote branch closure changed in ${name}`);
       }
       for (const key of Object.keys(branch.properties)) union[key] = {};
     }

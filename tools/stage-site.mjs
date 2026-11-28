@@ -210,8 +210,14 @@ if (fs.existsSync(previewSrc)) {
   for (const baseline of fs.readdirSync(previewSrc)) {
     const dst = path.join(out, 'fixtures/preview', baseline);
     cprf(path.join(previewSrc, baseline), dst);
-    const specJson = path.join(repoRoot, `dist/SPEC.preview.${baseline}.json`);
-    if (fs.existsSync(specJson)) fs.copyFileSync(specJson, path.join(dst, 'spec.json'));
+    // Banking keeps the historical spec.json name; other domains are suffixed.
+    for (const [from, to] of [
+      [`dist/SPEC.preview.${baseline}.json`, 'spec.json'],
+      [`dist/SPEC.preview.${baseline}.insurance.json`, 'spec.insurance.json'],
+    ]) {
+      const specJson = path.join(repoRoot, from);
+      if (fs.existsSync(specJson)) fs.copyFileSync(specJson, path.join(dst, to));
+    }
   }
 } else {
   console.warn(

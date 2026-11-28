@@ -5,6 +5,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follo
 
 ## [Unreleased]
 
+### Added — v2.2-rc2 insurance preview
+
+- The insurance fixtures join the preview at `/fixtures/preview/v2.2-rc2/`: every
+  insurance persona, LFI profile, listed seed and role bundle, 2,460 responses,
+  validated against the vendored rc2 Insurance YAML (`spec.insurance.json` alongside).
+- Facts rc2 newly requires come from `src/generator/insurance/preview-v22.js`, read
+  from the same scenario's stable policy: quote `CoverType`, `PolicyStartDate` and
+  `PolicyEndDate` (replacing the free-text `LevelOfCover`), motor `RegistrationType`,
+  and home and renters address coordinates at the emirate's centre point.
+- rc2 keeps the v2.1 quote-composition defect, so the reviewed normalization now also
+  applies to the rc2 file, keyed to its hash. A test confirms the literal rc2 schema
+  still rejects every quote.
+- The preview builder restores any field the candidate makes mandatory that an LFI
+  profile redacted, from the same scenario's Rich envelope.
+
 ### Added — v2.2-rc2 banking preview corpus
 
 - The banking fixtures are also published in the Standards v2.2-rc2 wire shape at

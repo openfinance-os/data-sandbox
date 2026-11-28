@@ -28,6 +28,16 @@
           "vendoredAt": "spec/preview/v2.2-rc2/uae-account-information-openapi.yaml",
           "sha256": "5b830f749cbfaad084bcf96f7d39baaf35a99c1cb41bcf6aa99dc9be8a418958",
           "retrievedAt": "2026-11-28T00:00:00Z"
+        },
+        "insurance": {
+          "version": "v2.2-rc2",
+          "branch": "v2.2-rc2-nebras",
+          "commit": "4b0827a9206e87a8d4e4801118e7c13f3b48ea75",
+          "path": "dist/standards/v2.2-rc2/uae-insurance-openapi.yaml",
+          "vendoredAt": "spec/preview/v2.2-rc2/uae-insurance-openapi.yaml",
+          "sha256": "3551898712103371c7cfeda061b36f033200d9eeed384b61c31e700e56ccb245",
+          "normalization": null,
+          "retrievedAt": "2026-11-28T00:00:00Z"
         }
       }
     }

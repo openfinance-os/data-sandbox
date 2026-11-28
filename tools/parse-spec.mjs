@@ -250,6 +250,7 @@ export function parseDomain(config) {
 
   const yamlText = fs.readFileSync(specPath, 'utf8');
   const spec =
+    // Reviewed quote-composition normalization, keyed to each file's hash.
     config.id === 'insurance'
       ? createValidators(yamlText, { normalization: true }).spec
       : yaml.load(yamlText);

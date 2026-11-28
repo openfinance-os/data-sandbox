@@ -139,7 +139,12 @@ if (!SITE_STAGED) {
       expect(index.baseline).toBe('v2.2-rc2');
       const spec = JSON.parse(fs.readFileSync(need(`${base}/spec.json`).p, 'utf8'));
       expect(spec.specVersion).toBe('v2.2-rc2');
-      const persona = index.personas[0];
+      expect(index.domains).toEqual(['banking', 'insurance']);
+      const insuranceSpec = JSON.parse(
+        fs.readFileSync(need(`${base}/spec.insurance.json`).p, 'utf8'),
+      );
+      expect(insuranceSpec.specVersion).toBe('v2.2-rc2');
+      const persona = index.personas.banking[0];
       const manifest = JSON.parse(fs.readFileSync(need(`${base}/manifest.json`).p, 'utf8'));
       const entry = Object.values(manifest.fixtures).find((f) => f.personaId === persona);
       const accounts = need(`${base}/${entry.endpoints['/accounts']}`);

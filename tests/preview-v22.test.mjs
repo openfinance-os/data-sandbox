@@ -10,7 +10,16 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { buildBundle } from '../src/generator/index.js';
 import { envelopesFromBundle } from '../src/core/envelopes.js';
-import { toPreviewEnvelope, templateFor, decimalString } from '../src/core/preview.js';
+import {
+  toPreviewEnvelope,
+  templateFor,
+  decimalString,
+  restoreMandatory,
+} from '../src/core/preview.js';
+import {
+  previewQuoteFields,
+  previewPolicyAdditions,
+} from '../src/generator/insurance/preview-v22.js';
 import { loadPersonasByDomain, loadAllPools, repoRoot } from '../tools/load-fixtures.mjs';
 import { createValidators, stripAnnotations } from '../tools/schema-validator.mjs';
 import { PREVIEWS } from '../tools/domains.config.mjs';
@@ -111,8 +120,14 @@ describe('v2.2-rc2 preview: adapter', () => {
     for (const [endpoint, env] of Object.entries(envs)) {
       if (!isBanking(endpoint)) continue;
       const before = JSON.stringify(env);
-      const a = toPreviewEnvelope(env, endpoint, previewSpec, corpusProvenance);
-      const b = toPreviewEnvelope(env, endpoint, previewSpec, corpusProvenance);
+      const a = toPreviewEnvelope(env, endpoint, previewSpec, {
+        stableSpec,
+        provenance: corpusProvenance,
+      });
+      const b = toPreviewEnvelope(env, endpoint, previewSpec, {
+        stableSpec,
+        provenance: corpusProvenance,
+      });
       expect(JSON.stringify(env)).toBe(before);
       expect(JSON.stringify(a)).toBe(JSON.stringify(b));
       expect(a.envelope._watermark).toBe(env._watermark);
@@ -134,7 +149,10 @@ describe('v2.2-rc2 preview: every persona × LFI validates strictly', () => {
         });
         for (const [endpoint, env] of Object.entries(envs)) {
           if (!isBanking(endpoint)) continue;
-          const { envelope } = toPreviewEnvelope(env, endpoint, previewSpec, corpusProvenance);
+          const { envelope } = toPreviewEnvelope(env, endpoint, previewSpec, {
+            stableSpec,
+            provenance: corpusProvenance,
+          });
           const validate = validators.forEndpoint(endpoint);
           const payload = stripAnnotations(envelope);
           expect(validate(payload), JSON.stringify({ endpoint, errors: validate.errors })).toBe(
@@ -171,16 +189,24 @@ describe('v2.2-rc2 preview: built corpus', () => {
   );
 
   it('covers every stable banking fixture, primary and role', () => {
+    const index = JSON.parse(fs.readFileSync(path.join(PREVIEW_ROOT, 'index.json'), 'utf8'));
     for (const group of ['fixtures', 'roleFixtures']) {
       const expected = Object.entries(stable[group])
         .filter(([, e]) => Object.keys(e.endpoints).some(isBanking))
         .map(([k]) => k)
         .sort();
-      expect(Object.keys(manifest[group]).sort()).toEqual(expected);
+      const withBanking = Object.entries(manifest[group])
+        .filter(([, e]) => Object.keys(e.endpoints).some(isBanking))
+        .map(([k]) => k)
+        .sort();
+      expect(withBanking).toEqual(expected);
     }
     expect(manifest.status).toBe('preview');
     expect(manifest.baseline).toBe('v2.2-rc2');
     expect(manifest.specProvenance.banking.commit).toBe(corpusProvenance.commit);
+    expect(index.wireChanges.banking).toEqual({
+      'Data.Transaction[].CurrencyExchange.ExchangeRate': 'number → decimal string',
+    });
   });
 
   it('every emitted preview response validates and carries the watermark', () => {
@@ -189,7 +215,7 @@ describe('v2.2-rc2 preview: built corpus', () => {
     for (const group of ['fixtures', 'roleFixtures'])
       for (const entry of Object.values(manifest[group]))
         for (const [endpoint, rel] of Object.entries(entry.endpoints)) {
-          if (endpoint.includes('{') || seen.has(rel)) continue;
+          if (!isBanking(endpoint) || endpoint.includes('{') || seen.has(rel)) continue;
           seen.add(rel);
           const env = JSON.parse(fs.readFileSync(path.join(PREVIEW_ROOT, rel), 'utf8'));
           expect(env._watermark).toContain('SYNTHETIC');
@@ -203,7 +229,7 @@ describe('v2.2-rc2 preview: built corpus', () => {
 
   it('changes only what the release candidate re-types', () => {
     const index = JSON.parse(fs.readFileSync(path.join(PREVIEW_ROOT, 'index.json'), 'utf8'));
-    for (const fieldPath of Object.keys(index.wireChanges)) {
+    for (const fieldPath of Object.keys(index.wireChanges.banking)) {
       const [ep] = Object.entries(previewSpec.endpoints).find(([, e]) =>
         e.fields.some((f) => f.path === fieldPath),
       );
@@ -211,6 +237,154 @@ describe('v2.2-rc2 preview: built corpus', () => {
       const was = stableSpec.endpoints[ep].fields.find((f) => f.path === fieldPath);
       expect(now.type).toBe('string');
       expect(was.type).not.toBe('string');
+    }
+  });
+});
+
+// ── Insurance ──────────────────────────────────────────────────────────────
+const insurancePreview = PREVIEWS.find((p) => p.id === 'insurance' && p.baseline === 'v2.2-rc2');
+const insuranceYaml = fs.readFileSync(path.join(repoRoot, insurancePreview.specPath), 'utf8');
+const insuranceValidators = createValidators(insuranceYaml, { normalization: true });
+const insuranceLiteral = createValidators(insuranceYaml);
+const insuranceSpec = JSON.parse(
+  fs.readFileSync(path.join(repoRoot, insurancePreview.outPath), 'utf8'),
+);
+const insuranceStableSpec = JSON.parse(
+  fs.readFileSync(path.join(repoRoot, 'dist/SPEC.insurance.json'), 'utf8'),
+);
+const isInsurance = (e) => e.includes('-insurance-') || e.startsWith('/insurance-consents');
+
+describe('v2.2-rc2 preview: insurance generator facts', () => {
+  const policy = (extra) => ({ Product: { Policy: { PolicyStartDate: '2026-01-31', ...extra } } });
+
+  it('maps each line to a CoverType the candidate declares', () => {
+    const enumOf = (line) =>
+      insuranceSpec.endpoints[`/${line}-insurance-quotes/{QuoteId}`].fields.find(
+        (f) => f.path === 'Data.CoverType',
+      ).enum;
+    const cases = {
+      motor: policy({ TypeOfPolicy: 'ThirdPartyLiability' }),
+      health: policy({ TypeOfPolicy: 'HealthInsuranceIndividual' }),
+      life: policy({ CoverType: 'Joint' }),
+      employment: policy({ SchemeCategory: 'CategoryA' }),
+      travel: policy({ MultiTrip: false }),
+      home: policy(),
+      renters: policy(),
+    };
+    for (const [line, data] of Object.entries(cases)) {
+      const fields = previewQuoteFields(line, data);
+      expect(enumOf(line), line).toContain(fields.CoverType);
+      expect(fields.PolicyStartDate).toBe('2026-01-31');
+      expect(fields.PolicyEndDate).toBe('2027-01-31');
+    }
+    expect(previewQuoteFields('home', policy({ PolicyEndDate: '2026-12-31' })).PolicyEndDate).toBe(
+      '2026-12-31',
+    );
+    expect(() => previewQuoteFields('motor', {})).toThrow();
+  });
+
+  it('derives motor registration and insured-address coordinates', () => {
+    const motor = (year) => ({
+      Product: { Policy: { PolicyStartDate: '2026-01-31' }, VehicleDetails: { ModelYear: year } },
+    });
+    expect(previewPolicyAdditions('motor', motor('2026'))[0].values.RegistrationType).toBe('New');
+    expect(previewPolicyAdditions('motor', motor('2021'))[0].values.RegistrationType).toBe(
+      'RenewalOfExistingVehicle',
+    );
+    const home = {
+      Product: { PropertyDetails: { InsuredPropertyAddress: { AddressLine: ['B 1', 'Dubai'] } } },
+    };
+    const [{ values }] = previewPolicyAdditions('home', home);
+    expect(values).toEqual({ Latitude: '25.20', Longitude: '55.27' });
+    expect(previewPolicyAdditions('travel', home)).toEqual([]);
+  });
+
+  it('restores newly mandatory fields a profile redacted, from the Rich twin', () => {
+    const sparse = { Data: { A: [{ B: 1 }, { B: 2 }] } };
+    const rich = {
+      Data: {
+        A: [
+          { B: 1, C: 'x' },
+          { B: 2, C: 'y' },
+        ],
+      },
+    };
+    expect(restoreMandatory(sparse, rich, ['Data.A[].C'])).toEqual(['Data.A[].C']);
+    expect(sparse.Data.A.map((a) => a.C)).toEqual(['x', 'y']);
+  });
+
+  it('refuses an addition the candidate does not declare', () => {
+    const env = { Data: {}, Links: {}, Meta: {} };
+    expect(() =>
+      toPreviewEnvelope(env, '/motor-insurance-quotes/q1', insuranceSpec, {
+        stableSpec: insuranceStableSpec,
+        additions: [{ at: ['Data'], values: { NotAField: 1 } }],
+      }),
+    ).toThrow(/not declared/);
+  });
+});
+
+describe('v2.2-rc2 preview: insurance built corpus', () => {
+  const manifest = JSON.parse(fs.readFileSync(path.join(PREVIEW_ROOT, 'manifest.json'), 'utf8'));
+  const stable = JSON.parse(
+    fs.readFileSync(path.join(repoRoot, 'packages/sandbox-fixtures/manifest.json'), 'utf8'),
+  );
+
+  it('covers every stable insurance fixture and pins its own provenance', () => {
+    const insuranceProvenance = provenance.preview.corpus.domains.insurance;
+    expect(crypto.createHash('sha256').update(insuranceYaml).digest('hex')).toBe(
+      insuranceProvenance.sha256,
+    );
+    expect(manifest.domains).toEqual(['banking', 'insurance']);
+    for (const group of ['fixtures', 'roleFixtures']) {
+      const expected = Object.entries(stable[group])
+        .filter(([, e]) => Object.keys(e.endpoints).some(isInsurance))
+        .map(([k]) => k);
+      for (const key of expected)
+        expect(Object.keys(manifest[group][key].endpoints).some(isInsurance), key).toBe(true);
+    }
+  });
+
+  it('every emitted insurance response validates against the reviewed rc2 composition', () => {
+    let count = 0;
+    let quotes = 0;
+    const seen = new Set();
+    for (const group of ['fixtures', 'roleFixtures'])
+      for (const entry of Object.values(manifest[group]))
+        for (const [endpoint, rel] of Object.entries(entry.endpoints)) {
+          if (!isInsurance(endpoint) || endpoint.includes('{') || seen.has(rel)) continue;
+          seen.add(rel);
+          const env = JSON.parse(fs.readFileSync(path.join(PREVIEW_ROOT, rel), 'utf8'));
+          expect(env._watermark).toContain('SYNTHETIC');
+          expect(env._specVersion).toBe('v2.2-rc2');
+          const payload = stripAnnotations(env);
+          const validate = insuranceValidators.forEndpoint(endpoint);
+          expect(
+            validate(payload),
+            JSON.stringify({ rel, errors: validate.errors?.slice(0, 3) }),
+          ).toBe(true);
+          // The composition defect is upstream: rc2 still rejects every quote literally.
+          if (endpoint.includes('-insurance-quotes/')) {
+            expect(insuranceLiteral.forEndpoint(endpoint)(payload)).toBe(false);
+            quotes++;
+          }
+          count++;
+        }
+    expect(count).toBeGreaterThan(1000);
+    expect(quotes).toBeGreaterThan(0);
+  });
+
+  it('only wire changes the two parsed specs explain', () => {
+    const index = JSON.parse(fs.readFileSync(path.join(PREVIEW_ROOT, 'index.json'), 'utf8'));
+    const anywhere = (spec, p) =>
+      Object.values(spec.endpoints).some((e) => e.fields.some((f) => f.path === p));
+    for (const [p, kind] of Object.entries(index.wireChanges.insurance)) {
+      if (kind === 'removed') {
+        expect(anywhere(insuranceStableSpec, p), p).toBe(true);
+        expect(anywhere(insuranceSpec, p), p).toBe(false);
+      } else {
+        expect(anywhere(insuranceSpec, p), p).toBe(true);
+      }
     }
   });
 });
