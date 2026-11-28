@@ -1,6 +1,6 @@
 // Opt-in OAuth 2.1 simulation layer for the HTTP transport.
 //
-// Default deploy at https://data-sandbox.fly.dev/mcp remains anonymous per
+// Default deploy at https://mcp.openfinance-os.org/mcp remains anonymous per
 // PRD D-13 ("Anonymous — no auth, no API keys, no OAuth. The data is
 // synthetic so there is nothing to protect"). This module is wired only
 // when --simulate-oauth / MCP_SIMULATE_OAUTH=1 is set.

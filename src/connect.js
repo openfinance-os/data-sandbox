@@ -1190,7 +1190,7 @@ function renderJ1Discovery(body) {
       'Each row below is one real HTTP exchange — click ',
       el('strong', {}, 'Probe the live server'),
       ' to populate the metadata rows from the production deploy at ',
-      el('code', {}, 'data-sandbox.fly.dev'),
+      el('code', {}, 'mcp.openfinance-os.org'),
       '.',
     ]),
   );
@@ -1278,7 +1278,7 @@ function renderJ1Discovery(body) {
 async function probeLiveServer(btn) {
   btn.disabled = true;
   btn.textContent = 'Probing…';
-  const base = 'https://data-sandbox.fly.dev';
+  const base = 'https://mcp.openfinance-os.org';
   const targets = [
     { id: 'rfc9728', url: `${base}/.well-known/oauth-protected-resource` },
     { id: 'rfc8414', url: `${base}/.well-known/oauth-authorization-server` },
@@ -1625,7 +1625,7 @@ function renderConnected() {
     el(
       'div',
       { className: 'url-copy', 'aria-label': 'Sandbox MCP connector URL' },
-      'https://data-sandbox.fly.dev/mcp',
+      'https://mcp.openfinance-os.org/mcp',
     ),
     el(
       'a',

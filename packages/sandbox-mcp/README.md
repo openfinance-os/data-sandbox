@@ -23,11 +23,11 @@ The sandbox's `/connect` page teaches three connection journeys for UAE Open Fin
 
 | Journey | Pattern | Consent UI | This server's role |
 |---|---|---|---|
-| **J1 — Bank-direct (MCP labs)** | A single LFI exposes the OF v2.1 data shape directly to its own retail or SME customer | Bank's own OAuth 2.1 + PKCE (the `--simulate-oauth` screen in this server). The on-page sandbox now walks the J1 consent in 4 sub-steps that mirror what this server does: MCP discovery (401 + RFC 9728/8414) → bank-side SCA (Article 18) → consent (v2.1 Permissions taxonomy + ExpirationDateTime + TransactionFromDateTime) → token (PKCE-validated bearer). | **Canonical backend.** `https://data-sandbox.fly.dev/mcp` is the live J1 demo surface — add it as a Claude custom connector. |
+| **J1 — Bank-direct (MCP labs)** | A single LFI exposes the OF v2.1 data shape directly to its own retail or SME customer | Bank's own OAuth 2.1 + PKCE (the `--simulate-oauth` screen in this server). The on-page sandbox now walks the J1 consent in 4 sub-steps that mirror what this server does: MCP discovery (401 + RFC 9728/8414) → bank-side SCA (Article 18) → consent (v2.1 Permissions taxonomy + ExpirationDateTime + TransactionFromDateTime) → token (PKCE-validated bearer). | **Canonical backend.** `https://mcp.openfinance-os.org/mcp` is the live J1 demo surface — add it as a Claude custom connector. |
 | **J2 — OF rails (TPP via Al Tareq)** | A regulated TPP aggregates one or many LFIs through Al Tareq CAAP / Consent Manager (FAPI 2.0, OFTF mTLS) | Al Tareq CAAP (regulated, centralized at the Consent Manager) | Out of scope for v1. The `/connect` page's J2 wizard is fully client-side and reads the same fixture corpus directly. A future `/tpp/*` surface here would let a real agent walk J2 too. |
 | **J3 — Off-rails aggregator (Plaid-pattern)** | Multi-entity aggregation via screen-scraping or partner deals | None (no consent broker) | **Specifically not modelled.** UAE Article 15 forecloses this pattern; `/connect` shows it as a static contrast only. |
 
-For end users: the fastest way to try J1 is **Claude.ai → Customize → Connectors → Add custom connector → paste `https://data-sandbox.fly.dev/mcp`**. No OAuth client setup is required for the anonymous deploy.
+For end users: the fastest way to try J1 is **Claude.ai → Customize → Connectors → Add custom connector → paste `https://mcp.openfinance-os.org/mcp`**. No OAuth client setup is required for the anonymous deploy.
 
 ## Install
 
@@ -37,12 +37,12 @@ npx -y @openfinance-os/sandbox-mcp --help
 
 ### Claude connector (hosted HTTP)
 
-Published endpoint: **`https://data-sandbox.fly.dev/mcp`** (live; canonical CNAME `https://mcp.openfinance-os.org/mcp` lands during the OF-OS Commons cutover per PRD D-13). Anonymous, no auth, no API key.
+Published endpoint: **`https://mcp.openfinance-os.org/mcp`** (canonical OF-OS Commons hostname per PRD D-13; the Fly-assigned `https://data-sandbox.fly.dev/mcp` serves the same app and stays as a fallback). Anonymous, no auth, no API key.
 
 Add it as a custom connector in **Claude.ai → Settings → Connectors → Add custom connector** (paste the URL). In Claude Code:
 
 ```sh
-claude mcp add --transport http open-finance-sandbox https://data-sandbox.fly.dev/mcp
+claude mcp add --transport http open-finance-sandbox https://mcp.openfinance-os.org/mcp
 ```
 
 To run your own HTTP instance:
@@ -104,7 +104,7 @@ Anything that runs Docker continuously and supports long-lived HTTP connections 
 - **Idle session TTL** (default 30 min) and **max session count** (default 1024) cap memory growth on a public anonymous endpoint. Tunable via `MCP_SESSION_IDLE_TTL_MS` and `MCP_MAX_SESSIONS` env vars.
 - **Per-IP rate limit** — a token bucket on `POST /mcp` (default: burst 60, refill 10 req/s per client IP; `429` + `Retry-After` when exceeded). Tunable via `MCP_RATE_LIMIT_BURST` / `MCP_RATE_LIMIT_RPS`; set `MCP_RATE_LIMIT_BURST=0` to disable.
 - **Scoped CORS** — the `Access-Control-Allow-Origin: *` wildcard applies only to `/mcp` and `/health`, never to the OAuth simulation endpoints (`/authorize`, `/token`, `/register`, `/.well-known/*`).
-- **Public URL** — `--public-url https://mcp.example.org` (or `MCP_PUBLIC_URL`) declares the deployment's public https origin. It is validated (must be `https://`), added to the Host allowlist, and used as the OAuth issuer in the RFC 8414/9728 discovery documents instead of the internal `http://host:port` listen address. For the Fly deploy, set `MCP_PUBLIC_URL = "https://data-sandbox.fly.dev"` in `fly.toml` `[env]` (the deploy workflow already uses the same value to smoke-test the endpoint).
+- **Public URL** — `--public-url https://mcp.example.org` (or `MCP_PUBLIC_URL`) declares the deployment's public https origin. It is validated (must be `https://`), added to the Host allowlist, and used as the OAuth issuer in the RFC 8414/9728 discovery documents instead of the internal `http://host:port` listen address. For the Fly deploy, set `MCP_PUBLIC_URL = "https://mcp.openfinance-os.org"` in `fly.toml` `[env]` (the deploy workflow already uses the same value to smoke-test the endpoint).
 - **Stub Dynamic Client Registration** — with `--simulate-oauth`, `POST /register` implements an RFC 7591 stub (echoes back a synthetic `client_id`, public client, PKCE-only) and the RFC 8414 metadata advertises `registration_endpoint`, so real MCP clients that attempt DCR (Claude.ai, VS Code) can complete the simulated flow.
 - **Graceful shutdown** — SIGTERM / SIGINT closes every active MCP session before the process exits, so `docker stop` and Kubernetes pod evictions don't drop in-flight requests.
 - **Structured request logging** — every request emits `<ISO timestamp> METHOD /path STATUS Nms session=<id8>` to stderr (stdout is reserved for stdio MCP framing).

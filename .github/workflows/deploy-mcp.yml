@@ -1,7 +1,8 @@
 name: Deploy sandbox-mcp to Fly
 
 # Builds packages/sandbox-mcp/Dockerfile and ships it to Fly.io as the
-# data-sandbox app (https://data-sandbox.fly.dev/mcp). Triggered on every push
+# data-sandbox app (https://mcp.openfinance-os.org/mcp, also reachable at
+# https://data-sandbox.fly.dev/mcp). Triggered on every push
 # to main that touches the MCP server, its Dockerfile, fly.toml, or this
 # workflow itself, so config changes such as MCP_ALLOWED_HOSTS in fly.toml
 # [env] reach the live machine without a manual `fly deploy`.
@@ -39,7 +40,7 @@ concurrency:
 env:
   # Override per environment if the Fly app is renamed; the smoke job
   # uses this hostname to validate that the deploy actually came up.
-  MCP_PUBLIC_URL: https://data-sandbox.fly.dev
+  MCP_PUBLIC_URL: https://mcp.openfinance-os.org
 
 jobs:
   # Gate: only proceed for a manual dispatch, or a CI run that passed on a

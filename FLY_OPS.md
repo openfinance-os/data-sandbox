@@ -90,6 +90,19 @@ For our deploy you should not normally need any secrets — the MCP endpoint is 
 
 ---
 
+## Custom domain: `mcp.openfinance-os.org`
+
+The canonical hostname (PRD D-13) lives on the Cloudflare-hosted `openfinance-os.org` zone and points at the Fly app. Fly terminates TLS and issues the certificate; Cloudflare only serves DNS.
+
+1. `fly certs add mcp.openfinance-os.org --app data-sandbox` — prints the DNS records Fly wants (the app's dedicated `A` and `AAAA` addresses; `fly certs setup` shows the `CNAME mcp → data-sandbox.fly.dev` alternative).
+2. In Cloudflare DNS for `openfinance-os.org`, add those records for `mcp` with **Proxy status: DNS only** (grey cloud). An orange-cloud proxy breaks Fly's certificate validation and puts Cloudflare's 100 s idle timeout in front of the Streamable HTTP stream.
+3. If step 1 also printed an `_acme-challenge.mcp` CNAME, add it as well (DNS only).
+4. `fly certs show mcp.openfinance-os.org --app data-sandbox` until it reports `Issued`, then `curl -s https://mcp.openfinance-os.org/health`.
+
+`MCP_ALLOWED_HOSTS` in `fly.toml` lists both hostnames, so `data-sandbox.fly.dev` keeps answering as a fallback. `MCP_PUBLIC_URL` (the OAuth issuer and the deploy smoke target) is the custom domain.
+
+---
+
 ## Failure modes to recognise
 
 | Symptom (`fly status` / `fly logs`) | Likely cause | Fix |
@@ -107,10 +120,11 @@ For our deploy you should not normally need any secrets — the MCP endpoint is 
 
 ```sh
 # How many sessions are open right now?
-curl -s https://data-sandbox.fly.dev/health | jq
+curl -s https://mcp.openfinance-os.org/health | jq
+curl -s https://data-sandbox.fly.dev/health | jq          # fallback hostname, bypasses the custom domain
 
 # Smoke the deployed endpoint manually
-node packages/sandbox-mcp/scripts/smoke.mjs https://data-sandbox.fly.dev
+node packages/sandbox-mcp/scripts/smoke.mjs https://mcp.openfinance-os.org
 
 # Force a redeploy without changing code (e.g. after env-var change)
 fly deploy --remote-only --strategy rolling --app data-sandbox

@@ -19,9 +19,9 @@ primary_region = 'fra'
   # Public origin used as the OAuth issuer in discovery documents when the
   # opt-in OAuth simulation is enabled (--simulate-oauth). Without it the
   # issuer resolves to the container's internal bind address, which is
-  # unroutable behind Fly's TLS terminator. Swap to the canonical CNAME on
-  # the D-13 cutover together with MCP_ALLOWED_HOSTS above.
-  MCP_PUBLIC_URL = "https://data-sandbox.fly.dev"
+  # unroutable behind Fly's TLS terminator. Points at the canonical D-13
+  # hostname; data-sandbox.fly.dev stays in MCP_ALLOWED_HOSTS as a fallback.
+  MCP_PUBLIC_URL = "https://mcp.openfinance-os.org"
 
 [http_service]
   internal_port = 8787

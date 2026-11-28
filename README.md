@@ -3,7 +3,7 @@
 Synthetic UAE Open Finance v2.1 data you can browse, fetch or plug into an AI assistant. It gives you realistic Bank Data Sharing, Insurance and ATM Locator payloads for 38 fictional customers, with every field marked mandatory, optional or conditional straight from the published OpenAPI spec. Nothing here comes from a real customer or a real bank.
 
 - **Explorer:** <https://data-sandbox.openfinance-os.org/>
-- **Hosted MCP server:** `https://data-sandbox.fly.dev/mcp` (anonymous, no API key)
+- **Hosted MCP server:** `https://mcp.openfinance-os.org/mcp` (anonymous, no API key)
 - **Integration guide:** <https://data-sandbox.openfinance-os.org/src/integrate.html>
 
 ## Try it in a minute
@@ -19,7 +19,7 @@ Use `fixtures/v1/index.json` (about 40 KB) to list personas and their published 
 **2. Ask an AI assistant.** Add the hosted MCP server as a custom connector in Claude (Settings, Connectors, Add custom connector) or in Claude Code:
 
 ```sh
-claude mcp add --transport http open-finance-sandbox https://data-sandbox.fly.dev/mcp
+claude mcp add --transport http open-finance-sandbox https://mcp.openfinance-os.org/mcp
 ```
 
 Then ask, for example: "List the banking personas, pick the gig worker, and tell me how regular their income is." The assistant calls `list_personas`, `set_session` and `get_transactions`. Every tool is read-only.

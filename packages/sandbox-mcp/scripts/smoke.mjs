@@ -2,7 +2,7 @@
 // Post-deploy smoke test for the hosted MCP endpoint.
 //
 // Usage: node packages/sandbox-mcp/scripts/smoke.mjs <base-url>
-// e.g.   node packages/sandbox-mcp/scripts/smoke.mjs https://data-sandbox.fly.dev
+// e.g.   node packages/sandbox-mcp/scripts/smoke.mjs https://mcp.openfinance-os.org
 //
 // Asserts:
 //   1. GET /health → { ok: true }

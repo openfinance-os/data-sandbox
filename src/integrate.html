@@ -401,14 +401,14 @@ https://data-sandbox.openfinance-os.org/fixtures/preview/v2.2-rc2/bundles/&lt;pe
   </p>
   <h3>Hosted HTTP (Claude.ai connector / Claude Code)</h3>
   <p>
-    Live endpoint: <code>https://data-sandbox.fly.dev/mcp</code> (canonical
-    CNAME <code>https://mcp.openfinance-os.org/mcp</code> lands during the
-    OF-OS Commons cutover). No auth, no API key.
+    Live endpoint: <code>https://mcp.openfinance-os.org/mcp</code>. The
+    original Fly address <code>https://data-sandbox.fly.dev/mcp</code> keeps
+    working as a fallback. No auth, no API key.
   </p>
   <ul>
     <li><strong>Claude.ai</strong> — Settings → Connectors → Add custom connector → paste the URL.</li>
     <li><strong>Claude Code</strong>:
-      <pre tabindex="0"><code>claude mcp add --transport http open-finance-sandbox https://data-sandbox.fly.dev/mcp</code></pre>
+      <pre tabindex="0"><code>claude mcp add --transport http open-finance-sandbox https://mcp.openfinance-os.org/mcp</code></pre>
     </li>
   </ul>
   <h3>Local stdio (Claude Desktop / npx)</h3>
