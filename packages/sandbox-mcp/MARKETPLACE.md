@@ -32,7 +32,7 @@ Alternates if the field caps differently:
 ## Install URL (Streamable HTTP)
 
 ```
-https://data-sandbox.fly.dev/mcp
+https://mcp.openfinance-os.org/mcp
 ```
 
 (`https://mcp.openfinance-os.org/mcp` is the future canonical URL — it lands with the OF-OS Commons CNAME cutover per PRD D-13 and is not live yet. Re-point the listing when DNS goes live; re-listing is cheap.)

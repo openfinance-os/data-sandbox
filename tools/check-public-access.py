@@ -92,7 +92,7 @@ def run(origin, mcp_origin=None, expected_revision=None):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--origin', default='https://data-sandbox.openfinance-os.org')
-    parser.add_argument('--mcp-origin', default='https://data-sandbox.fly.dev')
+    parser.add_argument('--mcp-origin', default='https://mcp.openfinance-os.org')
     parser.add_argument('--expected-revision')
     parser.add_argument('--report', default='artifacts/public-access.json')
     args = parser.parse_args()

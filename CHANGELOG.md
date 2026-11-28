@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follo
 
 ## [Unreleased]
 
+### Changed — MCP server on `mcp.openfinance-os.org`
+
+- The hosted MCP endpoint is now published as `https://mcp.openfinance-os.org/mcp`,
+  the canonical OF-OS Commons hostname from PRD D-13, across the README, `/integrate`,
+  `/connect`, the package README and the marketplace listing.
+- `MCP_PUBLIC_URL` (OAuth issuer) and the deploy smoke target move to the custom
+  domain. `data-sandbox.fly.dev` stays in `MCP_ALLOWED_HOSTS`, so existing connectors
+  keep working.
+- `FLY_OPS.md` documents the Fly certificate and Cloudflare DNS setup.
+
 ### Added — v2.2-rc2 insurance preview
 
 - The insurance fixtures join the preview at `/fixtures/preview/v2.2-rc2/`: every

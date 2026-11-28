@@ -41,7 +41,7 @@ An interactive, **client-side static** sandbox that lets a TPP-perspective user 
 - `tests/` — Vitest suites (spec validation, replay, LFI bands, fixture-package, integrate-staging, journey-coherence, etc.) + Playwright e2e under `tests/e2e/`.
 - `packages/sandbox-fixtures/` — `@openfinance-os/sandbox-fixtures` (npm). Exports: `loadFixture`, `loadJourney`, `buildBundle`, `expandRecipe`, `encodeRecipe`, `recipeHash`, `validateRecipe`, `listPersonas`, `listEndpoints`, `loadSpec`, `getPools`, `manifest`.
 - `packages/sandbox-fixtures-py/` — PyPI mirror (same fixture data, Python loader).
-- `packages/sandbox-mcp/` — `@openfinance-os/sandbox-mcp`, MCP server wrapping the fixture package (stdio + Streamable HTTP transports; deployed at `https://data-sandbox.fly.dev/mcp`).
+- `packages/sandbox-mcp/` — `@openfinance-os/sandbox-mcp`, MCP server wrapping the fixture package (stdio + Streamable HTTP transports; deployed at `https://mcp.openfinance-os.org/mcp`).
 - `examples/tpp-budgeting-demo/` — worked TPP integration (HTML + `app.js` + Postman collection).
 - `examples/accounting-multi-bank-demo/` — multi-LFI role-bundle reconciliation demo (cross-LFI ledger by IBAN identity).
 - `dist/` — build outputs (`SPEC.json`, `SPEC.insurance.json`, `SPEC.atm.json`, `data.json`, `data.i18n.json`, `avatars.json`, `domains.json`); gitignored.

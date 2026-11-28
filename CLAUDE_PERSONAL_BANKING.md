@@ -10,7 +10,7 @@ This is one of three connection journeys the sandbox teaches on its `/connect` p
 
 The load-bearing invariant: **all three return the same v2.1 data contract**. Only the consent journey varies. That's what makes the bank-direct labs path here faithful to UAE Open Finance even though it never enters Al Tareq — the data shape is the regulated standard, just delivered through a non-regulated consent surface.
 
-Nothing here is endorsed by Anthropic, CBUAE, Nebras, or any UAE LFI. The data is synthetic — every payload carries a `_watermark`. The OAuth journey is opt-in simulation behind `--simulate-oauth`; the production deploy at `https://data-sandbox.fly.dev/mcp` stays anonymous-by-default per PRD D-13.
+Nothing here is endorsed by Anthropic, CBUAE, Nebras, or any UAE LFI. The data is synthetic — every payload carries a `_watermark`. The OAuth journey is opt-in simulation behind `--simulate-oauth`; the production deploy at `https://mcp.openfinance-os.org/mcp` stays anonymous-by-default per PRD D-13.
 
 ---
 
@@ -46,7 +46,7 @@ I tap Approve. The browser redirects back to Claude. I'm in the chat again and C
 
 The `/connect` page now walks the J1 consent journey in four sub-steps that mirror what the MCP + OAuth handshake actually does end-to-end. Each sub-step is its own rendered screen with its own sub-step indicator at the top of step 3.
 
-**3a — MCP discovery chain.** Claude's MCP client hits `/mcp` without a bearer and gets back a `401` with a `WWW-Authenticate: Bearer realm="open-finance-sandbox", authorization_uri=…, resource_metadata=…` challenge. From there it fetches `/.well-known/oauth-protected-resource` (RFC 9728 — declares the authorization servers the resource trusts) and `/.well-known/oauth-authorization-server` (RFC 8414 — declares `/authorize` and `/token` endpoints, supported scopes, PKCE methods). Then it opens `/authorize` with a PKCE S256 challenge bound to a verifier it keeps private. The page visualises all four exchanges as rows; a "Probe the live server" button fetches the actual metadata from `https://data-sandbox.fly.dev` and inlines it.
+**3a — MCP discovery chain.** Claude's MCP client hits `/mcp` without a bearer and gets back a `401` with a `WWW-Authenticate: Bearer realm="open-finance-sandbox", authorization_uri=…, resource_metadata=…` challenge. From there it fetches `/.well-known/oauth-protected-resource` (RFC 9728 — declares the authorization servers the resource trusts) and `/.well-known/oauth-authorization-server` (RFC 8414 — declares `/authorize` and `/token` endpoints, supported scopes, PKCE methods). Then it opens `/authorize` with a PKCE S256 challenge bound to a verifier it keeps private. The page visualises all four exchanges as rows; a "Probe the live server" button fetches the actual metadata from `https://mcp.openfinance-os.org` and inlines it.
 
 **3b — Bank-side Strong Customer Authentication.** Article 18 of CBUAE Circular C 03/2025 mandates 2FA. The mock screen shows username + password + 6-digit OTP, with a "use your bank app" push-based alternate (same regulatory category). This is the bank's own auth surface — Claude never sees these credentials.
 
@@ -94,7 +94,7 @@ This whole flow is theatre over synthetic data. The load-bearing invariants don'
 - **No institution-specific operational detail, ever** (NG5, refined by D-14). LFI profiles are anonymous Rich/Median/Sparse bands.
 - **Deterministic generation** (EXP-05). `(persona, lfi, seed)` → byte-identical bundle.
 - **Mandatory fields are never redacted** (EXP-04). The Sparse profile only drops optional/conditional fields.
-- **Anonymous-by-default deploy** (D-13). The OAuth simulation is opt-in via `--simulate-oauth` / `MCP_SIMULATE_OAUTH=1`. The production `https://data-sandbox.fly.dev/mcp` requires no credentials.
+- **Anonymous-by-default deploy** (D-13). The OAuth simulation is opt-in via `--simulate-oauth` / `MCP_SIMULATE_OAUTH=1`. The production `https://mcp.openfinance-os.org/mcp` requires no credentials.
 - **Watermark every export** (EXP-19). Every payload Claude reads carries `SYNTHETIC — Open Finance Data Sandbox · OpenFinance-OS Commons · persona:{id} lfi:{profile} seed:{seed} retrieved:{timestamp}`.
 
 For the full PRD see `PRD_OF_Data_Explorer.md`. For the visual mockup of the connect flow, see [`/connect.html`](src/connect.html). For the OAuth-sim implementation, see [`packages/sandbox-mcp/src/transports/oauth-simulation.mjs`](packages/sandbox-mcp/src/transports/oauth-simulation.mjs).
