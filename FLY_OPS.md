@@ -92,10 +92,10 @@ For our deploy you should not normally need any secrets — the MCP endpoint is 
 
 ## Custom domain: `mcp.openfinance-os.org`
 
-The canonical hostname (PRD D-13) is a CNAME on the Cloudflare-hosted `openfinance-os.org` zone pointing at the Fly app. Fly terminates TLS and issues the certificate; Cloudflare only serves DNS.
+The canonical hostname (PRD D-13) lives on the Cloudflare-hosted `openfinance-os.org` zone and points at the Fly app. Fly terminates TLS and issues the certificate; Cloudflare only serves DNS.
 
-1. `fly certs add mcp.openfinance-os.org --app data-sandbox` — prints the DNS records Fly wants.
-2. In Cloudflare DNS for `openfinance-os.org`, add `CNAME mcp → data-sandbox.fly.dev` with **Proxy status: DNS only** (grey cloud). An orange-cloud proxy breaks Fly's certificate validation and puts Cloudflare's 100 s idle timeout in front of the Streamable HTTP stream.
+1. `fly certs add mcp.openfinance-os.org --app data-sandbox` — prints the DNS records Fly wants (the app's dedicated `A` and `AAAA` addresses; `fly certs setup` shows the `CNAME mcp → data-sandbox.fly.dev` alternative).
+2. In Cloudflare DNS for `openfinance-os.org`, add those records for `mcp` with **Proxy status: DNS only** (grey cloud). An orange-cloud proxy breaks Fly's certificate validation and puts Cloudflare's 100 s idle timeout in front of the Streamable HTTP stream.
 3. If step 1 also printed an `_acme-challenge.mcp` CNAME, add it as well (DNS only).
 4. `fly certs show mcp.openfinance-os.org --app data-sandbox` until it reports `Issued`, then `curl -s https://mcp.openfinance-os.org/health`.
 
