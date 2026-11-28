@@ -5,6 +5,32 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follo
 
 ## [Unreleased]
 
+### Added — v2.2-rc2 banking preview corpus
+
+- The banking fixtures are also published in the Standards v2.2-rc2 wire shape at
+  `/fixtures/preview/v2.2-rc2/` (index, manifest, spec and bundles), ahead of the
+  31 December 2026 Tier-1 release deadline. It covers every banking persona, LFI
+  profile, listed seed and role bundle: 3,936 responses.
+- The release candidate is vendored at `spec/preview/v2.2-rc2/`, pinned to commit
+  `4b0827a` on the upstream `v2.2-rc2-nebras` branch and by SHA-256 in
+  `spec/provenance.json`. `tools/parse-spec.mjs` emits
+  `dist/SPEC.preview.v2.2-rc2.json`.
+- `src/core/preview.js` re-shapes stable envelopes from the parsed candidate spec. The
+  only wire change in today's data is the transaction exchange rate, which becomes a
+  decimal string. Fields the candidate newly requires, such as the transaction
+  narrative, are checked as present and informative under every profile.
+- Every preview response validates strictly against the vendored candidate, keeps the
+  watermark and is labelled `_baselineStatus: "preview"`. v2.1 stays the default for
+  the explorer, packages, MCP server and `/fixtures/v1/`. PRD D-01 is amended
+  accordingly.
+
+### Fixed — spec parser types for `allOf` scalars
+
+- A field declared as `allOf` of a scalar `$ref` plus a description no longer emits a
+  second record of type `unknown`. In v2.1 this corrects
+  `FinanceRates.CalculationFrequency` on the product endpoint, which now shows its
+  type and enum, and it makes every v2.2 date-time field carry its type.
+
 ### Added — Open Finance OS bar, dark mode, accessibility fixes
 
 - Every page except the embed opens with an Open Finance OS bar that links back to

@@ -632,7 +632,7 @@ All previously-open questions resolved. Recorded here as a decisions log; deltas
 
 | ID | Decision | Notes |
 |---|---|---|
-| **D-01** *(was OQ-EXP-01)* | **Standards baseline is v2.1 only.** No v2.0 ↔ v2.1 toggle. | Single pinned-SHA source. Phase 2 follows v2.x onwards as the spec evolves; previous-version migration analysis is out of scope. |
+| **D-01** *(was OQ-EXP-01; amended 28 Nov 2026)* | **Standards baseline is v2.1 only.** No v2.0 ↔ v2.1 toggle. **Amendment:** a release-candidate preview corpus (v2.2-rc2) is published beside the stable corpus, never replacing it; see the v2.2 preview amendment below. | Single pinned-SHA source. Phase 2 follows v2.x onwards as the spec evolves; previous-version migration analysis is out of scope. |
 | **D-02** *(was OQ-EXP-02)* | **Working name: *Open Finance Data Sandbox*.** Final slug confirmed by the Commons publication workflow. | Descriptive name in the *Velox*-sibling pattern; no separate single-word brand. |
 | **D-03** *(was OQ-EXP-03)* | **No pre-publication courtesy brief to Nebras.** | The artefact is fully part of the Commons; standard publication path applies. |
 | **D-04** *(was OQ-EXP-04)* | **Cross-link from the *Credit Underwriting in the UAE* article is a static link.** No deep-link with persona+LFI preselected. | Keeps the article and the sandbox loosely coupled. |
@@ -731,3 +731,13 @@ D-11 is extended for the corrected corpus: corpus 0.1.0 is a new release. `/fixt
 New requirements: one explicit reference clock independent of schema retrieval; full scenario identity (corpus/generator, persona/recipe, role/profile, seed, date and domain provenance); shared portable exporters; local HTTP mock with curated/custom/role data and API Hub-labelled consent/failure simulations; exhaustive scenario/filter-bound cursor retrieval; complete booked numerical summaries separated by currency with paged source evidence; normalized table joins; generated types/validator; guided income, SME, consent and banking/insurance labs; opt-in separated evaluation inputs/labels with entity/persona-family holdouts; optional domain archives and a compatible full corpus.
 
 Five-minute first-result completion is a hypothesis requiring observed user sessions, not an acceptance result inferred from code. Public explorer/packages/MCP parity requires live release evidence and publishing prerequisites. noindex remains an explicit release-stage choice. Anonymous allowlisted self-reported lab completion supplements voluntary feedback; it does not prove cross-session retention. The retired Service Worker is not a portable HTTP integration; static payload files ignore pagination query parameters.
+
+## Approved v2.2 preview amendment — 28 November 2026
+
+The maintainer approved a v2.2 preview corpus ahead of the 31 December 2026 Tier-1 release deadline. This amends D-01 and nothing else.
+
+- **What ships.** The banking fixtures (every persona, LFI profile, listed seed and role bundle) are re-shaped to the v2.2-rc2 Account Information schema and published at `/fixtures/preview/v2.2-rc2/`. The release-candidate YAML is vendored at `spec/preview/v2.2-rc2/`, pinned by commit on the upstream `v2.2-rc2-nebras` branch and by SHA-256 in `spec/provenance.json#preview.corpus`.
+- **What stays.** v2.1 remains the stable baseline and the default for the explorer, embed, packages, MCP server, labs and `/fixtures/v1/`. The preview is not adopted (`preview.adopted: false`). No v2.1 ↔ v2.2 toggle or delta view is added to the explorer (D-09 still holds).
+- **How it is derived.** The preview reuses the stable scenarios. Re-shaping is driven by the parsed release-candidate SPEC JSON (EXP-01): a value changes only where the candidate re-types the field. Mandatory fields come from the candidate's own `required` arrays, so fields it newly requires (such as the transaction narrative) must be present and informative under every profile, including Sparse (invariant 5). Every preview response must validate strictly against the vendored candidate (invariant 6), keeps the standard watermark (invariant 9) and is deterministic (invariant 4).
+- **Labelling.** Every preview response carries `_specVersion`, `_specSha`, `_baselineStatus: "preview"` and a `_preview` notice that release candidates must not be the basis of a production implementation.
+- **Scope.** Insurance v2.2-rc2 needs generator changes (restructured quotes, motor `RegistrationType`) and follows separately. When v2.2 is final, the preview is re-pinned to the final release; switching the stable baseline needs its own decision.

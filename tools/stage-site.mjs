@@ -202,6 +202,23 @@ if (fs.existsSync(path.join(fixtureSrc, 'manifest.json'))) {
   );
 }
 
+// Release-candidate preview corpora (PRD D-01 amendment, 28 November 2026),
+// built by tools/build-preview-corpus.mjs. Published beside, never instead
+// of, the stable /fixtures/v1/ corpus.
+const previewSrc = path.join(fixtureSrc, 'preview');
+if (fs.existsSync(previewSrc)) {
+  for (const baseline of fs.readdirSync(previewSrc)) {
+    const dst = path.join(out, 'fixtures/preview', baseline);
+    cprf(path.join(previewSrc, baseline), dst);
+    const specJson = path.join(repoRoot, `dist/SPEC.preview.${baseline}.json`);
+    if (fs.existsSync(specJson)) fs.copyFileSync(specJson, path.join(dst, 'spec.json'));
+  }
+} else {
+  console.warn(
+    '[stage-site] preview corpus not built — /fixtures/preview/ will be missing. Run `node tools/build-preview-corpus.mjs` first.',
+  );
+}
+
 // Keep documentation discoverable without indexing the explorer.
 const guideHtml = fs.readFileSync(path.join(out, 'src/integrate.html'), 'utf8');
 for (const [filename, contents] of Object.entries(discoveryFiles(guideHtml))) {
@@ -239,6 +256,11 @@ const headers = `/dist/*
   Cache-Control: public, max-age=60, must-revalidate
 
 /fixtures/v1/*
+  Cache-Control: public, max-age=600, must-revalidate
+  Access-Control-Allow-Origin: *
+  Access-Control-Allow-Methods: GET, HEAD, OPTIONS
+
+/fixtures/preview/*
   Cache-Control: public, max-age=600, must-revalidate
   Access-Control-Allow-Origin: *
   Access-Control-Allow-Methods: GET, HEAD, OPTIONS

@@ -13,7 +13,24 @@
   "preview": {
     "documentation": "v2.2-rc2",
     "repository": "v2.2-rc1",
-    "adopted": false
+    "adopted": false,
+    "corpus": {
+      "baseline": "v2.2-rc2",
+      "status": "preview",
+      "approvedAt": "2026-11-28",
+      "note": "Release candidate published corpus alongside the stable v2.1 baseline. Not a stable replacement; v2.1 stays the default everywhere.",
+      "domains": {
+        "banking": {
+          "version": "v2.2-rc2",
+          "branch": "v2.2-rc2-nebras",
+          "commit": "4b0827a9206e87a8d4e4801118e7c13f3b48ea75",
+          "path": "dist/standards/v2.2-rc2/uae-account-information-openapi.yaml",
+          "vendoredAt": "spec/preview/v2.2-rc2/uae-account-information-openapi.yaml",
+          "sha256": "5b830f749cbfaad084bcf96f7d39baaf35a99c1cb41bcf6aa99dc9be8a418958",
+          "retrievedAt": "2026-11-28T00:00:00Z"
+        }
+      }
+    }
   },
   "domains": {
     "banking": {
