@@ -32,6 +32,11 @@ const REQUIRED_IN_CI = [
     gates: 'brand-registry suite + lint-brand-registry-coverage',
   },
   {
+    rel: 'packages/sandbox-fixtures/preview/v2.2-rc2/manifest.json',
+    build: 'npm run build:fixtures',
+    gates: 'preview-v22 built-corpus suite',
+  },
+  {
     rel: '_site/src/index.html',
     build: 'npm run build:site',
     gates: 'integrate-staging (EXP-28..31) suite',

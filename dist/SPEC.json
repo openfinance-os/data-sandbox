@@ -3837,14 +3837,26 @@
         {
           "path": "Data.Product[].FinanceRates.CalculationFrequency",
           "name": "CalculationFrequency",
-          "type": "unknown",
+          "type": "string",
+          "enum": [
+            "Monthly",
+            "Daily",
+            "Quarterly",
+            "Annually"
+          ],
           "status": "optional",
           "description": "Describes how often the interest rate is calculated"
         },
         {
           "path": "Data.Product[].FinanceRates.ApplicationFrequency",
           "name": "ApplicationFrequency",
-          "type": "unknown",
+          "type": "string",
+          "enum": [
+            "Monthly",
+            "Daily",
+            "Quarterly",
+            "Annually"
+          ],
           "status": "optional",
           "description": "Describes how often the rate is charged, especially in relation to the conditions or triggers (e.g., monthly, one-off, or on each trigger)"
         },

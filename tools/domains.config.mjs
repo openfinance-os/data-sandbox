@@ -109,3 +109,27 @@ export const DOMAINS = [
     inScopePaths: ['/atms'],
   },
 ];
+
+// Release-candidate preview corpora, published alongside the stable v2.1
+// baseline and never replacing it (PRD D-01 amendment, 28 November 2026).
+// Each entry reuses a stable domain's in-scope paths and emits its own
+// SPEC JSON; previews are kept out of dist/domains.json so the explorer's
+// domain list and every default stay on v2.1.
+export const PREVIEWS = [
+  {
+    id: 'banking',
+    baseline: 'v2.2-rc2',
+    label: 'Bank Data Sharing (v2.2-rc2 preview)',
+    status: 'preview',
+    specPath: 'spec/preview/v2.2-rc2/uae-account-information-openapi.yaml',
+    pinPath: 'spec/preview/v2.2-rc2/SPEC_PIN.sha',
+    retrievedPath: 'spec/preview/v2.2-rc2/SPEC_PIN.retrieved',
+    bandsPath: 'spec/lfi-bands.banking.yaml',
+    outPath: 'dist/SPEC.preview.v2.2-rc2.json',
+    upstreamRepo: 'Nebras-Open-Finance/api-specs',
+    upstreamBranch: 'v2.2-rc2-nebras',
+    upstreamPath: 'dist/standards/v2.2-rc2/uae-account-information-openapi.yaml',
+    defaultEndpoint: '/accounts',
+    inScopePaths: DOMAINS.find((d) => d.id === 'banking').inScopePaths,
+  },
+];

@@ -14,7 +14,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import yaml from 'js-yaml';
 import { createValidators } from './schema-validator.mjs';
-import { DOMAINS } from './domains.config.mjs';
+import { DOMAINS, PREVIEWS } from './domains.config.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -72,9 +72,23 @@ function walkSchema(spec, schema, pathParts, parentRequired, seen, out, depth = 
 
   // Combinators: allOf merges; oneOf/anyOf record alternatives but flatten the first.
   if (Array.isArray(schema.allOf)) {
+    const merged = [];
     for (const sub of schema.allOf) {
-      walkSchema(spec, sub, pathParts, parentRequired, seen, out, depth + 1);
+      walkSchema(spec, sub, pathParts, parentRequired, seen, merged, depth + 1);
     }
+    // allOf branches describe the same node. A `$ref` to a scalar plus a
+    // sibling `{ description }` (the v2.2 `AEDateTime` pattern) emits a typed
+    // record and an `unknown` one for the same path; fold the `unknown` one
+    // into its typed sibling, keeping its more specific description. Paths
+    // without an `unknown` record are emitted exactly as before.
+    for (const field of merged) {
+      if (field.type !== 'unknown') continue;
+      const typed = merged.find((f) => f.path === field.path && f.type !== 'unknown');
+      if (!typed) continue;
+      if (field.description !== undefined) typed.description = field.description;
+      field.folded = true;
+    }
+    out.push(...merged.filter((f) => !f.folded));
     return;
   }
   if (Array.isArray(schema.oneOf) || Array.isArray(schema.anyOf)) {
@@ -291,6 +305,9 @@ export function parseDomain(config) {
   }
 
   const out = stripUndefined({
+    ...(config.status === 'preview'
+      ? { status: 'preview', baseline: config.baseline, upstreamBranch: config.upstreamBranch }
+      : {}),
     specVersion: spec.info?.version ?? 'unknown',
     openapiVersion: spec.openapi ?? 'unknown',
     pinSha,
@@ -340,6 +357,9 @@ function main() {
   console.log(
     `wrote domains manifest (${manifestEntries.length} domain${manifestEntries.length === 1 ? '' : 's'}) → ${path.relative(repoRoot, domainsManifestPath)}`,
   );
+
+  // Previews emit their own SPEC JSON only; dist/domains.json stays v2.1.
+  for (const preview of PREVIEWS) parseDomain(preview);
 }
 
 main();

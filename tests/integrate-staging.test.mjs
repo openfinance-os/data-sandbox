@@ -132,6 +132,24 @@ if (!SITE_STAGED) {
       expect(headers).toMatch(/Cache-Control: public/);
     });
 
+    it('stages the v2.2-rc2 preview beside, not instead of, /fixtures/v1/', () => {
+      const base = 'fixtures/preview/v2.2-rc2';
+      const index = JSON.parse(fs.readFileSync(need(`${base}/index.json`).p, 'utf8'));
+      expect(index.status).toBe('preview');
+      expect(index.baseline).toBe('v2.2-rc2');
+      const spec = JSON.parse(fs.readFileSync(need(`${base}/spec.json`).p, 'utf8'));
+      expect(spec.specVersion).toBe('v2.2-rc2');
+      const persona = index.personas[0];
+      const manifest = JSON.parse(fs.readFileSync(need(`${base}/manifest.json`).p, 'utf8'));
+      const entry = Object.values(manifest.fixtures).find((f) => f.personaId === persona);
+      const accounts = need(`${base}/${entry.endpoints['/accounts']}`);
+      expect(accounts.exists).toBe(true);
+      const stable = JSON.parse(fs.readFileSync(need('fixtures/v1/index.json').p, 'utf8'));
+      expect(stable.specVersion).toMatch(/^v2\.1/);
+      const headers = fs.readFileSync(need('_headers').p, 'utf8');
+      expect(headers).toMatch(/\/fixtures\/preview\/\*\n[^\n]*\n  Access-Control-Allow-Origin: \*/);
+    });
+
     it('TPP demo panel snippet patterns are exercised by url.js (EXP-30)', async () => {
       const url = await import('../src/url.js');
       const fixtureUrl = url.encodeFixtureUrl({
