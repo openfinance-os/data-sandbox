@@ -364,25 +364,30 @@ https://data-sandbox.openfinance-os.org/fixtures/v1/bundles/&lt;persona&gt;/&lt;
   </p>
   <h3 id="v2-2-preview">v2.2-rc2 preview</h3>
   <p>
-    Tier-1 banks must release Standards v2.2 by 31 December 2026, and v2.2 is
-    still a release candidate. To let you build against it early, the banking
-    fixtures are also published in the v2.2-rc2 wire shape. It is the same
-    personas and the same data as <code>/fixtures/v1/</code>, re-shaped to
-    the release candidate's schema and validated against it. v2.1 stays the
-    stable default everywhere else in the sandbox.
+    Tier-1 banks and insurers must release Standards v2.2 by 31 December
+    2026, and v2.2 is still a release candidate. To let you build against it
+    early, the banking and insurance fixtures are also published in the
+    v2.2-rc2 wire shape. It is the same personas and the same data as
+    <code>/fixtures/v1/</code>, re-shaped to the release candidate's schema
+    and validated against it. v2.1 stays the stable default everywhere else
+    in the sandbox.
   </p>
   <pre tabindex="0"><code>https://data-sandbox.openfinance-os.org/fixtures/preview/v2.2-rc2/index.json
 https://data-sandbox.openfinance-os.org/fixtures/preview/v2.2-rc2/manifest.json
 https://data-sandbox.openfinance-os.org/fixtures/preview/v2.2-rc2/spec.json
+https://data-sandbox.openfinance-os.org/fixtures/preview/v2.2-rc2/spec.insurance.json
 https://data-sandbox.openfinance-os.org/fixtures/preview/v2.2-rc2/bundles/&lt;persona&gt;/&lt;lfi&gt;/seed-&lt;n&gt;/&lt;endpoint&gt;.json</code></pre>
   <p>
     <code>index.json</code> lists every wire change from v2.1 that shows up
-    in the data, such as the transaction exchange rate becoming a decimal
-    string. Every transaction carries a narrative, which v2.2 makes
-    mandatory. Each response names the pinned release-candidate commit in
+    in the data. In banking, the transaction exchange rate becomes a decimal
+    string, and every transaction carries the narrative v2.2 makes
+    mandatory. In insurance, quotes replace <code>LevelOfCover</code> with
+    <code>CoverType</code> and policy dates, motor policies gain
+    <code>RegistrationType</code>, and home and renters addresses gain
+    coordinates. Each response names the pinned release-candidate commit in
     <code>_specSha</code>. The release candidate can still change before
     v2.2 is final, so don't use it as the basis of a production
-    implementation. Insurance fixtures are still v2.1 only.
+    implementation.
   </p>
 
   <h2 id="path-mcp">Path 5 — MCP connector (Claude)</h2>

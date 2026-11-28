@@ -34,7 +34,7 @@ An interactive, **client-side static** sandbox that lets a TPP-perspective user 
 ## Repo layout
 
 - `src/` — frontend sources (vanilla JS) and portable shared core.
-- `spec/` — vendored OpenAPI YAMLs (banking v2.1-errata2, insurance v2.1-errata3, ATM Locator) + `lfi-bands.{banking,insurance,atm}.yaml`; `spec/preview/v2.2-rc2/` holds the pinned banking release candidate for the preview corpus.
+- `spec/` — vendored OpenAPI YAMLs (banking v2.1-errata2, insurance v2.1-errata3, ATM Locator) + `lfi-bands.{banking,insurance,atm}.yaml`; `spec/preview/v2.2-rc2/` holds the pinned banking and insurance release candidates for the preview corpus.
 - `tools/` — spec parser, data builder, fixture-package builders, site stager, lints.
 - `personas/` — YAML persona manifests (21 banking-only + 9 insurance-only + 8 multi-domain = 38 customer personas, plus the `atm-directory` infrastructure persona = 39 manifests; the banking domain renders 29 personas and the insurance domain renders 17, with the 8 multi-domain personas counted under both).
 - `synthetic-identity-pool/` — name/IBAN/phone/DOB pools.
@@ -81,7 +81,7 @@ These come from the PRD's NG (non-goals) and EXP requirements. Violating any of 
 4. **Deterministic generation** (EXP-05). `(persona, lfi_profile, seed)` always yields the exact same bundle. Replay requires the full versioned scenario; current static URLs can change across releases. CI replay test runs every build.
 5. **Mandatory fields are never redacted by LFI profile** (EXP-04 / §8.3). Redaction filter only touches optional/conditional fields. If the Sparse profile ever drops a mandatory field, the bundle is spec-invalid — bug.
 6. **Every generated payload validates against the v2.1 OpenAPI schema** (EXP-10 acceptance). Snapshot test runs across the full persona × LFI × endpoint matrix.
-7. **Standards baseline is v2.1 only** (D-01). No v2.0↔v2.1 toggle, no delta view (D-09). Single pinned SHA. The one exception is the v2.2-rc2 preview corpus (D-01 amendment, 28 Nov 2026): `spec/preview/v2.2-rc2/` + `src/core/preview.js` + `tools/build-preview-corpus.mjs` publish banking fixtures at `/fixtures/preview/v2.2-rc2/` beside, never instead of, the v2.1 corpus. Preview re-shaping is spec-driven from `dist/SPEC.preview.v2.2-rc2.json`; v2.1 stays the default everywhere.
+7. **Standards baseline is v2.1 only** (D-01). No v2.0↔v2.1 toggle, no delta view (D-09). Single pinned SHA. The one exception is the v2.2-rc2 preview corpus (D-01 amendment, 28 Nov 2026): `spec/preview/v2.2-rc2/` + `src/core/preview.js` + `tools/build-preview-corpus.mjs` publish banking and insurance fixtures at `/fixtures/preview/v2.2-rc2/` beside, never instead of, the v2.1 corpus. Preview re-shaping is spec-driven from `dist/SPEC.preview.v2.2-rc2{,.insurance}.json`; facts rc2 newly requires come from `src/generator/insurance/preview-v22.js`; the rc2 insurance quote normalization is hash-keyed in `tools/schema-validator.mjs`. v2.1 stays the default everywhere.
 8. **No separate contributor branding** (NG6). The artefact takes OF-OS Commons visual identity. No logos, no upsells, no contributor chrome.
 9. **Watermark every export** (§6.5, EXP-19). Every CSV/JSON/tarball carries `SYNTHETIC — Open Finance Data Sandbox · OpenFinance-OS Commons · persona:{id} lfi:{profile} seed:{seed} retrieved:{timestamp}`.
 
